@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5440:5432"
     restart: unless-stopped
 
   backend:
@@ -27,7 +27,7 @@ services:
       - INITIAL_ADMIN_PASSWORD=admin
       - INITIAL_ADMIN_FULLNAME=Administrator
     ports:
-      - "5000:5000"
+      - "5050:5000"
     depends_on:
       - db
     restart: unless-stopped
@@ -38,7 +38,7 @@ services:
       dockerfile: Dockerfile
     container_name: tizim_frontend
     ports:
-      - "80:80"
+      - "8050:80"
     depends_on:
       - backend
     restart: unless-stopped
