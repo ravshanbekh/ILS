@@ -11,7 +11,7 @@ RUN npm install
 COPY . .
 # We use a dummy API URL during build because the proxy handles it in production
 ENV VITE_API_URL=/api
-RUN npm run build
+RUN npx vite build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
