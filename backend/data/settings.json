@@ -1,0 +1,14 @@
+{
+  "tutorialVideos": {
+    "platformRules": {
+      "title": "Platforma ishlatish qoidalari",
+      "youtubeUrl": "https://youtu.be/znTZTKks5NY?si=mHjI1pcbi8B_0lOf",
+      "description": "Platformadan foydalanish bo'yicha qo'llanma video"
+    },
+    "normativeRules": {
+      "title": "Normativ qoidalari bajarish",
+      "youtubeUrl": "https://youtu.be/znTZTKks5NY?si=mHjI1pcbi8B_0lOf",
+      "description": "Normativlarni qanday bajarish kerakligi haqida video"
+    }
+  }
+}

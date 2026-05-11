@@ -1,0 +1,32 @@
+import { z } from 'zod';
+
+export const createUserSchema = z.object({
+  fullName: z
+    .string()
+    .min(2, 'Ism kamida 2 ta belgi bo\'lishi kerak')
+    .max(100, 'Ism 100 ta belgidan oshmasligi kerak'),
+  login: z
+    .string()
+    .min(3, 'Login kamida 3 ta belgi')
+    .max(50, 'Login 50 ta belgidan oshmasin')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Login faqat harf, raqam va _ bo\'lishi mumkin'),
+  password: z
+    .string()
+    .min(3, 'Parol kamida 3 ta belgi'),
+  role: z.enum(['admin', 'teacher', 'student'], {
+    errorMap: () => ({ message: 'Rol: admin, teacher yoki student bo\'lishi kerak' }),
+  }),
+  avatarUrl: z.string().url().optional().nullable(),
+});
+
+export const updateUserSchema = z.object({
+  fullName: z.string().min(2).max(100).optional(),
+  login: z.string().min(3).max(50).optional(),
+  password: z.string().min(3).optional(),
+  role: z.enum(['admin', 'teacher', 'student']).optional(),
+  avatarUrl: z.string().url().optional().nullable(),
+  isActive: z.boolean().optional(),
+});
+
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
