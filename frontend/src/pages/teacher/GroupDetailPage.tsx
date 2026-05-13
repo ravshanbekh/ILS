@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
 import { rankingsApi, groupsApi, exportApi, usersApi } from '@/api';
-import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search } from 'lucide-react';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import { normativesApi } from '@/api';
 import { downloadBlob } from '@/utils';
@@ -22,6 +22,7 @@ export default function GroupDetailPage() {
   const [allStudents, setAllStudents] = useState<any[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [savingStudents, setSavingStudents] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
 
   // Normative management states
   const [showNormativeModal, setShowNormativeModal] = useState(false);
@@ -57,6 +58,7 @@ export default function GroupDetailPage() {
     try {
       const res = await usersApi.getAll(1, 1000, 'student');
       setAllStudents(res.data.data || []);
+      setStudentSearch('');
       setShowStudentModal(true);
     } catch (err) {
       console.error(err);
@@ -390,13 +392,31 @@ export default function GroupDetailPage() {
             <h2 className="text-xl font-bold text-white mb-2">
               Guruh o'quvchilari
             </h2>
-            <p className="text-sm text-zinc-400 mb-4">Belgilanganlar guruhga qo'shiladi</p>
+            <p className="text-sm text-zinc-400 mb-3">Belgilanganlar guruhga qo'shiladi</p>
+
+            {/* Search */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Ism yoki login bo'yicha qidirish..."
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
+              />
+            </div>
 
             <div className="flex-1 overflow-y-auto mb-6 bg-[#09090b] rounded-xl border border-zinc-800 p-2 divide-y divide-zinc-800">
               {allStudents.length === 0 ? (
                 <div className="p-4 text-center text-sm text-zinc-500">O'quvchilar topilmadi. Avval o'quvchi qo'shing.</div>
               ) : (
-                allStudents.map(student => (
+                allStudents
+                  .filter(student => {
+                    if (!studentSearch.trim()) return true;
+                    const q = studentSearch.toLowerCase();
+                    return student.fullName.toLowerCase().includes(q) || student.login.toLowerCase().includes(q);
+                  })
+                  .map(student => (
                   <label key={student.id} className="flex items-center justify-between p-3 hover:bg-zinc-800/30 cursor-pointer transition-colors rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-blue-600/10 flex items-center justify-center text-xs font-bold text-blue-500 border border-blue-500/20">

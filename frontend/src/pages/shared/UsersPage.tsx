@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { usersApi } from '@/api';
+import { usersApi, groupsApi } from '@/api';
 import Header from '@/components/layout/Header';
-import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react';
 import { formatDateTime } from '@/utils';
 
 export default function UsersPage() {
@@ -30,6 +30,11 @@ export default function UsersPage() {
   });
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Group selection for new students
+  const [allGroups, setAllGroups] = useState<any[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+  const [groupSearch, setGroupSearch] = useState('');
 
   const fetchUsers = useCallback(async (page: number, search: string) => {
     setLoading(true);
@@ -79,6 +84,10 @@ export default function UsersPage() {
         role: 'student',
       });
     }
+    setSelectedGroupId('');
+    setGroupSearch('');
+    // Load groups
+    groupsApi.getAll(1, 200).then(res => setAllGroups(res.data.data || [])).catch(console.error);
     setShowModal(true);
   };
 
@@ -91,7 +100,15 @@ export default function UsersPage() {
       if (editingUser) {
         await usersApi.update(editingUser.id, payload);
       } else {
-        await usersApi.create(payload);
+        const res = await usersApi.create(payload);
+        // If student and group selected, add to group
+        if (payload.role === 'student' && selectedGroupId && res.data.data?.id) {
+          try {
+            await groupsApi.addStudent(selectedGroupId, res.data.data.id);
+          } catch (err) {
+            console.error('Guruhga qo\'shishda xatolik:', err);
+          }
+        }
       }
       setShowModal(false);
       fetchUsers(currentPage, debouncedSearch);
@@ -327,6 +344,58 @@ export default function UsersPage() {
                     <option value="teacher">O'qituvchi (Teacher)</option>
                     <option value="admin">Admin</option>
                   </select>
+                </div>
+              )}
+
+              {/* Group selection for new students */}
+              {!editingUser && formData.role === 'student' && (
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">
+                    <span className="flex items-center gap-1.5">
+                      <FolderOpen className="w-3.5 h-3.5" />
+                      Guruhga biriktirish
+                      <span className="text-zinc-600 font-normal normal-case">(ixtiyoriy)</span>
+                    </span>
+                  </label>
+                  <div className="relative mb-2">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+                    <input
+                      type="text"
+                      placeholder="Guruh nomi bo'yicha qidirish..."
+                      value={groupSearch}
+                      onChange={(e) => setGroupSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
+                    />
+                  </div>
+                  <div className="max-h-32 overflow-y-auto bg-[#09090b] rounded-lg border border-zinc-800 divide-y divide-zinc-800/50">
+                    <label className="flex items-center gap-3 px-3 py-2 hover:bg-zinc-800/30 cursor-pointer transition-colors">
+                      <input
+                        type="radio"
+                        name="group"
+                        value=""
+                        checked={selectedGroupId === ''}
+                        onChange={() => setSelectedGroupId('')}
+                        className="w-3.5 h-3.5 text-blue-600 bg-[#09090b] border-zinc-700"
+                      />
+                      <span className="text-sm text-zinc-400">Biriktirmasdan yaratish</span>
+                    </label>
+                    {allGroups
+                      .filter(g => !groupSearch.trim() || g.name.toLowerCase().includes(groupSearch.toLowerCase()))
+                      .map(g => (
+                        <label key={g.id} className="flex items-center gap-3 px-3 py-2 hover:bg-zinc-800/30 cursor-pointer transition-colors">
+                          <input
+                            type="radio"
+                            name="group"
+                            value={g.id}
+                            checked={selectedGroupId === g.id}
+                            onChange={() => setSelectedGroupId(g.id)}
+                            className="w-3.5 h-3.5 text-blue-600 bg-[#09090b] border-zinc-700"
+                          />
+                          <span className="text-sm text-white">{g.name}</span>
+                        </label>
+                      ))
+                    }
+                  </div>
                 </div>
               )}
 
