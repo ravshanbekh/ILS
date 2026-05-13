@@ -28,8 +28,8 @@ export const usersApi = {
 };
 
 export const groupsApi = {
-  getAll: (page: number = 1, limit: number = 100, search?: string) =>
-    api.get('/groups', { params: { page, limit, search } }),
+  getAll: (page: number = 1, limit: number = 100, search?: string, teacherId?: string) =>
+    api.get('/groups', { params: { page, limit, search, teacherId } }),
 
   getById: (id: string) => api.get(`/groups/${id}`),
 

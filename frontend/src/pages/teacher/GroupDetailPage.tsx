@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
 import { rankingsApi, groupsApi, exportApi, usersApi } from '@/api';
-import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap } from 'lucide-react';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import { normativesApi } from '@/api';
 import { downloadBlob } from '@/utils';
@@ -182,6 +182,19 @@ export default function GroupDetailPage() {
         title={`${group?.name || ''} Guruhi`} 
         subtitle={`${students.length} o'quvchi | ${normatives.length} normativ`} 
       />
+
+      {/* Teacher badge */}
+      <div className="px-8 pt-4 max-w-7xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181b] border border-zinc-800 text-sm">
+          <GraduationCap className="w-4 h-4 text-blue-400" />
+          <span className="text-zinc-400">O'qituvchi:</span>
+          {group?.teacher ? (
+            <span className="text-white font-medium">{group.teacher.fullName}</span>
+          ) : (
+            <span className="text-zinc-500 italic">Biriktirilmagan</span>
+          )}
+        </div>
+      </div>
 
       <div className="p-8 max-w-7xl mx-auto">
         {/* Top Actions */}

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { groupsApi, usersApi } from '@/api';
 import Header from '@/components/layout/Header';
 import { Link } from 'react-router-dom';
-import { FolderPlus, Pencil, Trash2, Users, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FolderPlus, Pencil, Trash2, Users, Search, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react';
 
 export default function GroupsPage() {
   const { user } = useAuthStore();
@@ -11,9 +11,10 @@ export default function GroupsPage() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Pagination and search
-  const [searchQuery, setSearchQuery] = useState('');
+  // Pagination, search, filter
   const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -24,22 +25,27 @@ export default function GroupsPage() {
   const [editingGroup, setEditingGroup] = useState<any>(null);
   const [formData, setFormData] = useState({ name: '', teacherId: '' });
 
-  const fetchGroups = async (page = currentPage, query = searchQuery) => {
+  const fetchGroups = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await groupsApi.getAll(page, limit, query);
+      const res = await groupsApi.getAll(
+        currentPage,
+        limit,
+        debouncedSearch || undefined,
+        selectedTeacherId || undefined
+      );
       setGroups(res.data.data);
-      if (res.data.meta) {
-        setTotalPages(res.data.meta.totalPages);
-        setCurrentPage(res.data.meta.page);
-        setTotalItems(res.data.meta.total);
+      const meta = res.data.meta || res.data.pagination;
+      if (meta) {
+        setTotalPages(meta.totalPages || 1);
+        setTotalItems(meta.total || 0);
       }
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, debouncedSearch, selectedTeacherId]);
 
   const fetchTeachers = async () => {
     if (user?.role === 'admin') {
@@ -52,19 +58,27 @@ export default function GroupsPage() {
     }
   };
 
+  // Debounce search
   useEffect(() => {
-    fetchGroups(currentPage, searchQuery);
-  }, [currentPage, searchQuery]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Teacher filter changes => reset page
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedTeacherId]);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
 
   useEffect(() => {
     fetchTeachers();
   }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearchQuery(searchInput);
-    setCurrentPage(1);
-  };
 
   const handleOpenModal = (groupToEdit: any = null) => {
     if (groupToEdit) {
@@ -112,25 +126,57 @@ export default function GroupsPage() {
       <Header title="Guruhlar" subtitle="Guruhlarni boshqarish" />
 
       <div className="p-4 sm:p-8 max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <form onSubmit={handleSearch} className="relative w-full sm:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-            <input
-              type="text"
-              placeholder="Guruh nomini qidiring..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-[#18181b] border border-zinc-800 rounded-xl text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
-            />
-          </form>
+        <div className="flex flex-col gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Guruh nomini qidiring..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 bg-[#18181b] border border-zinc-800 rounded-xl text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
+              />
+            </div>
 
-          <button 
-            onClick={() => handleOpenModal()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap w-full sm:w-auto justify-center"
-          >
-            <FolderPlus className="w-4 h-4" />
-            Yangi guruh
-          </button>
+            {/* Teacher filter - admin only */}
+            {user?.role === 'admin' && teachers.length > 0 && (
+              <div className="relative min-w-[220px]">
+                <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <select
+                  value={selectedTeacherId}
+                  onChange={(e) => setSelectedTeacherId(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 bg-[#18181b] border border-zinc-800 rounded-xl text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none"
+                >
+                  <option value="">Barcha o'qituvchilar</option>
+                  {teachers.map(t => (
+                    <option key={t.id} value={t.id}>{t.fullName}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <button 
+              onClick={() => handleOpenModal()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap justify-center"
+            >
+              <FolderPlus className="w-4 h-4" />
+              Yangi guruh
+            </button>
+          </div>
+
+          {/* Active teacher filter badge */}
+          {selectedTeacherId && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-400">Filtr:</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-medium">
+                <GraduationCap className="w-3 h-3" />
+                {teachers.find(t => t.id === selectedTeacherId)?.fullName}
+                <button onClick={() => setSelectedTeacherId('')} className="ml-1 text-blue-400 hover:text-white">×</button>
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
