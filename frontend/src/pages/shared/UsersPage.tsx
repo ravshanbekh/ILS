@@ -1,14 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { usersApi } from '@/api';
 import Header from '@/components/layout/Header';
-import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDateTime } from '@/utils';
 
 export default function UsersPage() {
   const { user } = useAuthStore();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const ITEMS_PER_PAGE = 15;
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -25,22 +31,33 @@ export default function UsersPage() {
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async (page: number, search: string) => {
     setLoading(true);
     try {
       const roleFilter = user?.role === 'teacher' ? 'student' : undefined;
-      const res = await usersApi.getAll(1, 100, roleFilter);
+      const res = await usersApi.getAll(page, ITEMS_PER_PAGE, roleFilter, search || undefined);
       setUsers(res.data.data);
+      setTotalPages(res.data.pagination?.totalPages || 1);
+      setTotalCount(res.data.pagination?.total || res.data.data.length);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.role]);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(currentPage, debouncedSearch);
+  }, [currentPage, debouncedSearch, fetchUsers]);
 
   const handleOpenModal = (userToEdit: any = null) => {
     if (userToEdit) {
@@ -77,7 +94,7 @@ export default function UsersPage() {
         await usersApi.create(payload);
       }
       setShowModal(false);
-      fetchUsers();
+      fetchUsers(currentPage, debouncedSearch);
     } catch (error) {
       console.error(error);
       alert('Xatolik yuz berdi');
@@ -88,7 +105,7 @@ export default function UsersPage() {
     if (!confirm('Rostdan ham o\'chirmoqchimisiz?')) return;
     try {
       await usersApi.delete(id);
-      fetchUsers();
+      fetchUsers(currentPage, debouncedSearch);
     } catch (error) {
       console.error(error);
       alert('O\'chirishda xatolik yuz berdi');
@@ -106,21 +123,34 @@ export default function UsersPage() {
       <Header title="Foydalanuvchilar" subtitle="O'quvchilar va boshqa foydalanuvchilarni boshqarish" />
 
       <div className="p-8 max-w-7xl mx-auto">
-        <div className="flex justify-end gap-3 mb-6">
-          <button 
-            onClick={() => setShowBulkModal(true)}
-            className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-          >
-            <UserPlus className="w-4 h-4" />
-            Exceldan yuklash
-          </button>
-          <button 
-            onClick={() => handleOpenModal()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-          >
-            <UserPlus className="w-4 h-4" />
-            Yangi qo'shish
-          </button>
+        <div className="flex flex-col sm:flex-row justify-between gap-3 mb-6">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Ism yoki login bo'yicha qidirish..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#18181b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
+            />
+          </div>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setShowBulkModal(true)}
+              className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              Exceldan yuklash
+            </button>
+            <button 
+              onClick={() => handleOpenModal()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              Yangi qo'shish
+            </button>
+          </div>
         </div>
 
         <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
@@ -193,6 +223,50 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-800">
+              <span className="text-xs text-zinc-500">
+                Jami: {totalCount} ta foydalanuvchi
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  let page: number;
+                  if (totalPages <= 7) { page = i + 1; }
+                  else if (currentPage <= 4) { page = i + 1; }
+                  else if (currentPage >= totalPages - 3) { page = totalPages - 6 + i; }
+                  else { page = currentPage - 3 + i; }
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -327,7 +401,8 @@ export default function UsersPage() {
                     alert(`Muvaffaqiyatli: ${res.data.data.created} ta. Xatolar: ${res.data.data.errors.length} ta.`);
                     setShowBulkModal(false);
                     setBulkData('');
-                    fetchUsers();
+                    fetchUsers(1, debouncedSearch);
+                    setCurrentPage(1);
                   } catch (error) {
                     console.error(error);
                     alert('Yuklashda xatolik yuz berdi');
