@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import categoriesController from './categories.controller';
-import { protect, restrictTo } from '../../shared/middleware/auth';
+import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 
 const router = Router();
 
 // Barcha uchun
-router.use(protect);
+router.use(authenticate);
 
 router.get('/', categoriesController.getAll);
 
 // Faqat admin uchun
-router.use(restrictTo('admin'));
+router.use(roleGuard('admin'));
 
 router.post('/', categoriesController.create);
 router.put('/:id', categoriesController.update);
