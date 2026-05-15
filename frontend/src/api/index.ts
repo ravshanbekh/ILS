@@ -145,3 +145,10 @@ export const backupApi = {
   downloadBackup: () => api.get('/backup/download', { responseType: 'blob' }),
   restoreBackup: (data: any) => api.post('/backup/restore', data),
 };
+
+export const categoriesApi = {
+  getAll: () => api.get('/categories'),
+  create: (data: any) => api.post('/categories', data),
+  update: (id: string, data: any) => api.put(`/categories/${id}`, data),
+  delete: (id: string) => api.delete(`/categories/${id}`),
+};
