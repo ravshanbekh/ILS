@@ -486,12 +486,18 @@ export default function GroupDetailPage() {
             <p className="text-sm text-zinc-400 mb-4">Guruhga yangi normativlar biriktiring</p>
 
             <div className="flex-1 overflow-y-auto mb-6 bg-[#09090b] rounded-xl border border-zinc-800 p-2 divide-y divide-zinc-800">
-              {allNormatives.length === 0 ? (
-                <div className="p-4 text-center text-sm text-zinc-500">Normativlar topilmadi.</div>
+              {allNormatives.filter(norm => {
+                const isAssigned = (group?.normatives || []).some((n: any) => (n.normativeId || n.id) === norm.id);
+                return !isAssigned;
+              }).length === 0 ? (
+                <div className="p-4 text-center text-sm text-zinc-500">Barcha normativlar allaqachon biriktirilgan.</div>
               ) : (
-                allNormatives.map(norm => {
-                  const isAssigned = (group?.normatives || []).some((n: any) => (n.normativeId || n.id) === norm.id);
-                  return (
+                allNormatives
+                  .filter(norm => {
+                    const isAssigned = (group?.normatives || []).some((n: any) => (n.normativeId || n.id) === norm.id);
+                    return !isAssigned;
+                  })
+                  .map(norm => (
                     <label key={norm.id} className="flex items-center justify-between p-3 hover:bg-zinc-800/30 cursor-pointer transition-colors rounded-lg">
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-mono text-blue-500">#{norm.taskNumber}</span>
@@ -500,7 +506,6 @@ export default function GroupDetailPage() {
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-600 bg-[#09090b]"
-                        disabled={isAssigned}
                         checked={selectedNormativeIds.includes(norm.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -511,8 +516,7 @@ export default function GroupDetailPage() {
                         }}
                       />
                     </label>
-                  );
-                })
+                  ))
               )}
             </div>
 

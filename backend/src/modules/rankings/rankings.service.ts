@@ -5,13 +5,17 @@ class RankingsService {
   /**
    * Umumiy reyting (o'quv markaz, o'qituvchi yoki guruh bo'yicha)
    */
-  async getOverallRanking(params: PaginationParams, filters?: { teacherId?: string; groupId?: string }) {
+  async getOverallRanking(params: PaginationParams, filters?: { teacherId?: string; groupId?: string; search?: string }) {
     const whereClause: any = { role: 'student', isActive: true };
 
     if (filters?.groupId) {
       whereClause.groupStudents = { some: { groupId: filters.groupId } };
     } else if (filters?.teacherId) {
       whereClause.groupStudents = { some: { group: { teacherId: filters.teacherId } } };
+    }
+
+    if (filters?.search) {
+      whereClause.fullName = { contains: filters.search, mode: 'insensitive' };
     }
 
     // Barcha active studentlarni olish

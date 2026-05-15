@@ -12,6 +12,7 @@ class RankingsController {
       const filters = {
         teacherId: req.query.teacherId as string | undefined,
         groupId: req.query.groupId as string | undefined,
+        search: req.query.search as string | undefined,
       };
       
       const result = await rankingsService.getOverallRanking(pagination, filters);

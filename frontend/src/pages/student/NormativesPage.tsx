@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import Header from '@/components/layout/Header';
 import ScoreBadge from '@/components/shared/ScoreBadge';
-import { normativesApi, submissionsApi } from '@/api';
+import { normativesApi, submissionsApi, groupsApi } from '@/api';
+import api from '@/api/client';
 import { useAuthStore } from '@/stores/authStore';
 import { BookOpen, Video, Send, Loader2, Clock, ChevronDown, ChevronRight, ExternalLink, Play } from 'lucide-react';
 
@@ -26,11 +27,32 @@ export default function StudentNormativesPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      // O'quvchining guruhlarini olish
+      const meRes = await api.get('/auth/me');
+      const studentGroups = meRes.data.data?.groupStudents?.map((gs: any) => gs.group) || [];
+
+      // Guruhga biriktirilgan normativ ID'larini yig'ish
+      const groupNormIds = new Set<string>();
+      for (const group of studentGroups) {
+        try {
+          const groupRes = await groupsApi.getById(group.id);
+          const gNorms = groupRes.data?.data?.normatives || [];
+          gNorms.forEach((n: any) => groupNormIds.add(n.id));
+        } catch {}
+      }
+
       const [normRes, subRes] = await Promise.all([
-        normativesApi.getAll(1, 200),
+        normativesApi.getAll(1, 500),
         submissionsApi.getByStudent(user?.id as string)
       ]);
-      setNormatives(normRes.data.data || []);
+
+      // Faqat guruhga biriktirilgan normativlarni ko'rsat
+      const allNorms = normRes.data.data || [];
+      const filtered = groupNormIds.size > 0
+        ? allNorms.filter((n: any) => groupNormIds.has(n.id))
+        : [];
+
+      setNormatives(filtered);
       setSubmissions(subRes.data.data || []);
     } catch (err) {
       console.error(err);
@@ -38,6 +60,7 @@ export default function StudentNormativesPage() {
       setLoading(false);
     }
   };
+
 
   const getSubmissionForNormative = (normativeId: string) => {
     return submissions.find(s => s.normativeId === normativeId);
@@ -53,8 +76,8 @@ export default function StudentNormativesPage() {
     e.preventDefault();
     setError('');
 
-    // Youtube validation
-    const youtubeRegex = /^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/;
+    // Youtube validation (watch, shorts, live, youtu.be barchasi)
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch|shorts|live|embed)\/.+|youtu\.be\/.+)/;
     if (!youtubeRegex.test(youtubeUrl)) {
       setError("Noto'g'ri YouTube havola kiritildi");
       return;

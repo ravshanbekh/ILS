@@ -5,7 +5,7 @@ import api from '@/api/client';
 import { useAuthStore } from '@/stores/authStore';
 import {
   Trophy, Medal, Loader2, Star, ChevronLeft, ChevronRight,
-  Filter, Users, Building2, ChevronsLeft, ChevronsRight,
+  Filter, Users, Building2, ChevronsLeft, ChevronsRight, Search,
 } from 'lucide-react';
 
 type FilterType = 'overall' | 'group';
@@ -26,6 +26,9 @@ export default function StudentRankingPage() {
     hasNext: false,
     hasPrev: false,
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [myRank, setMyRank] = useState<any>(null);
 
   // O'quvchining o'z guruhlarini olish (/auth/me orqali)
   useEffect(() => {
@@ -37,6 +40,14 @@ export default function StudentRankingPage() {
       })
       .catch(console.error);
   }, []);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Reytingni yuklash
   const loadRanking = useCallback(async (page: number = 1) => {
@@ -50,11 +61,20 @@ export default function StudentRankingPage() {
       if (filterType === 'group' && selectedGroupId) {
         params.groupId = selectedGroupId;
       }
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
 
       const res = await rankingsApi.getOverall(params);
       const responseData = res.data;
 
-      setRanking(responseData.data || []);
+      const rankData = responseData.data || [];
+      setRanking(rankData);
+      // O'quvchining o'z o'rnini topish
+      if (user?.role === 'student') {
+        const myEntry = rankData.find((r: any) => r.student?.id === user?.id);
+        if (myEntry) setMyRank(myEntry);
+      }
       setPagination({
         page: responseData.pagination?.page || 1,
         total: responseData.pagination?.total || 0,
@@ -68,7 +88,7 @@ export default function StudentRankingPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterType, selectedGroupId]);
+  }, [filterType, selectedGroupId, debouncedSearch]);
 
   useEffect(() => {
     loadRanking(1);
@@ -148,6 +168,18 @@ export default function StudentRankingPage() {
                 </div>
               )}
             </div>
+
+            {/* Search input */}
+            <div className="relative mt-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="O'quvchi ismi bo'yicha qidirish..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); }}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600 transition-colors"
+              />
+            </div>
           </div>
 
           {/* Stats Bar */}
@@ -162,6 +194,23 @@ export default function StudentRankingPage() {
             )}
           </div>
         </div>
+
+        {/* My Rank Banner (faqat o'quvchi uchun) */}
+        {user?.role === 'student' && myRank && !searchQuery && (
+          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+              <Star className="w-6 h-6 text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Sizning o'rningiz</p>
+              <p className="text-white font-bold text-lg">{user.fullName}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-black text-white">#{myRank.rank}</p>
+              <p className="text-xs text-amber-400 font-semibold">⭐ {myRank.totalScore} ball</p>
+            </div>
+          </div>
+        )}
 
         {/* Ranking List */}
         <div className="bg-[#18181b] rounded-2xl overflow-hidden border border-zinc-800 shadow-sm">
