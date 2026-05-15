@@ -22,7 +22,10 @@ class NormativesService {
     const [normatives, total] = await Promise.all([
       prisma.normative.findMany({
         where,
-        orderBy: { taskNumber: 'asc' },
+        include: {
+          category: { select: { id: true, name: true } },
+        },
+        orderBy: [{ categoryId: 'asc' }, { taskNumber: 'asc' }],
         skip: params.skip,
         take: params.limit,
       }),
@@ -44,6 +47,7 @@ class NormativesService {
             group: { select: { id: true, name: true } },
           },
         },
+        category: { select: { id: true, name: true } },
         _count: {
           select: { submissions: true },
         },
@@ -76,6 +80,7 @@ class NormativesService {
         timeLimit: data.timeLimit,
         url: data.url,
         maxScore: data.maxScore,
+        categoryId: data.categoryId,
       },
     });
 
@@ -104,7 +109,9 @@ class NormativesService {
 
     const normative = await prisma.normative.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+      },
     });
 
     if (updatedByUserId) {

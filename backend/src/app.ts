@@ -19,6 +19,7 @@ import exportRoutes from './modules/export/export.routes';
 import notificationsRoutes from './modules/notifications/notifications.routes';
 import backupRoutes from './modules/backup/backup.routes';
 import settingsRoutes from './modules/settings/settings.routes';
+import categoriesRoutes from './modules/categories/categories.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -67,6 +68,7 @@ app.use('/api/export', exportRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/categories', categoriesRoutes);
 
 // 404 handler
 app.use((_req, res) => {

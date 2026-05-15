@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
-import { rankingsApi, groupsApi, exportApi, usersApi } from '@/api';
+import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi } from '@/api';
 import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap } from 'lucide-react';
 import ScoreBadge from '@/components/shared/ScoreBadge';
-import { normativesApi } from '@/api';
 import { downloadBlob } from '@/utils';
 
 export default function GroupDetailPage() {
@@ -27,6 +26,8 @@ export default function GroupDetailPage() {
   // Normative management states
   const [showNormativeModal, setShowNormativeModal] = useState(false);
   const [allNormatives, setAllNormatives] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [selectedNormativeIds, setSelectedNormativeIds] = useState<string[]>([]);
   const [savingNormatives, setSavingNormatives] = useState(false);
 
@@ -100,17 +101,34 @@ export default function GroupDetailPage() {
 
   const handleOpenNormativeModal = async () => {
     try {
-      const res = await normativesApi.getAll(1, 1000);
-      setAllNormatives(res.data.data || []);
+      const [normRes, catRes] = await Promise.all([
+        normativesApi.getAll(1, 1000),
+        categoriesApi.getAll()
+      ]);
+      setAllNormatives(normRes.data.data || []);
+      setCategories(catRes.data.data || []);
       
       const currentIds = (group?.normatives || []).map((n: any) => n.normativeId || n.id);
       setSelectedNormativeIds(currentIds);
+      setSelectedCategoryId('all');
       
       setShowNormativeModal(true);
     } catch (err) {
       console.error(err);
       alert("Normativlarni yuklashda xatolik");
     }
+  };
+
+  const handleSelectCategoryAll = () => {
+    const unassignedInCategory = allNormatives.filter(norm => {
+      const isAssigned = (group?.normatives || []).some((n: any) => (n.normativeId || n.id) === norm.id);
+      const matchCategory = selectedCategoryId === 'all' || norm.categoryId === selectedCategoryId;
+      return !isAssigned && matchCategory;
+    });
+    
+    const idsToAdd = unassignedInCategory.map(n => n.id);
+    const newSelected = [...new Set([...selectedNormativeIds, ...idsToAdd])];
+    setSelectedNormativeIds(newSelected);
   };
 
   const handleSaveNormatives = async () => {
@@ -484,18 +502,39 @@ export default function GroupDetailPage() {
               Guruh normativlari
             </h2>
             <p className="text-sm text-zinc-400 mb-4">Guruhga yangi normativlar biriktiring</p>
+            
+            <div className="flex gap-2 mb-4">
+              <select
+                value={selectedCategoryId}
+                onChange={(e) => setSelectedCategoryId(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="all">Barcha kategoriyalar</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <button 
+                onClick={handleSelectCategoryAll}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap"
+              >
+                Barchasini tanlash
+              </button>
+            </div>
 
             <div className="flex-1 overflow-y-auto mb-6 bg-[#09090b] rounded-xl border border-zinc-800 p-2 divide-y divide-zinc-800">
               {allNormatives.filter(norm => {
                 const isAssigned = (group?.normatives || []).some((n: any) => (n.normativeId || n.id) === norm.id);
-                return !isAssigned;
+                const matchCategory = selectedCategoryId === 'all' || norm.categoryId === selectedCategoryId;
+                return !isAssigned && matchCategory;
               }).length === 0 ? (
                 <div className="p-4 text-center text-sm text-zinc-500">Barcha normativlar allaqachon biriktirilgan.</div>
               ) : (
                 allNormatives
                   .filter(norm => {
                     const isAssigned = (group?.normatives || []).some((n: any) => (n.normativeId || n.id) === norm.id);
-                    return !isAssigned;
+                    const matchCategory = selectedCategoryId === 'all' || norm.categoryId === selectedCategoryId;
+                    return !isAssigned && matchCategory;
                   })
                   .map(norm => (
                     <label key={norm.id} className="flex items-center justify-between p-3 hover:bg-zinc-800/30 cursor-pointer transition-colors rounded-lg">

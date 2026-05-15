@@ -7,6 +7,7 @@ export const createNormativeSchema = z.object({
   timeLimit: z.number().int().positive().optional().nullable(),
   url: z.string().url('Noto\'g\'ri URL format').optional().nullable(),
   maxScore: z.number().int().positive().default(40),
+  categoryId: z.string().uuid().optional().nullable(),
 });
 
 export const updateNormativeSchema = z.object({
@@ -17,6 +18,7 @@ export const updateNormativeSchema = z.object({
   url: z.string().url().optional().nullable(),
   maxScore: z.number().int().positive().optional(),
   isActive: z.boolean().optional(),
+  categoryId: z.string().uuid().optional().nullable(),
 });
 
 export const assignNormativeSchema = z.object({

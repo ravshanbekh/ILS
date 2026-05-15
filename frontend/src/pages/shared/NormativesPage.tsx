@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { normativesApi } from '@/api';
+import { normativesApi, categoriesApi } from '@/api';
 import Header from '@/components/layout/Header';
 import { Plus, Pencil, Trash2, Link as LinkIcon, Search, Check, AlertCircle } from 'lucide-react';
 
@@ -9,6 +9,12 @@ export default function NormativesPage() {
   const [normatives, setNormatives] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
+  
+  // Category Modal
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -19,8 +25,18 @@ export default function NormativesPage() {
     description: '',
     timeLimit: '',
     url: '',
-    maxScore: 40
+    maxScore: 40,
+    categoryId: ''
   });
+
+  const fetchCategories = async () => {
+    try {
+      const res = await categoriesApi.getAll();
+      setCategories(res.data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const fetchNormatives = async () => {
     setLoading(true);
@@ -36,6 +52,7 @@ export default function NormativesPage() {
 
   useEffect(() => {
     fetchNormatives();
+    fetchCategories();
   }, []);
 
   const handleOpenModal = (norm: any = null) => {
@@ -47,14 +64,15 @@ export default function NormativesPage() {
         description: norm.description || '',
         timeLimit: norm.timeLimit ? norm.timeLimit.toString() : '',
         url: norm.url || '',
-        maxScore: norm.maxScore || 40
+        maxScore: norm.maxScore || 40,
+        categoryId: norm.categoryId || ''
       });
     } else {
       setEditingNormative(null);
-      // Auto-increment taskNumber
-      const nextNum = normatives.length > 0 
-        ? Math.max(...normatives.map(n => n.taskNumber)) + 1 
-        : 1;
+      let nextNum = 1;
+      if (normatives.length > 0) {
+        nextNum = Math.max(...normatives.map(n => n.taskNumber)) + 1;
+      }
         
       setFormData({
         taskNumber: nextNum,
@@ -62,7 +80,8 @@ export default function NormativesPage() {
         description: '',
         timeLimit: '',
         url: '',
-        maxScore: 40
+        maxScore: 40,
+        categoryId: formData.categoryId || (selectedCategoryId !== 'all' ? selectedCategoryId : '')
       });
     }
     setShowModal(true);
@@ -75,6 +94,7 @@ export default function NormativesPage() {
         taskNumber: Number(formData.taskNumber),
         title: formData.title,
         maxScore: Number(formData.maxScore),
+        categoryId: formData.categoryId || null
       };
       
       if (formData.description) payload.description = formData.description;
@@ -111,11 +131,25 @@ export default function NormativesPage() {
     }
   };
 
-  const filteredNormatives = normatives.filter(n => 
-    n.title.toLowerCase().includes(search.toLowerCase()) || 
-    (n.description && n.description.toLowerCase().includes(search.toLowerCase())) ||
-    n.taskNumber.toString().includes(search)
-  );
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await categoriesApi.create({ name: newCategoryName });
+      setNewCategoryName('');
+      setShowCategoryModal(false);
+      fetchCategories();
+    } catch (error: any) {
+      alert('Xatolik: ' + (error.response?.data?.error?.message || 'Qandaydir muammo yuz berdi'));
+    }
+  };
+
+  const filteredNormatives = normatives.filter(n => {
+    const matchSearch = n.title.toLowerCase().includes(search.toLowerCase()) || 
+      (n.description && n.description.toLowerCase().includes(search.toLowerCase())) ||
+      n.taskNumber.toString().includes(search);
+    const matchCategory = selectedCategoryId === 'all' || n.categoryId === selectedCategoryId;
+    return matchSearch && matchCategory;
+  });
 
   return (
     <div>
@@ -133,15 +167,36 @@ export default function NormativesPage() {
               className="w-full pl-10 pr-4 py-2 rounded-lg bg-[#18181b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
+
+          <div className="w-full sm:w-auto">
+             <select
+               value={selectedCategoryId}
+               onChange={(e) => setSelectedCategoryId(e.target.value)}
+               className="w-full px-4 py-2 rounded-lg bg-[#18181b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+             >
+               <option value="all">Barcha kategoriyalar</option>
+               {categories.map(c => (
+                 <option key={c.id} value={c.id}>{c.name}</option>
+               ))}
+             </select>
+          </div>
           
           {user?.role === 'admin' && (
-            <button 
-              onClick={() => handleOpenModal()}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Yangi qo'shish
-            </button>
+            <div className="flex w-full sm:w-auto gap-2">
+              <button 
+                onClick={() => setShowCategoryModal(true)}
+                className="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                Kategoriya qo'shish
+              </button>
+              <button 
+                onClick={() => handleOpenModal()}
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Yangi qo'shish
+              </button>
+            </div>
           )}
         </div>
 
@@ -247,6 +302,23 @@ export default function NormativesPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">
+                  Kategoriya (Yo'nalish)
+                </label>
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Kategoriyani tanlang</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">
@@ -339,6 +411,45 @@ export default function NormativesPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
+                  className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors"
+                >
+                  Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Category Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#18181b] rounded-2xl w-full max-w-md p-6 shadow-2xl border border-zinc-800">
+            <h2 className="text-xl font-bold text-white mb-6">Yangi kategoriya qo'shish</h2>
+            <form onSubmit={handleCreateCategory} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">
+                  Kategoriya nomi
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Masalan: Foundation, Frontend..."
+                  required
+                />
+              </div>
+              <div className="mt-6 pt-4 border-t border-zinc-800 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryModal(false)}
                   className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
                 >
                   Bekor qilish
