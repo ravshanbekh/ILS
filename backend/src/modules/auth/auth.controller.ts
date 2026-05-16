@@ -120,7 +120,7 @@ class AuthController {
       // Agar parol o'zgartirmoqchi bo'lsa
       if (newPassword) {
         if (!currentPassword) throw ApiError.badRequest('Joriy parolni kiriting');
-        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
         if (!isMatch) throw ApiError.badRequest('Joriy parol noto\'g\'ri');
       }
 
@@ -132,7 +132,7 @@ class AuthController {
 
       const updateData: any = {};
       if (login) updateData.login = login;
-      if (newPassword) updateData.password = await bcrypt.hash(newPassword, 10);
+      if (newPassword) updateData.passwordHash = await bcrypt.hash(newPassword, 10);
 
       const updated = await prisma.user.update({
         where: { id: req.user.userId },
