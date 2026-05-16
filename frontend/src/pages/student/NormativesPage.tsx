@@ -366,46 +366,46 @@ export default function StudentNormativesPage() {
                 );
               })}
             </div>
-          </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-4 border-t border-zinc-800 bg-[#111113]">
-              <p className="text-xs text-zinc-500">
-                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalNorms)} / {totalNorms} ta
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium disabled:opacity-40 transition-colors"
-                >
-                  ← Oldingi
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-5 py-4 border-t border-zinc-800 bg-[#111113]">
+                <p className="text-xs text-zinc-500">
+                  {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalNorms)} / {totalNorms} ta
+                </p>
+                <div className="flex items-center gap-2">
                   <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                      page === currentPage
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
-                    }`}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium disabled:opacity-40 transition-colors"
                   >
-                    {page}
+                    ← Oldingi
                   </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium disabled:opacity-40 transition-colors"
-                >
-                  Keyingi →
-                </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
+                        page === currentPage
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium disabled:opacity-40 transition-colors"
+                  >
+                    Keyingi →
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Topshirish Modali */}

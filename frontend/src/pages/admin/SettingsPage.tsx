@@ -256,7 +256,7 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
-      </div>
+
 
         {/* Profile Security Section */}
         <div className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden">
