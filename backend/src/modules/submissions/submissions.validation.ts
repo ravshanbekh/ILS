@@ -7,7 +7,7 @@ export const createSubmissionSchema = z.object({
     .string()
     .min(1, 'YouTube havola kerak')
     .regex(
-      /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})(?:\S+)?$/,
+      /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)[\w\-]+(?:\S*)?$/,
       'Faqat YouTube havola qabul qilinadi'
     ),
 });

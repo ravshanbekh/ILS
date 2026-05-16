@@ -13,6 +13,8 @@ export default function StudentProfilePage() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [regrading, setRegrading] = useState<string | null>(null); // submission id being regraded
+  const [regradeProcessing, setRegradeProcessing] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -22,6 +24,25 @@ export default function StudentProfilePage() {
         .finally(() => setLoading(false));
     }
   }, [id]);
+
+  const handleRegrade = async (subId: string, result: 'green' | 'blue' | 'red') => {
+    setRegradeProcessing(true);
+    try {
+      await submissionsApi.check(subId, { result });
+      setStats((prev: any) => ({
+        ...prev,
+        submissions: prev.submissions.map((s: any) =>
+          s.id === subId ? { ...s, result, score: result === 'green' ? 20 : result === 'blue' ? 10 : 0 } : s
+        )
+      }));
+      setRegrading(null);
+    } catch (err) {
+      console.error(err);
+      alert('Xatolik yuz berdi');
+    } finally {
+      setRegradeProcessing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -235,37 +256,55 @@ export default function StudentProfilePage() {
                       <div className="flex items-center gap-4 sm:justify-end shrink-0 pl-14 sm:pl-0">
                         {sub.status === 'checked' ? (
                           <>
-                            <div className="text-right">
-                              <p className="text-lg font-bold text-white leading-none">{sub.score}</p>
-                              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mt-1">Ball</p>
-                            </div>
-                            <ScoreBadge result={sub.result} showLabel />
-                            {sub.result !== 'green' && !sub.canResubmit && (
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    await submissionsApi.allowResubmit(sub.id);
-                                    setStats((prev: any) => ({
-                                      ...prev,
-                                      submissions: prev.submissions.map((s: any) => 
-                                        s.id === sub.id ? { ...s, canResubmit: true } : s
-                                      )
-                                    }));
-                                  } catch (err) {
-                                    console.error('Failed to allow resubmit', err);
-                                    alert('Xatolik yuz berdi');
-                                  }
-                                }}
-                                className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs transition-colors whitespace-nowrap"
-                                title="Qayta topshirishga ruxsat berish"
-                              >
-                                Ochib berish
-                              </button>
-                            )}
-                            {sub.canResubmit && (
-                              <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20 whitespace-nowrap">
-                                Ochiq
-                              </span>
+                            {regrading === sub.id ? (
+                              <div className="flex items-center gap-1.5 animate-fade-in">
+                                <button onClick={() => handleRegrade(sub.id, 'green')} disabled={regradeProcessing} className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 text-xs font-bold transition-colors disabled:opacity-50">🟢</button>
+                                <button onClick={() => handleRegrade(sub.id, 'blue')} disabled={regradeProcessing} className="px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/30 text-xs font-bold transition-colors disabled:opacity-50">🔵</button>
+                                <button onClick={() => handleRegrade(sub.id, 'red')} disabled={regradeProcessing} className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 text-xs font-bold transition-colors disabled:opacity-50">🔴</button>
+                                <button onClick={() => setRegrading(null)} className="px-2 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs transition-colors hover:text-white">✕</button>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="text-right">
+                                  <p className="text-lg font-bold text-white leading-none">{sub.score}</p>
+                                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider mt-1">Ball</p>
+                                </div>
+                                <ScoreBadge result={sub.result} showLabel />
+                                <button
+                                  onClick={() => setRegrading(sub.id)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium text-xs transition-colors whitespace-nowrap"
+                                  title="Natijani o'zgartirish"
+                                >
+                                  O'zgartiris
+                                </button>
+                                {sub.result !== 'green' && !sub.canResubmit && (
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await submissionsApi.allowResubmit(sub.id);
+                                        setStats((prev: any) => ({
+                                          ...prev,
+                                          submissions: prev.submissions.map((s: any) =>
+                                            s.id === sub.id ? { ...s, canResubmit: true } : s
+                                          )
+                                        }));
+                                      } catch (err) {
+                                        console.error('Failed to allow resubmit', err);
+                                        alert('Xatolik yuz berdi');
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs transition-colors whitespace-nowrap"
+                                    title="Qayta topshirishga ruxsat berish"
+                                  >
+                                    Ochib berish
+                                  </button>
+                                )}
+                                {sub.canResubmit && (
+                                  <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20 whitespace-nowrap">
+                                    Ochiq
+                                  </span>
+                                )}
+                              </>
                             )}
                           </>
                         ) : (
@@ -274,9 +313,9 @@ export default function StudentProfilePage() {
                             Kutilmoqda
                           </span>
                         )}
-                        <a 
-                          href={sub.youtubeUrl} 
-                          target="_blank" 
+                        <a
+                          href={sub.youtubeUrl}
+                          target="_blank"
                           rel="noreferrer"
                           className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center hover:bg-blue-500/20 transition-colors"
                           title="YouTube'da ko'rish"

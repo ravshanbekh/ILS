@@ -17,4 +17,7 @@ router.post('/logout', authenticate, authController.logout);
 // GET /api/auth/me — Joriy foydalanuvchi
 router.get('/me', authenticate, authController.getMe);
 
+// PATCH /api/auth/profile — O'z login/parolini o'zgartirish
+router.patch('/profile', authenticate, authController.updateProfile);
+
 export default router;

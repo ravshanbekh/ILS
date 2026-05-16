@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
 import Header from '@/components/layout/Header';
-import { submissionsApi } from '@/api';
+import { submissionsApi, groupsApi } from '@/api';
 import { formatDateTime } from '@/utils';
-import { Loader2, Video, Check, X, Minus, MessageSquare } from 'lucide-react';
+import { Loader2, Video, Check, MessageSquare, Search, Filter, Clock } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
 
 export default function TeacherPendingPage() {
+  const { user } = useAuthStore();
   const [pending, setPending] = useState<any[]>([]);
+  const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [groups, setGroups] = useState<any[]>([]);
+
+  // Filter state
+  const [searchName, setSearchName] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState('');
 
   // Grading state
   const [gradingSubId, setGradingSubId] = useState<string | null>(null);
@@ -15,7 +23,21 @@ export default function TeacherPendingPage() {
 
   useEffect(() => {
     fetchPending();
+    fetchGroups();
   }, []);
+
+  useEffect(() => {
+    let result = pending;
+    if (searchName.trim()) {
+      result = result.filter(s =>
+        s.student?.fullName?.toLowerCase().includes(searchName.toLowerCase())
+      );
+    }
+    if (selectedGroup) {
+      result = result.filter(s => s.group?.id === selectedGroup);
+    }
+    setFiltered(result);
+  }, [searchName, selectedGroup, pending]);
 
   const fetchPending = async () => {
     try {
@@ -29,12 +51,19 @@ export default function TeacherPendingPage() {
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      const res = await groupsApi.getAll();
+      setGroups(res.data.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleGrade = async (id: string, result: 'green' | 'blue' | 'red') => {
     setProcessing(true);
     try {
       await submissionsApi.check(id, { result, comment: gradingSubId === id ? comment : undefined });
-      
-      // Remove from list
       setPending(prev => prev.filter(p => p.id !== id));
       setGradingSubId(null);
       setComment('');
@@ -59,19 +88,59 @@ export default function TeacherPendingPage() {
       <Header title="Tekshirilmagan topshiriqlar" subtitle={`Kutilyotgan: ${pending.length} ta`} />
 
       <div className="p-8 max-w-5xl mx-auto">
-        {pending.length === 0 ? (
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              placeholder="O'quvchi ismi bo'yicha qidirish..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#18181b] border border-zinc-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+            />
+          </div>
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <select
+              value={selectedGroup}
+              onChange={(e) => setSelectedGroup(e.target.value)}
+              className="pl-10 pr-8 py-2.5 rounded-xl bg-[#18181b] border border-zinc-800 text-white text-sm focus:outline-none focus:border-blue-500 appearance-none min-w-[180px]"
+            >
+              <option value="">Barcha guruhlar</option>
+              {groups.map(g => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+          {(searchName || selectedGroup) && (
+            <button
+              onClick={() => { setSearchName(''); setSelectedGroup(''); }}
+              className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm transition-colors whitespace-nowrap"
+            >
+              Tozalash
+            </button>
+          )}
+        </div>
+
+        {filtered.length === 0 ? (
           <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-12 text-center">
             <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
               <Check className="w-8 h-8 text-emerald-500" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Barcha ishlar tekshirilgan!</h3>
-            <p className="text-zinc-400">Hozircha yangi topshiriqlar yo'q.</p>
+            <h3 className="text-xl font-bold text-white mb-2">
+              {pending.length === 0 ? 'Barcha ishlar tekshirilgan!' : 'Topilmadi'}
+            </h3>
+            <p className="text-zinc-400">
+              {pending.length === 0 ? 'Hozircha yangi topshiriqlar yo\'q.' : 'Filtr bo\'yicha topshiriqlar yo\'q.'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
-            {pending.map((sub) => (
+            {filtered.map((sub) => (
               <div key={sub.id} className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden hover:border-blue-500/30 transition-all flex flex-col md:flex-row">
-                
+
                 {/* Info section */}
                 <div className="p-6 flex-1 border-b md:border-b-0 md:border-r border-zinc-800">
                   <div className="flex items-start justify-between mb-4">
@@ -91,13 +160,21 @@ export default function TeacherPendingPage() {
                         <span className="text-xs font-mono font-bold text-blue-500 bg-blue-500/10 px-2 py-1 rounded">#{sub.normative.taskNumber}</span>
                         <span className="font-medium text-white text-sm">{sub.normative.title}</span>
                       </div>
-                      <span className="text-xs font-medium text-zinc-400 bg-zinc-800/50 px-2 py-1 rounded w-fit">Max: 20 ball</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {sub.normative.timeLimit && (
+                          <span className="flex items-center gap-1 text-xs font-medium text-amber-500 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">
+                            <Clock className="w-3 h-3" />
+                            {sub.normative.timeLimit}s
+                          </span>
+                        )}
+                        <span className="text-xs font-medium text-zinc-400 bg-zinc-800/50 px-2 py-1 rounded">Max: {sub.normative.maxScore} ball</span>
+                      </div>
                     </div>
                   </div>
 
-                  <a 
-                    href={sub.youtubeUrl} 
-                    target="_blank" 
+                  <a
+                    href={sub.youtubeUrl}
+                    target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 transition-colors font-medium text-sm w-fit"
                   >
@@ -123,32 +200,11 @@ export default function TeacherPendingPage() {
                         />
                       </div>
                       <div className="grid grid-cols-3 gap-2">
-                        <button
-                          onClick={() => handleGrade(sub.id, 'green')}
-                          disabled={processing}
-                          className="py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 transition-colors disabled:opacity-50 font-bold"
-                        >
-                          🟢
-                        </button>
-                        <button
-                          onClick={() => handleGrade(sub.id, 'blue')}
-                          disabled={processing}
-                          className="py-2.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/30 transition-colors disabled:opacity-50 font-bold"
-                        >
-                          🔵
-                        </button>
-                        <button
-                          onClick={() => handleGrade(sub.id, 'red')}
-                          disabled={processing}
-                          className="py-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 transition-colors disabled:opacity-50 font-bold"
-                        >
-                          🔴
-                        </button>
+                        <button onClick={() => handleGrade(sub.id, 'green')} disabled={processing} className="py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 transition-colors disabled:opacity-50 font-bold">🟢</button>
+                        <button onClick={() => handleGrade(sub.id, 'blue')} disabled={processing} className="py-2.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/30 transition-colors disabled:opacity-50 font-bold">🔵</button>
+                        <button onClick={() => handleGrade(sub.id, 'red')} disabled={processing} className="py-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 transition-colors disabled:opacity-50 font-bold">🔴</button>
                       </div>
-                      <button
-                        onClick={() => setGradingSubId(null)}
-                        className="w-full py-2 text-xs font-medium text-zinc-500 hover:text-white transition-colors"
-                      >
+                      <button onClick={() => setGradingSubId(null)} className="w-full py-2 text-xs font-medium text-zinc-500 hover:text-white transition-colors">
                         Bekor qilish
                       </button>
                     </div>
@@ -156,35 +212,20 @@ export default function TeacherPendingPage() {
                     <div className="space-y-4">
                       <h4 className="text-[10px] uppercase tracking-wider font-bold text-zinc-500 mb-3 text-center">Natijani baholash</h4>
                       <div className="grid grid-cols-1 gap-2.5">
-                        <button
-                          onClick={() => handleGrade(sub.id, 'green')}
-                          className="flex items-center justify-between px-4 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 transition-all"
-                        >
+                        <button onClick={() => handleGrade(sub.id, 'green')} className="flex items-center justify-between px-4 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 transition-all">
                           <span className="font-semibold text-sm">A'lo (Yashil)</span>
                           <span className="text-xs font-bold bg-emerald-500/20 px-2 py-1 rounded">20 ball</span>
                         </button>
-                        
-                        <button
-                          onClick={() => handleGrade(sub.id, 'blue')}
-                          className="flex items-center justify-between px-4 py-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 transition-all"
-                        >
+                        <button onClick={() => handleGrade(sub.id, 'blue')} className="flex items-center justify-between px-4 py-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 transition-all">
                           <span className="font-semibold text-sm">Yaxshi (Ko'k)</span>
                           <span className="text-xs font-bold bg-blue-500/20 px-2 py-1 rounded">10 ball</span>
                         </button>
-
                         <div className="flex gap-2.5 mt-1">
-                          <button
-                            onClick={() => handleGrade(sub.id, 'red')}
-                            className="flex-1 flex items-center justify-center px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all"
-                          >
+                          <button onClick={() => handleGrade(sub.id, 'red')} className="flex-1 flex items-center justify-center px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all">
                             <span className="font-semibold text-sm">Qoniqarsiz (Qizil)</span>
                           </button>
-                          
                           <button
-                            onClick={() => {
-                              setGradingSubId(sub.id);
-                              setComment('');
-                            }}
+                            onClick={() => { setGradingSubId(sub.id); setComment(''); }}
                             className="w-12 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-all flex items-center justify-center border border-zinc-700"
                             title="Izoh qoldirish"
                           >

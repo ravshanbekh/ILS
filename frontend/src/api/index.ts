@@ -10,6 +10,9 @@ export const authApi = {
   logout: () => api.post('/auth/logout'),
 
   getMe: () => api.get('/auth/me'),
+
+  updateProfile: (data: { login?: string; currentPassword?: string; newPassword?: string }) =>
+    api.patch('/auth/profile', data),
 };
 
 export const usersApi = {

@@ -3,6 +3,7 @@ import authService from './auth.service';
 import { loginSchema, refreshTokenSchema } from './auth.validation';
 import { ApiError } from '../../shared/middleware/errorHandler';
 import prisma from '../../config/database';
+import bcrypt from 'bcryptjs';
 
 class AuthController {
   /**
@@ -99,6 +100,47 @@ class AuthController {
         success: true,
         data: user,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * PATCH /api/auth/profile — O'z login/parolini o'zgartirish
+   */
+  async updateProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw ApiError.unauthorized();
+
+      const { login, currentPassword, newPassword } = req.body;
+
+      const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+      if (!user) throw ApiError.notFound('Foydalanuvchi topilmadi');
+
+      // Agar parol o'zgartirmoqchi bo'lsa
+      if (newPassword) {
+        if (!currentPassword) throw ApiError.badRequest('Joriy parolni kiriting');
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) throw ApiError.badRequest('Joriy parol noto\'g\'ri');
+      }
+
+      // Login o'zgartirilsa — boshqasi ishlatmayotganini tekshir
+      if (login && login !== user.login) {
+        const exists = await prisma.user.findFirst({ where: { login } });
+        if (exists) throw ApiError.badRequest('Bu login allaqachon band');
+      }
+
+      const updateData: any = {};
+      if (login) updateData.login = login;
+      if (newPassword) updateData.password = await bcrypt.hash(newPassword, 10);
+
+      const updated = await prisma.user.update({
+        where: { id: req.user.userId },
+        data: updateData,
+        select: { id: true, fullName: true, login: true, role: true },
+      });
+
+      res.json({ success: true, data: updated });
     } catch (error) {
       next(error);
     }

@@ -12,6 +12,8 @@ export default function StudentNormativesPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   // Modal state
   const [selectedNormative, setSelectedNormative] = useState<any>(null);
@@ -53,12 +55,13 @@ export default function StudentNormativesPage() {
       const submittedNormIds = new Set<string>(allSubs.map((s: any) => s.normativeId));
 
       // Guruhga biriktirilgan YOKI talaba avval topshirgan normativlarni ko'rsat
-      const filtered = allNorms.filter((n: any) => 
-        groupNormIds.has(n.id) || submittedNormIds.has(n.id)
-      );
+      const sortedFiltered = allNorms
+        .filter((n: any) => groupNormIds.has(n.id) || submittedNormIds.has(n.id))
+        .sort((a: any, b: any) => a.taskNumber - b.taskNumber);
 
-      setNormatives(filtered);
+      setNormatives(sortedFiltered);
       setSubmissions(allSubs);
+      setCurrentPage(1);
     } catch (err) {
       console.error(err);
     } finally {
@@ -131,6 +134,9 @@ export default function StudentNormativesPage() {
   }).length;
   const notSubmittedCount = totalNorms - completedCount - pendingCount;
 
+  const totalPages = Math.ceil(totalNorms / PAGE_SIZE);
+  const paginatedNormatives = normatives.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <div>
       <Header title="Normativlar" subtitle="Barcha normativlar va ularni topshirish" />
@@ -175,7 +181,7 @@ export default function StudentNormativesPage() {
 
             {/* Normatives List */}
             <div className="divide-y divide-zinc-800/50">
-              {normatives.map((norm) => {
+              {paginatedNormatives.map((norm) => {
                 const submission = getSubmissionForNormative(norm.id);
                 const isPending = submission && submission.status === 'pending';
                 const isChecked = submission && submission.status === 'checked';
@@ -361,7 +367,45 @@ export default function StudentNormativesPage() {
               })}
             </div>
           </div>
-        )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-4 border-t border-zinc-800 bg-[#111113]">
+              <p className="text-xs text-zinc-500">
+                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalNorms)} / {totalNorms} ta
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium disabled:opacity-40 transition-colors"
+                >
+                  ← Oldingi
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
+                      page === currentPage
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium disabled:opacity-40 transition-colors"
+                >
+                  Keyingi →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Topshirish Modali */}
