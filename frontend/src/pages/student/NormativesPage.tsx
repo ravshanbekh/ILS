@@ -43,7 +43,7 @@ export default function StudentNormativesPage() {
 
       const [normRes, subRes] = await Promise.all([
         normativesApi.getAll(1, 500),
-        submissionsApi.getByStudent(user?.id as string)
+        submissionsApi.getByStudent(user?.id as string, { page: '1', limit: '1000' })
       ]);
 
       const allNorms = normRes.data.data || [];
