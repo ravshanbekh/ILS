@@ -11,8 +11,8 @@ router.use(authenticate);
 // GET /api/groups — Barcha guruhlar (admin va teacher)
 router.get('/', roleGuard('admin', 'teacher'), groupsController.getAll);
 
-// GET /api/groups/:id — Bitta guruh
-router.get('/:id', roleGuard('admin', 'teacher'), groupsController.getById);
+// GET /api/groups/:id — Bitta guruh (o'quvchilar ham o'z guruhini ko'rishi uchun)
+router.get('/:id', roleGuard('admin', 'teacher', 'student'), groupsController.getById);
 
 // POST /api/groups — Guruh yaratish
 router.post('/', roleGuard('admin', 'teacher'), groupsController.create);
