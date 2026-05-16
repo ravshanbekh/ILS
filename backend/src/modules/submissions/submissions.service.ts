@@ -285,9 +285,8 @@ class SubmissionsService {
       throw ApiError.notFound('Topshiriq topilmadi');
     }
 
-    if (submission.status === 'checked') {
-      throw ApiError.conflict('Bu topshiriq allaqachon tekshirilgan');
-    }
+    // Faqat pending yoki checked bo'lgan submissionlarni baholay oladi
+    // (o'qituvchi adashib noto'g'ri ball qo'ysa qayta o'zgartira olsin)
 
     // Ball hisoblash
     const score = calculateScore(data.result, submission.normative.maxScore);
