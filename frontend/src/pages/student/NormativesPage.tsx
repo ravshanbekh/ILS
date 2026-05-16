@@ -46,14 +46,19 @@ export default function StudentNormativesPage() {
         submissionsApi.getByStudent(user?.id as string)
       ]);
 
-      // Faqat guruhga biriktirilgan normativlarni ko'rsat
       const allNorms = normRes.data.data || [];
-      const filtered = groupNormIds.size > 0
-        ? allNorms.filter((n: any) => groupNormIds.has(n.id))
-        : [];
+      const allSubs = subRes.data.data || [];
+
+      // Talaba topshirgan normativlar ID'lari
+      const submittedNormIds = new Set<string>(allSubs.map((s: any) => s.normativeId));
+
+      // Guruhga biriktirilgan YOKI talaba avval topshirgan normativlarni ko'rsat
+      const filtered = allNorms.filter((n: any) => 
+        groupNormIds.has(n.id) || submittedNormIds.has(n.id)
+      );
 
       setNormatives(filtered);
-      setSubmissions(subRes.data.data || []);
+      setSubmissions(allSubs);
     } catch (err) {
       console.error(err);
     } finally {
