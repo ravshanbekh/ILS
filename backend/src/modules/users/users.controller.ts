@@ -6,6 +6,21 @@ import { ApiError } from '../../shared/middleware/errorHandler';
 
 class UsersController {
   /**
+   * GET /api/users/my-students — Teacher uchun o'z o'quvchilarini olish (tezkor)
+   */
+  async getMyStudents(req: Request, res: Response, next: NextFunction) {
+    try {
+      const pagination = getPagination(req.query as any);
+      const search = req.query.search as string | undefined;
+      const teacherId = req.user?.userId!;
+      const result = await usersService.getMyStudents(teacherId, pagination, search);
+      res.json({ success: true, ...result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /api/users — Barcha foydalanuvchilar
    */
   async getAll(req: Request, res: Response, next: NextFunction) {

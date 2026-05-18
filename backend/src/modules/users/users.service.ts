@@ -47,6 +47,66 @@ class UsersService {
   }
 
   /**
+   * Teacher ning barcha o'quvchilarini BITTA so'rovda olish (tezkor)
+   */
+  async getMyStudents(teacherId: string, params: PaginationParams, search?: string) {
+    // Bitta JOIN query — N+1 muammosi yo'q
+    const where: Prisma.GroupStudentWhereInput = {
+      group: {
+        teacherId,
+        isActive: true,
+      },
+      student: {
+        isActive: true,
+        ...(search ? {
+          OR: [
+            { fullName: { contains: search, mode: 'insensitive' } },
+            { login: { contains: search, mode: 'insensitive' } },
+          ]
+        } : {}),
+      },
+    };
+
+    const [groupStudents, total] = await Promise.all([
+      prisma.groupStudent.findMany({
+        where,
+        select: {
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              login: true,
+              role: true,
+              avatarUrl: true,
+              createdAt: true,
+            },
+          },
+        },
+        orderBy: { student: { fullName: 'asc' } },
+      }),
+      // unique count uchun distinct
+      prisma.groupStudent.findMany({
+        where,
+        select: { studentId: true },
+        distinct: ['studentId'],
+      }).then(r => r.length),
+    ]);
+
+    // Duplicate studentlarni olib tashlaymiz (bir o'quvchi bir necha guruhda bo'lishi mumkin)
+    const uniqueMap = new Map<string, any>();
+    for (const gs of groupStudents) {
+      uniqueMap.set(gs.student.id, gs.student);
+    }
+    const allStudents = Array.from(uniqueMap.values());
+    const uniqueTotal = allStudents.length;
+
+    // Pagination (in-memory, chunki unique kerak)
+    const paged = allStudents.slice(params.skip, params.skip + params.limit);
+
+    return createPaginatedResult(paged, uniqueTotal, params);
+  }
+
+  /**
    * Bitta foydalanuvchini ID bo'yicha olish
    */
   async getById(id: string) {

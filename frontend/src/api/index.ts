@@ -19,6 +19,10 @@ export const usersApi = {
   getAll: (page: number = 1, limit: number = 100, role?: string, search?: string) =>
     api.get('/users', { params: { page, limit, role, search } }),
 
+  // Teacher uchun tezkor endpoint — bitta DB query
+  getMyStudents: (page: number = 1, limit: number = 100, search?: string) =>
+    api.get('/users/my-students', { params: { page, limit, search } }),
+
   getById: (id: string) => api.get(`/users/${id}`),
 
   create: (data: any) => api.post('/users', data),

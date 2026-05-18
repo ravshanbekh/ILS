@@ -43,29 +43,11 @@ export default function UsersPage() {
     setLoading(true);
     try {
       if (isTeacher) {
-        // Teacher: server tomonidan teacherId param bilan guruhlarni olish
-        const groupRes = await groupsApi.getAll(1, 100, undefined, user?.id);
-        const myGroups: any[] = groupRes.data.data || [];
-        const studentMap = new Map<string, any>();
-        for (const g of myGroups) {
-          try {
-            const gRes = await groupsApi.getById(g.id);
-            const groupStudents = gRes.data?.data?.students || [];
-            groupStudents.forEach((s: any) => studentMap.set(s.id, s));
-          } catch {}
-        }
-        let allStudents = Array.from(studentMap.values());
-        if (search.trim()) {
-          allStudents = allStudents.filter(s =>
-            s.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-            s.login?.toLowerCase().includes(search.toLowerCase())
-          );
-        }
-        const total = allStudents.length;
-        const start = (page - 1) * ITEMS_PER_PAGE;
-        setUsers(allStudents.slice(start, start + ITEMS_PER_PAGE));
-        setTotalPages(Math.ceil(total / ITEMS_PER_PAGE) || 1);
-        setTotalCount(total);
+        // ⚡ Teacher: bitta so'rov — /api/users/my-students
+        const res = await usersApi.getMyStudents(page, ITEMS_PER_PAGE, search || undefined);
+        setUsers(res.data.data);
+        setTotalPages(res.data.pagination?.totalPages || 1);
+        setTotalCount(res.data.pagination?.total || res.data.data.length);
       } else {
         // Admin: barcha foydalanuvchilar
         const res = await usersApi.getAll(page, ITEMS_PER_PAGE, undefined, search || undefined);
