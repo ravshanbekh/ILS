@@ -194,15 +194,13 @@ export default function UsersPage() {
                 Exceldan yuklash
               </button>
             )}
-            {!isTeacher && (
-              <button
-                onClick={() => handleOpenModal()}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-              >
-                <UserPlus className="w-4 h-4" />
-                Yangi qo'shish
-              </button>
-            )}
+            <button
+              onClick={() => handleOpenModal()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              {isTeacher ? "Yangi o'quvchi" : "Yangi qo'shish"}
+            </button>
           </div>
         </div>
 
@@ -274,13 +272,22 @@ export default function UsersPage() {
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
                           {isTeacher ? (
-                            <button
-                              onClick={() => navigate(`/teacher/student/${u.id}`)}
-                              className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-colors"
-                              title="O'quvchi profilini ko'rish"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleOpenModal(u)}
+                                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                                title="Tahrirlash / Parolni o'zgartirish"
+                              >
+                                <KeyRound className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => navigate(`/teacher/student/${u.id}`)}
+                                className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-colors"
+                                title="O'quvchi profilini ko'rish"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </button>
+                            </>
                           ) : (
                             <>
                               <button
