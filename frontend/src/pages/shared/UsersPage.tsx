@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { usersApi, groupsApi } from '@/api';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
-import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight, FolderOpen, ExternalLink } from 'lucide-react';
 import { formatDateTime } from '@/utils';
 
 export default function UsersPage() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const isTeacher = user?.role === 'teacher';
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,17 +42,46 @@ export default function UsersPage() {
   const fetchUsers = useCallback(async (page: number, search: string) => {
     setLoading(true);
     try {
-      const roleFilter = user?.role === 'teacher' ? 'student' : undefined;
-      const res = await usersApi.getAll(page, ITEMS_PER_PAGE, roleFilter, search || undefined);
-      setUsers(res.data.data);
-      setTotalPages(res.data.pagination?.totalPages || 1);
-      setTotalCount(res.data.pagination?.total || res.data.data.length);
+      if (isTeacher) {
+        // Teacher: faqat o'z guruhlaridagi o'quvchilar
+        const groupRes = await groupsApi.getAll(1, 100);
+        const allGroups: any[] = groupRes.data.data || [];
+        // Teacher ID bilan guruhlarni filtrlaymiz
+        const myGroups = allGroups.filter((g: any) => g.teacherId === user?.id);
+        const studentMap = new Map<string, any>();
+        for (const g of myGroups) {
+          try {
+            const gRes = await groupsApi.getById(g.id);
+            const groupStudents = gRes.data?.data?.students || [];
+            groupStudents.forEach((s: any) => studentMap.set(s.id, s));
+          } catch {}
+        }
+        let allStudents = Array.from(studentMap.values());
+        if (search.trim()) {
+          allStudents = allStudents.filter(s =>
+            s.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+            s.login?.toLowerCase().includes(search.toLowerCase())
+          );
+        }
+        const total = allStudents.length;
+        const start = (page - 1) * ITEMS_PER_PAGE;
+        setUsers(allStudents.slice(start, start + ITEMS_PER_PAGE));
+        setTotalPages(Math.ceil(total / ITEMS_PER_PAGE) || 1);
+        setTotalCount(total);
+      } else {
+        // Admin: barcha foydalanuvchilar
+        const roleFilter = undefined;
+        const res = await usersApi.getAll(page, ITEMS_PER_PAGE, roleFilter, search || undefined);
+        setUsers(res.data.data);
+        setTotalPages(res.data.pagination?.totalPages || 1);
+        setTotalCount(res.data.pagination?.total || res.data.data.length);
+      }
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [user?.role]);
+  }, [user?.id, isTeacher]);
 
   // Debounce search
   useEffect(() => {
@@ -137,7 +169,10 @@ export default function UsersPage() {
 
   return (
     <div>
-      <Header title="Foydalanuvchilar" subtitle="O'quvchilar va boshqa foydalanuvchilarni boshqarish" />
+      <Header
+        title={isTeacher ? "O'quvchilarim" : 'Foydalanuvchilar'}
+        subtitle={isTeacher ? 'Guruhlaringizdagi o\'quvchilar' : 'O\'quvchilar va boshqa foydalanuvchilarni boshqarish'}
+      />
 
       <div className="p-8 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between gap-3 mb-6">
@@ -153,20 +188,24 @@ export default function UsersPage() {
             />
           </div>
           <div className="flex gap-3">
-            <button 
-              onClick={() => setShowBulkModal(true)}
-              className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              Exceldan yuklash
-            </button>
-            <button 
-              onClick={() => handleOpenModal()}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              Yangi qo'shish
-            </button>
+            {!isTeacher && (
+              <button
+                onClick={() => setShowBulkModal(true)}
+                className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                Exceldan yuklash
+              </button>
+            )}
+            {!isTeacher && (
+              <button
+                onClick={() => handleOpenModal()}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                Yangi qo'shish
+              </button>
+            )}
           </div>
         </div>
 
@@ -193,8 +232,20 @@ export default function UsersPage() {
                   </tr>
                 ) : (
                   users.map((u) => (
-                    <tr key={u.id} className="hover:bg-zinc-800/30 transition-colors">
-                      <td className="px-6 py-4 font-medium text-white">{u.fullName}</td>
+                    <tr key={u.id} className="hover:bg-zinc-800/30 transition-colors group">
+                      <td className="px-6 py-4 font-medium">
+                        {isTeacher ? (
+                          <button
+                            onClick={() => navigate(`/teacher/student/${u.id}`)}
+                            className="text-white hover:text-blue-400 transition-colors flex items-center gap-2 font-medium text-left"
+                          >
+                            {u.fullName}
+                            <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
+                          </button>
+                        ) : (
+                          <span className="text-white">{u.fullName}</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 font-mono text-blue-400 flex items-center gap-2">
                         {u.login}
                         <button 
@@ -217,20 +268,30 @@ export default function UsersPage() {
                       <td className="px-6 py-4 text-zinc-500">{formatDateTime(u.createdAt)}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
-                          <button 
-                            onClick={() => handleOpenModal(u)}
-                            className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
-                            title="Tahrirlash / Parolni o'zgartirish"
-                          >
-                            <KeyRound className="w-4 h-4" />
-                          </button>
-                          {user?.role === 'admin' && (
-                            <button 
-                              onClick={() => handleDelete(u.id)}
-                              className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                          {isTeacher ? (
+                            <button
+                              onClick={() => navigate(`/teacher/student/${u.id}`)}
+                              className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-colors"
+                              title="O'quvchi profilini ko'rish"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <ExternalLink className="w-4 h-4" />
                             </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleOpenModal(u)}
+                                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                                title="Tahrirlash / Parolni o'zgartirish"
+                              >
+                                <KeyRound className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(u.id)}
+                                className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>

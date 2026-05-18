@@ -1,40 +1,57 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
-import { useAuthStore } from '@/stores/authStore';
 import { normativesApi, groupsApi } from '@/api';
-import { Loader2, BookOpen, Link as LinkIcon, Clock, CheckCircle, Plus } from 'lucide-react';
+import { Loader2, BookOpen, Link as LinkIcon, Clock, CheckCircle, Plus, Search } from 'lucide-react';
+
+const PAGE_SIZE = 15;
 
 export default function TeacherNormativesPage() {
-  const { user } = useAuthStore();
   const [normatives, setNormatives] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Assign modal state
+  // Search & Pagination
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Assign modal
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [selectedNormativeIds, setSelectedNormativeIds] = useState<string[]>([]);
   const [assigning, setAssigning] = useState(false);
   const [assignResult, setAssignResult] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const [normRes, groupRes] = await Promise.all([
-        normativesApi.getAll(1, 200),
+        normativesApi.getAll(1, 500),
         groupsApi.getAll(1, 100)
       ]);
-      setNormatives(normRes.data.data || []);
+      const sorted = (normRes.data.data || []).sort((a: any, b: any) => a.taskNumber - b.taskNumber);
+      setNormatives(sorted);
       setGroups(groupRes.data.data || []);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filter & paginate
+  const filtered = normatives.filter(n =>
+    !searchQuery.trim() ||
+    n.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(n.taskNumber).includes(searchQuery)
+  );
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const handleSearch = (val: string) => {
+    setSearchQuery(val);
+    setCurrentPage(1);
   };
 
   const handleOpenAssignModal = () => {
@@ -64,7 +81,7 @@ export default function TeacherNormativesPage() {
   };
 
   const toggleNormative = (id: string) => {
-    setSelectedNormativeIds(prev => 
+    setSelectedNormativeIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
@@ -90,63 +107,160 @@ export default function TeacherNormativesPage() {
       <Header title="Normativlar" subtitle={`${normatives.length} ta normativ`} />
 
       <div className="p-8 max-w-7xl mx-auto">
-        {/* Action Bar */}
-        <div className="flex justify-end mb-6">
+
+        {/* Search + Action */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Normativ qidirish..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#18181b] border border-zinc-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors placeholder:text-zinc-600"
+            />
+          </div>
           <button
             onClick={handleOpenAssignModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             Guruhga biriktirish
           </button>
         </div>
 
-        {/* Normatives Grid */}
-        {normatives.length === 0 ? (
+        {/* Table */}
+        {filtered.length === 0 ? (
           <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-12 text-center">
             <BookOpen className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-white mb-2">Normativlar topilmadi</h3>
-            <p className="text-zinc-400 text-sm">Admin normativlar qo'shishi kerak.</p>
+            <p className="text-zinc-400 text-sm">Qidiruv bo'yicha natija yo'q.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {normatives.map((norm) => (
-              <div key={norm.id} className="bg-[#18181b] rounded-xl p-5 border border-zinc-800 hover:border-blue-500/30 transition-all">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#09090b] border border-zinc-800 flex items-center justify-center text-blue-500 font-bold text-sm">
-                    #{norm.taskNumber}
+          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-[60px_60px_1fr_2fr_100px_80px_80px] items-center gap-4 px-5 py-3 border-b border-zinc-800 bg-[#111113]">
+              <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold text-center">N</span>
+              <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold text-center">#</span>
+              <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Qaysi funksiya</span>
+              <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Nima qila olsin</span>
+              <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold text-center">Vaqti</span>
+              <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold text-center">URL</span>
+              <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold text-center">Ball</span>
+            </div>
+
+            {/* Rows */}
+            <div className="divide-y divide-zinc-800/50">
+              {paginated.map((norm, idx) => (
+                <div
+                  key={norm.id}
+                  className="grid grid-cols-[60px_60px_1fr_2fr_100px_80px_80px] items-center gap-4 px-5 py-3.5 hover:bg-zinc-800/20 transition-colors"
+                >
+                  {/* Row number */}
+                  <div className="flex justify-center">
+                    <span className="text-sm font-bold text-zinc-500">
+                      {(currentPage - 1) * PAGE_SIZE + idx + 1}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-medium text-sm truncate">{norm.title}</h3>
-                    <p className="text-xs text-zinc-500">20 ball</p>
+
+                  {/* Task number badge */}
+                  <div className="flex justify-center">
+                    <div className="w-9 h-9 rounded-lg bg-[#09090b] border border-zinc-800 flex items-center justify-center text-blue-500 font-bold text-xs">
+                      {norm.taskNumber}
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <div className="min-w-0">
+                    <p className="text-white font-medium text-sm truncate">{norm.title}</p>
+                  </div>
+
+                  {/* Description */}
+                  <div className="min-w-0">
+                    <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
+                      {norm.description || '—'}
+                    </p>
+                  </div>
+
+                  {/* Time limit */}
+                  <div className="flex justify-center">
+                    {norm.timeLimit ? (
+                      <span className="flex items-center gap-1 text-xs font-bold bg-amber-500/10 text-amber-500 px-2 py-1 rounded border border-amber-500/20 whitespace-nowrap">
+                        <Clock className="w-3 h-3" />
+                        {norm.timeLimit} sek
+                      </span>
+                    ) : (
+                      <span className="text-zinc-700 text-xs">—</span>
+                    )}
+                  </div>
+
+                  {/* URL */}
+                  <div className="flex justify-center">
+                    {norm.url ? (
+                      <a
+                        href={norm.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 bg-blue-500/10 text-blue-500 px-2 py-1 rounded border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-xs"
+                      >
+                        <LinkIcon className="w-3 h-3" />
+                        URL
+                      </a>
+                    ) : (
+                      <span className="text-zinc-700 text-xs">—</span>
+                    )}
+                  </div>
+
+                  {/* Max score */}
+                  <div className="flex justify-center">
+                    <span className="text-xs font-bold text-zinc-300">{norm.maxScore} ball</span>
                   </div>
                 </div>
+              ))}
+            </div>
 
-                <p className="text-xs text-zinc-400 mb-3 line-clamp-2 leading-relaxed">
-                  {norm.description || "Ta'rif kiritilmagan"}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-5 py-4 border-t border-zinc-800 bg-[#111113]">
+                <p className="text-xs text-zinc-500">
+                  {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} / {filtered.length} ta
                 </p>
-
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
-                  {norm.timeLimit && (
-                    <span className="flex items-center gap-1 bg-amber-500/10 text-amber-500 px-2 py-1 rounded border border-amber-500/20">
-                      <Clock className="w-3 h-3" />
-                      {norm.timeLimit} sek
-                    </span>
-                  )}
-                  {norm.url && (
-                    <a 
-                      href={norm.url} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="flex items-center gap-1 bg-blue-500/10 text-blue-500 px-2 py-1 rounded border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
-                    >
-                      <LinkIcon className="w-3 h-3" />
-                      URL
-                    </a>
-                  )}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium disabled:opacity-40 transition-colors"
+                  >
+                    ← Oldingi
+                  </button>
+                  {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                    let page: number;
+                    if (totalPages <= 7) page = i + 1;
+                    else if (currentPage <= 4) page = i + 1;
+                    else if (currentPage >= totalPages - 3) page = totalPages - 6 + i;
+                    else page = currentPage - 3 + i;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
+                          page === currentPage ? 'bg-blue-600 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium disabled:opacity-40 transition-colors"
+                  >
+                    Keyingi →
+                  </button>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
@@ -168,7 +282,6 @@ export default function TeacherNormativesPage() {
               </div>
             )}
 
-            {/* Group selector */}
             <div className="mb-4">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">Guruh tanlang</label>
               <select
@@ -183,7 +296,6 @@ export default function TeacherNormativesPage() {
               </select>
             </div>
 
-            {/* Normatives list */}
             <div className="mb-2 flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Normativlar</label>
               <button onClick={selectAll} className="text-xs text-blue-500 hover:text-blue-400 transition-colors">
