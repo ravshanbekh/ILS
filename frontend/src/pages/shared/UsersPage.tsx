@@ -43,11 +43,9 @@ export default function UsersPage() {
     setLoading(true);
     try {
       if (isTeacher) {
-        // Teacher: faqat o'z guruhlaridagi o'quvchilar
-        const groupRes = await groupsApi.getAll(1, 100);
-        const allGroups: any[] = groupRes.data.data || [];
-        // Teacher ID bilan guruhlarni filtrlaymiz
-        const myGroups = allGroups.filter((g: any) => g.teacherId === user?.id);
+        // Teacher: server tomonidan teacherId param bilan guruhlarni olish
+        const groupRes = await groupsApi.getAll(1, 100, undefined, user?.id);
+        const myGroups: any[] = groupRes.data.data || [];
         const studentMap = new Map<string, any>();
         for (const g of myGroups) {
           try {
@@ -70,8 +68,7 @@ export default function UsersPage() {
         setTotalCount(total);
       } else {
         // Admin: barcha foydalanuvchilar
-        const roleFilter = undefined;
-        const res = await usersApi.getAll(page, ITEMS_PER_PAGE, roleFilter, search || undefined);
+        const res = await usersApi.getAll(page, ITEMS_PER_PAGE, undefined, search || undefined);
         setUsers(res.data.data);
         setTotalPages(res.data.pagination?.totalPages || 1);
         setTotalCount(res.data.pagination?.total || res.data.data.length);
@@ -237,6 +234,14 @@ export default function UsersPage() {
                         {isTeacher ? (
                           <button
                             onClick={() => navigate(`/teacher/student/${u.id}`)}
+                            className="text-white hover:text-blue-400 transition-colors flex items-center gap-2 font-medium text-left"
+                          >
+                            {u.fullName}
+                            <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
+                          </button>
+                        ) : u.role === 'student' ? (
+                          <button
+                            onClick={() => navigate(`/admin/student/${u.id}`)}
                             className="text-white hover:text-blue-400 transition-colors flex items-center gap-2 font-medium text-left"
                           >
                             {u.fullName}
