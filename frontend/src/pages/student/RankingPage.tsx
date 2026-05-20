@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import Header from '@/components/layout/Header';
-import { rankingsApi } from '@/api';
+import { rankingsApi, groupsApi } from '@/api';
 import api from '@/api/client';
 import { useAuthStore } from '@/stores/authStore';
 import {
@@ -30,16 +30,27 @@ export default function StudentRankingPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [myRank, setMyRank] = useState<any>(null);
 
-  // O'quvchining o'z guruhlarini olish (/auth/me orqali)
+  // Guruhlarni rol boyicha to'g'ri yuklaymiz
   useEffect(() => {
-    api.get('/auth/me')
-      .then((res) => {
-        const userData = res.data.data;
-        const studentGroups = userData?.groupStudents?.map((gs: any) => gs.group) || [];
-        setGroups(studentGroups);
-      })
-      .catch(console.error);
-  }, []);
+    if (user?.role === 'teacher') {
+      // Teacher: o'z guruhlarini oladi
+      groupsApi.getAll(1, 100, undefined, user.id)
+        .then((res) => {
+          const teacherGroups = res.data.data || [];
+          setGroups(teacherGroups);
+        })
+        .catch(console.error);
+    } else {
+      // Student: o'z guruhlarini /auth/me orqali oladi
+      api.get('/auth/me')
+        .then((res) => {
+          const userData = res.data.data;
+          const studentGroups = userData?.groupStudents?.map((gs: any) => gs.group) || [];
+          setGroups(studentGroups);
+        })
+        .catch(console.error);
+    }
+  }, [user?.role, user?.id]);
 
   // Debounce search
   useEffect(() => {
