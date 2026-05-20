@@ -14,6 +14,7 @@ export default function StudentProfilePage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [regrading, setRegrading] = useState<string | null>(null); // submission id being regraded
+  const [regradeComment, setRegradeComment] = useState('');
   const [regradeProcessing, setRegradeProcessing] = useState(false);
 
   useEffect(() => {
@@ -28,14 +29,18 @@ export default function StudentProfilePage() {
   const handleRegrade = async (subId: string, result: 'green' | 'blue' | 'red') => {
     setRegradeProcessing(true);
     try {
-      await submissionsApi.check(subId, { result });
+      await submissionsApi.check(subId, { result, comment: regradeComment || undefined });
       setStats((prev: any) => ({
         ...prev,
-        submissions: prev.submissions.map((s: any) =>
-          s.id === subId ? { ...s, result, score: result === 'green' ? 20 : result === 'blue' ? 10 : 0 } : s
-        )
+        submissions: prev.submissions.map((s: any) => {
+          if (s.id !== subId) return s;
+          const maxScore = s.normative?.maxScore || 20;
+          const score = result === 'green' ? maxScore : result === 'blue' ? Math.round(maxScore / 2) : 0;
+          return { ...s, result, score, status: 'checked', canResubmit: false };
+        })
       }));
       setRegrading(null);
+      setRegradeComment('');
     } catch (err) {
       console.error(err);
       alert('Xatolik yuz berdi');
@@ -308,10 +313,31 @@ export default function StudentProfilePage() {
                             )}
                           </>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                            <Clock className="w-3.5 h-3.5" />
-                            Kutilmoqda
-                          </span>
+                          // PENDING — teacher bu yerdan ham baholay oladi
+                          regrading === sub.id ? (
+                            <div className="flex flex-col gap-2 animate-fade-in min-w-[200px]">
+                              <div className="flex items-center gap-1.5">
+                                <button onClick={() => handleRegrade(sub.id, 'green')} disabled={regradeProcessing} className="flex-1 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 text-xs font-bold transition-colors disabled:opacity-50">🟢 A'lo</button>
+                                <button onClick={() => handleRegrade(sub.id, 'blue')} disabled={regradeProcessing} className="flex-1 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/30 text-xs font-bold transition-colors disabled:opacity-50">🔵 Yaxshi</button>
+                                <button onClick={() => handleRegrade(sub.id, 'red')} disabled={regradeProcessing} className="flex-1 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 text-xs font-bold transition-colors disabled:opacity-50">🔴 Qizil</button>
+                                <button onClick={() => { setRegrading(null); setRegradeComment(''); }} className="px-2 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs transition-colors hover:text-white">✕</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                <Clock className="w-3.5 h-3.5" />
+                                Kutilmoqda
+                              </span>
+                              <button
+                                onClick={() => { setRegrading(sub.id); setRegradeComment(''); }}
+                                className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors whitespace-nowrap"
+                                title="Baholash"
+                              >
+                                Baholash
+                              </button>
+                            </>
+                          )
                         )}
                         <a
                           href={sub.youtubeUrl}
