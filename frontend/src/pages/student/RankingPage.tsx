@@ -172,11 +172,25 @@ export default function StudentRankingPage() {
                 </button>
               </div>
 
-              {/* Group Display */}
-              {filterType === 'group' && selectedGroupId && (
-                <div className="flex-1 min-w-0 flex items-center bg-zinc-800/50 text-purple-400 border border-purple-500/20 rounded-xl px-4 py-2.5 text-sm font-medium">
-                  {groups.find(g => g.id === selectedGroupId)?.name || "Guruhingiz reytingi"}
-                </div>
+              {/* Group Selector — nechta guruh bo'lsa barchasini tanlab bo'ladi */}
+              {filterType === 'group' && groups.length > 0 && (
+                groups.length === 1 ? (
+                  <div className="flex-1 min-w-0 flex items-center bg-zinc-800/50 text-purple-400 border border-purple-500/20 rounded-xl px-4 py-2.5 text-sm font-medium">
+                    {groups[0].name}
+                  </div>
+                ) : (
+                  <select
+                    value={selectedGroupId}
+                    onChange={(e) => handleGroupChange(e.target.value)}
+                    className="flex-1 min-w-0 px-4 py-2.5 rounded-xl bg-zinc-800/50 text-purple-400 border border-purple-500/30 text-sm font-medium focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 appearance-none cursor-pointer"
+                  >
+                    {groups.map(g => (
+                      <option key={g.id} value={g.id} className="bg-[#18181b] text-white">
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                )
               )}
             </div>
 
