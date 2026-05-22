@@ -242,13 +242,43 @@ export default function UsersPage() {
                         </button>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                          u.role === 'admin' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                          u.role === 'teacher' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' :
-                          'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                        }`}>
-                          {u.role}
-                        </span>
+                        {(() => {
+                          const roleColors: Record<string, string> = {
+                            admin: 'bg-red-500/10 text-red-500 border-red-500/20',
+                            teacher: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+                            student: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+                            filial_rahbari: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                            assistant: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+                            moliya_rahbari: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                            kassir: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+                            administrator: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+                            nazoratchi: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+                            hr_rahbari: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+                            sotuv_operatori: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
+                            farrosh: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+                          };
+                          const roleLabels: Record<string, string> = {
+                            admin: 'Admin',
+                            teacher: "O'qituvchi",
+                            student: "O'quvchi",
+                            filial_rahbari: 'Filial Rahbari',
+                            assistant: 'Assistant',
+                            moliya_rahbari: 'Moliya Rahbari',
+                            kassir: 'Kassir',
+                            administrator: 'Administrator',
+                            nazoratchi: 'Nazoratchi',
+                            hr_rahbari: 'HR Rahbari',
+                            sotuv_operatori: 'Sotuv Op.',
+                            farrosh: 'Farrosh',
+                          };
+                          const colorClass = roleColors[u.role] ?? 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+                          const label = roleLabels[u.role] ?? u.role;
+                          return (
+                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${colorClass}`}>
+                              {label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 text-zinc-500">{formatDateTime(u.createdAt)}</td>
                       <td className="px-6 py-4">
@@ -398,6 +428,18 @@ export default function UsersPage() {
                     <option value="student">O'quvchi (Student)</option>
                     <option value="teacher">O'qituvchi (Teacher)</option>
                     <option value="admin">Admin</option>
+                    <option disabled>──────────────</option>
+                    <option value="filial_rahbari">Filial Rahbari</option>
+                    <option value="assistant">Assistant</option>
+                    <option value="moliya_rahbari">Moliya Rahbari</option>
+                    <option value="kassir">Kassir</option>
+                    <option value="administrator">Administrator</option>
+                    <option value="nazoratchi">Nazoratchi (Inspektor)</option>
+                    <option value="hr_rahbari">HR Rahbari</option>
+                    <option value="sotuv_operatori">Sotuv Menejeri</option>
+                    <option value="call_operatori">Call Operatori</option>
+                    <option value="farrosh">Farrosh</option>
+                    <option value="robototexnika_ustoz">Robototexnika Ustoz</option>
                   </select>
                 </div>
               )}

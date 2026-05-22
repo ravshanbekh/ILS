@@ -20,6 +20,7 @@ import notificationsRoutes from './modules/notifications/notifications.routes';
 import backupRoutes from './modules/backup/backup.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import categoriesRoutes from './modules/categories/categories.routes';
+import checklistRoutes from './modules/checklist/checklist.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -69,6 +70,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/checklist', checklistRoutes);
 
 // 404 handler
 app.use((_req, res) => {

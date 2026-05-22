@@ -3,8 +3,9 @@ import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import { statsApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
-import { FolderOpen, Users, Clock, BarChart3, Loader2 } from 'lucide-react';
+import { FolderOpen, Users, Clock, CheckSquare, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ChecklistPage from '@/pages/viewer/ChecklistPage';
 
 export default function TeacherDashboard() {
   const { user } = useAuthStore();
@@ -92,6 +93,19 @@ export default function TeacherDashboard() {
             </div>
           </div>
         )}
+        {/* Kunlik Checklist (Mentor) */}
+        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-zinc-800">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+              <CheckSquare className="w-4 h-4 text-purple-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-white">Kunlik Checklist</h3>
+              <p className="text-xs text-zinc-500">Bugungi dars vazifalari</p>
+            </div>
+          </div>
+          <ChecklistPage compact />
+        </div>
       </div>
     </div>
   );

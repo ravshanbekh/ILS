@@ -16,6 +16,17 @@ enum UserRole {
   admin
   teacher
   student
+  filial_rahbari
+  assistant
+  moliya_rahbari
+  kassir
+  administrator
+  nazoratchi
+  hr_rahbari
+  sotuv_operatori
+  farrosh
+  robototexnika_ustoz
+  call_operatori
 }
 
 enum SubmissionStatus {
@@ -47,8 +58,9 @@ model User {
   groupStudents  GroupStudent[]
   submissions    Submission[]     @relation("StudentSubmissions")
   checkedBy      Submission[]     @relation("CheckedByTeacher")
-  notifications  Notification[]
-  auditLogs      AuditLog[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  checklistEntries    DailyChecklistEntry[]
 
   @@map("users")
 }
@@ -212,4 +224,39 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+/// Kunlik Checklist elementlari (template)
+model ChecklistItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  role        UserRole
+  order       Int
+  score       Int      @default(1)
+  section     String?  @db.VarChar(200)
+  category    String   @db.VarChar(200)
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  entries DailyChecklistEntry[]
+
+  @@map("checklist_items")
+}
+
+/// Kunlik Checklist yozuvlari (kim, qachon, bajarildimi)
+model DailyChecklistEntry {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  checklistItemId String        @map("checklist_item_id") @db.Uuid
+  date            DateTime      @db.Date
+  isDone          Boolean       @default(false) @map("is_done")
+  doneAt          DateTime?     @map("done_at")
+
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checklistItem ChecklistItem @relation(fields: [checklistItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, checklistItemId, date])
+  @@map("daily_checklist_entries")
 }

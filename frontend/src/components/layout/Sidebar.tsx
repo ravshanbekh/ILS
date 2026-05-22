@@ -12,6 +12,7 @@ const adminLinks = [
   { to: '/admin/normatives', icon: BookOpen, label: 'Normativlar' },
   { to: '/admin/submissions', icon: ClipboardCheck, label: 'Topshiriqlar' },
   { to: '/admin/stats', icon: BarChart3, label: 'Statistika' },
+  { to: '/admin/checklist-stats', icon: ClipboardCheck, label: 'Cheklist Hisobot' },
   { to: '/admin/rankings', icon: Trophy, label: 'Reyting' },
   { to: '/admin/export', icon: Download, label: 'Eksport' },
   { to: '/admin/settings', icon: Settings, label: 'Sozlamalar' },
@@ -19,7 +20,7 @@ const adminLinks = [
 
 const teacherLinks = [
   { to: '/teacher', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/teacher/users', icon: Users, label: 'O\'quvchilar' },
+  { to: '/teacher/users', icon: Users, label: "O'quvchilar" },
   { to: '/teacher/groups', icon: FolderOpen, label: 'Guruhlarim' },
   { to: '/teacher/normatives', icon: BookOpen, label: 'Normativlar' },
   { to: '/teacher/pending', icon: ClipboardCheck, label: 'Tekshirish' },
@@ -35,6 +36,28 @@ const studentLinks = [
   { to: '/student/ranking', icon: Trophy, label: 'Reyting' },
 ];
 
+const VIEWER_ROLES = [
+  'filial_rahbari', 'assistant', 'moliya_rahbari', 'kassir',
+  'administrator', 'nazoratchi', 'hr_rahbari', 'sotuv_operatori', 'farrosh',
+  'robototexnika_ustoz', 'call_operatori',
+] as const;
+
+type ViewerRole = typeof VIEWER_ROLES[number];
+
+const VIEWER_ROLE_LABELS: Record<ViewerRole, string> = {
+  filial_rahbari: 'Filial Rahbari',
+  assistant: 'Assistant',
+  moliya_rahbari: 'Moliya Rahbari',
+  kassir: 'Kassir',
+  administrator: 'Administrator',
+  nazoratchi: 'Nazoratchi (Inspektor)',
+  hr_rahbari: 'HR Rahbari',
+  sotuv_operatori: 'Sotuv Menejeri',
+  farrosh: 'Farrosh',
+  robototexnika_ustoz: 'Robototexnika Ustoz',
+  call_operatori: 'Call Operatori',
+};
+
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
@@ -44,11 +67,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
+  const isViewer = user?.role && VIEWER_ROLES.includes(user.role as ViewerRole);
+
+  const nazoratchiLinks = user?.role === 'nazoratchi' ? [
+    { to: `/viewer/nazoratchi`, icon: LayoutDashboard, label: 'Dashboard' },
+    { to: `/viewer/nazoratchi/checklist-stats`, icon: BarChart3, label: 'Cheklist Hisobot' },
+  ] : [];
+
+  const viewerLinks = isViewer && user?.role !== 'nazoratchi' ? [
+    { to: `/viewer/${user!.role}`, icon: LayoutDashboard, label: 'Dashboard' },
+  ] : [];
+
   const links = user?.role === 'admin'
     ? adminLinks
     : user?.role === 'teacher'
     ? teacherLinks
-    : studentLinks;
+    : user?.role === 'student'
+    ? studentLinks
+    : user?.role === 'nazoratchi'
+    ? nazoratchiLinks
+    : viewerLinks;
 
   const handleLogout = () => {
     logout();
@@ -97,7 +135,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <NavLink
               key={link.to}
               to={link.to}
-              end={link.to === '/admin' || link.to === '/teacher' || link.to === '/student'}
+              end={link.to === '/admin' || link.to === '/teacher' || link.to === '/student' || link.to === '/viewer/nazoratchi'}
               onClick={handleNavClick}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -121,7 +159,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">{user?.fullName}</p>
-              <p className="text-xs text-zinc-500 capitalize">{user?.role}</p>
+              <p className="text-xs text-zinc-500 capitalize">
+                {isViewer && user?.role
+                  ? VIEWER_ROLE_LABELS[user.role as ViewerRole]
+                  : user?.role === 'admin' ? 'Admin'
+                  : user?.role === 'teacher' ? "O'qituvchi"
+                  : "O'quvchi"}
+              </p>
             </div>
           </div>
           <button

@@ -27,6 +27,8 @@ import AdminStatsPage from '@/pages/admin/StatsPage';
 import AdminRankingsPage from '@/pages/admin/RankingsPage';
 import AdminSettingsPage from '@/pages/admin/SettingsPage';
 import MonthlyReportPrintPage from '@/pages/admin/MonthlyReportPrintPage';
+import ViewerDashboardPage from '@/pages/viewer/DashboardPage';
+import ChecklistStatsPage from '@/pages/admin/ChecklistStatsPage';
 import { socket } from '@/utils/socket';
 import { useEffect } from 'react';
 
@@ -54,7 +56,7 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
       case 'admin': return <Navigate to="/admin" replace />;
       case 'teacher': return <Navigate to="/teacher" replace />;
       case 'student': return <Navigate to="/student" replace />;
-      default: return <Navigate to="/login" replace />;
+      default: return <Navigate to={`/viewer/${user.role}`} replace />;
     }
   }
 
@@ -70,6 +72,7 @@ function AuthRedirect() {
       case 'admin': return <Navigate to="/admin" replace />;
       case 'teacher': return <Navigate to="/teacher" replace />;
       case 'student': return <Navigate to="/student" replace />;
+      default: return <Navigate to={`/viewer/${user.role}`} replace />;
     }
   }
 
@@ -136,6 +139,7 @@ export default function App() {
               <Route path="/admin/rankings" element={<AdminRankingsPage />} />
               <Route path="/admin/export" element={<ExportPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
+              <Route path="/admin/checklist-stats" element={<ChecklistStatsPage />} />
             </Route>
 
             {/* Teacher routes */}
@@ -170,6 +174,18 @@ export default function App() {
               <Route path="/student/history" element={<StudentHistoryPage />} />
               <Route path="/student/my-normatives" element={<MyNormativesGuidePage />} />
               <Route path="/student/ranking" element={<StudentRankingPage />} />
+            </Route>
+
+            {/* Viewer routes — all new roles */}
+            <Route
+              element={
+                <ProtectedRoute roles={['filial_rahbari','assistant','moliya_rahbari','kassir','administrator','nazoratchi','hr_rahbari','sotuv_operatori','farrosh','robototexnika_ustoz','call_operatori']}>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/viewer/:role" element={<ViewerDashboardPage />} />
+              <Route path="/viewer/nazoratchi/checklist-stats" element={<ChecklistStatsPage />} />
             </Route>
 
             {/* Default redirect */}

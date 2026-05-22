@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+const ALL_ROLES = [
+  'admin', 'teacher', 'student',
+  'filial_rahbari', 'assistant', 'moliya_rahbari', 'kassir',
+  'administrator', 'nazoratchi', 'hr_rahbari', 'sotuv_operatori', 'farrosh',
+  'robototexnika_ustoz', 'call_operatori',
+] as const;
+
 export const createUserSchema = z.object({
   fullName: z
     .string()
@@ -13,8 +20,8 @@ export const createUserSchema = z.object({
   password: z
     .string()
     .min(3, 'Parol kamida 3 ta belgi'),
-  role: z.enum(['admin', 'teacher', 'student'], {
-    errorMap: () => ({ message: 'Rol: admin, teacher yoki student bo\'lishi kerak' }),
+  role: z.enum(ALL_ROLES, {
+    errorMap: () => ({ message: 'Noto\'g\'ri rol tanlandi' }),
   }),
   avatarUrl: z.string().url().optional().nullable(),
 });
@@ -23,10 +30,11 @@ export const updateUserSchema = z.object({
   fullName: z.string().min(2).max(100).optional(),
   login: z.string().min(3).max(50).optional(),
   password: z.string().min(3).optional(),
-  role: z.enum(['admin', 'teacher', 'student']).optional(),
+  role: z.enum(ALL_ROLES).optional(),
   avatarUrl: z.string().url().optional().nullable(),
   isActive: z.boolean().optional(),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+

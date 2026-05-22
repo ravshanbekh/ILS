@@ -4,7 +4,7 @@ interface User {
   id: string;
   fullName: string;
   login: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student' | 'filial_rahbari' | 'assistant' | 'moliya_rahbari' | 'kassir' | 'administrator' | 'nazoratchi' | 'hr_rahbari' | 'sotuv_operatori' | 'farrosh' | 'robototexnika_ustoz' | 'call_operatori';
   avatarUrl: string | null;
 }
 

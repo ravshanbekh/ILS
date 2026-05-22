@@ -159,3 +159,10 @@ export const categoriesApi = {
   update: (id: string, data: any) => api.put(`/categories/${id}`, data),
   delete: (id: string) => api.delete(`/categories/${id}`),
 };
+
+export const checklistApi = {
+  getToday: () => api.get('/checklist/today'),
+  getDay: (date: string) => api.get('/checklist/day', { params: { date } }),
+  getWeekly: () => api.get('/checklist/weekly'),
+  toggle: (itemId: string) => api.post(`/checklist/${itemId}/toggle`),
+};

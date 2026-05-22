@@ -18,5 +18,5 @@ RUN npm run build || true
 
 EXPOSE 5000
 
-# Start script: Push schema to DB and start server
-CMD npx prisma db push && npm start
+# Start script: Run migrations and start server
+CMD npx prisma migrate deploy && npm start
