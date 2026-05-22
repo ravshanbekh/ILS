@@ -123,9 +123,10 @@ export default function UsersPage() {
       }
       setShowModal(false);
       fetchUsers(currentPage, debouncedSearch);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Xatolik yuz berdi');
+      const msg = error.response?.data?.message || 'Xatolik yuz berdi';
+      alert(msg);
     }
   };
 

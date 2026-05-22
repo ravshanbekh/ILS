@@ -16,7 +16,7 @@ export const createUserSchema = z.object({
     .string()
     .min(3, 'Login kamida 3 ta belgi')
     .max(50, 'Login 50 ta belgidan oshmasin')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Login faqat harf, raqam va _ bo\'lishi mumkin'),
+    .regex(/^[a-zA-Z0-9_.]+$/, 'Login faqat harf, raqam, nuqta va _ bo\'lishi mumkin'),
   password: z
     .string()
     .min(3, 'Parol kamida 3 ta belgi'),
@@ -28,7 +28,7 @@ export const createUserSchema = z.object({
 
 export const updateUserSchema = z.object({
   fullName: z.string().min(2).max(100).optional(),
-  login: z.string().min(3).max(50).optional(),
+  login: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_.]+$/).optional(),
   password: z.string().min(3).optional(),
   role: z.enum(ALL_ROLES).optional(),
   avatarUrl: z.string().url().optional().nullable(),
