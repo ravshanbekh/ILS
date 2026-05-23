@@ -51,7 +51,7 @@ const VIEWER_ROLE_LABELS: Record<ViewerRole, string> = {
   kassir: 'Kassir',
   administrator: 'Administrator',
   nazoratchi: 'Nazoratchi (Inspektor)',
-  hr_rahbari: 'HR Rahbari',
+  hr_rahbari: 'HR Menejeri',
   sotuv_operatori: 'Sotuv Menejeri',
   farrosh: 'Farrosh',
   robototexnika_ustoz: 'Robototexnika Ustoz',

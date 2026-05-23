@@ -268,7 +268,7 @@ export default function UsersPage() {
                             kassir: 'Kassir',
                             administrator: 'Administrator',
                             nazoratchi: 'Nazoratchi',
-                            hr_rahbari: 'HR Rahbari',
+                            hr_rahbari: 'HR Menejeri',
                             sotuv_operatori: 'Sotuv Op.',
                             farrosh: 'Farrosh',
                           };
@@ -436,7 +436,7 @@ export default function UsersPage() {
                     <option value="kassir">Kassir</option>
                     <option value="administrator">Administrator</option>
                     <option value="nazoratchi">Nazoratchi (Inspektor)</option>
-                    <option value="hr_rahbari">HR Rahbari</option>
+                    <option value="hr_rahbari">HR Menejeri</option>
                     <option value="sotuv_operatori">Sotuv Menejeri</option>
                     <option value="call_operatori">Call Operatori</option>
                     <option value="farrosh">Farrosh</option>

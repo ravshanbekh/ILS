@@ -9,7 +9,7 @@ const ROLE_LABELS: Record<string, string> = {
   kassir: 'Kassir',
   administrator: 'Administrator',
   nazoratchi: 'Nazoratchi (Inspektor)',
-  hr_rahbari: 'HR Rahbari',
+  hr_rahbari: 'HR Menejeri',
   sotuv_operatori: 'Sotuv Operatori',
   farrosh: 'Farrosh',
 };
