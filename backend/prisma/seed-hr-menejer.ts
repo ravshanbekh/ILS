@@ -57,7 +57,7 @@ const hrChecklists = [
     score: 1,
     section: "3. ISH JARAYONI — TUSHLIKDAN KEYIN",
     category: "Intizom va ish faoliyati kuzatuvi",
-    description": "Ichki tartib-qoidalarga rioya qilinishi"
+    description: "Ichki tartib-qoidalarga rioya qilinishi"
   },
   {
     role: "hr_rahbari" as const,
@@ -65,15 +65,15 @@ const hrChecklists = [
     score: 1,
     section: "3. ISH JARAYONI — TUSHLIKDAN KEYIN",
     category: "Xodimlar kayfiyati monitoringi",
-    description": "Jamoadagi ruhiy muhitni o'lchash - eNPS bu (xodimlarning kompaniyaga bo'lgan sodiqligi) darajasini aniqlash"
+    description: "Jamoadagi ruhiy muhitni o'lchash - eNPS bu (xodimlarning kompaniyaga bo'lgan sodiqligi) darajasini aniqlash"
   },
   {
     role: "hr_rahbari" as const,
     order: 9,
-    score": 1,
+    score: 1,
     section: "3. ISH JARAYONI — TUSHLIKDAN KEYIN",
     category: "Xodim murojaatlari bilan ishlash",
-    description": "Har bir murojaatga aniq javob berish - Hal qilib bo'lmasa mas'ullarga yo'naltirish"
+    description: "Har bir murojaatga aniq javob berish - Hal qilib bo'lmasa mas'ullarga yo'naltirish"
   },
   {
     role: "hr_rahbari" as const,
@@ -81,7 +81,7 @@ const hrChecklists = [
     score: 1,
     section: "3. ISH JARAYONI — TUSHLIKDAN KEYIN",
     category: "Kamida 1 ta individual suhbat",
-    description": "Rejalashtirilgan savollar asosida ishonchli muloqot - Maqsad: xodim holati, muammolar, taklif"
+    description: "Rejalashtirilgan savollar asosida ishonchli muloqot - Maqsad: xodim holati, muammolar, taklif"
   },
   {
     role: "hr_rahbari" as const,
@@ -89,7 +89,7 @@ const hrChecklists = [
     score: 1,
     section: "3. ISH JARAYONI — TUSHLIKDAN KEYIN",
     category: "EJM bilan ishlash",
-    description": "EJMga kirish - Bosqich bo'yicha harakatlanish - Yangi ma'lumotlar kiritildi"
+    description: "EJMga kirish - Bosqich bo'yicha harakatlanish - Yangi ma'lumotlar kiritildi"
   },
   {
     role: "hr_rahbari" as const,
@@ -97,7 +97,7 @@ const hrChecklists = [
     score: 1,
     section: "4. KUN YAKUNI",
     category: "Ertangi ish rejasini tuzish",
-    description": "Kechikkanlar ro'yhati - Nomzodlar oqimi - \"Yopilmagan\" nomzodlarga qayta aloqa - Sinov muddatidagi xodim bilan muloqot - 1 ta 45 daqiqalik yuzma-yuz suhbat rejasi"
+    description: "Kechikkanlar ro'yhati - Nomzodlar oqimi - \"Yopilmagan\" nomzodlarga qayta aloqa - Sinov muddatidagi xodim bilan muloqot - 1 ta 45 daqiqalik yuzma-yuz suhbat rejasi"
   },
   {
     role: "hr_rahbari" as const,
@@ -105,7 +105,7 @@ const hrChecklists = [
     score: 1,
     section: "4. KUN YAKUNI",
     category: "Rahbarga hisobot (Telegram)",
-    description": "Intizom va davomat - Recruiting holati - Adaptatsiya va jamoa kayfiyati - Hujjatlar va reja (bayram,tadbirlar tashkillashtirish)"
+    description: "Intizom va davomat - Recruiting holati - Adaptatsiya va jamoa kayfiyati - Hujjatlar va reja (bayram,tadbirlar tashkillashtirish)"
   }
 ];
 
