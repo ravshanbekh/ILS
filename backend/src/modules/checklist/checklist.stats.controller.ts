@@ -5,7 +5,7 @@ import prisma from '../../config/database';
 const CHECKLIST_ROLES = [
   'filial_rahbari', 'teacher', 'robototexnika_ustoz', 'assistant',
   'moliya_rahbari', 'sotuv_operatori', 'kassir', 'call_operatori',
-  'farrosh', 'nazoratchi',
+  'farrosh', 'nazoratchi', 'hr_rahbari',
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -19,6 +19,7 @@ const ROLE_LABELS: Record<string, string> = {
   call_operatori: 'Call Operatori',
   farrosh: 'Farrosh',
   nazoratchi: 'Nazoratchi',
+  hr_rahbari: 'HR Menejeri',
 };
 
 // Format: "YYYY-MM-DD"

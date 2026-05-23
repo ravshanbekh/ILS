@@ -10,7 +10,7 @@ const ROLE_LABELS: Record<string, string> = {
   administrator: 'Administrator',
   nazoratchi: 'Nazoratchi (Inspektor)',
   hr_rahbari: 'HR Menejeri',
-  sotuv_operatori: 'Sotuv Operatori',
+  sotuv_operatori: 'Sotuv Menejeri',
   farrosh: 'Farrosh',
 };
 
@@ -25,6 +25,7 @@ const CHECKLIST_ROLES = [
   'call_operatori',
   'farrosh',
   'nazoratchi',
+  'hr_rahbari',
 ];
 
 export default function ViewerDashboardPage() {
