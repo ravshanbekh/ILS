@@ -124,8 +124,7 @@ async function main() {
     });
     added++;
   }
-
-  console.log(\`Seed finished. Added \${added} items for HR Menejeri.\`);
+  console.log(`Seed finished. Added ${added} items for HR Menejeri.`);
 }
 
 main()
