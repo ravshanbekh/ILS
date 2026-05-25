@@ -29,6 +29,7 @@ import AdminSettingsPage from '@/pages/admin/SettingsPage';
 import MonthlyReportPrintPage from '@/pages/admin/MonthlyReportPrintPage';
 import ViewerDashboardPage from '@/pages/viewer/DashboardPage';
 import ChecklistStatsPage from '@/pages/admin/ChecklistStatsPage';
+import ChecklistManagePage from '@/pages/admin/ChecklistManagePage';
 import { socket } from '@/utils/socket';
 import { useEffect } from 'react';
 
@@ -140,6 +141,7 @@ export default function App() {
               <Route path="/admin/export" element={<ExportPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
               <Route path="/admin/checklist-stats" element={<ChecklistStatsPage />} />
+              <Route path="/admin/checklist-manage" element={<ChecklistManagePage />} />
             </Route>
 
             {/* Teacher routes */}
@@ -186,6 +188,7 @@ export default function App() {
             >
               <Route path="/viewer/:role" element={<ViewerDashboardPage />} />
               <Route path="/viewer/nazoratchi/checklist-stats" element={<ChecklistStatsPage />} />
+              <Route path="/viewer/nazoratchi/checklist-manage" element={<ChecklistManagePage />} />
             </Route>
 
             {/* Default redirect */}

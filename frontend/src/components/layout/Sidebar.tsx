@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import {
   LayoutDashboard, Users, FolderOpen, BookOpen, ClipboardCheck,
-  BarChart3, Trophy, Download, LogOut, GraduationCap, Video, Settings, X,
+  BarChart3, Trophy, Download, LogOut, GraduationCap, Video, Settings, X, ClipboardList,
 } from 'lucide-react';
 
 const adminLinks = [
@@ -13,6 +13,7 @@ const adminLinks = [
   { to: '/admin/submissions', icon: ClipboardCheck, label: 'Topshiriqlar' },
   { to: '/admin/stats', icon: BarChart3, label: 'Statistika' },
   { to: '/admin/checklist-stats', icon: ClipboardCheck, label: 'Cheklist Hisobot' },
+  { to: '/admin/checklist-manage', icon: ClipboardList, label: 'Cheklist Boshqaruv' },
   { to: '/admin/rankings', icon: Trophy, label: 'Reyting' },
   { to: '/admin/export', icon: Download, label: 'Eksport' },
   { to: '/admin/settings', icon: Settings, label: 'Sozlamalar' },
@@ -72,6 +73,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const nazoratchiLinks = user?.role === 'nazoratchi' ? [
     { to: `/viewer/nazoratchi`, icon: LayoutDashboard, label: 'Dashboard' },
     { to: `/viewer/nazoratchi/checklist-stats`, icon: BarChart3, label: 'Cheklist Hisobot' },
+    { to: `/viewer/nazoratchi/checklist-manage`, icon: ClipboardList, label: 'Cheklist Boshqaruv' },
   ] : [];
 
   const viewerLinks = isViewer && user?.role !== 'nazoratchi' ? [
