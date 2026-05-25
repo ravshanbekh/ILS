@@ -79,6 +79,105 @@ function getInitials(name: string) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
+// ── Farrosh Read-only Checklist Modal ─────────────────────────────────────────
+function FarroshChecklistModal({ onClose }: { onClose: () => void }) {
+  const [sections, setSections] = useState<{ name: string; items: { id: string; category: string; description: string; order: number }[] }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/checklist/items?role=farrosh');
+        const items: { id: string; category: string; description: string; order: number; section?: string }[] = res.data.data || res.data;
+        const grouped: Record<string, typeof items> = {};
+        for (const item of items) {
+          const sec = item.section || 'Umumiy';
+          if (!grouped[sec]) grouped[sec] = [];
+          grouped[sec].push(item);
+        }
+        setSections(Object.entries(grouped).map(([name, its]) => ({ name, items: its.sort((a, b) => a.order - b.order) })));
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleBackdrop = (e: React.MouseEvent) => { if (e.target === e.currentTarget) onClose(); };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(6px)' }}
+      onClick={handleBackdrop}
+    >
+      <div className="w-full max-w-lg max-h-[85vh] flex flex-col bg-[#111113] border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-zinc-800 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+              <ClipboardList className="w-5 h-5 text-orange-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Farrosh — Checklist</h2>
+              <p className="text-xs text-zinc-500">Kunlik vazifalar ro'yxati</p>
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-all">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {loading && (
+            <div className="flex items-center justify-center h-32">
+              <div className="w-7 h-7 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+          {!loading && sections.map(sec => (
+            <div key={sec.name}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-px flex-1 bg-zinc-800" />
+                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider px-2">{sec.name}</span>
+                <div className="h-px flex-1 bg-zinc-800" />
+              </div>
+              <div className="space-y-2">
+                {sec.items.map((item, idx) => (
+                  <div key={item.id} className="flex items-start gap-3 p-3 rounded-xl border border-zinc-800 bg-zinc-900/60">
+                    <div className="w-6 h-6 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-zinc-500">{idx + 1}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white">{item.category}</p>
+                      {item.description && (
+                        <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{item.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          {!loading && sections.length === 0 && (
+            <div className="text-center py-10 text-zinc-600">
+              <ClipboardList className="w-10 h-10 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">Checklist topilmadi</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Detail Modal ──────────────────────────────────────────────────────────────
 function UserDetailModal({
   userId, date, roleLabel, onClose
@@ -293,6 +392,7 @@ export default function ChecklistStatsPage() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selectedUser, setSelectedUser] = useState<{ id: string; roleLabel: string } | null>(null);
+  const [showFarroshModal, setShowFarroshModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(toLocalDateStr(new Date()));
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [secondsAgo, setSecondsAgo] = useState(0);
@@ -386,6 +486,11 @@ export default function ChecklistStatsPage() {
           roleLabel={selectedUser.roleLabel}
           onClose={() => setSelectedUser(null)}
         />
+      )}
+
+      {/* Farrosh Checklist Modal */}
+      {showFarroshModal && (
+        <FarroshChecklistModal onClose={() => setShowFarroshModal(false)} />
       )}
 
       <div className="p-6 space-y-6 max-w-6xl mx-auto">
@@ -530,8 +635,11 @@ export default function ChecklistStatsPage() {
               <div key={role.role} className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden">
                 {/* Role header */}
                 <div
-                  onClick={() => role.totalUsers > 0 && toggleExpand(role.role)}
-                  className={`flex items-center gap-4 p-4 ${role.totalUsers > 0 ? 'cursor-pointer hover:bg-zinc-800/40' : ''} transition-colors`}
+                  onClick={() => {
+                    if (role.role === 'farrosh') { setShowFarroshModal(true); return; }
+                    if (role.totalUsers > 0) toggleExpand(role.role);
+                  }}
+                  className={`flex items-center gap-4 p-4 ${role.role === 'farrosh' || role.totalUsers > 0 ? 'cursor-pointer hover:bg-zinc-800/40' : ''} transition-colors`}
                 >
                   <div className="w-5 shrink-0">
                     {role.totalUsers > 0 && (
