@@ -12,6 +12,8 @@ interface TutorialVideo {
 interface TutorialVideos {
   platformRules: TutorialVideo;
   normativeRules: TutorialVideo;
+  obsStudio?: TutorialVideo;
+  youtubeChannel?: TutorialVideo;
 }
 
 /**
@@ -60,7 +62,7 @@ function getYouTubeThumbnail(url: string): string | null {
 export default function MyNormativesGuidePage() {
   const [videos, setVideos] = useState<TutorialVideos | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeVideo, setActiveVideo] = useState<'platform' | 'normative' | null>(null);
+  const [activeVideo, setActiveVideo] = useState<'platform' | 'normative' | 'obs' | 'ytchannel' | null>(null);
 
   useEffect(() => {
     settingsApi.getTutorialVideos()
@@ -85,7 +87,15 @@ export default function MyNormativesGuidePage() {
     ? getYouTubeEmbedUrl(videos.normativeRules.youtubeUrl)
     : null;
 
-  const hasAnyVideo = platformEmbedUrl || normativeEmbedUrl;
+  const obsEmbedUrl = videos?.obsStudio?.youtubeUrl
+    ? getYouTubeEmbedUrl(videos.obsStudio.youtubeUrl)
+    : null;
+
+  const ytChannelEmbedUrl = videos?.youtubeChannel?.youtubeUrl
+    ? getYouTubeEmbedUrl(videos.youtubeChannel.youtubeUrl)
+    : null;
+
+  const hasAnyVideo = platformEmbedUrl || normativeEmbedUrl || obsEmbedUrl || ytChannelEmbedUrl;
 
   return (
     <div>
@@ -156,6 +166,38 @@ export default function MyNormativesGuidePage() {
               gradient="from-emerald-500 to-teal-500"
               accentColor="emerald"
             />
+
+            {/* Video 3: OBS Studio */}
+            {obsEmbedUrl && (
+              <VideoCard
+                number={3}
+                title={videos?.obsStudio?.title || 'OBS Studio o\'rnatish va sozlash'}
+                description={videos?.obsStudio?.description || 'OBS Studio dasturini o\'rnatish va sozlash bo\'yicha qo\'llanma'}
+                embedUrl={obsEmbedUrl}
+                youtubeUrl={videos?.obsStudio?.youtubeUrl || ''}
+                isActive={activeVideo === 'obs'}
+                onActivate={() => setActiveVideo('obs')}
+                icon={<PlayCircle className="w-5 h-5" />}
+                gradient="from-purple-500 to-violet-500"
+                accentColor="purple"
+              />
+            )}
+
+            {/* Video 4: YouTube kanal */}
+            {ytChannelEmbedUrl && (
+              <VideoCard
+                number={4}
+                title={videos?.youtubeChannel?.title || 'YouTube kanal ochish va video joylash'}
+                description={videos?.youtubeChannel?.description || 'YouTube kanalini qanday ochish va video joylash bo\'yicha qo\'llanma'}
+                embedUrl={ytChannelEmbedUrl}
+                youtubeUrl={videos?.youtubeChannel?.youtubeUrl || ''}
+                isActive={activeVideo === 'ytchannel'}
+                onActivate={() => setActiveVideo('ytchannel')}
+                icon={<BookOpen className="w-5 h-5" />}
+                gradient="from-red-500 to-rose-500"
+                accentColor="red"
+              />
+            )}
           </div>
         )}
 

@@ -12,6 +12,12 @@ export default function SettingsPage() {
   const [normativeUrl, setNormativeUrl] = useState('');
   const [normativeTitle, setNormativeTitle] = useState('');
   const [normativeDesc, setNormativeDesc] = useState('');
+  const [obsUrl, setObsUrl] = useState('');
+  const [obsTitle, setObsTitle] = useState('');
+  const [obsDesc, setObsDesc] = useState('');
+  const [ytChannelUrl, setYtChannelUrl] = useState('');
+  const [ytChannelTitle, setYtChannelTitle] = useState('');
+  const [ytChannelDesc, setYtChannelDesc] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -40,6 +46,16 @@ export default function SettingsPage() {
           setNormativeTitle(data.normativeRules.title || '');
           setNormativeDesc(data.normativeRules.description || '');
         }
+        if (data?.obsStudio) {
+          setObsUrl(data.obsStudio.youtubeUrl || '');
+          setObsTitle(data.obsStudio.title || '');
+          setObsDesc(data.obsStudio.description || '');
+        }
+        if (data?.youtubeChannel) {
+          setYtChannelUrl(data.youtubeChannel.youtubeUrl || '');
+          setYtChannelTitle(data.youtubeChannel.title || '');
+          setYtChannelDesc(data.youtubeChannel.description || '');
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -59,6 +75,16 @@ export default function SettingsPage() {
           youtubeUrl: normativeUrl,
           title: normativeTitle,
           description: normativeDesc,
+        },
+        obsStudio: {
+          youtubeUrl: obsUrl,
+          title: obsTitle,
+          description: obsDesc,
+        },
+        youtubeChannel: {
+          youtubeUrl: ytChannelUrl,
+          title: ytChannelTitle,
+          description: ytChannelDesc,
         },
       });
       setSaveStatus('success');
@@ -220,6 +246,100 @@ export default function SettingsPage() {
                     onChange={(e) => setNormativeDesc(e.target.value)}
                     placeholder="Qisqacha tavsif..."
                     className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all duration-200"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-800/50"></div>
+
+            {/* Video 3: OBS Studio */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-500 text-sm font-bold border border-purple-500/20">
+                  3
+                </div>
+                <h3 className="text-sm font-bold text-white">OBS Studio o'rnatish va sozlash</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-11">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">YouTube URL</label>
+                  <div className="relative">
+                    <input
+                      type="url"
+                      value={obsUrl}
+                      onChange={(e) => setObsUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200"
+                    />
+                    <PlayCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Sarlavha</label>
+                  <input
+                    type="text"
+                    value={obsTitle}
+                    onChange={(e) => setObsTitle(e.target.value)}
+                    placeholder="OBS Studio o'rnatish va sozlash"
+                    className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Tavsif</label>
+                  <input
+                    type="text"
+                    value={obsDesc}
+                    onChange={(e) => setObsDesc(e.target.value)}
+                    placeholder="Qisqacha tavsif..."
+                    className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-200"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-800/50"></div>
+
+            {/* Video 4: YouTube kanal */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 text-sm font-bold border border-red-500/20">
+                  4
+                </div>
+                <h3 className="text-sm font-bold text-white">YouTube kanal ochish va video joylash</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-11">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">YouTube URL</label>
+                  <div className="relative">
+                    <input
+                      type="url"
+                      value={ytChannelUrl}
+                      onChange={(e) => setYtChannelUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all duration-200"
+                    />
+                    <PlayCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Sarlavha</label>
+                  <input
+                    type="text"
+                    value={ytChannelTitle}
+                    onChange={(e) => setYtChannelTitle(e.target.value)}
+                    placeholder="YouTube kanal ochish va video joylash"
+                    className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Tavsif</label>
+                  <input
+                    type="text"
+                    value={ytChannelDesc}
+                    onChange={(e) => setYtChannelDesc(e.target.value)}
+                    placeholder="Qisqacha tavsif..."
+                    className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all duration-200"
                   />
                 </div>
               </div>

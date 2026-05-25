@@ -16,6 +16,16 @@ const defaultSettings = {
       youtubeUrl: '',
       description: 'Normativlarni qanday bajarish kerakligi haqida video',
     },
+    obsStudio: {
+      title: 'OBS Studio o\'rnatish va sozlash',
+      youtubeUrl: '',
+      description: 'OBS Studio dasturini o\'rnatish va sozlash bo\'yicha qo\'llanma',
+    },
+    youtubeChannel: {
+      title: 'YouTube kanal ochish va video joylash',
+      youtubeUrl: '',
+      description: 'YouTube kanalini qanday ochish va video joylash bo\'yicha qo\'llanma',
+    },
   },
 };
 
@@ -59,6 +69,8 @@ class SettingsService {
   async updateTutorialVideos(data: {
     platformRules?: { youtubeUrl: string; title?: string; description?: string };
     normativeRules?: { youtubeUrl: string; title?: string; description?: string };
+    obsStudio?: { youtubeUrl: string; title?: string; description?: string };
+    youtubeChannel?: { youtubeUrl: string; title?: string; description?: string };
   }) {
     const settings = this.readSettings();
 
@@ -73,6 +85,20 @@ class SettingsService {
       settings.tutorialVideos.normativeRules = {
         ...settings.tutorialVideos.normativeRules,
         ...data.normativeRules,
+      };
+    }
+
+    if (data.obsStudio) {
+      (settings.tutorialVideos as any).obsStudio = {
+        ...(settings.tutorialVideos as any).obsStudio,
+        ...data.obsStudio,
+      };
+    }
+
+    if (data.youtubeChannel) {
+      (settings.tutorialVideos as any).youtubeChannel = {
+        ...(settings.tutorialVideos as any).youtubeChannel,
+        ...data.youtubeChannel,
       };
     }
 
