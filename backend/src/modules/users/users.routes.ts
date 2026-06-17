@@ -7,6 +7,9 @@ const router = Router();
 // Barcha routelar authenticate talab qiladi
 router.use(authenticate);
 
+// GET /api/users/ungrouped — Guruhsiz o'quvchilar (GroupDetailPage bug fix)
+router.get('/ungrouped', roleGuard('admin', 'teacher'), usersController.getUngrouped);
+
 // GET /api/users/my-students — Teacher o'z o'quvchilarini tezkor oladi (bitta query)
 router.get('/my-students', roleGuard('teacher'), usersController.getMyStudents);
 

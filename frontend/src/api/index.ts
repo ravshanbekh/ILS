@@ -19,6 +19,10 @@ export const usersApi = {
   getAll: (page: number = 1, limit: number = 100, role?: string, search?: string) =>
     api.get('/users', { params: { page, limit, role, search } }),
 
+  // Guruhsiz o'quvchilar (bug fix - pagination chegarasiz)
+  getUngrouped: (search?: string) =>
+    api.get('/users/ungrouped', { params: { search } }),
+
   // Teacher uchun tezkor endpoint — bitta DB query
   getMyStudents: (page: number = 1, limit: number = 100, search?: string) =>
     api.get('/users/my-students', { params: { page, limit, search } }),
@@ -124,6 +128,48 @@ export const settingsApi = {
     platformRules?: { youtubeUrl: string; title?: string; description?: string };
     normativeRules?: { youtubeUrl: string; title?: string; description?: string };
   }) => api.put('/settings/tutorial-videos', data),
+
+  // Gemini AI sozlamalari
+  getGeminiStatus: () => api.get('/settings/gemini'),
+  updateGemini: (data: { apiKey: string; model?: string }) => api.put('/settings/gemini', data),
+  testGemini: () => api.post('/settings/gemini/test'),
+};
+
+export const freezesApi = {
+  // Muzlatish (admin, administrator, sotuv_operatori, kassir)
+  freeze: (data: {
+    studentId: string;
+    reason: string;
+    detailedNote?: string;
+    phone?: string;
+    startDate?: string;
+    filial?: string;
+  }) => api.post('/freezes', data),
+
+  // Ro'yxat (admin, filial_rahbari, kassir)
+  getAll: (params?: {
+    month?: number;
+    year?: number;
+    reason?: string;
+    teacherName?: string;
+    filial?: string;
+    search?: string;
+  }) => api.get('/freezes', { params }),
+
+  // Hisobot (5 tab uchun ma'lumotlar)
+  getReport: (month: number, year: number) =>
+    api.get('/freezes/report', { params: { month, year } }),
+
+  // O'qituvchilar reytingi
+  getTeacherRating: (month: number, year: number) =>
+    api.get('/freezes/teacher-rating', { params: { month, year } }),
+
+  // Gemini AI tahlil
+  analyzeWithAI: (month: number, year: number) =>
+    api.post('/freezes/ai-analyze', { month, year }),
+
+  // Bekor qilish (admin only)
+  unfreeze: (id: string) => api.delete(`/freezes/${id}`),
 };
 
 export const notificationsApi = {

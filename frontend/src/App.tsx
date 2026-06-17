@@ -28,6 +28,8 @@ import AdminRankingsPage from '@/pages/admin/RankingsPage';
 import AdminSettingsPage from '@/pages/admin/SettingsPage';
 import MonthlyReportPrintPage from '@/pages/admin/MonthlyReportPrintPage';
 import ViewerDashboardPage from '@/pages/viewer/DashboardPage';
+import FrozenStudentsPage from '@/pages/shared/FrozenStudentsPage';
+import TeacherRatingPage from '@/pages/admin/TeacherRatingPage';
 import ChecklistStatsPage from '@/pages/admin/ChecklistStatsPage';
 import ChecklistManagePage from '@/pages/admin/ChecklistManagePage';
 import { socket } from '@/utils/socket';
@@ -138,6 +140,8 @@ export default function App() {
               <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/rankings" element={<AdminRankingsPage />} />
+              <Route path="/admin/frozen-students" element={<FrozenStudentsPage />} />
+              <Route path="/admin/teacher-rating" element={<TeacherRatingPage />} />
               <Route path="/admin/export" element={<ExportPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
               <Route path="/admin/checklist-stats" element={<ChecklistStatsPage />} />
@@ -187,6 +191,8 @@ export default function App() {
               }
             >
               <Route path="/viewer/:role" element={<ViewerDashboardPage />} />
+              <Route path="/viewer/:role/frozen-students" element={<FrozenStudentsPage />} />
+              <Route path="/viewer/:role/teacher-rating" element={<TeacherRatingPage />} />
               <Route path="/viewer/nazoratchi/checklist-stats" element={<ChecklistStatsPage />} />
               <Route path="/viewer/nazoratchi/checklist-manage" element={<ChecklistManagePage />} />
             </Route>

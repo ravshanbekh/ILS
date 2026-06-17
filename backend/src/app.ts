@@ -21,6 +21,7 @@ import backupRoutes from './modules/backup/backup.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import categoriesRoutes from './modules/categories/categories.routes';
 import checklistRoutes from './modules/checklist/checklist.routes';
+import freezesRoutes from './modules/freezes/freezes.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -71,6 +72,7 @@ app.use('/api/backup', backupRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/checklist', checklistRoutes);
+app.use('/api/freezes', freezesRoutes);
 
 // 404 handler
 app.use((_req, res) => {

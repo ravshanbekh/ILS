@@ -82,9 +82,17 @@ class ExportService {
     // Ball bo'yicha tartiblash
     studentStats.sort((a, b) => b.totalScore - a.totalScore);
 
-    studentStats.forEach((s, index) => {
+    let currentRank = 1;
+    let previousScore: number | null = null;
+
+    studentStats.forEach((s) => {
+      if (previousScore !== null && s.totalScore < previousScore) {
+        currentRank++;
+      }
+      previousScore = s.totalScore;
+
       const row = sheet1.addRow({
-        rank: index + 1,
+        rank: currentRank,
         student: s.student.fullName,
         totalScore: s.totalScore,
         completed: s.completed,
@@ -94,10 +102,10 @@ class ExportService {
         red: s.red,
       });
 
-      // Top 3 uchun maxsus rang
-      if (index === 0) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } };
-      if (index === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC0C0C0' } };
-      if (index === 2) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCD7F32' } };
+      // Top 3 uchun maxsus rang (O'rin bo'yicha)
+      if (currentRank === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } };
+      if (currentRank === 2) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC0C0C0' } };
+      if (currentRank === 3) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCD7F32' } };
     });
 
     // ============ SHEET 2: Normativlar bo'yicha ============
@@ -331,9 +339,17 @@ class ExportService {
     // Sort by performance (volume * quality)
     teacherStats.sort((a, b) => b.scoreForSort - a.scoreForSort);
 
-    teacherStats.forEach((stat, index) => {
+    let currentTeacherRank = 1;
+    let previousTeacherScore: number | null = null;
+
+    teacherStats.forEach((stat) => {
+      if (previousTeacherScore !== null && stat.scoreForSort < previousTeacherScore) {
+        currentTeacherRank++;
+      }
+      previousTeacherScore = stat.scoreForSort;
+
       sheet.addRow({
-        rank: index + 1,
+        rank: currentTeacherRank,
         teacher: stat.teacher,
         groupsCount: stat.groupsCount,
         studentsCount: stat.studentsCount,

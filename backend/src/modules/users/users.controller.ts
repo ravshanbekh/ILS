@@ -40,6 +40,19 @@ class UsersController {
   }
 
   /**
+   * GET /api/users/ungrouped — Hech bir guruhda bo'lmagan o'quvchilar
+   */
+  async getUngrouped(req: Request, res: Response, next: NextFunction) {
+    try {
+      const search = req.query.search as string | undefined;
+      const data = await usersService.getUngrouped(search);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /api/users/:id — Bitta foydalanuvchi
    */
   async getById(req: Request, res: Response, next: NextFunction) {

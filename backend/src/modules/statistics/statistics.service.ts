@@ -98,10 +98,18 @@ class StatisticsService {
     );
 
     teacherStats.sort((a, b) => b.scoreForSort - a.scoreForSort);
-    return teacherStats.map((stat, index) => ({
-      rank: index + 1,
-      ...stat
-    }));
+    let currentRank = 1;
+    let previousScore: number | null = null;
+    return teacherStats.map((stat) => {
+      if (previousScore !== null && stat.scoreForSort < previousScore) {
+        currentRank++;
+      }
+      previousScore = stat.scoreForSort;
+      return {
+        rank: currentRank,
+        ...stat
+      };
+    });
   }
 
   /**
@@ -227,8 +235,14 @@ class StatisticsService {
 
     // O'ringa bo'yicha tartiblash
     studentStats.sort((a, b) => b.totalScore - a.totalScore);
-    studentStats.forEach((s, index) => {
-      (s as any).rank = index + 1;
+    let currentGroupRank = 1;
+    let previousGroupScore: number | null = null;
+    studentStats.forEach((s) => {
+      if (previousGroupScore !== null && s.totalScore < previousGroupScore) {
+        currentGroupRank++;
+      }
+      previousGroupScore = s.totalScore;
+      (s as any).rank = currentGroupRank;
     });
 
     // Umumiy ko'rsatkichlar
@@ -310,7 +324,21 @@ class StatisticsService {
         );
 
         scores.sort((a, b) => b.totalScore - a.totalScore);
-        const rank = scores.findIndex((s) => s.studentId === studentId) + 1;
+        
+        let currentGroupRankForStudent = 1;
+        let previousScoreForStudent: number | null = null;
+        let finalRank = 1;
+        for (let i = 0; i < scores.length; i++) {
+          if (previousScoreForStudent !== null && scores[i].totalScore < previousScoreForStudent) {
+            currentGroupRankForStudent++;
+          }
+          previousScoreForStudent = scores[i].totalScore;
+          if (scores[i].studentId === studentId) {
+            finalRank = currentGroupRankForStudent;
+            break;
+          }
+        }
+        const rank = finalRank;
 
         return {
           group: gs.group,

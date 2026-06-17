@@ -61,6 +61,8 @@ model User {
   notifications       Notification[]
   auditLogs           AuditLog[]
   checklistEntries    DailyChecklistEntry[]
+  frozenEntries       StudentFreeze[]   @relation("FrozenStudents")
+  frozenByEntries     StudentFreeze[]   @relation("FrozenBy")
 
   @@map("users")
 }
@@ -259,4 +261,51 @@ model DailyChecklistEntry {
 
   @@unique([userId, checklistItemId, date])
   @@map("daily_checklist_entries")
+}
+
+// ============ FREEZE SYSTEM ============
+
+enum FreezeReason {
+  moliyaviy           // Moliyaviy (to'lov)
+  kochib_ketish       // Ko'chib/safarga ketish
+  vaqtincha_toxtatgan // Vaqtincha to'xtatgan (qaytish rejasi bor)
+  kasallik            // Kasallik
+  kanikul             // Lager/Kanikul (vaqtinchalik)
+  boshqa_fan          // Boshqa fan/sertifikatga o'tish
+  kurs_tugadi         // Kurs tugadi, davomi yo'q
+  motivatsiya         // Motivatsiya/oilaviy sabab
+  ish_tadbir          // Ishga ketish/oilaviy tadbir
+  universitet         // Universitet sessiyasi
+  shaxsiy             // Shaxsiy sabab
+  oqituvchidan_norozi // O'qituvchidan norozilik
+  boshqa              // Boshqa
+  sabab_korsatilmagan // Sabab ko'rsatilmagan
+}
+
+/// Muzlatilgan O'quvchilar (Ketish Hisoboti)
+model StudentFreeze {
+  id           String       @id @default(uuid()) @db.Uuid
+  studentId    String       @map("student_id") @db.Uuid
+  frozenById   String       @map("frozen_by_id") @db.Uuid
+  frozenAt     DateTime     @default(now()) @map("frozen_at")
+  month        Int          // Muzlatilgan oy (1-12)
+  year         Int          // Muzlatilgan yil (2025, 2026...)
+  reason       FreezeReason // Sabab kategoriyasi
+  detailedNote String?      @map("detailed_note") @db.VarChar(1000)
+  phone        String?      @db.VarChar(30)
+  startDate    DateTime?    @map("start_date") // Kursga kirgan sana
+  filial       String?      @db.VarChar(100)  // Filial (Beeline, Stomatologiya...)
+
+  // Muzlatish vaqtidagi snapshot (o'zgarmas qoladi)
+  studentName  String       @map("student_name") @db.VarChar(200)
+  teacherName  String?      @map("teacher_name") @db.VarChar(200)
+  groupName    String?      @map("group_name")   @db.VarChar(100)
+
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  student  User @relation("FrozenStudents", fields: [studentId], references: [id])
+  frozenBy User @relation("FrozenBy",       fields: [frozenById],  references: [id])
+
+  @@map("student_freezes")
 }

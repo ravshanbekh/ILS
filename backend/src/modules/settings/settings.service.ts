@@ -4,7 +4,7 @@ import path from 'path';
 const SETTINGS_FILE = path.join(__dirname, '../../../data/settings.json');
 
 // Default settings
-const defaultSettings = {
+const defaultSettings: any = {
   tutorialVideos: {
     platformRules: {
       title: 'Platforma ishlatish qoidalari',
@@ -27,6 +27,8 @@ const defaultSettings = {
       description: 'YouTube kanalini qanday ochish va video joylash bo\'yicha qo\'llanma',
     },
   },
+  geminiApiKey: '',
+  geminiModel: 'gemini-2.0-flash',
 };
 
 class SettingsService {
@@ -104,6 +106,55 @@ class SettingsService {
 
     this.writeSettings(settings);
     return settings.tutorialVideos;
+  }
+
+  /**
+   * Gemini konfiguratsiyasini olish
+   * API key ni bermaydi (faqat isConfigured qaytaradi)
+   */
+  async getGeminiStatus() {
+    const settings = this.readSettings();
+    return {
+      isConfigured: !!(settings as any).geminiApiKey,
+      model: (settings as any).geminiModel || 'gemini-2.0-flash',
+    };
+  }
+
+  /**
+   * Gemini konfiguratsiyasini yangilash (admin only)
+   */
+  async updateGeminiConfig(data: { apiKey?: string; model?: string }) {
+    const settings = this.readSettings();
+    if (data.apiKey !== undefined) (settings as any).geminiApiKey = data.apiKey;
+    if (data.model !== undefined) (settings as any).geminiModel = data.model;
+    this.writeSettings(settings);
+    return { isConfigured: !!(settings as any).geminiApiKey, model: (settings as any).geminiModel };
+  }
+
+  /**
+   * Gemini API key ni test qilish
+   */
+  async testGeminiConfig() {
+    const settings = this.readSettings();
+    const apiKey = (settings as any).geminiApiKey;
+    const model = (settings as any).geminiModel || 'gemini-2.0-flash';
+
+    if (!apiKey) return { success: false, message: 'API key kiritilmagan' };
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'Hello' }] }] }),
+        }
+      );
+      if (response.ok) return { success: true, message: 'Gemini ishlayapti ✅' };
+      return { success: false, message: 'API key noto\'g\'ri ❌' };
+    } catch {
+      return { success: false, message: 'Gemini API bilan bog\'lanib bo\'lmadi' };
+    }
   }
 }
 

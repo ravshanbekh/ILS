@@ -74,11 +74,19 @@ class RankingsService {
     // Ball bo'yicha tartiblash
     studentScores.sort((a, b) => b.totalScore - a.totalScore);
 
-    // Rank qo'shish
-    const ranked = studentScores.map((s, index) => ({
-      rank: index + 1,
-      ...s,
-    }));
+    // Rank qo'shish (Dense Ranking)
+    let currentRank = 1;
+    let previousScore: number | null = null;
+    const ranked = studentScores.map((s) => {
+      if (previousScore !== null && s.totalScore < previousScore) {
+        currentRank++;
+      }
+      previousScore = s.totalScore;
+      return {
+        rank: currentRank,
+        ...s,
+      };
+    });
 
     // Pagination
     const total = ranked.length;
@@ -142,11 +150,19 @@ class RankingsService {
     // Ball bo'yicha tartiblash
     studentScores.sort((a, b) => b.totalScore - a.totalScore);
 
-    // Rank qo'shish
-    const ranked = studentScores.map((s, index) => ({
-      rank: index + 1,
-      ...s,
-    }));
+    // Rank qo'shish (Dense Ranking)
+    let currentGroupRank = 1;
+    let previousGroupScore: number | null = null;
+    const ranked = studentScores.map((s) => {
+      if (previousGroupScore !== null && s.totalScore < previousGroupScore) {
+        currentGroupRank++;
+      }
+      previousGroupScore = s.totalScore;
+      return {
+        rank: currentGroupRank,
+        ...s,
+      };
+    });
 
     // Guruh normativlari soni
     const normativesCount = await prisma.groupNormative.count({

@@ -47,6 +47,31 @@ class UsersService {
   }
 
   /**
+   * Guruhda bo'lmagan o'quvchilarni olish (GroupDetailPage uchun bug fix)
+   * Pagination CHEGARASI yo'q — barcha guruhsiz o'quvchilar qaytariladi
+   */
+  async getUngrouped(search?: string) {
+    const where: Prisma.UserWhereInput = {
+      role: 'student',
+      isActive: true,
+      groupStudents: { none: {} }, // Hech bir guruhda yo'q
+    };
+
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { login: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    return prisma.user.findMany({
+      where,
+      select: { id: true, fullName: true, login: true, avatarUrl: true, createdAt: true },
+      orderBy: { fullName: 'asc' },
+    });
+  }
+
+  /**
    * Teacher ning barcha o'quvchilarini BITTA so'rovda olish (tezkor)
    */
   async getMyStudents(teacherId: string, params: PaginationParams, search?: string) {

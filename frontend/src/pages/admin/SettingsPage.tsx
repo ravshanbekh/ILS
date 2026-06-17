@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Header from '@/components/layout/Header';
 import { settingsApi, authApi } from '@/api';
-import { Settings, PlayCircle, Save, Loader2, CheckCircle2, AlertCircle, Video, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Settings, PlayCircle, Save, Loader2, CheckCircle2, AlertCircle, Video, Lock, User, Eye, EyeOff, Brain } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function SettingsPage() {
@@ -32,6 +32,15 @@ export default function SettingsPage() {
   const [profileStatus, setProfileStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [profileError, setProfileError] = useState('');
 
+  // Gemini settings
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [geminiModel, setGeminiModel] = useState('');
+  const [geminiStatus, setGeminiStatus] = useState<any>(null);
+  const [geminiSaving, setGeminiSaving] = useState(false);
+  const [geminiSaveStatus, setGeminiSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [geminiTesting, setGeminiTesting] = useState(false);
+  const [geminiTestResult, setGeminiTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
   useEffect(() => {
     settingsApi.getTutorialVideos()
       .then((res) => {
@@ -59,6 +68,13 @@ export default function SettingsPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    settingsApi.getGeminiStatus()
+      .then(res => {
+        setGeminiStatus(res.data.data);
+        setGeminiModel(res.data.data?.model || 'gemini-2.0-flash');
+      })
+      .catch(console.error);
   }, []);
 
   const handleSave = async () => {
@@ -126,6 +142,36 @@ export default function SettingsPage() {
       setTimeout(() => setProfileStatus('idle'), 3000);
     } finally {
       setProfileSaving(false);
+    }
+  };
+
+  const handleGeminiSave = async () => {
+    setGeminiSaving(true);
+    setGeminiSaveStatus('idle');
+    try {
+      const res = await settingsApi.updateGemini({ apiKey: geminiApiKey || undefined, model: geminiModel || undefined } as any);
+      setGeminiStatus(res.data.data);
+      setGeminiSaveStatus('success');
+      setGeminiApiKey('');
+      setTimeout(() => setGeminiSaveStatus('idle'), 3000);
+    } catch (e) {
+      setGeminiSaveStatus('error');
+      setTimeout(() => setGeminiSaveStatus('idle'), 3000);
+    } finally {
+      setGeminiSaving(false);
+    }
+  };
+
+  const handleGeminiTest = async () => {
+    setGeminiTesting(true);
+    setGeminiTestResult(null);
+    try {
+      const res = await settingsApi.testGemini();
+      setGeminiTestResult(res.data.data);
+    } catch (e: any) {
+      setGeminiTestResult({ success: false, message: e.response?.data?.message || 'Xatolik yuz berdi' });
+    } finally {
+      setGeminiTesting(false);
     }
   };
 
@@ -377,6 +423,92 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Gemini AI Settings Section */}
+        <div className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden">
+          <div className="p-5 border-b border-zinc-800 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-600 flex items-center justify-center shadow-lg">
+              <Brain className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-tight">Gemini AI Sozlamalari</h2>
+              <p className="text-xs text-zinc-400">Sun'iy intellekt orqali tahlillar uchun Google Gemini API Key</p>
+            </div>
+          </div>
+
+          <div className="p-5 space-y-5">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#09090b] border border-zinc-800">
+              <div className={`w-2.5 h-2.5 rounded-full ${geminiStatus?.isConfigured ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              <span className="text-sm text-zinc-400">Holat:</span>
+              <span className={`text-sm font-bold ${geminiStatus?.isConfigured ? 'text-emerald-500' : 'text-red-500'}`}>
+                {geminiStatus?.isConfigured ? "Ulangan" : "Ulanmagan"}
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1.5 font-medium">API Key (mavjudini o'zgartirish uchun)</label>
+              <input
+                type="password"
+                value={geminiApiKey}
+                onChange={(e) => setGeminiApiKey(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Model</label>
+              <select
+                value={geminiModel}
+                onChange={(e) => setGeminiModel(e.target.value)}
+                className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all outline-none"
+              >
+                <option value="gemini-2.0-flash">gemini-2.0-flash (Tezkor, tavsiya etiladi)</option>
+                <option value="gemini-1.5-pro">gemini-1.5-pro (Kuchli)</option>
+                <option value="gemini-1.5-flash">gemini-1.5-flash (Arzon)</option>
+              </select>
+            </div>
+
+            {geminiTestResult && (
+              <div className={`p-3 rounded-xl text-sm font-medium flex items-start gap-2 ${geminiTestResult.success ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+                {geminiTestResult.success ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+                {geminiTestResult.message}
+              </div>
+            )}
+          </div>
+
+          <div className="p-5 border-t border-zinc-800 flex items-center justify-between bg-[#09090b]/30">
+            <div className="flex items-center gap-3">
+              {geminiSaveStatus === 'success' && (
+                <div className="flex items-center gap-2 text-emerald-500 text-sm font-medium">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Saqlandi!
+                </div>
+              )}
+              {geminiSaveStatus === 'error' && (
+                <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
+                  <AlertCircle className="w-4 h-4" />
+                  Xatolik!
+                </div>
+              )}
+              <button
+                onClick={handleGeminiTest}
+                disabled={geminiTesting || (!geminiStatus?.isConfigured && !geminiApiKey)}
+                className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {geminiTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
+                Test qilish
+              </button>
+            </div>
+            <button
+              onClick={handleGeminiSave}
+              disabled={geminiSaving || (!geminiApiKey && !geminiModel)}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all shadow-lg shadow-indigo-500/20"
+            >
+              {geminiSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {geminiSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+            </button>
+          </div>
+        </div>
 
         {/* Profile Security Section */}
         <div className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden">
