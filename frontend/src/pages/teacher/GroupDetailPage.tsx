@@ -21,7 +21,6 @@ export default function GroupDetailPage() {
   const [allStudents, setAllStudents] = useState<any[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [savingStudents, setSavingStudents] = useState(false);
-  const [savingStudents, setSavingStudents] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
   const [ungroupedStudents, setUngroupedStudents] = useState<any[]>([]);
 
