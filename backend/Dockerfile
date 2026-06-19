@@ -18,5 +18,5 @@ RUN npm run build || true
 
 EXPOSE 5000
 
-# Start script: Run pending migrations and start server
-CMD npx prisma migrate deploy && npm start
+# Start script: Sync schema and start server (db push is safe - adds new tables, never drops data)
+CMD npx prisma db push && npm start
