@@ -8,9 +8,12 @@ class MonitoringController {
       const groupId = req.body.groupId as string;
       const summary = req.body.summary as string | undefined;
       const callDate = req.body.callDate as string | undefined;
-      const calledById = (req as any).user.id;
+      const calledById = req.user?.userId;
       if (!groupId) {
         return res.status(400).json({ success: false, message: 'groupId majburiy' });
+      }
+      if (!calledById) {
+        return res.status(401).json({ success: false, message: 'Foydalanuvchi topilmadi' });
       }
       const call = await monitoringService.createCall({ groupId, calledById, summary, callDate });
       res.status(201).json({ success: true, data: call });
