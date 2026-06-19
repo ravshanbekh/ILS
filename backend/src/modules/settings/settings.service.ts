@@ -28,7 +28,7 @@ const defaultSettings: any = {
     },
   },
   geminiApiKey: '',
-  geminiModel: 'gemini-3.5-flash',
+  geminiModel: 'gemini-2.5-flash',
 };
 
 class SettingsService {
@@ -116,7 +116,7 @@ class SettingsService {
     const settings = this.readSettings();
     return {
       isConfigured: !!(settings as any).geminiApiKey,
-      model: (settings as any).geminiModel || 'gemini-3.5-flash',
+      model: (settings as any).geminiModel || 'gemini-2.5-flash',
     };
   }
 
@@ -137,7 +137,7 @@ class SettingsService {
   async testGeminiConfig() {
     const settings = this.readSettings();
     const apiKey = (settings as any).geminiApiKey;
-    const model = (settings as any).geminiModel || 'gemini-3.5-flash';
+    const model = (settings as any).geminiModel || 'gemini-2.5-flash';
 
     if (!apiKey) return { success: false, message: 'API key kiritilmagan' };
 
@@ -156,9 +156,16 @@ class SettingsService {
       if (response.ok) return { success: true, message: 'Gemini ishlayapti ✅' };
       const errText = await response.text();
       console.error('Gemini test error:', errText);
-      return { success: false, message: 'API key noto\'g\'ri ❌' };
-    } catch {
-      return { success: false, message: 'Gemini API bilan bog\'lanib bo\'lmadi' };
+      try {
+        const parsed = JSON.parse(errText);
+        const errMsg = parsed.error?.message || 'Noma\'lum xato';
+        const errCode = parsed.error?.code || response.status;
+        return { success: false, message: `API xatoligi (${errCode}): ${errMsg} ❌` };
+      } catch {
+        return { success: false, message: `API xatoligi (${response.status}): ${errText.substring(0, 100)} ❌` };
+      }
+    } catch (e: any) {
+      return { success: false, message: `Gemini API bilan bog'lanib bo'lmadi: ${e.message || e}` };
     }
   }
 }
