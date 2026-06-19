@@ -63,6 +63,8 @@ model User {
   checklistEntries    DailyChecklistEntry[]
   frozenEntries       StudentFreeze[]   @relation("FrozenStudents")
   frozenByEntries     StudentFreeze[]   @relation("FrozenBy")
+  monitoringCalls     MonitoringCall[]  @relation("MonitoringCalledBy")
+  monitoringNotes     MonitoringNote[]  @relation("MonitoringNotes")
 
   @@map("users")
 }
@@ -81,6 +83,7 @@ model Group {
   groupNormatives GroupNormative[]
   submissions    Submission[]
   rankingCache   RankingCache[]
+  monitoringCalls MonitoringCall[]
 
   @@map("groups")
 }
@@ -308,4 +311,61 @@ model StudentFreeze {
   frozenBy User @relation("FrozenBy",       fields: [frozenById],  references: [id])
 
   @@map("student_freezes")
+}
+
+// ============ MONITORING SYSTEM ============
+
+enum MonitoringMood {
+  yaxshi          // 😊 Hamma narsa yaxshi
+  oddiy           // 😐 Alohida shikoyat yo'q
+  yomon           // 😟 Muammo bor, norozilik
+  javob_bermadi   // 📵 Telefonga javob bermadi
+}
+
+/// Monitoring qo'ng'iroq sessiyasi (administrator qaysi guruhga qo'ng'iroq qildi)
+model MonitoringCall {
+  id          String   @id @default(uuid()) @db.Uuid
+  groupId     String   @map("group_id") @db.Uuid
+  calledById  String   @map("called_by_id") @db.Uuid
+  callDate    DateTime @default(now()) @map("call_date")
+  summary     String?  @db.VarChar(500)  // Umumiy qisqa izoh
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  calledBy User   @relation("MonitoringCalledBy", fields: [calledById], references: [id])
+  notes    MonitoringNote[]
+
+  @@map("monitoring_calls")
+}
+
+/// Har bir o'quvchi uchun monitoring fikri
+model MonitoringNote {
+  id       String          @id @default(uuid()) @db.Uuid
+  callId   String          @map("call_id") @db.Uuid
+  studentId String         @map("student_id") @db.Uuid
+  mood     MonitoringMood
+  note     String          @db.VarChar(2000)
+  tags     String[]        @default([])
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  call    MonitoringCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+  student User           @relation("MonitoringNotes", fields: [studentId], references: [id])
+
+  @@map("monitoring_notes")
+}
+
+/// AI tomonidan yaratilgan tahlil hisobotlari (cache)
+model MonitoringAIReport {
+  id          String   @id @default(uuid()) @db.Uuid
+  groupId     String?  @map("group_id") @db.Uuid
+  teacherId   String?  @map("teacher_id") @db.Uuid
+  reportType  String   @db.VarChar(50)  // "group_analysis" | "teacher_analysis" | "overall"
+  content     String   // AI javob matni (plain text)
+  period      String   @db.VarChar(20)  // "2026-06"
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("monitoring_ai_reports")
 }

@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   LayoutDashboard, Users, FolderOpen, BookOpen, ClipboardCheck,
   BarChart3, Trophy, Download, LogOut, GraduationCap, Video, Settings, X, ClipboardList,
-  Snowflake, Star
+  Snowflake, Star, Phone
 } from 'lucide-react';
 
 const adminLinks = [
@@ -15,6 +15,7 @@ const adminLinks = [
   { to: '/admin/stats', icon: BarChart3, label: 'Statistika' },
   { to: '/admin/frozen-students', icon: Snowflake, label: 'Muzlatilganlar' },
   { to: '/admin/teacher-rating', icon: Star, label: "O'qituvchi reytingi" },
+  { to: '/admin/monitoring', icon: Phone, label: 'Monitoring' },
   { to: '/admin/checklist-stats', icon: ClipboardCheck, label: 'Cheklist Hisobot' },
   { to: '/admin/checklist-manage', icon: ClipboardList, label: 'Cheklist Boshqaruv' },
   { to: '/admin/rankings', icon: Trophy, label: 'Reyting' },
@@ -83,6 +84,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { to: `/viewer/${user!.role}`, icon: LayoutDashboard, label: 'Dashboard' },
     ...(['filial_rahbari', 'administrator', 'sotuv_operatori', 'kassir'].includes(user!.role) ? [
       { to: `/viewer/${user!.role}/frozen-students`, icon: Snowflake, label: 'Muzlatilganlar' }
+    ] : []),
+    ...(['filial_rahbari', 'administrator', 'sotuv_operatori', 'call_operatori'].includes(user!.role) ? [
+      { to: `/viewer/${user!.role}/monitoring`, icon: Phone, label: 'Monitoring' }
     ] : []),
     ...(['filial_rahbari', 'hr_rahbari'].includes(user!.role) ? [
       { to: `/viewer/${user!.role}/teacher-rating`, icon: Star, label: "O'qituvchi reytingi" }

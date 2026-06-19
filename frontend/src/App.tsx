@@ -29,6 +29,7 @@ import AdminSettingsPage from '@/pages/admin/SettingsPage';
 import MonthlyReportPrintPage from '@/pages/admin/MonthlyReportPrintPage';
 import ViewerDashboardPage from '@/pages/viewer/DashboardPage';
 import FrozenStudentsPage from '@/pages/shared/FrozenStudentsPage';
+import MonitoringPage from '@/pages/shared/MonitoringPage';
 import TeacherRatingPage from '@/pages/admin/TeacherRatingPage';
 import ChecklistStatsPage from '@/pages/admin/ChecklistStatsPage';
 import ChecklistManagePage from '@/pages/admin/ChecklistManagePage';
@@ -141,6 +142,7 @@ export default function App() {
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/rankings" element={<AdminRankingsPage />} />
               <Route path="/admin/frozen-students" element={<FrozenStudentsPage />} />
+              <Route path="/admin/monitoring" element={<MonitoringPage />} />
               <Route path="/admin/teacher-rating" element={<TeacherRatingPage />} />
               <Route path="/admin/export" element={<ExportPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
@@ -192,6 +194,7 @@ export default function App() {
             >
               <Route path="/viewer/:role" element={<ViewerDashboardPage />} />
               <Route path="/viewer/:role/frozen-students" element={<FrozenStudentsPage />} />
+              <Route path="/viewer/:role/monitoring" element={<MonitoringPage />} />
               <Route path="/viewer/:role/teacher-rating" element={<TeacherRatingPage />} />
               <Route path="/viewer/nazoratchi/checklist-stats" element={<ChecklistStatsPage />} />
               <Route path="/viewer/nazoratchi/checklist-manage" element={<ChecklistManagePage />} />

@@ -22,6 +22,7 @@ import settingsRoutes from './modules/settings/settings.routes';
 import categoriesRoutes from './modules/categories/categories.routes';
 import checklistRoutes from './modules/checklist/checklist.routes';
 import freezesRoutes from './modules/freezes/freezes.routes';
+import monitoringRoutes from './modules/monitoring/monitoring.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -73,6 +74,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/checklist', checklistRoutes);
 app.use('/api/freezes', freezesRoutes);
+app.use('/api/monitoring', monitoringRoutes);
 
 // 404 handler
 app.use((_req, res) => {

@@ -216,3 +216,53 @@ export const checklistApi = {
   getWeekly: () => api.get('/checklist/weekly'),
   toggle: (itemId: string) => api.post(`/checklist/${itemId}/toggle`),
 };
+
+export const monitoringApi = {
+  // Guruhlar ro'yxati (rang indikatori bilan)
+  getGroups: () => api.get('/monitoring/groups'),
+
+  // Guruh dashboard — o'quvchilar + oxirgi fikrlar
+  getGroupDashboard: (groupId: string) => api.get(`/monitoring/groups/${groupId}`),
+
+  // Guruh qo'ng'iroqlar tarixi
+  getGroupCalls: (groupId: string, params?: { page?: number; limit?: number }) =>
+    api.get(`/monitoring/groups/${groupId}/calls`, { params }),
+
+  // O'quvchi timeline
+  getStudentTimeline: (studentId: string) =>
+    api.get(`/monitoring/students/${studentId}/timeline`),
+
+  // Yangi qo'ng'iroq sessiyasi
+  createCall: (data: { groupId: string; summary?: string; callDate?: string }) =>
+    api.post('/monitoring/calls', data),
+
+  // Qo'ng'iroqni o'chirish
+  deleteCall: (callId: string) => api.delete(`/monitoring/calls/${callId}`),
+
+  // Fikr qo'shish
+  addNote: (callId: string, data: {
+    studentId: string;
+    mood: string;
+    note: string;
+    tags?: string[];
+  }) => api.post(`/monitoring/calls/${callId}/notes`, data),
+
+  // Fikr tahrirlash
+  updateNote: (noteId: string, data: {
+    mood?: string;
+    note?: string;
+    tags?: string[];
+  }) => api.put(`/monitoring/notes/${noteId}`, data),
+
+  // Fikr o'chirish
+  deleteNote: (noteId: string) => api.delete(`/monitoring/notes/${noteId}`),
+
+  // Guruh AI tahlil
+  analyzeGroup: (groupId: string) =>
+    api.post(`/monitoring/groups/${groupId}/ai-analyze`),
+
+  // O'qituvchi AI tahlil
+  analyzeTeacher: (teacherId: string) =>
+    api.post(`/monitoring/teachers/${teacherId}/ai-analyze`),
+};
+
