@@ -77,6 +77,7 @@ export default function FrozenStudentsPage() {
   });
   const [studentSearch, setStudentSearch] = useState('');
   const [saving, setSaving] = useState(false);
+  const [studentSearchLoading, setStudentSearchLoading] = useState(false);
 
   // AI tahlil
   const [aiLoading, setAiLoading] = useState(false);
@@ -117,12 +118,9 @@ export default function FrozenStudentsPage() {
 
   const handleOpenFreezeModal = async () => {
     try {
-      const [ungroupRes, allRes] = await Promise.all([
-        usersApi.getUngrouped(),
-        usersApi.getAll(1, 200, 'student'),
-      ]);
+      const ungroupRes = await usersApi.getUngrouped();
       setUngroupedStudents(ungroupRes.data.data || []);
-      setAllStudents(allRes.data.data || []);
+      setAllStudents([]);
       setFreezeForm({ studentId: '', reason: '', detailedNote: '', phone: '', startDate: '', filial: '' });
       setStudentSearch('');
       setShowFreezeModal(true);
@@ -168,12 +166,26 @@ export default function FrozenStudentsPage() {
   };
 
   // Filtrlangan o'quvchilar modal uchun
-  const ungroupedFiltered = ungroupedStudents.filter(s =>
-    !studentSearch || s.fullName.toLowerCase().includes(studentSearch.toLowerCase()) || s.login.toLowerCase().includes(studentSearch.toLowerCase())
-  );
-  const allFiltered = allStudents
-    .filter(s => !ungroupedStudents.find(u => u.id === s.id))
-    .filter(s => !studentSearch || s.fullName.toLowerCase().includes(studentSearch.toLowerCase()) || s.login.toLowerCase().includes(studentSearch.toLowerCase()));
+  // Backend qidiruv (debounced)
+  useEffect(() => {
+    if (!showFreezeModal) return;
+    const timer = setTimeout(async () => {
+      setStudentSearchLoading(true);
+      try {
+        const [ungroupRes, allRes] = await Promise.all([
+          usersApi.getUngrouped(studentSearch || undefined),
+          usersApi.getAll(1, 500, 'student', studentSearch || undefined),
+        ]);
+        setUngroupedStudents(ungroupRes.data.data || []);
+        setAllStudents(allRes.data.data || []);
+      } catch {}
+      finally { setStudentSearchLoading(false); }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [studentSearch, showFreezeModal]);
+
+  const ungroupedFiltered = ungroupedStudents;
+  const allFiltered = allStudents.filter(s => !ungroupedStudents.find(u => u.id === s.id));
 
   // Guruhlar bo'yicha guruhlash
   const allFilteredByGroup = allFiltered.reduce((acc: Record<string, any[]>, s: any) => {
@@ -715,6 +727,7 @@ export default function FrozenStudentsPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input placeholder="Ism yoki login..." value={studentSearch} onChange={e => setStudentSearch(e.target.value)}
                     className="w-full pl-9 pr-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-white text-sm focus:border-blue-500 outline-none" />
+                  {studentSearchLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 animate-spin" />}
                 </div>
                 <div className="bg-zinc-800 border border-zinc-700 rounded-xl max-h-[220px] overflow-y-auto divide-y divide-zinc-700/50">
                   {ungroupedFiltered.length === 0 && allFiltered.length === 0 && (
