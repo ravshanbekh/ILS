@@ -399,17 +399,21 @@ Hozirgi tendentsiya davom etsa nima kutish mumkin.
 
 Javobni o'zbek tilida, aniq va foydali yozing. Markdown formatini ishlating.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-        }),
-      }
-    );
+    // Yangi AQ. yoki eski AIza format uchun to'g'ri auth
+    const isNewKeyFormat = apiKey.startsWith('AQ.');
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent${isNewKeyFormat ? '' : `?key=${apiKey}`}`;
+    const geminiHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (isNewKeyFormat) geminiHeaders['Authorization'] = `Bearer ${apiKey}`;
+    else geminiHeaders['x-goog-api-key'] = apiKey;
+
+    const response = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: geminiHeaders,
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+      }),
+    });
 
     if (!response.ok) {
       const errBody = await response.text();

@@ -142,15 +142,21 @@ class SettingsService {
     if (!apiKey) return { success: false, message: 'API key kiritilmagan' };
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: 'Hello' }] }] }),
-        }
-      );
+      // Yangi AQ. format yoki eski AIza format uchun to'g'ri auth usuli
+      const isNewFormat = apiKey.startsWith('AQ.');
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent${isNewFormat ? '' : `?key=${apiKey}`}`;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (isNewFormat) headers['Authorization'] = `Bearer ${apiKey}`;
+      else headers['x-goog-api-key'] = apiKey;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ contents: [{ parts: [{ text: 'Hello' }] }] }),
+      });
       if (response.ok) return { success: true, message: 'Gemini ishlayapti ✅' };
+      const errText = await response.text();
+      console.error('Gemini test error:', errText);
       return { success: false, message: 'API key noto\'g\'ri ❌' };
     } catch {
       return { success: false, message: 'Gemini API bilan bog\'lanib bo\'lmadi' };
