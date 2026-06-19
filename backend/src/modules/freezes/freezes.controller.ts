@@ -9,7 +9,7 @@ class FreezesController {
   async freeze(req: Request, res: Response, next: NextFunction) {
     try {
       const { studentId, reason, detailedNote, phone, startDate, filial } = req.body;
-      const frozenById = (req as any).user.id;
+      const frozenById = (req as any).user.userId;  // JWT payload da userId field bor
 
       if (!studentId || !reason) {
         return res.status(400).json({ success: false, message: "studentId va reason majburiy" });
