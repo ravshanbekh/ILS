@@ -360,44 +360,63 @@ class FreezesService {
       .map((d) => `- ${d.label}: ${d.count} ta (${d.percent}%)`)
       .join('\n');
 
-    const prompt = `Sen O'quv markaz uchun ma'lumotlar tahlilchisisisan. Quyidagi oylik statistika asosida chuqur tahlil qil va amaliy maslahatlar ber.
+    const rawFreezesText = reportData.rawList
+      .map((f: any, i: number) => {
+        const startStr = f.startDate ? new Date(f.startDate).toLocaleDateString('uz-UZ') : 'Noma\'lum';
+        const freezeStr = new Date(f.frozenAt).toLocaleDateString('uz-UZ');
+        const reasonLabel = FREEZE_REASON_LABELS[f.reason] || f.reason;
+        return `${i + 1}. O'quvchi: ${f.studentName || 'Noma\'lum'}
+   - Guruh: ${f.groupName || 'Noma\'lum'} | O'qituvchi: ${f.teacherName || 'Noma\'lum'}
+   - Filial: ${f.filial || 'Bosh filial'}
+   - O'qish davri: ${startStr} dan ${freezeStr} gacha
+   - Ketish sababi: ${reasonLabel}
+   - Batafsil izoh: ${f.detailedNote || 'Izoh yozilmagan'}`;
+      })
+      .join('\n\n');
 
-=== ${monthNames[month]} ${year} OYLIK HISOBOTI ===
+    const prompt = `Siz o'quv markazlarini rivojlantirish va biznesini optimallashtirish bo'yicha 10 yillik tajribaga ega bo'lgan professional biznes-konsultant (EdTech eksperti) ekansiz. Quyidagi oylik muzlatilgan (tizimdan ketgan) o'quvchilar ma'lumotlari asosida chuqur tahlil qiling va faoliyatimizni yaxshilash uchun aniq takliflar bering.
 
-UMUMIY:
-- Jami muzlatilgan (ketgan) o'quvchilar: ${reportData.total} ta
+Murojaat va hisobotni "Hurmatli IT Live jamoasi va rahbariyati," deb boshlang. ("Hurmatli Sen" yoki boshqa har qanday generic murojaat mutlaqo ishlatilmasin).
+
+=== ${monthNames[month]} ${year} OYLIK HISOBOTI MA'LUMOTLARI ===
+
+UMUMIY STATISTIKA:
+- Jami muzlatilgan (ketgan) o'quvchilar soni: ${reportData.total} ta
 - O'rtacha o'qigan muddat: ${reportData.avgDuration} oy
 - Eng uzoq o'qigan: ${reportData.maxDuration} oy | Eng qisqa: ${reportData.minDuration} oy
 
-KETISH SABABLARI (eng ko'pdan kamga):
+KETISH SABABLARI TAQSIMOTI:
 ${reasonsText}
 
-O'QITUVCHILAR BO'YICHA:
+O'QITUVCHILAR BO'YICHA KETISH KO'RSATKICHLARI:
 ${teachersText}
 
-O'QIGAN MUDDAT TAQSIMOTI:
+MUDDATLAR TAQSIMOTI:
 ${durationText}
+
+KETGAN O'QUVCHILARNING TO'LIQ VA BATAFSIL RO'YXATI (IZOHLARI BILAN):
+${rawFreezesText}
 
 ===
 
-Iltimos quyidagilarni tahlil qilib ber:
+Quyidagi tuzilish bo'yicha juda chuqur, tanqidiy va professional tahlil tayyorlang:
 
-## 🔍 Asosiy Muammolar
-Eng katta muammolarni aniqlab, har birini izohlang.
+1. **Kirish**: Salamlashish va umumiy oylik holatga biznes ko'zi bilan baho berish.
+2. **🔍 Yashirin Muammolar (Biz ko'rmayotgan jihatlar)**:
+   - Ro'yxatdagi izohlarni, o'qituvchilarni, guruhlarni va muddatlarni solishtirib, tizimli qanday muammolar borligini ochib bering.
+   - Har bir ketish ortidagi haqiqiy sabablarni tahlil qiling (masalan, onboarding xatolari, o'quv dasturi murakkabligi, moliyaviy muammolarga yondashuv sustligi, o'qituvchining metodikasi va hk).
+3. **👨‍🏫 O'qituvchilar va Guruhlar Tahlili**:
+   - Qaysi o'qituvchidan eng ko'p ketish bo'lyapti va buning sababi nimada bo'lishi mumkin (izohlarga tayanib)?
+   - O'qituvchilarning o'quvchini ushlab qolish mahoratiga baho bering.
+4. **⚡ Tezkor Biznes Yechimlar (Kelgusi 30 kun uchun)**:
+   - Ushbu ketishlarni to'xtatish va yo'qotilgan daromadni tiklash uchun darhol amalga oshirish kerak bo'lgan 3-5 ta chora-tadbir.
+   - O'quvchilarni qaytarish (retention) bo'yicha amaliy skriptlar yoki g'oyalar.
+5. **📋 Uzoq Muddatli Tizimli Tavsiyalar (3-6 oy)**:
+   - IT Live o'quv markazini yanada kuchaytirish, mijozlar sodiqligini (LTV) oshirish uchun biznes jarayonlarni (LMS, KPI, o'qituvchilarni nazorat qilish, sifat nazorati) qanday o'zgartirish kerak?
+6. **📈 Biznes Prognozi**:
+   - Agar bu muammolar hal etilmasa, kelgusi oylarda o'quv markazi daromadi va brend obro'siga ta'siri qanday bo'ladi?
 
-## 👨‍🏫 O'qituvchilar Tahlili  
-Eng yuqori va past ko'rsatkichli o'qituvchilar haqida mulohaza yuriting.
-
-## ⚡ Tezkor Choralar (kelgusi 30 kun)
-3-5 ta darhol amalga oshirish mumkin bo'lgan chora-tadbirlar.
-
-## 📋 Uzoq Muddatli Tavsiyalar (3-6 oy)
-Tizimli yechimlar.
-
-## 📈 Prognoz
-Hozirgi tendentsiya davom etsa nima kutish mumkin.
-
-Javobni o'zbek tilida, aniq va foydali yozing. Markdown formatini ishlating.`;
+Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida yozing. Har bir bo'limni chiroyli emoji va vizual struktura (ro'yxatlar, qalin shriftlar, muhim joylar uchun iqtiboslar) bilan bezating.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
