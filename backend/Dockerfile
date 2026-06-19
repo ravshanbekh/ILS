@@ -18,5 +18,5 @@ RUN npm run build || true
 
 EXPOSE 5000
 
-# Start script: Push schema changes and start server
-CMD npx prisma db push --accept-data-loss && npm start
+# Start script: Run pending migrations and start server
+CMD npx prisma migrate deploy && npm start
