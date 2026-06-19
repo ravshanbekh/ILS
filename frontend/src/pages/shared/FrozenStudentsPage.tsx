@@ -175,6 +175,14 @@ export default function FrozenStudentsPage() {
     .filter(s => !ungroupedStudents.find(u => u.id === s.id))
     .filter(s => !studentSearch || s.fullName.toLowerCase().includes(studentSearch.toLowerCase()) || s.login.toLowerCase().includes(studentSearch.toLowerCase()));
 
+  // Guruhlar bo'yicha guruhlash
+  const allFilteredByGroup = allFiltered.reduce((acc: Record<string, any[]>, s: any) => {
+    const groupName = s.group?.name || 'Guruhsiz';
+    if (!acc[groupName]) acc[groupName] = [];
+    acc[groupName].push(s);
+    return acc;
+  }, {});
+
   // LTV hisoblash
   const avgLTV = reportData ? reportData.avgDuration * monthlyFee : 0;
   const totalLTV = reportData ? reportData.total * avgLTV : 0;
@@ -708,10 +716,13 @@ export default function FrozenStudentsPage() {
                   <input placeholder="Ism yoki login..." value={studentSearch} onChange={e => setStudentSearch(e.target.value)}
                     className="w-full pl-9 pr-4 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-white text-sm focus:border-blue-500 outline-none" />
                 </div>
-                <div className="bg-zinc-800 border border-zinc-700 rounded-xl max-h-[180px] overflow-y-auto divide-y divide-zinc-700/50">
+                <div className="bg-zinc-800 border border-zinc-700 rounded-xl max-h-[220px] overflow-y-auto divide-y divide-zinc-700/50">
+                  {ungroupedFiltered.length === 0 && allFiltered.length === 0 && (
+                    <div className="px-3 py-4 text-center text-zinc-500 text-sm">O'quvchi topilmadi</div>
+                  )}
                   {ungroupedFiltered.length > 0 && (
                     <>
-                      <div className="px-3 py-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/5">
+                      <div className="px-3 py-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/5 sticky top-0">
                         🔓 Guruhsiz o'quvchilar ({ungroupedFiltered.length})
                       </div>
                       {ungroupedFiltered.map(s => (
@@ -725,20 +736,22 @@ export default function FrozenStudentsPage() {
                       ))}
                     </>
                   )}
-                  {allFiltered.length > 0 && (
-                    <>
-                      <div className="px-3 py-1.5 text-xs text-zinc-400 font-semibold">Guruhdagi o'quvchilar</div>
-                      {allFiltered.slice(0, 30).map(s => (
+                  {Object.entries(allFilteredByGroup).map(([groupName, students]: [string, any]) => (
+                    <div key={groupName}>
+                      <div className="px-3 py-1.5 text-xs text-blue-400 font-semibold bg-blue-500/5 sticky top-0">
+                        📚 {groupName} ({students.length})
+                      </div>
+                      {students.map((s: any) => (
                         <label key={s.id} className={`flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-700 cursor-pointer transition-colors ${freezeForm.studentId === s.id ? 'bg-blue-500/10' : ''}`}>
                           <input type="radio" name="student" value={s.id} checked={freezeForm.studentId === s.id} onChange={() => setFreezeForm(f => ({ ...f, studentId: s.id }))} className="accent-blue-500" />
                           <div>
                             <p className="text-white text-sm">{s.fullName}</p>
-                            <p className="text-zinc-500 text-xs">{s.login}</p>
+                            <p className="text-zinc-500 text-xs">{s.login} · <span className="text-blue-400">{groupName}</span></p>
                           </div>
                         </label>
                       ))}
-                    </>
-                  )}
+                    </div>
+                  ))}
                 </div>
               </div>
 

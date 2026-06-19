@@ -35,6 +35,14 @@ class UsersService {
           avatarUrl: true,
           isActive: true,
           createdAt: true,
+          groupStudents: {
+            select: {
+              group: {
+                select: { id: true, name: true }
+              }
+            },
+            take: 1,
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip: params.skip,
@@ -43,7 +51,13 @@ class UsersService {
       prisma.user.count({ where }),
     ]);
 
-    return createPaginatedResult(users, total, params);
+    // groupStudents dan birinchi guruhni chiqaramiz
+    const usersWithGroup = users.map(u => ({
+      ...u,
+      group: (u as any).groupStudents?.[0]?.group || null,
+    }));
+
+    return createPaginatedResult(usersWithGroup, total, params);
   }
 
   /**
