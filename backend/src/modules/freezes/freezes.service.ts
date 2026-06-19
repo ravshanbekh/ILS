@@ -351,7 +351,7 @@ class FreezesService {
     const freezeStr = new Date(freeze.frozenAt).toLocaleDateString('uz-UZ');
     const reasonLabel = FREEZE_REASON_LABELS[freeze.reason] || freeze.reason;
 
-    const prompt = `Siz o'quv markazida ketgan/muzlatilgan o'quvchilarni qaytarish (retention) bo'yicha 10 yillik tajribaga ega bo'lgan professional savdo/aloqa operatorisiz. Sizning vazifangiz - telefon orqali gaplashib o'quvchini yoki uning ota-onasini o'quv markaziga qaytarish uchun maxsus, individual suhbat skriptini tuzishdir.
+    const prompt = `Siz o'quv markazida ketgan/muzlatilgan o'quvchilarni qaytarish (retention) bo'yicha 10 yillik tajribaga ega bo'lgan professional savdo/aloqa operatorisiz. Telefon orqali gaplashib o'quvchini yoki uning ota-onasini o'quv markaziga qaytarish uchun maxsus, individual suhbat skriptini tuzing.
 
 Tizimdagi o'quvchi ma'lumotlari:
 - O'quvchi: ${freeze.studentName || 'Noma\'lum'}
@@ -367,24 +367,30 @@ Tizimdagi o'quvchi ma'lumotlari:
 ${centerContext || 'O\'quv markazi haqida ma\'lumotlar kiritilmagan.'}
 ==========================================================
 
-Juda muhim qoida (Recitation check cheklovidan o'tish uchun):
-Javobingizni hech qanday salomlashish (masalan: "Assalomu alaykum! Men sizga skript tuzib beraman..." yoki "Sizning professional tajribangizni inobatga olgan holda...") yoki topshiriq shartlarini boshida takrorlash bilan boshlamang! To'g'ridan-to'g'ri operator uchun mo'ljallangan skript bo'limlarini yozishdan boshlang.
+QAT'IY QOIDALAR (Bularga rioya qilmaslik javobni buzadi):
+1. MATNDA HECH QANDAY MARKDOWN BELGILARINI (*, **, #, \`\`\`) ISHLATMANG! Yulduzchalarni umuman ishlatmang. Sarlavhalarni shunchaki bosh harflar va emojilar bilan yozing. Matn to'liq oddiy matn (plain text) bo'lishi shart.
+2. Yuqoridagi o'quvchi ma'lumotlarini (ismi, guruhi, o'qituvchisi va hk.) javob boshida qaytadan ro'yxat qilib yozmang (buni operator allaqachon biladi). 
+3. Javobingizni hech qanday kirish, salomlashish yoki tushuntirish bilan boshlamang. To'g'ridan-to'g'ri quyidagi bo'limlarni yozishdan boshlang:
 
-Skriptni tuzishda quyidagilarga qat'iy amal qiling:
-1. **Muammoni aniqlash va qabul qilish**: Suhbatning boshida o'quvchining (yoki ota-onasining) ketishiga sabab bo'lgan asosiy muammoni (masalan, to'lov qiyinligi, motivatsiya tushishi, o'qituvchidan norozilik, vaqt etishmasligi) samimiy tinglang, unga hamdardlik (empathy) bildiring va o'quvchining vaziyatini tushunganingizni ko'rsating.
-2. **Yechim taklif qilish**: Muammodan kelib chiqib, o'quv markazimizning imkoniyatlaridan (kurs turlari, to'lov uchun qulayliklar, boshqa o'qituvchi yoki guruhga o'tkazish, bepul mentorliklar, kursning kelajakdagi foydalari va hk. - o'quv markazi kontekstiga qarang) foydalangan holda muammoga yechim taklif qiling.
-3. **Muloqot uslubi**: Juda samimiy, do'stona, bosimsiz (no-pressure), lekin ishonchli va sotuvga yo'naltirilgan bo'lsin.
-4. **Murojaat**: Muloqot skriptini o'zbek tilida, juda tushunarli qilib yozing. Ota-onaga yoki o'quvchiga qarab (izohdagi yoshiga qarab) qanday gapirish kerakligini belgilang.
+📞 OPERATOR UCHUN TAYYORGARLIK VA TAVSIYALAR
+(Operator qo'ng'iroqdan oldin nimalarga e'tibor berishi kerakligi haqida qisqacha tavsiyalar)
 
-Iltimos, operator uchun quyidagi bo'limlardan iborat mukammal qo'llanma tayyorlang:
-- **📞 Operator uchun tayyorgarlik va tavsiyalar** (Ushbu o'quvchi bilan bog'lanishdan oldin nimalarga e'tibor berish kerak?)
-- **👋 Salomlashish va muzni eritish** (Suhbatni qanday boshlash kerak?)
-- **🔍 Muammoni aniqlash va hamdardlik (Empathy) bosqichi** (Muammoni ochish va o'quvchini tinglash uchun savollar/gaplar)
-- **💡 Muammoga individual yechim taqaim etish bosqichi** (Keltirilgan sababga ko'ra o'quv markazi taklif etadigan aniq yechim/yordamlar)
-- **🙅‍♂️ E'tirozlar bilan ishlash** (Agar o'quvchi bosh tortsa, nima deb javob berish kerak?)
-- **🎯 Suhbatni yakunlash va Keyingi qadam (Call to Action)**
+👋 SALOMLASHISH SCRIPT
+(Operator telefonda aynan nima deyishi kerak - so'zma-so'z gaplar)
 
-Javobni o'zbek tilida, Markdown formatida, chiroyli dizayn va emojilar bilan yozing.`;
+🔍 MUAMMONI ANIQLASH VA HAMDARDLIK (EMPATHY) SCRIPT
+(O'quvchini yoki ota-onani tinglash va muammosini tushunish uchun so'zma-so'z gaplar)
+
+💡 MUAMMOGA YECHIM VA TAKLIF TAQDIM ETISH SCRIPT
+(O'quv markazi imkoniyatlaridan kelib chiqib, aynan uning muammosiga (masalan: ${reasonLabel} sababiga) mos taklif va yordamlar haqida so'zma-so'z gaplar. Agar kontekstda IELTS kurslari yoki qulayliklar bo'lsa, ularni qo'shing)
+
+🙅‍♂️ E'TIROZLAR BILAN ISHLASH SCRIPT
+(Agar rad etsa, operator nima deb javob berishi kerakligi bo'yicha so'zma-so'z gaplar)
+
+🎯 SUHBATNI YAKUNLASH VA KEYINGI QADAM (CALL TO ACTION) SCRIPT
+(Uchrashuvga yoki darsga taklif qilish gaplari)
+
+Barcha so'zma-so'z gaplarni tushunarli va ravon o'zbek tilida yozing.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
