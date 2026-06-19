@@ -524,11 +524,10 @@ Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida 
           'x-goog-api-key': apiKey,
         },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-        }),
-      }
-    );
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+      }),
+    });
 
     if (!response.ok) {
       const errBody = await response.text();
@@ -537,7 +536,8 @@ Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida 
     }
 
     const data: any = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    return parts.map((p: any) => p.text).join('') || '';
   }
 }
 
