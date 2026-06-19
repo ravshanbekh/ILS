@@ -7,17 +7,17 @@ const router = Router();
 // Barcha routelar authenticate talab qiladi
 router.use(authenticate);
 
-// GET /api/users/ungrouped — Guruhsiz o'quvchilar (GroupDetailPage bug fix)
-router.get('/ungrouped', roleGuard('admin', 'teacher'), usersController.getUngrouped);
+// GET /api/users/ungrouped — Guruhsiz o'quvchilar
+router.get('/ungrouped', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher'), usersController.getUngrouped);
 
 // GET /api/users/my-students — Teacher o'z o'quvchilarini tezkor oladi (bitta query)
 router.get('/my-students', roleGuard('teacher'), usersController.getMyStudents);
 
-// GET /api/users — Barcha foydalanuvchilar (admin va teacher)
-router.get('/', roleGuard('admin', 'teacher'), usersController.getAll);
+// GET /api/users — Barcha foydalanuvchilar
+router.get('/', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher'), usersController.getAll);
 
 // GET /api/users/:id — Bitta foydalanuvchi
-router.get('/:id', roleGuard('admin', 'teacher'), usersController.getById);
+router.get('/:id', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher'), usersController.getById);
 
 // POST /api/users/bulk — Ko'p foydalanuvchi yaratish (bulk import)
 router.post('/bulk', roleGuard('admin', 'teacher'), usersController.bulkCreate);

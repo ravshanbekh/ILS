@@ -19,7 +19,7 @@ router.post(
 // ============================================================
 router.post(
   '/ai-analyze',
-  roleGuard('admin', 'filial_rahbari', 'kassir'),
+  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'filial_rahbari'),
   freezesController.aiAnalyze
 );
 
@@ -28,28 +28,28 @@ router.post(
 // ============================================================
 router.get(
   '/report',
-  roleGuard('admin', 'filial_rahbari', 'kassir'),
+  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'filial_rahbari'),
   freezesController.getReport
 );
 
 router.get(
   '/teacher-rating',
-  roleGuard('admin', 'filial_rahbari', 'kassir'),
+  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'filial_rahbari'),
   freezesController.getTeacherRating
 );
 
 // ============================================================
-// RO'YXAT (GET) — admin, filial_rahbari, kassir
+// RO'YXAT (GET) — admin, administrator, sotuv_operatori, kassir, filial_rahbari
 // ============================================================
 router.get(
   '/',
-  roleGuard('admin', 'filial_rahbari', 'kassir'),
+  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'filial_rahbari'),
   freezesController.getAll
 );
 
 // ============================================================
 // BEKOR QILISH (DELETE) — faqat admin
 // ============================================================
-router.delete('/:id', roleGuard('admin'), freezesController.unfreeze);
+router.delete('/:id', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir'), freezesController.unfreeze);
 
 export default router;
