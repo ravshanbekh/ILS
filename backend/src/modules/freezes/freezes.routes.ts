@@ -48,6 +48,15 @@ router.get(
 );
 
 // ============================================================
+// OPERATOR SCRIPT YARATISH (POST) — barcha vakolatli rollar
+// ============================================================
+router.post(
+  '/:id/script',
+  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'filial_rahbari'),
+  freezesController.generateScript
+);
+
+// ============================================================
 // BEKOR QILISH (DELETE) — faqat admin
 // ============================================================
 router.delete('/:id', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir'), freezesController.unfreeze);

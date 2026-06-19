@@ -29,6 +29,7 @@ const defaultSettings: any = {
   },
   geminiApiKey: '',
   geminiModel: 'gemini-2.5-flash',
+  centerContext: '',
 };
 
 class SettingsService {
@@ -117,18 +118,24 @@ class SettingsService {
     return {
       isConfigured: !!(settings as any).geminiApiKey,
       model: (settings as any).geminiModel || 'gemini-2.5-flash',
+      centerContext: (settings as any).centerContext || '',
     };
   }
 
   /**
    * Gemini konfiguratsiyasini yangilash (admin only)
    */
-  async updateGeminiConfig(data: { apiKey?: string; model?: string }) {
+  async updateGeminiConfig(data: { apiKey?: string; model?: string; centerContext?: string }) {
     const settings = this.readSettings();
     if (data.apiKey !== undefined) (settings as any).geminiApiKey = data.apiKey;
     if (data.model !== undefined) (settings as any).geminiModel = data.model;
+    if (data.centerContext !== undefined) (settings as any).centerContext = data.centerContext;
     this.writeSettings(settings);
-    return { isConfigured: !!(settings as any).geminiApiKey, model: (settings as any).geminiModel };
+    return {
+      isConfigured: !!(settings as any).geminiApiKey,
+      model: (settings as any).geminiModel,
+      centerContext: (settings as any).centerContext,
+    };
   }
 
   /**

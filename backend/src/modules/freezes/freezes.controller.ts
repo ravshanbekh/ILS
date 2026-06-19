@@ -119,6 +119,31 @@ class FreezesController {
   }
 
   /**
+   * POST /api/freezes/:id/script — Muzlatilgan o'quvchi uchun operator gaplashish skriptini yaratish
+   */
+  async generateScript(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      if (!id) {
+        return res.status(400).json({ success: false, message: "Freeze ID majburiy" });
+      }
+      const script = await freezesService.generateOperatorScript(id);
+      return res.json({ success: true, script });
+    } catch (err: any) {
+      if (err.message === 'API_KEY_NOT_SET') {
+        return res.status(400).json({ success: false, error: 'API_KEY_NOT_SET', message: "Gemini API key sozlanmagan" });
+      }
+      if (err.message === 'FREEZE_NOT_FOUND') {
+        return res.status(404).json({ success: false, error: 'FREEZE_NOT_FOUND', message: "Muzlatish ma'lumoti topilmadi" });
+      }
+      if (err.message === 'GEMINI_API_ERROR') {
+        return res.status(502).json({ success: false, error: 'GEMINI_API_ERROR', message: "Gemini API bilan bog'lanib bo'lmadi" });
+      }
+      next(err);
+    }
+  }
+
+  /**
    * DELETE /api/freezes/:id — Muzlatishni bekor qilish
    * Roles: admin only
    */

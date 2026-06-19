@@ -87,6 +87,29 @@ export default function FrozenStudentsPage() {
   // LTV kalkulyator
   const [monthlyFee, setMonthlyFee] = useState(600000);
 
+  // Operator script
+  const [showScriptModal, setShowScriptModal] = useState(false);
+  const [selectedFreeze, setSelectedFreeze] = useState<any | null>(null);
+  const [scriptLoading, setScriptLoading] = useState(false);
+  const [scriptText, setScriptText] = useState('');
+  const [scriptError, setScriptError] = useState('');
+
+  const handleGetScript = async (freeze: any) => {
+    setSelectedFreeze(freeze);
+    setShowScriptModal(true);
+    setScriptLoading(true);
+    setScriptError('');
+    setScriptText('');
+    try {
+      const res = await freezesApi.getOperatorScript(freeze.id);
+      setScriptText(res.data.script || '');
+    } catch (e: any) {
+      setScriptError(e.response?.data?.message || 'Skript olishda xatolik yuz berdi');
+    } finally {
+      setScriptLoading(false);
+    }
+  };
+
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
     else setMonth(m => m - 1);
@@ -302,6 +325,7 @@ export default function FrozenStudentsPage() {
                         <th className="px-4 py-3 text-left">Filial</th>
                         <th className="px-4 py-3 text-left">Sana</th>
                         {canReport && <th className="px-4 py-3 text-left">Tafsilot</th>}
+                        <th className="px-4 py-3 text-center w-28">Skript</th>
                         {user?.role === 'admin' && <th className="px-4 py-3 text-center">Amal</th>}
                       </tr>
                     </thead>
@@ -324,6 +348,14 @@ export default function FrozenStudentsPage() {
                           <td className="px-4 py-3 text-zinc-400 text-xs">{f.filial || '—'}</td>
                           <td className="px-4 py-3 text-zinc-400 text-xs">{formatDate(f.frozenAt)}</td>
                           {canReport && <td className="px-4 py-3 text-zinc-500 text-xs max-w-[200px] truncate" title={f.detailedNote}>{f.detailedNote || '—'}</td>}
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => handleGetScript(f)}
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/10 hover:bg-violet-600/20 text-violet-400 border border-violet-500/15 text-xs font-semibold transition-all duration-200"
+                            >
+                              <Brain className="w-3.5 h-3.5" /> Skript
+                            </button>
+                          </td>
                           {user?.role === 'admin' && (
                             <td className="px-4 py-3 text-center">
                               <button onClick={() => handleUnfreeze(f.id, f.studentName)}
@@ -820,6 +852,79 @@ export default function FrozenStudentsPage() {
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Snowflake className="w-4 h-4" />}
                 Muzlatish
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== OPERATOR SCRIPT MODALI ===== */}
+      {showScriptModal && selectedFreeze && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-2xl border border-zinc-700 shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-zinc-800 bg-gradient-to-r from-violet-950/20 to-zinc-900">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20 animate-pulse">
+                  <Brain className="w-5 h-5 text-violet-400" />
+                </div>
+                <div>
+                  <h2 className="text-white font-bold text-base">Muloqot Skripti: {selectedFreeze.studentName}</h2>
+                  <p className="text-xs text-zinc-400">Ketish sababi: {REASON_LABELS[selectedFreeze.reason] || selectedFreeze.reason}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowScriptModal(false)} className="p-1.5 rounded-lg hover:bg-zinc-700 text-zinc-400 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto flex-1 p-5 space-y-4">
+              {scriptLoading && (
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-4 border-violet-500/20 border-t-violet-500 animate-spin" />
+                    <Brain className="w-6 h-6 text-violet-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                  <p className="text-zinc-400 text-sm">Sun'iy intellekt 10 yillik tajribali operator sifatida skript tuzmoqda...</p>
+                </div>
+              )}
+
+              {scriptError && !scriptLoading && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-red-300 font-medium">Skript yaratib bo'lmadi</p>
+                    <p className="text-zinc-400 text-sm mt-1">{scriptError}</p>
+                  </div>
+                </div>
+              )}
+
+              {scriptText && !scriptLoading && (
+                <div className="prose prose-invert max-w-none">
+                  <div className="bg-zinc-950 rounded-xl p-5 text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap font-sans border border-zinc-800">
+                    {scriptText}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-5 border-t border-zinc-800 flex gap-3 bg-zinc-950/20">
+              <button onClick={() => setShowScriptModal(false)}
+                className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-sm font-medium transition-colors">
+                Yopish
+              </button>
+              {scriptText && !scriptLoading && (
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(scriptText);
+                    alert("Skript muvaffaqiyatli nusxalandi!");
+                  }}
+                  className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-violet-600/20"
+                >
+                  <Copy className="w-4 h-4" /> Nusxalash
+                </button>
+              )}
             </div>
           </div>
         </div>

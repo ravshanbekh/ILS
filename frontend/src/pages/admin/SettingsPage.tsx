@@ -40,6 +40,7 @@ export default function SettingsPage() {
   const [geminiSaveStatus, setGeminiSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [geminiTesting, setGeminiTesting] = useState(false);
   const [geminiTestResult, setGeminiTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [centerContext, setCenterContext] = useState('');
 
   useEffect(() => {
     settingsApi.getTutorialVideos()
@@ -73,6 +74,7 @@ export default function SettingsPage() {
       .then(res => {
         setGeminiStatus(res.data.data);
         setGeminiModel(res.data.data?.model || 'gemini-2.5-flash');
+        setCenterContext(res.data.data?.centerContext || '');
       })
       .catch(console.error);
   }, []);
@@ -149,7 +151,11 @@ export default function SettingsPage() {
     setGeminiSaving(true);
     setGeminiSaveStatus('idle');
     try {
-      const res = await settingsApi.updateGemini({ apiKey: geminiApiKey || undefined, model: geminiModel || undefined } as any);
+      const res = await settingsApi.updateGemini({
+        apiKey: geminiApiKey || undefined,
+        model: geminiModel || undefined,
+        centerContext: centerContext
+      } as any);
       setGeminiStatus(res.data.data);
       setGeminiSaveStatus('success');
       setGeminiApiKey('');
@@ -469,6 +475,18 @@ export default function SettingsPage() {
               </select>
             </div>
 
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1.5 font-medium">O'quv markazi ma'lumotlari (AI uchun kontekst)</label>
+              <textarea
+                value={centerContext}
+                onChange={(e) => setCenterContext(e.target.value)}
+                placeholder="Bizning o'quv markazimiz haqida ma'lumotlar: kurslar, narxlar, chegirmalar, afzalliklarimiz va sotuv qoidalari..."
+                rows={5}
+                className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all resize-y"
+              />
+              <p className="text-xs text-zinc-500 mt-1">Ushbu ma'lumotlar sun'iy intellekt tomonidan har bir o'quvchi uchun individual suhbat skriptlarini yozishda qo'shimcha ma'lumot sifatida ishlatiladi.</p>
+            </div>
+
             {geminiTestResult && (
               <div className={`p-3 rounded-xl text-sm font-medium flex items-start gap-2 ${geminiTestResult.success ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
                 {geminiTestResult.success ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
@@ -502,7 +520,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={handleGeminiSave}
-              disabled={geminiSaving || (!geminiApiKey && !geminiModel)}
+              disabled={geminiSaving || (!geminiApiKey && !geminiModel && !centerContext)}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all shadow-lg shadow-indigo-500/20"
             >
               {geminiSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

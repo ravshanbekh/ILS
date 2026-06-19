@@ -316,6 +316,99 @@ class FreezesService {
   }
 
   /**
+   * O'quvchi uchun operator gaplashish scriptini yaratish
+   */
+  async generateOperatorScript(id: string): Promise<string> {
+    // Settings dan API key, model va context olish
+    let apiKey = '';
+    let model = 'gemini-2.5-flash';
+    let centerContext = '';
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const settingsPath = path.join(__dirname, '../../../data/settings.json');
+      if (fs.existsSync(settingsPath)) {
+        const raw = fs.readFileSync(settingsPath, 'utf-8');
+        const settings = JSON.parse(raw);
+        apiKey = settings.geminiApiKey || '';
+        model = settings.geminiModel || 'gemini-2.5-flash';
+        centerContext = settings.centerContext || '';
+      }
+    } catch (e) {
+      throw new Error('API_KEY_NOT_SET');
+    }
+
+    if (!apiKey) throw new Error('API_KEY_NOT_SET');
+
+    // Freeze ma'lumotlarini olish
+    const freeze = await prisma.studentFreeze.findUnique({
+      where: { id },
+    });
+
+    if (!freeze) throw new Error('FREEZE_NOT_FOUND');
+
+    const startStr = freeze.startDate ? new Date(freeze.startDate).toLocaleDateString('uz-UZ') : 'Noma\'lum';
+    const freezeStr = new Date(freeze.frozenAt).toLocaleDateString('uz-UZ');
+    const reasonLabel = FREEZE_REASON_LABELS[freeze.reason] || freeze.reason;
+
+    const prompt = `Siz o'quv markazida ketgan/muzlatilgan o'quvchilarni qaytarish (retention) bo'yicha 10 yillik tajribaga ega bo'lgan professional savdo/aloqa operatorisiz. Sizning vazifangiz - telefon orqali gaplashib o'quvchini yoki uning ota-onasini o'quv markaziga qaytarish uchun maxsus, individual suhbat skriptini tuzishdir.
+
+Tizimdagi o'quvchi ma'lumotlari:
+- O'quvchi: ${freeze.studentName || 'Noma\'lum'}
+- Telefon: ${freeze.phone || 'Noma\'lum'}
+- Guruh: ${freeze.groupName || 'Noma\'lum'}
+- O'qituvchi: ${freeze.teacherName || 'Noma\'lum'}
+- Filial: ${freeze.filial || 'Bosh filial'}
+- O'qish davri: ${startStr} dan ${freezeStr} gacha
+- Ketish/Muzlatish sababi: ${reasonLabel}
+- Admin yozib qoldirgan batafsil izoh: ${freeze.detailedNote || 'Izoh yozilmagan'}
+
+=== O'QUV MARKAZI HAQIDA MA'LUMOTLAR VA QO'SHIMCHA KONTEKST ===
+${centerContext || 'O\'quv markazi haqida ma\'lumotlar kiritilmagan.'}
+==========================================================
+
+Skriptni tuzishda quyidagilarga qat'iy amal qiling:
+1. **Muammoni aniqlash va qabul qilish**: Suhbatning boshida o'quvchining (yoki ota-onasining) ketishiga sabab bo'lgan asosiy muammoni (masalan, to'lov qiyinligi, motivatsiya tushishi, o'qituvchidan norozilik, vaqt etishmasligi) samimiy tinglang, unga hamdardlik (empathy) bildiring va o'quvchining vaziyatini tushunganingizni ko'rsating.
+2. **Yechim taklif qilish**: Muammodan kelib chiqib, o'quv markazimizning imkoniyatlaridan (kurs turlari, to'lov uchun qulayliklar, boshqa o'qituvchi yoki guruhga o'tkazish, bepul mentorliklar, kursning kelajakdagi foydalari va hk. - o'quv markazi kontekstiga qarang) foydalangan holda muammoga yechim taklif qiling.
+3. **Muloqot uslubi**: Juda samimiy, do'stona, bosimsiz (no-pressure), lekin ishonchli va sotuvga yo'naltirilgan bo'lsin.
+4. **Murojaat**: Muloqot skriptini o'zbek tilida, juda tushunarli qilib yozing. Ota-onaga yoki o'quvchiga qarab (izohdagi yoshiga qarab) qanday gapirish kerakligini belgilang.
+
+Iltimos, operator uchun quyidagi bo'limlardan iborat mukammal qo'llanma tayyorlang:
+- **📞 Operator uchun tayyorgarlik va tavsiyalar** (Ushbu o'quvchi bilan bog'lanishdan oldin nimalarga e'tibor berish kerak?)
+- **👋 Salomlashish va muzni eritish** (Suhbatni qanday boshlash kerak?)
+- **🔍 Muammoni aniqlash va hamdardlik (Empathy) bosqichi** (Muammoni ochish va o'quvchini tinglash uchun savollar/gaplar)
+- **💡 Muammoga individual yechim taqdim etish bosqichi** (Keltirilgan sababga ko'ra o'quv markazi taklif etadigan aniq yechim/yordamlar)
+- **🙅‍♂️ E'tirozlar bilan ishlash** (Agar o'quvchi bosh tortsa, nima deb javob berish kerak?)
+- **🎯 Suhbatni yakunlash va Keyingi qadam (Call to Action)**
+
+Javobni o'zbek tilida, Markdown formatida, chiroyli dizayn va emojilar bilan yozing.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error('Gemini script generation error:', errBody);
+      throw new Error('GEMINI_API_ERROR');
+    }
+
+    const data: any = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  }
+
+  /**
    * Gemini AI bilan tahlil
    */
   async analyzeWithAI(month: number, year: number): Promise<string> {

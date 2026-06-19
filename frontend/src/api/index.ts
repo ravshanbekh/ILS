@@ -131,7 +131,7 @@ export const settingsApi = {
 
   // Gemini AI sozlamalari
   getGeminiStatus: () => api.get('/settings/gemini'),
-  updateGemini: (data: { apiKey: string; model?: string }) => api.put('/settings/gemini', data),
+  updateGemini: (data: { apiKey?: string; model?: string; centerContext?: string }) => api.put('/settings/gemini', data),
   testGemini: () => api.post('/settings/gemini/test'),
 };
 
@@ -167,6 +167,10 @@ export const freezesApi = {
   // Gemini AI tahlil
   analyzeWithAI: (month: number, year: number) =>
     api.post('/freezes/ai-analyze', { month, year }),
+
+  // Operator gaplashish scriptini olish
+  getOperatorScript: (id: string) =>
+    api.post(`/freezes/${id}/script`),
 
   // Bekor qilish (admin only)
   unfreeze: (id: string) => api.delete(`/freezes/${id}`),
