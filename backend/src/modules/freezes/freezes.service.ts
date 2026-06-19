@@ -351,46 +351,46 @@ class FreezesService {
     const freezeStr = new Date(freeze.frozenAt).toLocaleDateString('uz-UZ');
     const reasonLabel = FREEZE_REASON_LABELS[freeze.reason] || freeze.reason;
 
-    const prompt = `Siz o'quv markazida ketgan/muzlatilgan o'quvchilarni qaytarish (retention) bo'yicha 10 yillik tajribaga ega bo'lgan professional savdo/aloqa operatorisiz. Telefon orqali gaplashib o'quvchini yoki uning ota-onasini o'quv markaziga qaytarish uchun maxsus, individual suhbat skriptini tuzing.
+    const prompt = `Siz o'quv markazida ketgan yoki muzlatilgan o'quvchilarni qaytarish bo'yicha 10 yillik tajribaga ega bo'lgan professional aloqa/sotuv operatorisiz. O'quvchini yoki uning ota-onasini o'quv markaziga qaytarish uchun telefonda gaplashish ssenariysini (muloqot skriptini) so'zma-so'z tuzing.
 
 Tizimdagi o'quvchi ma'lumotlari:
-- O'quvchi: ${freeze.studentName || 'Noma\'lum'}
+- O'quvchi ismi: ${freeze.studentName || 'Noma\'lum'}
 - Telefon: ${freeze.phone || 'Noma\'lum'}
 - Guruh: ${freeze.groupName || 'Noma\'lum'}
 - O'qituvchi: ${freeze.teacherName || 'Noma\'lum'}
 - Filial: ${freeze.filial || 'Bosh filial'}
 - O'qish davri: ${startStr} dan ${freezeStr} gacha
 - Ketish/Muzlatish sababi: ${reasonLabel}
-- Admin yozib qoldirgan batafsil izoh: ${freeze.detailedNote || 'Izoh yozilmagan'}
+- Admin izohi: ${freeze.detailedNote || 'Izoh yozilmagan'}
 
 === O'QUV MARKAZI HAQIDA MA'LUMOTLAR VA QO'SHIMCHA KONTEKST ===
 ${centerContext || 'O\'quv markazi haqida ma\'lumotlar kiritilmagan.'}
 ==========================================================
 
-QAT'IY QOIDALAR (Bularga rioya qilmaslik javobni buzadi):
-1. MATNDA HECH QANDAY MARKDOWN BELGILARINI (*, **, #, \`\`\`) ISHLATMANG! Yulduzchalarni umuman ishlatmang. Sarlavhalarni shunchaki bosh harflar va emojilar bilan yozing. Matn to'liq oddiy matn (plain text) bo'lishi shart.
-2. Yuqoridagi o'quvchi ma'lumotlarini (ismi, guruhi, o'qituvchisi va hk.) javob boshida qaytadan ro'yxat qilib yozmang (buni operator allaqachon biladi). 
-3. Javobingizni hech qanday kirish, salomlashish yoki tushuntirish bilan boshlamang. To'g'ridan-to'g'ri quyidagi bo'limlarni yozishdan boshlang:
+QAT'IY QOIDALAR (Bularga rioya qilmaslik javobni buzadi va xato keltirib chiqaradi):
+1. MATNDA MUTLAQO HECH QANDAY MARKDOWN BELGILARINI (*, **, #, \`\`\`, _) ISHLATMANG! Yulduzchalarni umuman yozmang. Sarlavhalarni shunchaki bosh harflar va emojilar bilan oddiy matnda yozing. Matn faqatgina toza plain text (oddiy matn) bo'lishi shart.
+2. O'quvchi ma'lumotlarini (ismi, guruhi, o'qituvchisi, o'qish davri va hk.) javob boshida qaytadan ro'yxat shaklida yoki tavsif shaklida yozmang. Bu ma'lumotlarni operator jadvalda ko'rib turibdi, ularni takrorlash Google xavfsizlik va nusxalash cheklovlarini (recitation check) ishga tushirib, javobingizni to'xtatib qo'yadi.
+3. Javobingizni hech qanday kirish, salomlashish yoki tushuntirish so'zlari bilan boshlamang. To'g'ridan-to'g'ri "SALOMLASHISH VA KIRISH" sarlavhasidan boshlab, faqat operator gapiradigan gaplarni yozing.
+4. "Operator uchun tayyorgarlik va tavsiyalar" degan bo'limlarni yozmang. Bizga faqat to'liq va tayyor muloqot skriptining o'zi kerak.
 
-📞 OPERATOR UCHUN TAYYORGARLIK VA TAVSIYALAR
-(Operator qo'ng'iroqdan oldin nimalarga e'tibor berishi kerakligi haqida qisqacha tavsiyalar)
+Quyidagi bo'limlar bo'yicha to'liq, batafsil, so'zma-so'z gaplarni o'zbek tilida yozing:
 
-👋 SALOMLASHISH SCRIPT
+SALOMLASHISH VA KIRISH
 (Operator telefonda aynan nima deyishi kerak - so'zma-so'z gaplar)
 
-🔍 MUAMMONI ANIQLASH VA HAMDARDLIK (EMPATHY) SCRIPT
-(O'quvchini yoki ota-onani tinglash va muammosini tushunish uchun so'zma-so'z gaplar)
+MUAMMONI ANIQLASH VA HAMDARDLIK
+(O'quvchini yoki ota-onani samimiy tinglash, uning ketish sababini (${reasonLabel}) hisobga olgan holda u bilan gaplashish gaplari)
 
-💡 MUAMMOGA YECHIM VA TAKLIF TAQDIM ETISH SCRIPT
-(O'quv markazi imkoniyatlaridan kelib chiqib, aynan uning muammosiga (masalan: ${reasonLabel} sababiga) mos taklif va yordamlar haqida so'zma-so'z gaplar. Agar kontekstda IELTS kurslari yoki qulayliklar bo'lsa, ularni qo'shing)
+YECHIM VA KAFOLATLAR TAQDIM ETISH
+(Mijozning muammosiga mos yechim, o'quv markazimiz imkoniyatlaridan va kontekstdan kelib chiqib beriladigan takliflar - masalan, chegirmalar, darslarni moslashtirish, yoki boshqa darslar/IELTS)
 
-🙅‍♂️ E'TIROZLAR BILAN ISHLASH SCRIPT
-(Agar rad etsa, operator nima deb javob berishi kerakligi bo'yicha so'zma-so'z gaplar)
+E'TIROZLAR BILAN ISHLASH
+(Mijoz rad etmoqchi bo'lganida yoki boshqa bahona aytganida operator qanday javob berishi kerakligi bo'yicha tayyor gaplar)
 
-🎯 SUHBATNI YAKUNLASH VA KEYINGI QADAM (CALL TO ACTION) SCRIPT
-(Uchrashuvga yoki darsga taklif qilish gaplari)
+KELISHUV VA YAKUNLASH
+(Mijozni qayta darsga yoki uchrashuvga jalb qilish, keyingi qadamlar va xayrlashuv)
 
-Barcha so'zma-so'z gaplarni tushunarli va ravon o'zbek tilida yozing.`;
+Har bir bo'limda operator tilidan tayyor so'zma-so'z gaplarni yozing.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -415,7 +415,17 @@ Barcha so'zma-so'z gaplarni tushunarli va ravon o'zbek tilida yozing.`;
 
     const data: any = await response.json();
     const parts = data.candidates?.[0]?.content?.parts || [];
-    return parts.map((p: any) => p.text).join('') || '';
+    let textResult = parts.map((p: any) => p.text).join('') || '';
+
+    // Remove markdown formatting symbols (asterisks, hashtags, underscores, backticks)
+    textResult = textResult
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/##+/g, '')
+      .replace(/__/g, '')
+      .replace(/`/g, '');
+
+    return textResult.trim();
   }
 
   /**
