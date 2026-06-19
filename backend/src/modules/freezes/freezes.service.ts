@@ -367,6 +367,9 @@ Tizimdagi o'quvchi ma'lumotlari:
 ${centerContext || 'O\'quv markazi haqida ma\'lumotlar kiritilmagan.'}
 ==========================================================
 
+Juda muhim qoida (Recitation check cheklovidan o'tish uchun):
+Javobingizni hech qanday salomlashish (masalan: "Assalomu alaykum! Men sizga skript tuzib beraman..." yoki "Sizning professional tajribangizni inobatga olgan holda...") yoki topshiriq shartlarini boshida takrorlash bilan boshlamang! To'g'ridan-to'g'ri operator uchun mo'ljallangan skript bo'limlarini yozishdan boshlang.
+
 Skriptni tuzishda quyidagilarga qat'iy amal qiling:
 1. **Muammoni aniqlash va qabul qilish**: Suhbatning boshida o'quvchining (yoki ota-onasining) ketishiga sabab bo'lgan asosiy muammoni (masalan, to'lov qiyinligi, motivatsiya tushishi, o'qituvchidan norozilik, vaqt etishmasligi) samimiy tinglang, unga hamdardlik (empathy) bildiring va o'quvchining vaziyatini tushunganingizni ko'rsating.
 2. **Yechim taklif qilish**: Muammodan kelib chiqib, o'quv markazimizning imkoniyatlaridan (kurs turlari, to'lov uchun qulayliklar, boshqa o'qituvchi yoki guruhga o'tkazish, bepul mentorliklar, kursning kelajakdagi foydalari va hk. - o'quv markazi kontekstiga qarang) foydalangan holda muammoga yechim taklif qiling.
@@ -377,7 +380,7 @@ Iltimos, operator uchun quyidagi bo'limlardan iborat mukammal qo'llanma tayyorla
 - **📞 Operator uchun tayyorgarlik va tavsiyalar** (Ushbu o'quvchi bilan bog'lanishdan oldin nimalarga e'tibor berish kerak?)
 - **👋 Salomlashish va muzni eritish** (Suhbatni qanday boshlash kerak?)
 - **🔍 Muammoni aniqlash va hamdardlik (Empathy) bosqichi** (Muammoni ochish va o'quvchini tinglash uchun savollar/gaplar)
-- **💡 Muammoga individual yechim taqdim etish bosqichi** (Keltirilgan sababga ko'ra o'quv markazi taklif etadigan aniq yechim/yordamlar)
+- **💡 Muammoga individual yechim taqaim etish bosqichi** (Keltirilgan sababga ko'ra o'quv markazi taklif etadigan aniq yechim/yordamlar)
 - **🙅‍♂️ E'tirozlar bilan ishlash** (Agar o'quvchi bosh tortsa, nima deb javob berish kerak?)
 - **🎯 Suhbatni yakunlash va Keyingi qadam (Call to Action)**
 
@@ -393,7 +396,7 @@ Javobni o'zbek tilida, Markdown formatida, chiroyli dizayn va emojilar bilan yoz
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
         }),
       }
     );
@@ -405,7 +408,8 @@ Javobni o'zbek tilida, Markdown formatida, chiroyli dizayn va emojilar bilan yoz
     }
 
     const data: any = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    return parts.map((p: any) => p.text).join('') || '';
   }
 
   /**
