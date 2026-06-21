@@ -525,11 +525,13 @@ Quyidagi tuzilish bo'yicha juda chuqur, tanqidiy va professional tahlil tayyorla
    - Ushbu ketishlarni to'xtatish va yo'qotilgan daromadni tiklash uchun darhol amalga oshirish kerak bo'lgan 3-5 ta chora-tadbir.
    - O'quvchilarni qaytarish (retention) bo'yicha amaliy skriptlar yoki g'oyalar.
 5. **📋 Uzoq Muddatli Tizimli Tavsiyalar (3-6 oy)**:
-   - IT Live o'quv markazini yanada kuchaytirish, mijozlar sodiqligini (LTV) oshirish uchun biznes jarayonlarni (LMS, KPI, o'qituvchilarni nazorat qilish, sifat nazorati) qanday o'zgartirish kerak?
+    - IT Live o'quv markazini yanada kuchaytirish, mijozlar sodiqligini (LTV) oshirish uchun biznes jarayonlarni (LMS, KPI, o'qituvchilarni nazorat qilish, sifat nazorati) qanday o'zgartirish kerak?
 6. **📈 Biznes Prognozi**:
-   - Agar bu muammolar hal etilmasa, kelgusi oylarda o'quv markazi daromadi va brend obro'siga ta'siri qanday bo'ladi?
+    - Agar bu muammolar hal etilmasa, kelgusi oylarda o'quv markazi daromadi va brend obro'siga ta'siri qanday bo'ladi?
 
-Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida yozing. Har bir bo'limni chiroyli emoji va vizual struktura (ro'yxatlar, qalin shriftlar, muhim joylar uchun iqtiboslar) bilan bezating.`;
+Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida yozing. Har bir bo'limni chiroyli emoji va vizual struktura (ro'yxatlar, qalin shriftlar, muhim joylar uchun iqtiboslar) bilan bezating.
+
+MUHIM CHEKLOV: Javobingiz 500-700 so'zdan oshmasin. Har bir bo'lim uchun 3-5 ta qisqa, aniq gap yeting. Ortiqcha batafsil tushuntirish kerak emas — faqat aniq va amaliy xulosalar.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -541,7 +543,7 @@ Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida 
         },
         body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2000 },
       }),
     });
 

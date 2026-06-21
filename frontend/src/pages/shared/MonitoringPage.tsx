@@ -359,7 +359,7 @@ export default function MonitoringPage() {
                     )}
 
                     {aiResult && !aiLoading && (
-                      <div className="bg-zinc-950 rounded-xl p-4 text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap border border-zinc-800 max-h-64 overflow-y-auto">
+                      <div className="bg-zinc-950 rounded-xl p-4 text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap border border-zinc-800 max-h-[500px] overflow-y-auto">
                         {aiResult}
                       </div>
                     )}

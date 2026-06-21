@@ -455,10 +455,8 @@ export default function FrozenStudentsPage() {
                 )}
 
                 {aiResult && !aiLoading && (
-                  <div className="prose prose-invert max-w-none">
-                    <div className="bg-zinc-800/50 rounded-xl p-5 text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap">
-                      {aiResult}
-                    </div>
+                  <div className="bg-zinc-800/50 rounded-xl p-5 text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap max-h-[500px] overflow-y-auto border border-zinc-700/50">
+                    {aiResult}
                   </div>
                 )}
 
@@ -900,10 +898,8 @@ export default function FrozenStudentsPage() {
               )}
 
               {scriptText && !scriptLoading && (
-                <div className="prose prose-invert max-w-none">
-                  <div className="bg-zinc-950 rounded-xl p-5 text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap font-sans border border-zinc-800">
-                    {scriptText}
-                  </div>
+                <div className="bg-zinc-950 rounded-xl p-5 text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap font-sans border border-zinc-800">
+                  {scriptText}
                 </div>
               )}
             </div>

@@ -493,7 +493,9 @@ Quyidagi bo'limlar bo'yicha tahlil yozing:
 💡 UZOQ MUDDATLI TAVSIYALAR
 (1-3 oylik rivojlanish yo'nalishi)
 
-Barcha matnni o'zbek tilida, tushunarli va amaliy uslubda yozing.`;
+Barcha matnni o'zbek tilida, tushunarli va amaliy uslubda yozing.
+
+MUHIM CHEKLOV: Javobingiz 350-500 so'zdan oshmasin. Har bir bo'lim uchun 2-4 ta qisqa, aniq gap yeting. Ortiqcha tushuntirish kerak emas — faqat eng muhim xulosalar.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -502,7 +504,7 @@ Barcha matnni o'zbek tilida, tushunarli va amaliy uslubda yozing.`;
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1800 },
         }),
       }
     );
@@ -622,7 +624,9 @@ Quyidagilar bo'yicha tahlil bering:
 📋 HR TAVSIYALARI
 (Ushbu o'qituvchi bilan ishlash bo'yicha amaliy qadamlar)
 
-O'zbek tilida yozing.`;
+O'zbek tilida yozing.
+
+MUHIM CHEKLOV: Javobingiz 300-450 so'zdan oshmasin. Har bir bo'lim 2-3 ta qisqa, aniq gap. Faqat eng muhim xulosalar.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -631,7 +635,7 @@ O'zbek tilida yozing.`;
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1800 },
         }),
       }
     );
