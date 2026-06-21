@@ -495,7 +495,7 @@ Quyidagi bo'limlar bo'yicha tahlil yozing:
 
 Barcha matnni o'zbek tilida, tushunarli va amaliy uslubda yozing.
 
-MUHIM CHEKLOV: Javobingiz 350-500 so'zdan oshmasin. Har bir bo'lim uchun 2-4 ta qisqa, aniq gap yeting. Ortiqcha tushuntirish kerak emas — faqat eng muhim xulosalar.`;
+MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -504,7 +504,7 @@ MUHIM CHEKLOV: Javobingiz 350-500 so'zdan oshmasin. Har bir bo'lim uchun 2-4 ta 
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1800 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
         }),
       }
     );
@@ -626,7 +626,7 @@ Quyidagilar bo'yicha tahlil bering:
 
 O'zbek tilida yozing.
 
-MUHIM CHEKLOV: Javobingiz 300-450 so'zdan oshmasin. Har bir bo'lim 2-3 ta qisqa, aniq gap. Faqat eng muhim xulosalar.`;
+MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -635,7 +635,7 @@ MUHIM CHEKLOV: Javobingiz 300-450 so'zdan oshmasin. Har bir bo'lim 2-3 ta qisqa,
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1800 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
         }),
       }
     );

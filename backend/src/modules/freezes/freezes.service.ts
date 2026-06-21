@@ -536,7 +536,7 @@ Quyidagi tuzilish bo'yicha juda chuqur, tanqidiy va professional tahlil tayyorla
 
 Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida yozing. Har bir bo'limni chiroyli emoji va vizual struktura (ro'yxatlar, qalin shriftlar, muhim joylar uchun iqtiboslar) bilan bezating.
 
-MUHIM CHEKLOV: Javobingiz 500-700 so'zdan oshmasin. Har bir bo'lim uchun 3-5 ta qisqa, aniq gap yeting. Ortiqcha batafsil tushuntirish kerak emas — faqat aniq va amaliy xulosalar.`;
+MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -548,7 +548,7 @@ MUHIM CHEKLOV: Javobingiz 500-700 so'zdan oshmasin. Har bir bo'lim uchun 3-5 ta 
         },
         body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2000 },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
       }),
     });
 
