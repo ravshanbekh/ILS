@@ -402,7 +402,7 @@ Har bir bo'limda operator tilidan tayyor so'zma-so'z gaplarni yozing.`;
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
         }),
       }
     );
