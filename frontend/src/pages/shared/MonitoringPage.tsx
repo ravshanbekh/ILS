@@ -315,7 +315,7 @@ export default function MonitoringPage() {
 
                 {/* AI tahlil paneli */}
                 {showAI && (
-                  <div className="border-b border-zinc-800 bg-violet-950/20 p-4">
+                  <div className="border-b border-zinc-800 bg-violet-950/20 p-4 flex-shrink-0">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-violet-300 font-semibold text-sm flex items-center gap-2">
                         <Brain className="w-4 h-4" /> Gemini AI Tahlil — {selectedGroup.name}
@@ -359,7 +359,10 @@ export default function MonitoringPage() {
                     )}
 
                     {aiResult && !aiLoading && (
-                      <div className="bg-zinc-950 rounded-xl p-4 text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap border border-zinc-800 max-h-[500px] overflow-y-auto">
+                      <div
+                        className="bg-zinc-950 rounded-xl p-4 text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap border border-zinc-800"
+                        style={{ maxHeight: '280px', overflowY: 'scroll' }}
+                      >
                         {aiResult}
                       </div>
                     )}

@@ -455,7 +455,10 @@ export default function FrozenStudentsPage() {
                 )}
 
                 {aiResult && !aiLoading && (
-                  <div className="bg-zinc-800/50 rounded-xl p-5 text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap max-h-[500px] overflow-y-auto border border-zinc-700/50">
+                  <div
+                    className="bg-zinc-800/50 rounded-xl p-5 text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap border border-zinc-700/50"
+                    style={{ maxHeight: '480px', overflowY: 'scroll' }}
+                  >
                     {aiResult}
                   </div>
                 )}
