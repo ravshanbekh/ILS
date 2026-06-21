@@ -1,0 +1,96 @@
+version: '3.8'
+
+# ================================================================
+#  DEMO TIZIM — demo.itlivescore.uz uchun
+#  
+#  XAVFSIZ ARXITEKTURA:
+#  - Faqat 1 ta tashqi port: 7080 (boshqa loyihalarga tegmaydi)
+#  - DB, Backend, Frontend — faqat ichki Docker networkda
+#  - Boshqa hech qanday loyihaga ta'sir yo'q
+#
+#  Ishga tushirish:
+#    docker-compose -f docker-compose.demo.yml up -d
+#  
+#  Tekshirish:
+#    curl http://localhost:7080/api/health
+# ================================================================
+
+services:
+
+  # ──── 1. NGINX PROXY (yagona tashqi eshik) ────
+  nginx_proxy_demo:
+    image: nginx:alpine
+    container_name: tizim_nginx_proxy_demo
+    ports:
+      - "7080:80"        # ← Faqat shu port tashqariga ochiq!
+    volumes:
+      - ./nginx-proxy-demo.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend_demo
+      - backend_demo
+    restart: unless-stopped
+    networks:
+      - demo_internal
+    labels:
+      - "project=tizim-demo"
+
+  # ──── 2. FRONTEND (ichki, port ochilmaydi) ────
+  frontend_demo:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.demo
+    container_name: tizim_frontend_demo
+    # ports: YO'Q — tashqariga ochilmaydi!
+    restart: unless-stopped
+    networks:
+      - demo_internal
+    labels:
+      - "project=tizim-demo"
+
+  # ──── 3. BACKEND (ichki, port ochilmaydi) ────
+  backend_demo:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tizim_backend_demo
+    env_file:
+      - ./backend/.env.demo
+    # ports: YO'Q — tashqariga ochilmaydi!
+    depends_on:
+      - db_demo
+    restart: unless-stopped
+    volumes:
+      - backend_demo_data:/app/data
+    networks:
+      - demo_internal
+    labels:
+      - "project=tizim-demo"
+
+  # ──── 4. DATABASE (ichki, port ochilmaydi) ────
+  db_demo:
+    image: postgres:15-alpine
+    container_name: tizim_db_demo
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: normativ_demo
+    volumes:
+      - postgres_demo_data:/var/lib/postgresql/data
+    # ports: YO'Q — tashqariga ochilmaydi!
+    restart: unless-stopped
+    networks:
+      - demo_internal
+    labels:
+      - "project=tizim-demo"
+
+volumes:
+  postgres_demo_data:
+    name: tizim_postgres_demo_data   # Boshqa loyihalar bilan ism to'qnashuvi yo'q
+  backend_demo_data:
+    name: tizim_backend_demo_data
+
+networks:
+  demo_internal:
+    name: tizim_demo_internal        # Boshqa loyihalar bilan network to'qnashuvi yo'q
+    driver: bridge
+    internal: false                  # Internetga chiqish kerak (prisma, npm uchun)

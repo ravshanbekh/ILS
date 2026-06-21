@@ -5,6 +5,7 @@ import { env } from './config/env';
 import logger from './shared/utils/logger';
 import { errorHandler } from './shared/middleware/errorHandler';
 import { apiLimiter } from './shared/middleware/rateLimiter';
+import { demoGuard } from './shared/middleware/demoGuard';
 import { initSocket } from './shared/utils/socket';
 
 // Route imports
@@ -46,6 +47,12 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Rate limiting
 app.use('/api/', apiLimiter);
+
+// Demo mode guard
+if (env.DEMO_MODE) {
+  app.use('/api/', demoGuard);
+  logger.info('🎭 Demo rejimi yoqildi — soxta ma\'lumotlar ishlatiladi');
+}
 
 // ============ ROUTES ============
 

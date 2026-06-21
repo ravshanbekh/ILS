@@ -1,5 +1,23 @@
 {
+  "scripts": {
+    "up": "docker-compose up -d",
+    "down": "docker-compose down",
+    "logs": "docker-compose logs -f",
+
+    "demo:up": "docker-compose -f docker-compose.demo.yml up -d",
+    "demo:down": "docker-compose -f docker-compose.demo.yml down",
+    "demo:logs": "docker-compose -f docker-compose.demo.yml logs -f",
+    "demo:seed": "docker exec tizim_backend_demo npx tsx prisma/seed-demo.ts",
+    "demo:reset": "docker-compose -f docker-compose.demo.yml down -v && docker-compose -f docker-compose.demo.yml up -d",
+    "demo:build": "docker-compose -f docker-compose.demo.yml build --no-cache",
+    "demo:status": "docker ps --filter label=project=tizim-demo",
+
+    "prod:up": "docker-compose up -d",
+    "prod:down": "docker-compose down",
+    "prod:logs": "docker-compose logs -f backend"
+  },
   "dependencies": {
     "socket.io": "^4.8.3"
   }
 }
+

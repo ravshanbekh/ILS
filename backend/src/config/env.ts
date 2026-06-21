@@ -28,4 +28,7 @@ export const env = {
 
   isDev: process.env.NODE_ENV === 'development',
   isProd: process.env.NODE_ENV === 'production',
+
+  // Demo rejim (taqdimot uchun)
+  DEMO_MODE: process.env.DEMO_MODE === 'true',
 };
