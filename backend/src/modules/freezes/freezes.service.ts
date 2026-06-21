@@ -402,7 +402,7 @@ Har bir bo'limda operator tilidan tayyor so'zma-so'z gaplarni yozing.`;
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
         }),
       }
     );
@@ -414,7 +414,12 @@ Har bir bo'limda operator tilidan tayyor so'zma-so'z gaplarni yozing.`;
     }
 
     const data: any = await response.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
+    const candidate = data.candidates?.[0];
+    const finishReason = candidate?.finishReason || 'UNKNOWN';
+    if (finishReason !== 'STOP') {
+      console.warn(`[Script] Gemini finish reason: ${finishReason} — script to'liq yaratilmadi!`);
+    }
+    const parts = candidate?.content?.parts || [];
     let textResult = parts.map((p: any) => p.text).join('') || '';
 
     // Remove markdown formatting symbols (asterisks, hashtags, underscores, backticks)
