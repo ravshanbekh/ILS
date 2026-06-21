@@ -318,7 +318,7 @@ export default function MonitoringPage() {
                   <div className="border-b border-zinc-800 bg-violet-950/20 p-4 flex-shrink-0">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-violet-300 font-semibold text-sm flex items-center gap-2">
-                        <Brain className="w-4 h-4" /> Gemini AI Tahlil — {selectedGroup.name}
+                        <Brain className="w-4 h-4" /> AI Tahlil — {selectedGroup.name}
                       </h3>
                       <div className="flex gap-2">
                         {aiResult && (
@@ -351,9 +351,9 @@ export default function MonitoringPage() {
                       <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
                         <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5" />
                         <div className="text-sm">
-                          {aiError === 'api_key' && <p className="text-amber-300">Gemini API key sozlanmagan. Admin sozlamalaridan kiriting.</p>}
+                          {aiError === 'api_key' && <p className="text-amber-300">AI API key sozlanmagan. Admin sozlamalaridan kiriting.</p>}
                           {aiError === 'no_data' && <p className="text-amber-300">Bu guruh uchun monitoring ma'lumotlari hali yo'q.</p>}
-                          {aiError === 'connection' && <p className="text-amber-300">Gemini bilan bog'lanib bo'lmadi. Qayta urining.</p>}
+                          {aiError === 'connection' && <p className="text-amber-300">AI bilan bog'lanib bo'lmadi. Qayta urining.</p>}
                         </div>
                       </div>
                     )}

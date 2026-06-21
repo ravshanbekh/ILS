@@ -400,7 +400,7 @@ export default function FrozenStudentsPage() {
                       <Brain className="w-5 h-5 text-violet-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-bold">Gemini AI Tahlil</h3>
+                      <h3 className="text-white font-bold">AI Tahlil</h3>
                       <p className="text-zinc-500 text-xs">{MONTH_NAMES[month]} {year} ma'lumotlari asosida</p>
                     </div>
                   </div>
@@ -425,7 +425,7 @@ export default function FrozenStudentsPage() {
                       <div className="w-16 h-16 rounded-full border-4 border-violet-500/20 border-t-violet-500 animate-spin" />
                       <Brain className="w-6 h-6 text-violet-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     </div>
-                    <p className="text-zinc-400 text-sm">Gemini tahlil qilmoqda...</p>
+                    <p className="text-zinc-400 text-sm">AI tahlil qilmoqda...</p>
                   </div>
                 )}
 
@@ -435,7 +435,7 @@ export default function FrozenStudentsPage() {
                     <div>
                       {aiError === 'api_key' && (
                         <>
-                          <p className="text-amber-300 font-medium">Gemini API key sozlanmagan</p>
+                          <p className="text-amber-300 font-medium">AI API key sozlanmagan</p>
                           <p className="text-zinc-400 text-sm mt-1">Admin sozlamalarda API key kiriting.</p>
                           {user?.role === 'admin' && (
                             <button onClick={() => navigate('/admin/settings')}
@@ -446,7 +446,7 @@ export default function FrozenStudentsPage() {
                       {aiError === 'no_data' && <p className="text-amber-300">Bu oy uchun ma'lumot yo'q — tahlil qilib bo'lmadi.</p>}
                       {aiError === 'connection' && (
                         <>
-                          <p className="text-amber-300 font-medium">Gemini API bilan bog'lanib bo'lmadi</p>
+                          <p className="text-amber-300 font-medium">AI bilan bog'lanib bo'lmadi</p>
                           <p className="text-zinc-400 text-sm">Oddiy tahlildan foydalaning yoki qayta urining.</p>
                         </>
                       )}

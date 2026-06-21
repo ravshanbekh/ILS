@@ -429,15 +429,15 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Gemini AI Settings Section */}
+        {/* AI Settings Section */}
         <div className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="p-5 border-b border-zinc-800 flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-600 flex items-center justify-center shadow-lg">
               <Brain className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">Gemini AI Sozlamalari</h2>
-              <p className="text-xs text-zinc-400">Sun'iy intellekt orqali tahlillar uchun Google Gemini API Key</p>
+              <h2 className="text-lg font-bold text-white tracking-tight">AI Sozlamalari</h2>
+              <p className="text-xs text-zinc-400">Sun'iy intellekt orqali tahlillar uchun API Key va model sozlamalari</p>
             </div>
           </div>
 
