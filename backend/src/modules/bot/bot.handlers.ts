@@ -306,7 +306,7 @@ Qoidalarga rioya qiling:
 1. Javobingizni o'zbek tilida, do'stona va pedagogik ohangda yozing.
 2. Ota-onaga farzandining zaif va kuchli tomonlarini tahlil qilib, kelgusi rivojlanishi va natijalarini oshirishi uchun 3 ta aniq amaliy tavsiya bering.
 3. Telegram Markdown parsing xatoliklarini oldini olish uchun javobingizda mutlaqo markdown elementlarini (masalan: *, _, \`, [) ishlatmang. Plain text (oddiy matn) shaklida, emojilar va yangi qatorlar bilan chiroyli formatlab yozing.
-4. Javobingiz 2500 belgidan oshmasin.`;
+4. Javobingiz mazmunan to'liq bo'lsin, lekin juda cho'zilib ketmasligi uchun maksimal 10 ta gapdan oshmasin.`;
 
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -315,7 +315,7 @@ Qoidalarga rioya qiling:
             headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.7, maxOutputTokens: 2000 },
+              generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
             }),
           }
         );
