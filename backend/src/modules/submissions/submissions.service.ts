@@ -6,6 +6,7 @@ import { calculateScore } from '../../shared/utils/scoreCalculator';
 import { PaginationParams, createPaginatedResult } from '../../shared/utils/pagination';
 import logger from '../../shared/utils/logger';
 import { emitToUser } from '../../shared/utils/socket';
+import { notifyParentsOnCheck } from '../bot/bot.notifications';
 
 class SubmissionsService {
   /**
@@ -331,6 +332,15 @@ class SubmissionsService {
     });
 
     logger.info(`Submission checked: ${submissionId} => ${data.result} (${score} ball)`);
+
+    // Telegram orqali ota-onalarga xabar yuborish (async, xato bo'lsa ham ishlaydi)
+    notifyParentsOnCheck(submission.studentId, {
+      normative: updated.normative,
+      result: updated.result,
+      score: updated.score,
+      comment: updated.comment,
+    }).catch((err) => logger.warn('Telegram notify error:', err));
+
     return updated;
   }
 

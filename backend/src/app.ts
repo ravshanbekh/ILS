@@ -24,6 +24,7 @@ import categoriesRoutes from './modules/categories/categories.routes';
 import checklistRoutes from './modules/checklist/checklist.routes';
 import freezesRoutes from './modules/freezes/freezes.routes';
 import monitoringRoutes from './modules/monitoring/monitoring.routes';
+import { startBot } from './modules/bot/bot';
 
 const app = express();
 const httpServer = createServer(app);
@@ -112,6 +113,13 @@ const startServer = async () => {
       logger.info(`📋 API: http://localhost:${env.PORT}/api/health`);
       logger.info(`🌐 Environment: ${env.NODE_ENV}`);
     });
+
+    // Telegram bot (agar token sozlangan bo'lsa)
+    if (env.TELEGRAM_BOT_TOKEN) {
+      startBot();
+    } else {
+      logger.warn('⚠️  TELEGRAM_BOT_TOKEN yo\'q — Telegram bot o\'chirildi');
+    }
   } catch (error) {
     logger.error('❌ Server ishga tushmadi:', error);
     process.exit(1);
