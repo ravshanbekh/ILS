@@ -28,6 +28,7 @@ import { notificationEngine } from './modules/notifications/notification-engine'
 import chatbotRoutes from './modules/chatbot/chatbot.routes';
 import predictionsRoutes from './modules/predictions/predictions.routes';
 import feedbackRoutes from './modules/feedback/feedback.routes';
+import { startBot } from './modules/bot/bot';
 
 const app = express();
 const httpServer = createServer(app);
@@ -129,6 +130,13 @@ const startServer = async () => {
         notificationEngine.runChecks();
       }, 6 * 60 * 60 * 1000);
     });
+
+    // Telegram bot (agar token sozlangan bo'lsa)
+    if (env.TELEGRAM_BOT_TOKEN) {
+      startBot();
+    } else {
+      logger.warn('⚠️  TELEGRAM_BOT_TOKEN yo\'q — Telegram bot o\'chirildi');
+    }
   } catch (error) {
     logger.error('❌ Server ishga tushmadi:', error);
     process.exit(1);

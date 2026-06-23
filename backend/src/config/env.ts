@@ -31,4 +31,7 @@ export const env = {
 
   // Demo rejim (taqdimot uchun)
   DEMO_MODE: process.env.DEMO_MODE === 'true',
+
+  // Telegram Bot
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
 };

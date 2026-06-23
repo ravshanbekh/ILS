@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { notifyOperatorsOnFreeze } from '../bot/bot.notifications';
 
 // Human-readable sabab nomlari
 export const FREEZE_REASON_LABELS: Record<string, string> = {
@@ -76,6 +77,16 @@ class FreezesService {
         frozenBy: { select: { id: true, fullName: true } },
       },
     });
+
+    // Telegram orqali operatorlarga xabar yuborish
+    notifyOperatorsOnFreeze({
+      id: freeze.id,
+      studentName: freeze.studentName,
+      teacherName: freeze.teacherName,
+      groupName: freeze.groupName,
+      reason: FREEZE_REASON_LABELS[freeze.reason] || freeze.reason,
+      phone: freeze.phone,
+    }).catch(() => {});
 
     return freeze;
   }

@@ -94,7 +94,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     ] : []),
   ] : [];
 
-  const links = user?.role === 'admin'
+  const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
+
+  const rawLinks = user?.role === 'admin'
     ? adminLinks
     : user?.role === 'teacher'
     ? teacherLinks
@@ -103,6 +105,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     : user?.role === 'nazoratchi'
     ? nazoratchiLinks
     : viewerLinks;
+
+  const links = isDemo 
+    ? rawLinks.filter(link => !link.to.includes('checklist'))
+    : rawLinks;
 
   const handleLogout = () => {
     logout();

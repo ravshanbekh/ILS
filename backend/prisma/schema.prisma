@@ -67,6 +67,9 @@ model User {
   monitoringNotes     MonitoringNote[]  @relation("MonitoringNotes")
   feedbacksWritten    StudentFeedback[] @relation("FeedbackByStudent")
   feedbacksReceived   StudentFeedback[] @relation("FeedbackForTeacher")
+  telegramLinks       TelegramLink[]    @relation("TelegramStudentLinks")
+  feedbackStudent     TelegramFeedback[] @relation("FeedbackStudent")
+  feedbackTeacher     TelegramFeedback[] @relation("FeedbackTeacher")
 
   @@map("users")
 }
@@ -358,6 +361,50 @@ model MonitoringNote {
   student User           @relation("MonitoringNotes", fields: [studentId], references: [id])
 
   @@map("monitoring_notes")
+}
+
+// ============ TELEGRAM BOT SYSTEM ============
+
+/// Telegram Chat bog'lanishi (Ota-ona/Operator → O'quvchi)
+model TelegramLink {
+  id           String   @id @default(uuid()) @db.Uuid
+  telegramId   BigInt   @unique @map("telegram_id")        // Telegram user ID
+  chatId       BigInt   @map("chat_id")                    // Telegram chat ID
+  studentId    String   @map("student_id") @db.Uuid        // Bog'langan o'quvchi
+  role         String   @default("parent") @db.VarChar(20) // "parent" | "operator"
+  fullName     String?  @map("full_name") @db.VarChar(200)
+  username     String?  @db.VarChar(100)                    // @username
+  isActive     Boolean  @default(true) @map("is_active")
+  language     String   @default("uz") @db.VarChar(5)      // "uz" | "ru"
+  notifyOnCheck    Boolean @default(true) @map("notify_on_check")
+  notifyOnRank     Boolean @default(true) @map("notify_on_rank")
+  notifyWeekly     Boolean @default(true) @map("notify_weekly")
+  notifyInactivity Boolean @default(true) @map("notify_inactivity")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  student User @relation("TelegramStudentLinks", fields: [studentId], references: [id])
+
+  @@map("telegram_links")
+}
+
+/// Telegram orqali yuborilgan feedback (ota-ona → o'qituvchi)
+model TelegramFeedback {
+  id         String    @id @default(uuid()) @db.Uuid
+  telegramId BigInt    @map("telegram_id")
+  studentId  String    @map("student_id") @db.Uuid
+  teacherId  String?   @map("teacher_id") @db.Uuid
+  message    String    @db.VarChar(2000)
+  isRead     Boolean   @default(false) @map("is_read")
+  repliedAt  DateTime? @map("replied_at")
+  replyText  String?   @map("reply_text") @db.VarChar(2000)
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  student User  @relation("FeedbackStudent", fields: [studentId], references: [id])
+  teacher User? @relation("FeedbackTeacher", fields: [teacherId], references: [id])
+
+  @@map("telegram_feedbacks")
 }
 
 /// AI tomonidan yaratilgan tahlil hisobotlari (cache)
