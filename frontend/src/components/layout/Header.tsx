@@ -105,32 +105,43 @@ export default function Header({ title, subtitle }: HeaderProps) {
                       Xabarnomalar yo'q
                     </div>
                   ) : (
-                    notifications.map((notif: any) => (
-                      <div 
-                        key={notif.id} 
-                        className={`p-4 transition-colors ${notif.isRead ? 'opacity-75 hover:bg-zinc-800/30' : 'bg-blue-500/5 hover:bg-blue-500/10'}`}
-                      >
-                        <div className="flex gap-3">
-                          <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${notif.isRead ? 'bg-transparent' : 'bg-blue-500'}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm ${notif.isRead ? 'text-zinc-300' : 'text-white font-medium'} leading-snug`}>
-                              {notif.message}
-                            </p>
-                            <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-wider">
-                              {new Date(notif.createdAt).toLocaleString('uz-UZ', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </p>
+                    notifications.map((notif: any) => {
+                      // Color based on type
+                      const typeConfig: Record<string, { dot: string; bg: string }> = {
+                        ai_alert: { dot: 'bg-violet-500', bg: 'bg-violet-500/5' },
+                        warning: { dot: 'bg-amber-500', bg: 'bg-amber-500/5' },
+                        success: { dot: 'bg-emerald-500', bg: 'bg-emerald-500/5' },
+                        info: { dot: 'bg-blue-500', bg: 'bg-blue-500/5' },
+                      };
+                      const tc = notif.type && typeConfig[notif.type] ? typeConfig[notif.type] : { dot: 'bg-blue-500', bg: 'bg-blue-500/5' };
+
+                      return (
+                        <div
+                          key={notif.id}
+                          className={`p-4 transition-colors ${notif.isRead ? 'opacity-75 hover:bg-zinc-800/30' : `${tc.bg} hover:bg-zinc-800/20`}`}
+                        >
+                          <div className="flex gap-3">
+                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${notif.isRead ? 'bg-transparent' : tc.dot}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm ${notif.isRead ? 'text-zinc-300' : 'text-white font-medium'} leading-snug`}>
+                                {notif.message}
+                              </p>
+                              <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-wider">
+                                {new Date(notif.createdAt).toLocaleString('uz-UZ', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
                           </div>
+                          {!notif.isRead && (
+                            <button
+                              onClick={() => markAsRead(notif.id)}
+                              className="mt-2 ml-5 text-xs font-medium text-blue-500 hover:text-blue-400"
+                            >
+                              O'qildi deb belgilash
+                            </button>
+                          )}
                         </div>
-                        {!notif.isRead && (
-                          <button 
-                            onClick={() => markAsRead(notif.id)}
-                            className="mt-2 ml-5 text-xs font-medium text-blue-500 hover:text-blue-400"
-                          >
-                            O'qildi deb belgilash
-                          </button>
-                        )}
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>

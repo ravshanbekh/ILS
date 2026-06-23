@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   LayoutDashboard, Users, FolderOpen, BookOpen, ClipboardCheck,
   BarChart3, Trophy, Download, LogOut, GraduationCap, Video, Settings, X, ClipboardList,
-  Snowflake, Star, Phone
+  Snowflake, Star, Phone, TrendingDown
 } from 'lucide-react';
 
 const adminLinks = [
@@ -18,6 +18,7 @@ const adminLinks = [
   { to: '/admin/monitoring', icon: Phone, label: 'Monitoring' },
   { to: '/admin/checklist-stats', icon: ClipboardCheck, label: 'Cheklist Hisobot' },
   { to: '/admin/checklist-manage', icon: ClipboardList, label: 'Cheklist Boshqaruv' },
+  { to: '/admin/predictions', icon: TrendingDown, label: 'AI Bashoratlar' },
   { to: '/admin/rankings', icon: Trophy, label: 'Reyting' },
   { to: '/admin/export', icon: Download, label: 'Eksport' },
   { to: '/admin/settings', icon: Settings, label: 'Sozlamalar' },

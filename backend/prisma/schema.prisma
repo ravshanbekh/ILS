@@ -65,6 +65,8 @@ model User {
   frozenByEntries     StudentFreeze[]   @relation("FrozenBy")
   monitoringCalls     MonitoringCall[]  @relation("MonitoringCalledBy")
   monitoringNotes     MonitoringNote[]  @relation("MonitoringNotes")
+  feedbacksWritten    StudentFeedback[] @relation("FeedbackByStudent")
+  feedbacksReceived   StudentFeedback[] @relation("FeedbackForTeacher")
 
   @@map("users")
 }
@@ -84,6 +86,7 @@ model Group {
   submissions    Submission[]
   rankingCache   RankingCache[]
   monitoringCalls MonitoringCall[]
+  feedbacks       StudentFeedback[]
 
   @@map("groups")
 }
@@ -368,4 +371,22 @@ model MonitoringAIReport {
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("monitoring_ai_reports")
+}
+
+/// Student feedback for teacher
+model StudentFeedback {
+  id          String   @id @default(uuid()) @db.Uuid
+  studentId   String   @map("student_id") @db.Uuid
+  teacherId   String   @map("teacher_id") @db.Uuid
+  groupId     String   @map("group_id") @db.Uuid
+  rating      Int      // 1-5
+  comment     String?  @db.VarChar(500)
+  isAnonymous Boolean  @default(true) @map("is_anonymous")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  student User  @relation("FeedbackByStudent", fields: [studentId], references: [id])
+  teacher User  @relation("FeedbackForTeacher", fields: [teacherId], references: [id])
+  group   Group @relation(fields: [groupId], references: [id])
+
+  @@map("student_feedbacks")
 }

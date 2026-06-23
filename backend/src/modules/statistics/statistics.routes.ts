@@ -21,4 +21,7 @@ router.get('/group/:id', roleGuard('admin', 'teacher'), statisticsController.get
 // GET /api/stats/student/:id — O'quvchi statistikasi
 router.get('/student/:id', statisticsController.getStudentStats);
 
+// POST /api/stats/student/:id/ai-analyze — O'quvchi normativ AI tahlil
+router.post('/student/:id/ai-analyze', roleGuard('admin', 'teacher', 'student'), statisticsController.analyzeStudentWithAI);
+
 export default router;

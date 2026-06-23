@@ -110,6 +110,10 @@ export const statsApi = {
 
   getStudentStats: (studentId: string) =>
     api.get(`/stats/student/${studentId}`),
+
+  // AI tahlil — o'quvchini normativlar bo'yicha AI bilan tahlil qilish
+  analyzeStudentWithAI: (studentId: string) =>
+    api.post(`/stats/student/${studentId}/ai-analyze`),
 };
 
 export const rankingsApi = {
@@ -264,5 +268,38 @@ export const monitoringApi = {
   // O'qituvchi AI tahlil
   analyzeTeacher: (teacherId: string) =>
     api.post(`/monitoring/teachers/${teacherId}/ai-analyze`),
+
+  // O'quvchi bilan ishlash uchun AI script generatsiyasi
+  generateStudentScript: (studentId: string) =>
+    api.post(`/monitoring/students/${studentId}/script`),
+};
+
+export const chatbotApi = {
+  ask: (message: string) => api.post('/chatbot/ask', { message }),
+};
+
+export const predictionsApi = {
+  // Dropout xavfi bashorati (admin uchun)
+  getDropout: () => api.get('/predictions/dropout'),
+
+  // Revenue bashorati (admin uchun)
+  getRevenue: () => api.get('/predictions/revenue'),
+};
+
+export const feedbackApi = {
+  // O'quvchi feedback beradi
+  create: (data: { message: string; type?: string }) => api.post('/feedback', data),
+
+  // O'z feedbacklarini ko'rish
+  getMy: () => api.get('/feedback/my'),
+
+  // Admin: barcha feedbacklar
+  getAll: () => api.get('/feedback'),
+
+  // Admin: feedbackga javob berish
+  reply: (id: string, reply: string) => api.patch(`/feedback/${id}/reply`, { reply }),
+
+  // O'quvchi: o'zining AI tahlilini ko'rish
+  getMyAiAnalysis: () => api.get('/feedback/ai-analysis'),
 };
 

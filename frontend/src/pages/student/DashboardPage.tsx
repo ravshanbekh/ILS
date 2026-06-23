@@ -2,15 +2,23 @@ import { useEffect, useState } from 'react';
 import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
-import { statsApi } from '@/api';
+import { statsApi, feedbackApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
-import { Trophy, Target, Clock, Star, Loader2, TrendingUp } from 'lucide-react';
+import { Trophy, Target, Clock, Star, Loader2, TrendingUp, Brain, Sparkles, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  // AI Analysis state
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  // Feedback state
+  const [feedbackMsg, setFeedbackMsg] = useState('');
+  const [feedbackType, setFeedbackType] = useState('general');
+  const [feedbackSending, setFeedbackSending] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -20,6 +28,33 @@ export default function StudentDashboard() {
         .finally(() => setLoading(false));
     }
   }, [user?.id]);
+
+  const loadAiAnalysis = async () => {
+    setAiLoading(true);
+    try {
+      const res = await feedbackApi.getMyAiAnalysis();
+      setAiAnalysis(res.data.data);
+    } catch {
+      /* silently fail */
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const sendFeedback = async () => {
+    if (!feedbackMsg.trim()) return;
+    setFeedbackSending(true);
+    try {
+      await feedbackApi.create({ message: feedbackMsg.trim(), type: feedbackType });
+      setFeedbackMsg('');
+      setFeedbackSent(true);
+      setTimeout(() => setFeedbackSent(false), 4000);
+    } catch {
+      alert("Feedback yuborishda xatolik");
+    } finally {
+      setFeedbackSending(false);
+    }
+  };
 
   // Compute chart data for growth dynamics
   const chartData = Array.isArray(stats?.submissions) ? [...stats.submissions]
@@ -203,6 +238,102 @@ export default function StudentDashboard() {
             </div>
           </div>
         )}
+
+        {/* AI Self-Analysis Card */}
+        <div className="bg-gradient-to-br from-violet-900/20 to-blue-900/10 border border-violet-500/30 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-violet-400" />
+              <h3 className="text-white font-bold text-sm">Mening AI Tahlilim</h3>
+            </div>
+            {!aiAnalysis && (
+              <button
+                id="btn-my-ai-analysis"
+                onClick={loadAiAnalysis}
+                disabled={aiLoading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white text-xs font-semibold transition-all disabled:opacity-50"
+              >
+                {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
+                {aiLoading ? 'Tahlil qilinmoqda...' : 'Tahlil qilish'}
+              </button>
+            )}
+          </div>
+
+          {aiAnalysis ? (
+            <div className="space-y-3">
+              <div className={`p-4 rounded-xl border ${
+                aiAnalysis.status === 'excellent' ? 'bg-amber-500/10 border-amber-500/20' :
+                aiAnalysis.status === 'critical' ? 'bg-red-500/10 border-red-500/20' :
+                aiAnalysis.status === 'good' ? 'bg-emerald-500/10 border-emerald-500/20' :
+                'bg-zinc-800 border-zinc-700'
+              }`}>
+                <p className="text-white font-semibold text-sm">{aiAnalysis.message}</p>
+                <p className="text-zinc-400 text-xs mt-1">{aiAnalysis.advice}</p>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {[['🏆', aiAnalysis.stats?.gold, 'Oltin'], ['🥈', aiAnalysis.stats?.silver, 'Kumush'], ['🥉', aiAnalysis.stats?.bronze, 'Bronza'], ['🔴', aiAnalysis.stats?.red, 'Qizil']].map(([icon, val, label]) => (
+                  <div key={String(label)} className="bg-zinc-900 rounded-lg p-2.5 text-center border border-zinc-800">
+                    <p className="text-lg">{icon}</p>
+                    <p className="text-white font-bold text-base">{val ?? 0}</p>
+                    <p className="text-zinc-500 text-[10px]">{label}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-zinc-500">O'rtacha ball: <span className="text-white font-bold">{aiAnalysis.stats?.avgScore}</span></p>
+            </div>
+          ) : !aiLoading ? (
+            <p className="text-zinc-500 text-sm">"Tahlil qilish" tugmasini bosing va AI natijalaringizni ko'ring.</p>
+          ) : null}
+        </div>
+
+        {/* Feedback Form */}
+        <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="w-5 h-5 text-blue-400" />
+            <h3 className="text-white font-bold text-sm">O'qituvchiga Fikr-Mulohaza Yuborish</h3>
+          </div>
+
+          {feedbackSent ? (
+            <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <p className="text-emerald-300 text-sm font-medium">Fikr-mulohazangiz muvaffaqiyatli yuborildi! Rahmat 🙏</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                {[['general', 'Umumiy'], ['question', 'Savol'], ['problem', 'Muammo'], ['suggestion', 'Taklif']].map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => setFeedbackType(val)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                      feedbackType === val
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white'
+                    }`}
+                  >{label}</button>
+                ))}
+              </div>
+              <textarea
+                id="feedback-textarea"
+                value={feedbackMsg}
+                onChange={e => setFeedbackMsg(e.target.value)}
+                placeholder="O'qituvchingizga savol, taklif yoki shikoyatingizni yozing..."
+                rows={3}
+                className="w-full bg-zinc-900 border border-zinc-700 text-white placeholder-zinc-500 text-sm px-4 py-3 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+              />
+              <button
+                id="btn-send-feedback"
+                onClick={sendFeedback}
+                disabled={!feedbackMsg.trim() || feedbackSending}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-all"
+              >
+                {feedbackSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {feedbackSending ? 'Yuborilmoqda...' : 'Yuborish'}
+              </button>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

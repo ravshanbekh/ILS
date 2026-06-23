@@ -402,8 +402,6 @@ class MonitoringService {
     const since = new Date();
     since.setDate(since.getDate() - 30);
 
-    const studentIds = group.groupStudents.map((gs) => gs.id);
-    // Note: groupStudents ids !== student ids, fix:
     const gsRecords = await prisma.groupStudent.findMany({
       where: { groupId },
       select: { studentId: true },
@@ -423,7 +421,16 @@ class MonitoringService {
       take: 100,
     });
 
-    if (notes.length === 0) throw new Error('NO_DATA');
+    // Fetch submissions for the group
+    const submissions = await prisma.submission.findMany({
+      where: { groupId },
+      include: {
+        student: { select: { fullName: true } },
+        normative: { select: { title: true } },
+      },
+    });
+
+    if (notes.length === 0 && submissions.length === 0) throw new Error('NO_DATA');
 
     // Statistika
     const moodCounts = { yaxshi: 0, oddiy: 0, yomon: 0, javob_bermadi: 0 };
@@ -448,7 +455,42 @@ class MonitoringService {
       })
       .join('\n');
 
-    const prompt = `Siz o'quv markazlarini rivojlantirish bo'yicha 10 yillik tajribaga ega bo'lgan EdTech mutaxassisisiz. Quyidagi guruh monitoring ma'lumotlarini tahlil qilib, amaliy xulosalar bering.
+    const totalSubmissions = submissions.length;
+    const avgScore = totalSubmissions > 0
+      ? Math.round(submissions.reduce((sum, s) => sum + s.score, 0) / totalSubmissions)
+      : 0;
+
+    // Student score breakdown
+    const studentScores: Record<string, { name: string; total: number; green: number; blue: number; red: number }> = {};
+    submissions.forEach(s => {
+      if (!studentScores[s.studentId]) {
+        studentScores[s.studentId] = { name: s.student.fullName, total: 0, green: 0, blue: 0, red: 0 };
+      }
+      studentScores[s.studentId].total += s.score;
+      if (s.status === 'checked' && s.result) {
+        studentScores[s.studentId][s.result]++;
+      }
+    });
+
+    const sortedScores = Object.values(studentScores).sort((a, b) => a.total - b.total);
+    const bottomStudents = sortedScores.slice(0, 5);
+
+    // Identify hard normatives (where 3+ students got red result)
+    const normativeRedCounts: Record<string, { title: string; count: number }> = {};
+    submissions.forEach(s => {
+      if (s.result === 'red' && s.normative) {
+        const title = s.normative.title;
+        if (!normativeRedCounts[title]) {
+          normativeRedCounts[title] = { title, count: 0 };
+        }
+        normativeRedCounts[title].count++;
+      }
+    });
+    const hardNormatives = Object.values(normativeRedCounts)
+      .filter(n => n.count >= 3)
+      .map(n => `- ${n.title} (${n.count} ta qizil)`);
+
+    const prompt = `Siz o'quv markazlarini rivojlantirish bo'yicha 10 yillik tajribaga ega bo'lgan EdTech mutaxassisisiz. Quyidagi guruh monitoring va normativ topshiriqlar ma'lumotlarini tahlil qilib, amaliy xulosalar va o'qituvchi uchun yo'llanmalar bering.
 
 GURUH: ${group.name}
 O'QITUVCHI: ${group.teacher?.fullName || 'Belgilanmagan'}
@@ -461,8 +503,18 @@ MOOD STATISTIKASI:
 - 😟 Yomon: ${moodCounts.yomon} ta
 - 📵 Javob bermadi: ${moodCounts.javob_bermadi} ta
 
-ENG KO'P UCHRAYDIGAN MUAMMOLAR:
+ENG KO'P UCHRAYDIGAN MONITORING MUAMMOLARI:
 ${topTags.length > 0 ? topTags.join('\n') : "Maxsus teglar kiritilmagan"}
+
+=== NORMATIV NATIJALARI ===
+Jami topshiriqlar: ${totalSubmissions} ta
+Guruhning o'rtacha balli: ${avgScore} ball
+
+ORTDA QOLAYOTGAN O'QUVCHILAR (eng past ball):
+${bottomStudents.map((s, i) => `${i+1}. ${s.name}: ${s.total} ball (🟢${s.green} 🔵${s.blue} 🔴${s.red})`).join('\n') || 'Ortda qolayotgan o\'quvchilar aniqlanmadi'}
+
+QIYINCHILIK TUG'DIRAYOTGAN NORMATIVLAR (kamida 3ta o'quvchida qizil):
+${hardNormatives.length > 0 ? hardNormatives.join('\n') : 'Bunday qiyin topshiriqlar aniqlanmadi'}
 
 BARCHA FIKRLAR RO'YXATI:
 ${notesText}
@@ -479,22 +531,21 @@ QAT'IY QOIDALAR:
 Quyidagi bo'limlar bo'yicha tahlil yozing:
 
 🔴 XAVFLI O'QUVCHILAR
-(Ketib qolish xavfi yuqori bo'lganlar, ularning ismlari va sabablari)
+(Ketib qolish xavfi yuqori bo'lganlar, ularning ismlari va sabablari, ayniqsa ortda qolayotgan o'quvchilar)
 
-👨‍🏫 O'QITUVCHI SAMARADORLIGI
-(Monitoring ma'lumotlari asosida o'qituvchiga baho, kuchli va zaif tomonlar)
+👨‍🏫 O'QITUVCHI SAMARADORLIGI VA TAVSIYALAR
+(Monitoring va topshiriq ballari asosida o'qituvchiga guruh dinamikasini boshqarish uchun baho, kuchli/zaif tomonlar)
 
 ⚡ TEZKOR CHORALAR (Kelgusi 7 kun)
-(Darhol amalga oshirish kerak bo'lgan 3-5 ta aniq qadam)
+(O'qituvchi va ma'muriyat uchun darhol amalga oshirish kerak bo'lgan 3-5 ta aniq qadam, qiyin topshiriqlarni qayta tushuntirish va ortda qolayotganlarga yordam berish)
 
 📈 IJOBIY TOMONLAR
 (Guruhda yaxshi ketayotgan narsalar)
 
 💡 UZOQ MUDDATLI TAVSIYALAR
-(1-3 oylik rivojlanish yo'nalishi)
+(O'qituvchining dars berish uslubi va guruhni ushlab qolish bo'yicha 1-3 oylik strategiya)
 
 Barcha matnni o'zbek tilida, tushunarli va amaliy uslubda yozing.
-
 MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.`;
 
     const response = await fetch(
@@ -641,6 +692,90 @@ MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'li
     );
 
     if (!response.ok) throw new Error('GEMINI_API_ERROR');
+
+    const data: any = await response.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    let text = parts.map((p: any) => p.text).join('') || '';
+    text = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/##+ /g, '').replace(/`/g, '');
+    return text.trim();
+  }
+
+  /**
+   * O'quvchi bilan ishlash AI Script (yuzma-yuz suhbat uchun)
+   */
+  async generateStudentScript(studentId: string): Promise<string> {
+    const { apiKey, model, centerContext } = this.getSettings();
+    if (!apiKey) throw new Error('API_KEY_NOT_SET');
+
+    // O'quvchi ma'lumotlari
+    const student = await prisma.user.findUnique({ where: { id: studentId } });
+    if (!student) throw new Error('STUDENT_NOT_FOUND');
+
+    // Normativ natijalari
+    const submissions = await prisma.submission.findMany({
+      where: { studentId },
+      include: { normative: true, group: true },
+      orderBy: { submittedAt: 'desc' },
+    });
+
+    // Monitoring notijalari (oxirgi 5 ta)
+    const notes = await prisma.monitoringNote.findMany({
+      where: { studentId },
+      include: { call: true },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    });
+
+    // Freeze tarixi (oxirgi 3 ta)
+    const freezes = await prisma.studentFreeze.findMany({
+      where: { studentId },
+      orderBy: { frozenAt: 'desc' },
+      take: 3,
+    });
+
+    const prompt = `Sen 10 yillik tajribali o'quv markaz mentorisisan.
+${centerContext ? `O'quv markaz haqida: ${centerContext}` : ''}
+
+O'quvchi haqida to'liq ma'lumot:
+
+SHAXSIY: ${student.fullName}
+NORMATIVLAR: Jami ${submissions.length} ta topshiriq, ${submissions.filter(s => s.result === 'green').length} ta muvaffaqiyatli
+SO'NGGI MONITORING:
+${notes.map(n => `- Kayfiyat: ${MOOD_LABELS[n.mood] || n.mood}, Izoh: ${n.note}, Teglar: ${n.tags.map(t => TAG_LABELS[t] || t).join(', ')}`).join('\n') || 'Ma\'lumot yo\'q'}
+MUZLATISH TARIXI: ${freezes.length > 0 ? freezes.map(f => `${f.reason} — ${f.detailedNote || ''}`).join('; ') : 'Yo\'q'}
+
+VAZIFA: Ushbu o'quvchi bilan yuzma-yuz suhbat o'tkazish uchun batafsil SCRIPT yoz.
+
+Script strukturasi:
+1. 🤝 SALOMLASHISH va munosabat o'rnatish (2-3 gap)
+2. 📊 O'QUVCHINING HOZIRGI HOLATI haqida suhbat boshlash (3-4 gap)
+3. 💡 MUAMMOLARNI ANIQLASH va tushunish (4-5 savol)
+4. 🎯 YECHIMLAR va motivatsiya (5-6 gap — aniq, amaliy)
+5. 📋 KELISHILGAN REJA (keyingi qadamlar, sana va maqsadlar)
+6. 🤗 XAYRLASHISH (2-3 gap)
+
+Har bir qismda ANIQ gaplar yoz — mentor shuni o'qib, o'quvchiga aynan shunday deydi.
+O'zbek tilida, samimiy va professional ohangda.
+Javob tugal va to'liq bo'lsin.
+HECH QANDAY MARKDOWN BELGILARINI (*, **, #) ISHLATMANG! Sarlavhalarni faqat emoji va bosh harflar bilan yozing.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('Gemini generate script error:', err);
+      throw new Error('GEMINI_API_ERROR');
+    }
 
     const data: any = await response.json();
     const parts = data.candidates?.[0]?.content?.parts || [];
