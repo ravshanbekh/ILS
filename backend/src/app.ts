@@ -111,6 +111,28 @@ const startServer = async () => {
     await prisma.$connect();
     logger.info('✅ PostgreSQL bilan bog\'landi');
 
+    // Settings migratsiyasi (eski/xato Gemini modellarini tuzatish)
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const settingsPath = path.join(__dirname, '../data/settings.json');
+      if (fs.existsSync(settingsPath)) {
+        const raw = fs.readFileSync(settingsPath, 'utf-8');
+        const settings = JSON.parse(raw);
+        if (
+          settings.geminiModel === 'gemini-2.5-flash' ||
+          settings.geminiModel === 'gemini-3.5-flash' ||
+          settings.geminiModel === 'gemini-2.5-pro'
+        ) {
+          settings.geminiModel = 'gemini-2.0-flash';
+          fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+          logger.info('⚙️  Gemini modeli avtomatik ravishda gemini-2.0-flash ga migratsiya qilindi');
+        }
+      }
+    } catch (err) {
+      logger.error('⚠️  Settings migratsiyasida xatolik:', err);
+    }
+
     // Boshlang'ich admin yaratish (INITIAL_ADMIN_* env orqali)
     const { initAdmin } = await import('./config/initAdmin');
     await initAdmin();
