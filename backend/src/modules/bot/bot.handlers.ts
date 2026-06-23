@@ -305,8 +305,9 @@ Ota-onaning savoli: "${text}"
 Qoidalarga rioya qiling:
 1. Javobingizni o'zbek tilida, do'stona va pedagogik ohangda yozing.
 2. Ota-onaga farzandining zaif va kuchli tomonlarini tahlil qilib, kelgusi rivojlanishi va natijalarini oshirishi uchun 3 ta aniq amaliy tavsiya bering.
-3. Telegram Markdown parsing xatoliklarini oldini olish uchun javobingizda mutlaqo markdown elementlarini (masalan: *, _, \`, [) ishlatmang. Plain text (oddiy matn) shaklida, emojilar va yangi qatorlar bilan chiroyli formatlab yozing.
-4. Javobingiz mazmunan to'liq bo'lsin, lekin juda cho'zilib ketmasligi uchun maksimal 10 ta gapdan oshmasin.`;
+3. IT sohasidan butunlay yiroq bo'lgan, dasturlashni bilmaydigan ota-ona ham tushunadigan darajada oddiy va sodda tildan foydalaning. Murakkab IT atamalarini (masalan: CSS Grid, HTML, Flexbox, Contact Form, Hero Section) to'g'ridan-to'g'ri ishlatmang, ularni o'zbekcha oddiy tushunchalar bilan almashtiring (Masalan: "CSS Grid/Flexbox" o'rniga "sayt dizayni va elementlarini chiroyli joylashtirish qoidalari", "HTML" o'rniga "veb-sahifa yaratish asoslari", "Contact Form" o'rniga "saytdagi aloqa bo'limi/anketa" deb tushuntiring).
+4. Telegram Markdown parsing xatoliklarini oldini olish uchun javobingizda mutlaqo markdown elementlarini (masalan: *, _, \`, [) ishlatmang. Plain text (oddiy matn) shaklida, emojilar va yangi qatorlar bilan chiroyli formatlab yozing.
+5. Javobingiz mazmunan to'liq bo'lsin, lekin juda cho'zilib ketmasligi uchun maksimal 10 ta gapdan oshmasin.`;
 
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
