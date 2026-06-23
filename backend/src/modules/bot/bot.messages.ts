@@ -22,7 +22,7 @@ export function welcomeMessage(): string {
 
 /** Login so'rash */
 export function askLoginMessage(): string {
-  return `🔑 *Bog'lanish*\n\nFarzandingizning *login* ini kiriting (o'quv markazidan berilgan):\n\n_Misol: alisher_abdusalomov_`;
+  return `🔑 *Bog'lanish*\n\nFarzandingizning *login* ini kiriting (o'quv markazidan berilgan):\n\nMisol: alisher\\_abdusalomov`;
 }
 
 /** Parol so'rash */
@@ -204,7 +204,7 @@ export function checkNotificationMessage(payload: NotifyCheckPayload): string {
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `📋 #${payload.normativeTaskNumber}: ${esc(payload.normativeTitle)}\n` +
     `${icon} Natija: *${resultText}* — ${payload.score} ball\n` +
-    (payload.comment ? `💬 Izoh: _"${esc(payload.comment)}"_\n` : '') +
+    (payload.comment ? `💬 Izoh: ${esc(payload.comment)}\n` : '') +
     (payload.totalScore !== undefined ? `\n🏆 Umumiy ball: *${payload.totalScore}*` : '')
   );
 }

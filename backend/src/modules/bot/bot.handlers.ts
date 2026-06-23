@@ -3,6 +3,7 @@ type BotInstance = InstanceType<typeof TelegramBot>;
 import botService from './bot.service';
 import freezesService from '../freezes/freezes.service';
 import {
+  esc,
   welcomeMessage,
   askLoginMessage,
   askPasswordMessage,
@@ -64,7 +65,7 @@ export function registerHandlers(bot: BotInstance) {
       const isOperator = link.role === 'operator';
       await bot.sendMessage(
         chatId,
-        `👋 Salom, *${link.fullName || link.student?.fullName || 'Foydalanuvchi'}*!\n\nQaytib keldingiz.`,
+        `👋 Salom, *${esc(link.fullName || link.student?.fullName || 'Foydalanuvchi')}*!\n\nQaytib keldingiz.`,
         {
           parse_mode: 'Markdown',
           reply_markup: isOperator ? operatorMenuKeyboard() : mainMenuKeyboard(),
@@ -80,7 +81,7 @@ export function registerHandlers(bot: BotInstance) {
     const chatId = msg.chat.id;
     const link = await botService.getLinkByTelegramId(msg.from!.id);
     if (link && link.isActive && link.role === 'parent') {
-      await bot.sendMessage(chatId, `✅ Siz allaqachon *${link.student?.fullName}* bilan bog'langansiz.\n\nBoshqa o'quvchiga o'tish uchun avval /unlink buyrug'ini yuboring.`, { parse_mode: 'Markdown', reply_markup: mainMenuKeyboard() });
+      await bot.sendMessage(chatId, `✅ Siz allaqachon *${esc(link.student?.fullName)}* bilan bog'langansiz.\n\nBoshqa o'quvchiga o'tish uchun avval /unlink buyrug'ini yuboring.`, { parse_mode: 'Markdown', reply_markup: mainMenuKeyboard() });
       return;
     }
     setState(chatId, { step: 'await_login' });
@@ -95,7 +96,7 @@ export function registerHandlers(bot: BotInstance) {
     const chatId = msg.chat.id;
     const link = await botService.getLinkByTelegramId(msg.from!.id);
     if (link && link.isActive && link.role === 'operator') {
-      await bot.sendMessage(chatId, `✅ Operator sifatida kirgansiz: *${link.fullName}*`, {
+      await bot.sendMessage(chatId, `✅ Operator sifatida kirgansiz: *${esc(link.fullName)}*`, {
         parse_mode: 'Markdown',
         reply_markup: operatorMenuKeyboard(),
       });
@@ -252,7 +253,7 @@ export function registerHandlers(bot: BotInstance) {
       clearState(chatId);
       const freezes = await botService.searchFrozen(text);
       if (freezes.length === 0) {
-        await bot.sendMessage(chatId, `🔍 *"${text}"* bo'yicha natija topilmadi.`, {
+        await bot.sendMessage(chatId, `🔍 *"${esc(text)}"* bo'yicha natija topilmadi.`, {
           parse_mode: 'Markdown',
           reply_markup: operatorMenuKeyboard(),
         });
@@ -264,7 +265,7 @@ export function registerHandlers(bot: BotInstance) {
       });
       // Har birini alohida inline tugma bilan
       for (const f of freezes.slice(0, 5)) {
-        await bot.sendMessage(chatId, `📋 *${f.studentName}*\n${f.reason}`, {
+        await bot.sendMessage(chatId, `📋 *${esc(f.studentName)}*\n${esc(f.reason)}`, {
           parse_mode: 'Markdown',
           reply_markup: freezeScriptInlineKeyboard(f.id),
         });
@@ -469,7 +470,7 @@ async function handleOperatorButtons(
       });
       // Inline script tugmalar
       for (const f of freezes.slice(0, 5)) {
-        await bot.sendMessage(chatId, `📋 *${f.studentName}* — ${f.reason}\n📞 ${f.phone || '—'}`, {
+        await bot.sendMessage(chatId, `📋 *${esc(f.studentName)}* — ${esc(f.reason)}\n📞 ${esc(f.phone || '—')}`, {
           parse_mode: 'Markdown',
           reply_markup: freezeScriptInlineKeyboard(f.id),
         });
