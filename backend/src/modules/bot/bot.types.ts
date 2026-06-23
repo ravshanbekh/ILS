@@ -39,6 +39,7 @@ export interface StudentStats {
     status: string;
     result: string | null;
     score: number;
+    comment?: string | null;
     submittedAt: Date;
     normative: {
       taskNumber: number;

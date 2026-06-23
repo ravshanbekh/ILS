@@ -248,6 +248,100 @@ export function registerHandlers(bot: BotInstance) {
       return;
     }
 
+    // ── AI savoli kutilmoqda ──
+    if (state.step === 'await_ai_query') {
+      const link = await botService.getLinkByTelegramId(telegramId);
+      if (!link) return;
+
+      await bot.sendMessage(chatId, '⏳ AI savolingizni va farzandingiz ma\'lumotlarini tahlil qilmoqda...');
+
+      try {
+        const stats = await botService.getStudentStats(link.studentId);
+        if (!stats) {
+          await bot.sendMessage(chatId, '❌ Farzandingiz ma\'lumotlari topilmadi.', { reply_markup: mainMenuKeyboard() });
+          clearState(chatId);
+          return;
+        }
+
+        let apiKey = '';
+        let model = 'gemini-2.5-flash';
+        try {
+          const fs = await import('fs');
+          const path = await import('path');
+          const settingsPath = path.join(__dirname, '../../../data/settings.json');
+          if (fs.existsSync(settingsPath)) {
+            const raw = fs.readFileSync(settingsPath, 'utf-8');
+            const settings = JSON.parse(raw);
+            apiKey = settings.geminiApiKey || '';
+            model = settings.geminiModel || 'gemini-2.5-flash';
+          }
+        } catch (_) {}
+
+        if (!apiKey) {
+          await bot.sendMessage(chatId, '❌ Gemini AI sozlanmagan (API key topilmadi). Iltimos, admin bilan bog\'laning.', { reply_markup: mainMenuKeyboard() });
+          clearState(chatId);
+          return;
+        }
+
+        const checkedSubs = stats.submissions.filter((s) => s.status === 'checked');
+        const last10Subs = checkedSubs.slice(0, 10).map((s) => 
+          `- Normativ #${s.normative.taskNumber}: ${s.normative.title} | Natija: ${s.result} | Ball: ${s.score} | Izoh: ${s.comment || 'izoh yo\'q'}`
+        ).join('\n');
+
+        const prompt = `Siz IT Live o'quv markazining tajribali AI-Pedagog/Konsultantisiz. Farzandining o'qish natijalari yuzasidan murojaat qilayotgan ota-ona bilan gaplashyapsiz. Quyidagi ma'lumotlarga tayangan holda samimiy, tushunarli, pedagogik va konstruktiv maslahat bering.
+
+Farzandining ma'lumotlari:
+- Ismi: ${stats.student.fullName}
+- O'qish darajasi (Level): ${stats.level}-daraja
+- Jami to'plagan balli: ${stats.totalScore} ball
+- Topshirilgan normativlar soni: ${stats.completed} ta
+- Kutilayotgan (tekshirilmoqda): ${stats.pending} ta
+- Badgelar (yutuqlar): ${stats.badges.map(b => b.name).join(', ') || 'Hozircha yutuqlar yo\'q'}
+- Oxirgi 10 ta topshiriq natijalari va o'qituvchi izohlari:
+${last10Subs || 'Hozircha topshiriqlar topshirilmagan.'}
+
+Ota-onaning savoli: "${text}"
+
+Qoidalarga rioya qiling:
+1. Javobingizni o'zbek tilida, do'stona va pedagogik ohangda yozing.
+2. Ota-onaga farzandining zaif va kuchli tomonlarini tahlil qilib, kelgusi rivojlanishi va natijalarini oshirishi uchun 3 ta aniq amaliy tavsiya bering.
+3. Telegram Markdown parsing xatoliklarini oldini olish uchun javobingizda mutlaqo markdown elementlarini (masalan: *, _, \`, [) ishlatmang. Plain text (oddiy matn) shaklida, emojilar va yangi qatorlar bilan chiroyli formatlab yozing.
+4. Javobingiz 2500 belgidan oshmasin.`;
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.7, maxOutputTokens: 2000 },
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Gemini API call failed');
+        }
+
+        const data: any = await response.json();
+        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'AI hozirda javob bera olmaydi.';
+
+        await bot.sendMessage(chatId, `🤖 *AI Konsultant javobi:*\n\n${responseText}`, {
+          parse_mode: 'Markdown',
+          reply_markup: cancelKeyboard(),
+        });
+
+      } catch (err) {
+        logger.error('AI Consultant query error:', err);
+        await bot.sendMessage(chatId, '❌ Kechirasiz, savolingizni tahlil qilishda xato yuz berdi. Iltimos, keyinroq qayta urinib ko\'ring.', {
+          reply_markup: mainMenuKeyboard(),
+        });
+        clearState(chatId);
+      }
+      return;
+    }
+
     // ── Qidiruv kutilmoqda (operator) ──
     if (state.step === 'operator_await_search') {
       clearState(chatId);
@@ -427,6 +521,15 @@ async function handleParentButtons(
       const teacher = await botService.getTeacherByStudentId(studentId);
       userStates.set(chatId, { step: 'await_feedback' });
       await bot.sendMessage(chatId, askFeedbackMessage(teacher?.fullName), {
+        parse_mode: 'Markdown',
+        reply_markup: cancelKeyboard(),
+      });
+      break;
+    }
+
+    case '🤖 AI Konsultant': {
+      userStates.set(chatId, { step: 'await_ai_query' });
+      await bot.sendMessage(chatId, `🤖 *AI Konsultant faollashtirildi!*\n\nFarzandingizning o'qishi, darslardagi faolligi va natijalarini yaxshilash bo'yicha savollaringizni yozib yuboring (Masalan: _"Farzandimning natijalarini qanday yaxshilasak bo'ladi?"_):\n\nAI farzandingizning haqiqiy ma'lumotlariga tayanib javob beradi.`, {
         parse_mode: 'Markdown',
         reply_markup: cancelKeyboard(),
       });

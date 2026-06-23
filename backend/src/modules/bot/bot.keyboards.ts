@@ -12,8 +12,8 @@ export const mainMenuKeyboard = (): ReplyKeyboardMarkup => ({
   keyboard: [
     [{ text: '📊 Natijalar' }, { text: '📈 Reyting' }],
     [{ text: '📋 Ma\'lumot' }, { text: '🏆 Leaderboard' }],
-    [{ text: '💬 Fikr bildirish' }, { text: '⚙️ Sozlamalar' }],
-    [{ text: '🔗 Bog\'lanishni uzish' }],
+    [{ text: '💬 Fikr bildirish' }, { text: '🤖 AI Konsultant' }],
+    [{ text: '⚙️ Sozlamalar' }, { text: '🔗 Bog\'lanishni uzish' }],
   ],
   resize_keyboard: true,
   is_persistent: true,

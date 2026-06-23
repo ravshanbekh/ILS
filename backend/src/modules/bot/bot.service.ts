@@ -230,6 +230,7 @@ class BotService {
         status: s.status,
         result: s.result,
         score: s.score,
+        comment: s.comment,
         submittedAt: s.submittedAt,
         normative: s.normative,
       })),
