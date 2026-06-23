@@ -73,7 +73,7 @@ export default function SettingsPage() {
     settingsApi.getGeminiStatus()
       .then(res => {
         setGeminiStatus(res.data.data);
-        setGeminiModel(res.data.data?.model || 'gemini-2.5-flash');
+        setGeminiModel(res.data.data?.model || 'gemini-2.0-flash');
         setCenterContext(res.data.data?.centerContext || '');
       })
       .catch(console.error);
@@ -468,10 +468,9 @@ export default function SettingsPage() {
                 onChange={(e) => setGeminiModel(e.target.value)}
                 className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all outline-none"
               >
-                <option value="gemini-2.5-flash">gemini-2.5-flash (Tavsiya etiladi)</option>
-                <option value="gemini-3.5-flash">gemini-3.5-flash (Eng so'nggi)</option>
-                <option value="gemini-2.5-pro">gemini-2.5-pro (Kuchli)</option>
-                <option value="gemini-2.0-flash">gemini-2.0-flash (Tezkor)</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash (Tavsiya etiladi)</option>
+                <option value="gemini-1.5-flash">gemini-1.5-flash (Tezkor)</option>
+                <option value="gemini-1.5-pro">gemini-1.5-pro (Tahlil uchun kuchli)</option>
               </select>
             </div>
 

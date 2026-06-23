@@ -264,7 +264,7 @@ export function registerHandlers(bot: BotInstance) {
         }
 
         let apiKey = '';
-        let model = 'gemini-2.5-flash';
+        let model = 'gemini-2.0-flash';
         try {
           const fs = await import('fs');
           const path = await import('path');
@@ -273,7 +273,7 @@ export function registerHandlers(bot: BotInstance) {
             const raw = fs.readFileSync(settingsPath, 'utf-8');
             const settings = JSON.parse(raw);
             apiKey = settings.geminiApiKey || '';
-            model = settings.geminiModel || 'gemini-2.5-flash';
+            model = settings.geminiModel || 'gemini-2.0-flash';
           }
         } catch (_) {}
 
