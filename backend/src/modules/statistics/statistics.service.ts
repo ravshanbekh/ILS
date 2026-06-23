@@ -1,5 +1,7 @@
 import prisma from '../../config/database';
 import { ApiError } from '../../shared/middleware/errorHandler';
+import fs from 'fs';
+import path from 'path';
 
 class StatisticsService {
   /**
@@ -426,6 +428,117 @@ class StatisticsService {
       groups: groupRanks,
       submissions,
     };
+  }
+
+  private getSettings(): { apiKey: string; model: string; centerContext: string } {
+    const settingsPath = path.join(__dirname, '../../../data/settings.json');
+    let apiKey = '';
+    let model = 'gemini-2.5-flash';
+    let centerContext = '';
+    try {
+      if (fs.existsSync(settingsPath)) {
+        const raw = fs.readFileSync(settingsPath, 'utf-8');
+        const s = JSON.parse(raw);
+        apiKey = s.geminiApiKey || '';
+        model = s.geminiModel || 'gemini-2.5-flash';
+        centerContext = s.centerContext || '';
+      }
+    } catch {}
+    return { apiKey, model, centerContext };
+  }
+
+  async analyzeStudentWithAI(studentId: string): Promise<string> {
+    const { apiKey, model, centerContext } = this.getSettings();
+    if (!apiKey) throw new Error('API_KEY_NOT_SET');
+
+    // Ma'lumotlarni yig'ish
+    const student = await prisma.user.findUnique({ where: { id: studentId } });
+    const submissions = await prisma.submission.findMany({
+      where: { studentId },
+      include: { normative: { include: { category: true } }, group: true },
+      orderBy: { submittedAt: 'asc' },
+    });
+
+    const greenCount = submissions.filter(s => s.result === 'green').length;
+    const blueCount = submissions.filter(s => s.result === 'blue').length;
+    const redCount = submissions.filter(s => s.result === 'red').length;
+    const pendingCount = submissions.filter(s => s.status === 'pending').length;
+    const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
+
+    // Kategoriya bo'yicha breakdown
+    const categoryStats: Record<string, { green: number; blue: number; red: number; total: number }> = {};
+    submissions.forEach(s => {
+      const cat = s.normative?.category?.name || 'Umumiy';
+      if (!categoryStats[cat]) categoryStats[cat] = { green: 0, blue: 0, red: 0, total: 0 };
+      if (s.status === 'checked' && s.result) {
+        categoryStats[cat][s.result]++;
+        categoryStats[cat].total += s.score;
+      }
+    });
+
+    const prompt = `Sen 10 yillik tajribali IT ta'lim mentorisan.
+${centerContext ? `O'quv markaz haqida: ${centerContext}` : ''}
+
+O'quvchi: ${student?.fullName}
+Jami ball: ${totalScore}
+Natijalar: 🟢 ${greenCount} | 🔵 ${blueCount} | 🔴 ${redCount} | ⏳ ${pendingCount}
+
+Kategoriya bo'yicha:
+${Object.entries(categoryStats).map(([cat, st]) => 
+  `${cat}: 🟢${st.green} 🔵${st.blue} 🔴${st.red} — ${st.total} ball`
+).join('\n')}
+
+Topshiriqlar ketma-ketligi (vaqt bo'yicha):
+${submissions.slice(-20).map(s => 
+  `${s.normative?.title}: ${s.status === 'checked' ? s.result : 'kutilmoqda'} (${s.score} ball) — ${new Date(s.submittedAt).toLocaleDateString()}`
+).join('\n')}
+
+Quyidagilarni tahlil qil:
+
+📊 UMUMIY HOLAT
+(O'quvchining hozirgi darajasi va o'rni haqida qisqa xulosa)
+
+💪 KUCHLI TOMONLARI
+(Qaysi sohalarda yaxshi natija ko'rsatmoqda)
+
+⚠️ ZAIF TOMONLARI
+(Qaysi normativlar/sohalar yomonroq)
+
+📈 O'SISH DINAMIKASI
+(Vaqt o'tishi bilan yaxshilanmoqdami yoki yomonlashmoqdami)
+
+🎯 INDIVIDUAL TAVSIYALAR
+(Aniq, amaliy maslahatlar — nima qilishi kerak)
+
+O'zbek tilida, tushunarli va amaliy uslubda yozing.
+Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.
+HECH QANDAY MARKDOWN BELGILARINI (*, **, #) ISHLATMANG! Sarlavhalarni faqat bosh harflar va emoji bilan yozing.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('Gemini student analyze error:', err);
+      throw new Error('GEMINI_API_ERROR');
+    }
+
+    const data: any = await response.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    let text = parts.map((p: any) => p.text).join('') || '';
+
+    // Markdown tozalash
+    text = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/##+ /g, '').replace(/`/g, '');
+    return text.trim();
   }
 }
 

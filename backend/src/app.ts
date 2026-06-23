@@ -24,6 +24,10 @@ import categoriesRoutes from './modules/categories/categories.routes';
 import checklistRoutes from './modules/checklist/checklist.routes';
 import freezesRoutes from './modules/freezes/freezes.routes';
 import monitoringRoutes from './modules/monitoring/monitoring.routes';
+import { notificationEngine } from './modules/notifications/notification-engine';
+import chatbotRoutes from './modules/chatbot/chatbot.routes';
+import predictionsRoutes from './modules/predictions/predictions.routes';
+import feedbackRoutes from './modules/feedback/feedback.routes';
 import { startBot } from './modules/bot/bot';
 
 const app = express();
@@ -83,6 +87,9 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/checklist', checklistRoutes);
 app.use('/api/freezes', freezesRoutes);
 app.use('/api/monitoring', monitoringRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/predictions', predictionsRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -112,6 +119,16 @@ const startServer = async () => {
       logger.info(`🚀 Server ishga tushdi: http://localhost:${env.PORT}`);
       logger.info(`📋 API: http://localhost:${env.PORT}/api/health`);
       logger.info(`🌐 Environment: ${env.NODE_ENV}`);
+      
+      // Smart notification checks
+      setTimeout(() => {
+        logger.info('⏰ Running smart notification engine initial checks...');
+        notificationEngine.runChecks();
+      }, 10000);
+      setInterval(() => {
+        logger.info('⏰ Running smart notification engine periodic checks...');
+        notificationEngine.runChecks();
+      }, 6 * 60 * 60 * 1000);
     });
 
     // Telegram bot (agar token sozlangan bo'lsa)

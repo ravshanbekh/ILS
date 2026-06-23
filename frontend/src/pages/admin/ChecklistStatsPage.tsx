@@ -465,7 +465,7 @@ export default function ChecklistStatsPage() {
     <div className="flex flex-col items-center justify-center h-64 gap-4">
       <div className="text-4xl">⚠️</div>
       <p className="text-zinc-400 text-center">{error}</p>
-      <button onClick={fetchStats}
+      <button onClick={() => fetchStats()}
         className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-colors">
         Qayta urinish
       </button>

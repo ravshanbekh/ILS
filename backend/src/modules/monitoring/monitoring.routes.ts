@@ -31,6 +31,10 @@ router.post('/teachers/:teacherId/ai-analyze', roleGuard(...ALLOWED_ROLES), moni
 // GET /api/monitoring/students/:studentId/timeline
 router.get('/students/:studentId/timeline', roleGuard(...ALLOWED_ROLES), monitoringController.getStudentTimeline);
 
+// ─── O'QUVCHI SCRIPT ────────────────────────────────────────
+// POST /api/monitoring/students/:id/script
+router.post('/students/:id/script', roleGuard(...ALLOWED_ROLES), monitoringController.generateStudentScript);
+
 // ─── CALL CRUD ──────────────────────────────────────────────
 // POST /api/monitoring/calls
 router.post('/calls', roleGuard(...ALLOWED_ROLES), monitoringController.createCall);

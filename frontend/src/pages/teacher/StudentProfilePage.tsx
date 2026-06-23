@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
-import { statsApi, submissionsApi } from '@/api';
+import { statsApi, submissionsApi, monitoringApi } from '@/api';
 import { formatDateTime } from '@/utils';
-import { Loader2, ArrowLeft, Star, Target, Clock, Trophy, ExternalLink, TrendingUp } from 'lucide-react';
+import { Loader2, ArrowLeft, Star, Target, Clock, Trophy, ExternalLink, TrendingUp, Brain, FileText, Copy, X, Sparkles } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 export default function StudentProfilePage() {
@@ -13,9 +13,18 @@ export default function StudentProfilePage() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [regrading, setRegrading] = useState<string | null>(null); // submission id being regraded
+  const [regrading, setRegrading] = useState<string | null>(null);
   const [regradeComment, setRegradeComment] = useState('');
   const [regradeProcessing, setRegradeProcessing] = useState(false);
+  // AI Analysis state
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  // Script modal state
+  const [scriptData, setScriptData] = useState<any>(null);
+  const [scriptLoading, setScriptLoading] = useState(false);
+  const [showScript, setShowScript] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -46,6 +55,42 @@ export default function StudentProfilePage() {
       alert('Xatolik yuz berdi');
     } finally {
       setRegradeProcessing(false);
+    }
+  };
+
+  const handleAiAnalysis = async () => {
+    if (!id) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const res = await statsApi.analyzeStudentWithAI(id);
+      setAiAnalysis(res.data.data);
+    } catch {
+      setAiError('AI tahlil qilishda xatolik yuz berdi');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleGenerateScript = async () => {
+    if (!id) return;
+    setScriptLoading(true);
+    try {
+      const res = await monitoringApi.generateStudentScript(id);
+      setScriptData(res.data.data);
+      setShowScript(true);
+    } catch {
+      alert('Script generatsiyasida xatolik');
+    } finally {
+      setScriptLoading(false);
+    }
+  };
+
+  const copyScript = () => {
+    if (scriptData?.script) {
+      navigator.clipboard.writeText(scriptData.script);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -150,6 +195,47 @@ export default function StudentProfilePage() {
             color="orange"
           />
         </div>
+
+        {/* AI Action Buttons */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          <button
+            id="btn-ai-analyze"
+            onClick={handleAiAnalysis}
+            disabled={aiLoading}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/20 transition-all disabled:opacity-50"
+          >
+            {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
+            {aiLoading ? 'Tahlil qilinmoqda...' : 'AI bilan tahlil qilish'}
+          </button>
+          <button
+            id="btn-gen-script"
+            onClick={handleGenerateScript}
+            disabled={scriptLoading}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold border border-zinc-700 transition-all disabled:opacity-50"
+          >
+            {scriptLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+            {scriptLoading ? 'Script tayyorlanmoqda...' : "O'quvchi bilan ishlash scripti"}
+          </button>
+        </div>
+
+        {/* AI Analysis Result Panel */}
+        {aiAnalysis && (
+          <div className="mb-6 bg-gradient-to-br from-violet-900/20 to-blue-900/10 border border-violet-500/30 rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-violet-400" />
+              <h3 className="text-white font-bold text-sm">AI Normativ Tahlil Natijasi</h3>
+              <button onClick={() => setAiAnalysis(null)} className="ml-auto text-zinc-500 hover:text-white"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="prose prose-invert prose-sm max-w-none">
+              <pre className="whitespace-pre-wrap text-sm text-zinc-200 font-sans leading-relaxed bg-black/20 rounded-lg p-4">{aiAnalysis.analysis || JSON.stringify(aiAnalysis, null, 2)}</pre>
+            </div>
+          </div>
+        )}
+        {aiError && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            {aiError}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Badges, Groups and Ranks */}
@@ -361,6 +447,40 @@ export default function StudentProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Script Modal */}
+      {showScript && scriptData && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#18181b] border border-zinc-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-6 py-4 border-b border-zinc-800 shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-sm">O'quvchi bilan ishlash scripti</h3>
+                <p className="text-zinc-500 text-xs">{scriptData.studentName}</p>
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={copyScript}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-all border border-zinc-700"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  {copied ? '✅ Nusxalandi!' : 'Nusxa olish'}
+                </button>
+                <button onClick={() => setShowScript(false)} className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            {/* Script content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <pre className="whitespace-pre-wrap text-sm text-zinc-200 font-sans leading-relaxed">{scriptData.script}</pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

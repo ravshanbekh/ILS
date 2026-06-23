@@ -73,6 +73,25 @@ class StatisticsController {
       next(error);
     }
   }
+
+  /**
+   * POST /api/stats/student/:id/ai-analyze
+   */
+  async analyzeStudentWithAI(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw ApiError.unauthorized();
+      const result = await statisticsService.analyzeStudentWithAI(req.params.id);
+      res.json({ success: true, data: { analysis: result } });
+    } catch (error: any) {
+      if (error.message === 'API_KEY_NOT_SET') {
+        return res.status(400).json({ success: false, error: 'API_KEY_NOT_SET', message: 'Gemini API key sozlanmagan' });
+      }
+      if (error.message === 'GEMINI_API_ERROR') {
+        return res.status(502).json({ success: false, error: 'GEMINI_API_ERROR', message: "Gemini API bilan bog'lanib bo'lmadi" });
+      }
+      next(error);
+    }
+  }
 }
 
 export default new StatisticsController();

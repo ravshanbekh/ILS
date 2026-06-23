@@ -33,6 +33,8 @@ import MonitoringPage from '@/pages/shared/MonitoringPage';
 import TeacherRatingPage from '@/pages/admin/TeacherRatingPage';
 import ChecklistStatsPage from '@/pages/admin/ChecklistStatsPage';
 import ChecklistManagePage from '@/pages/admin/ChecklistManagePage';
+import PredictionsPage from '@/pages/admin/PredictionsPage';
+import AIChatbot from '@/components/AIChatbot';
 import { socket } from '@/utils/socket';
 import { useEffect } from 'react';
 
@@ -148,6 +150,7 @@ export default function App() {
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
               <Route path="/admin/checklist-stats" element={<ChecklistStatsPage />} />
               <Route path="/admin/checklist-manage" element={<ChecklistManagePage />} />
+              <Route path="/admin/predictions" element={<PredictionsPage />} />
             </Route>
 
             {/* Teacher routes */}
@@ -205,6 +208,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </BrowserRouter>
+        <AIChatbot />
       </QueryClientProvider>
     </GlobalErrorBoundary>
   );

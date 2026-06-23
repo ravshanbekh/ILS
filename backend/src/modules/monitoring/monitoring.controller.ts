@@ -159,6 +159,25 @@ class MonitoringController {
       next(e);
     }
   };
+
+  generateStudentScript = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const studentId = req.params.id as string;
+      const script = await monitoringService.generateStudentScript(studentId);
+      res.json({ success: true, data: { script } });
+    } catch (e: any) {
+      if (e.message === 'API_KEY_NOT_SET') {
+        return res.status(400).json({ success: false, error: 'API_KEY_NOT_SET', message: 'Gemini API key sozlanmagan' });
+      }
+      if (e.message === 'STUDENT_NOT_FOUND') {
+        return res.status(404).json({ success: false, error: 'STUDENT_NOT_FOUND', message: "O'quvchi topilmadi" });
+      }
+      if (e.message === 'GEMINI_API_ERROR') {
+        return res.status(502).json({ success: false, error: 'GEMINI_API_ERROR', message: "Gemini API bilan bog'lanib bo'lmadi" });
+      }
+      next(e);
+    }
+  };
 }
 
 export default new MonitoringController();
