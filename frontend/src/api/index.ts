@@ -131,6 +131,8 @@ export const settingsApi = {
   updateTutorialVideos: (data: {
     platformRules?: { youtubeUrl: string; title?: string; description?: string };
     normativeRules?: { youtubeUrl: string; title?: string; description?: string };
+    obsStudio?: { youtubeUrl: string; title?: string; description?: string };
+    youtubeChannel?: { youtubeUrl: string; title?: string; description?: string };
   }) => api.put('/settings/tutorial-videos', data),
 
   // Gemini AI sozlamalari
