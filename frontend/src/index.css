@@ -75,215 +75,276 @@
    ======================================================== */
 .light {
   /* Variables */
-  --background: #f1f5f9; /* Modern slate-100 instead of pure white */
-  --foreground: #0f0f12;
+  --background: #1f3044;
+  --foreground: #ffffff;
   --card: #ffffff;
-  --card-foreground: #0f0f12;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #0f0f12;
-  --primary: #7c3aed;
+  --popover-foreground: #0f172a;
+  --primary: #06b6d4;
   --primary-foreground: #ffffff;
-  --secondary: #f3f4f6;
-  --secondary-foreground: #0f0f12;
-  --muted: #f3f4f6;
-  --muted-foreground: #4b5563;
-  --accent: #ede9fe;
-  --accent-foreground: #7c3aed;
-  --border: #e2e8f0; /* Modern slate-200 border */
-  --input: #e2e8f0;
-  --ring: #7c3aed;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --accent: rgba(6, 182, 212, 0.1);
+  --accent-foreground: #06b6d4;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #06b6d4;
 
   /* Global background & text */
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
+  background: radial-gradient(circle at 75% 20%, #4c6883 0%, #1e3040 100%) !important;
+  background-attachment: fixed !important;
+  color: #ffffff !important;
 
   /* Scrollbar override */
   ::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: #475569;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    background: #64748b;
   }
 
-  /* Force background color replacements for hex code classes */
-  .bg-\[\#09090b\], .bg-\[\#000000\], .bg-black, .bg-zinc-950, .bg-\[\#09090b\]\/95, .bg-\#09090b, main.bg-\[\#09090b\] {
-    background-color: var(--background) !important;
+  /* Force background color replacements for layout elements to let body gradient shine through */
+  .bg-\[\#09090b\], .bg-\[\#000000\], .bg-black, .bg-zinc-950, .bg-\[\#09090b\]\/95, .bg-\#09090b, main.bg-\[\#09090b\], main {
+    background: transparent !important;
+  }
+
+  /* Card components (bg-white or dark equivalent card background in light mode) */
+  .bg-\[\#18181b\], .bg-zinc-900, .bg-zinc-900\/50, .bg-\[\#18181b\]\/30, .bg-\[\#18181b\]\/90, .bg-\[\#18181b\]\/80, .glass-panel {
+    background-color: #ffffff !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M-4 12 L12 -4 M0 16 L16 0 M12 20 L20 12' fill='none' stroke='%23f1f5f9' stroke-width='1.2'/%3E%3C/svg%3E") !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 15px 30px -5px rgba(15, 23, 42, 0.12), 0 8px 16px -6px rgba(15, 23, 42, 0.12) !important;
+    border-radius: 16px !important;
+    color: #0f172a !important;
+    transition: all 0.2s ease-in-out !important;
   }
   
-  .bg-\[\#18181b\], .bg-zinc-900, .bg-zinc-900\/50, .bg-\[\#18181b\]\/30, .bg-\[\#18181b\]\/90, .bg-\[\#18181b\]\/80 {
-    background-color: var(--card) !important;
+  .bg-\[\#18181b\]:hover, .bg-zinc-900:hover, .glass-panel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 35px -5px rgba(15, 23, 42, 0.15), 0 10px 20px -6px rgba(15, 23, 42, 0.15) !important;
+    border-color: rgba(255, 255, 255, 1) !important;
   }
-  
+
+  /* Card content texts */
+  .bg-\[\#18181b\] .text-white, .bg-\[\#18181b\] .text-zinc-50, .bg-\[\#18181b\] .text-zinc-100, .bg-\[\#18181b\] .text-zinc-200,
+  .bg-zinc-900 .text-white, .bg-zinc-900 .text-zinc-50, .bg-zinc-900 .text-zinc-100, .bg-zinc-900 .text-zinc-200,
+  .glass-panel .text-white, .glass-panel .text-zinc-50, .glass-panel .text-zinc-100, .glass-panel .text-zinc-200,
+  [class*="bg-white"] .text-white {
+    color: #0f172a !important; /* dark text for card values */
+  }
+
+  .bg-\[\#18181b\] .text-zinc-300, .bg-\[\#18181b\] .text-zinc-400, .bg-\[\#18181b\] .text-zinc-500,
+  .bg-zinc-900 .text-zinc-300, .bg-zinc-900 .text-zinc-400, .bg-zinc-900 .text-zinc-500,
+  .glass-panel .text-zinc-300, .glass-panel .text-zinc-400, .glass-panel .text-zinc-500,
+  [class*="bg-white"] .text-zinc-400 {
+    color: #475569 !important; /* slate-600 for card subtitles/labels */
+  }
+
+  /* Background overrides for sub-components (like table headers or inner panels) */
   .bg-\[\#111113\], .bg-zinc-800, .bg-zinc-800\/50, .bg-zinc-800\/30, .bg-zinc-800\/40, .bg-zinc-900\/20, .bg-zinc-900\/10 {
-    background-color: var(--secondary) !important;
-  }
-
-  /* Text overrides */
-  .text-white, .text-zinc-50, .text-zinc-100, .text-zinc-200 {
-    color: var(--foreground) !important;
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
   }
   
-  .text-zinc-300, .text-zinc-400, .text-zinc-500 {
-    color: var(--muted-foreground) !important;
+  /* Text outside cards - keep them light on gradient background */
+  body > div > main h1, body > div > main h2, body > div > main h3, body > div > main p,
+  main .text-white, main .text-zinc-100, main .text-zinc-200 {
+    color: #ffffff;
+  }
+  main .text-zinc-400, main .text-zinc-500 {
+    color: #cbd5e1;
   }
 
-  /* Border overrides */
-  .border-zinc-800, .border-zinc-700, .border-zinc-800\/50, .border-zinc-700\/50, .border-zinc-900, header.border-b {
-    border-color: var(--border) !important;
-  }
-
-  /* Force tbody to have card background so table matches card container */
+  /* Tables inside card containers */
   tbody {
-    background-color: var(--card) !important;
+    background-color: #ffffff !important;
+  }
+  table {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  th {
+    color: #475569 !important;
+    background-color: #f8fafc !important;
+    border-bottom: 2px solid #edf2f7 !important;
+    font-weight: 600 !important;
+  }
+  td {
+    color: #1e293b !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+  tr:hover {
+    background-color: #f8fafc !important;
   }
 
-  /* Blue accent color to Violet accent color (for layout/buttons only, not status badges) */
-  .bg-blue-600, .bg-blue-500 {
-    background-color: var(--primary) !important;
-  }
-  .bg-blue-600\/20, .bg-blue-500\/20 {
-    background-color: var(--accent) !important;
-  }
-  .text-blue-600 {
-    color: var(--primary) !important;
-  }
-  .border-blue-500, .border-blue-600 {
-    border-color: var(--primary) !important;
-  }
-  
-  .hover\:bg-blue-700:hover, .hover\:bg-blue-600:hover {
-    background-color: #6d28d9 !important;
-  }
-
-  /* Hover states for lists/cards */
-  .hover\:bg-zinc-800\/50:hover, .hover\:bg-zinc-800\/30:hover, .hover\:bg-zinc-700:hover, .hover\:bg-zinc-800:hover {
-    background-color: var(--secondary) !important;
-  }
-
-  /* Custom components */
-  .glass-panel {
-    background-color: var(--card);
-    border: 1px solid var(--border);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
-  }
-  
+  /* Input fields */
   input, select, textarea {
-    background-color: var(--card) !important;
-    color: var(--foreground) !important;
-    border-color: var(--border) !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
   }
   input:focus, select:focus, textarea:focus {
-    border-color: var(--primary) !important;
-    --tw-ring-color: var(--primary) !important;
+    border-color: #06b6d4 !important;
+    --tw-ring-color: #06b6d4 !important;
   }
 
-  /* Recharts tooltip or other components */
-  .recharts-default-tooltip {
-    background-color: var(--card) !important;
-    border-color: var(--border) !important;
-    color: var(--foreground) !important;
+  /* StatsCard icon badges (with premium gradient and white icons) */
+  .bg-blue-500\/10 {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25) !important;
+  }
+  .bg-blue-500\/10 svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
   }
 
-  /* Sidebar Active Links styling */
-  a.bg-zinc-800.text-white {
-    background-color: var(--accent) !important;
-    color: var(--primary) !important;
+  .bg-emerald-500\/10 {
+    background: linear-gradient(135deg, #064e3b 0%, #10b981 100%) !important;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25) !important;
+  }
+  .bg-emerald-500\/10 svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  .bg-purple-500\/10 {
+    background: linear-gradient(135deg, #581c87 0%, #a855f7 100%) !important;
+    box-shadow: 0 4px 10px rgba(168, 85, 247, 0.25) !important;
+  }
+  .bg-purple-500\/10 svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  .bg-amber-500\/10 {
+    background: linear-gradient(135deg, #78350f 0%, #f59e0b 100%) !important;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25) !important;
+  }
+  .bg-amber-500\/10 svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  .bg-red-500\/10 {
+    background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%) !important;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25) !important;
+  }
+  .bg-red-500\/10 svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  /* --- FORCE PREMIUM NAVBAR/SIDEBAR & HEADER --- */
+  aside {
+    background: linear-gradient(to bottom, #092c4e 0%, #06182c 100%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  aside * {
+    color: #94a3b8 !important;
+  }
+  aside .text-white, aside h1, aside p.text-white, aside .font-bold {
+    color: #ffffff !important;
   }
   
-  .text-zinc-400 {
-    color: var(--muted-foreground) !important;
-  }
-
-  .text-gradient {
-    background: linear-gradient(to right, #7c3aed, #a855f7);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  /* --- FORCE BLACK NAVBAR/SIDEBAR & HEADER --- */
-  aside, header {
-    background-color: #18181b !important;
-    border-color: #27272a !important;
-  }
-  header {
-    background-color: rgba(9, 9, 11, 0.9) !important;
-  }
-  aside *, header * {
-    /* Keep native colors intact */
-  }
-  aside .text-white, header .text-white,
-  aside .text-zinc-50, header .text-zinc-50,
-  aside .text-zinc-100, header .text-zinc-100,
-  aside .text-zinc-200, header .text-zinc-200 {
-    color: #ffffff !important;
-  }
-  aside .text-zinc-300, header .text-zinc-300,
-  aside .text-zinc-400, header .text-zinc-400,
-  aside .text-zinc-500, header .text-zinc-500 {
-    color: #a1a1aa !important;
-  }
-  aside .bg-zinc-800, header .bg-zinc-800,
-  aside .bg-zinc-800\/20, header .bg-zinc-800\/20,
-  aside .bg-zinc-800\/30, header .bg-zinc-800\/30 {
-    background-color: #27272a !important;
-  }
-  aside .hover\:bg-zinc-800\/50:hover,
-  header .hover\:bg-zinc-800\/50:hover {
-    background-color: rgba(39, 39, 42, 0.5) !important;
-  }
-  aside .border-zinc-800, header .border-zinc-800 {
-    border-color: #27272a !important;
-  }
+  /* Active link in Sidebar with cyan glow */
   aside a.bg-zinc-800.text-white {
-    background-color: #27272a !important;
+    background: linear-gradient(to right, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.05)) !important;
+    color: #ffffff !important;
+    border: 1.5px solid #06b6d4 !important;
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.3) !important;
+  }
+  aside a.bg-zinc-800.text-white svg {
+    color: #06b6d4 !important;
+  }
+  aside a.bg-zinc-800.text-white * {
     color: #ffffff !important;
   }
-  aside .text-blue-500, header .text-blue-500 {
-    color: #3b82f6 !important;
+  
+  /* Inactive link hover */
+  aside a:hover:not(.bg-zinc-800) {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+  }
+  aside a:hover:not(.bg-zinc-800) * {
+    color: #ffffff !important;
   }
 
-  /* --- RICH HIGH-CONTRAST STATUS BADGES --- */
+  /* Header customization */
+  header {
+    background: rgba(15, 23, 42, 0.25) !important;
+    backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  header * {
+    color: #ffffff !important;
+  }
+  header .text-zinc-400, header .text-zinc-500 {
+    color: #94a3b8 !important;
+  }
+  
+  /* Header icons background glow */
+  header button.bg-zinc-800,
+  header button.bg-zinc-800\/50,
+  header button.bg-zinc-800\/30 {
+    background-color: rgba(6, 182, 212, 0.15) !important;
+    border: 1px solid rgba(6, 182, 212, 0.3) !important;
+    color: #06b6d4 !important;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.15) !important;
+  }
+  header button.bg-zinc-800:hover {
+    background-color: rgba(6, 182, 212, 0.25) !important;
+  }
+
+  /* Chart ticks readability */
+  .recharts-cartesian-axis-tick-value {
+    fill: #cbd5e1 !important;
+  }
+
+  /* --- RICH HIGH-CONTRAST STATUS BADGES (inside cards) --- */
   /* Green/Emerald Badge Override */
   .bg-emerald-500\/10 {
-    background-color: #d1fae5 !important; /* emerald-100 */
+    background-color: #d1fae5 !important;
   }
   .text-emerald-500, .text-emerald-400 {
-    color: #065f46 !important; /* emerald-800 */
+    color: #065f46 !important;
   }
   .border-emerald-500\/20, .border-emerald-500\/30 {
-    border-color: #6ee7b7 !important; /* emerald-300 */
+    border-color: #6ee7b7 !important;
   }
 
   /* Blue Badge Override */
   .bg-blue-500\/10 {
-    background-color: #dbeafe !important; /* blue-100 */
+    background-color: #dbeafe !important;
   }
   .text-blue-500, .text-blue-400 {
-    color: #1e40af !important; /* blue-800 */
+    color: #1e40af !important;
   }
   .border-blue-500\/20, .border-blue-500\/30 {
-    border-color: #93c5fd !important; /* blue-300 */
+    border-color: #93c5fd !important;
   }
 
   /* Red Badge Override */
   .bg-red-500\/10 {
-    background-color: #fee2e2 !important; /* red-100 */
+    background-color: #fee2e2 !important;
   }
   .text-red-500, .text-red-400 {
-    color: #991b1b !important; /* red-800 */
+    color: #991b1b !important;
   }
   .border-red-500\/20, .border-red-500\/30 {
-    border-color: #fca5a5 !important; /* red-300 */
+    border-color: #fca5a5 !important;
   }
 
   /* Amber Badge Override */
   .bg-amber-500\/10 {
-    background-color: #fef3c7 !important; /* amber-100 */
+    background-color: #fef3c7 !important;
   }
   .text-amber-500, .text-amber-400 {
-    color: #92400e !important; /* amber-800 */
+    color: #92400e !important;
   }
   .border-amber-500\/20, .border-amber-500\/30 {
-    border-color: #fcd34d !important; /* amber-300 */
+    border-color: #fcd34d !important;
   }
 }
