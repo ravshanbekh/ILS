@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
-import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi } from '@/api';
-import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap } from 'lucide-react';
+import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi, monitoringApi } from '@/api';
+import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain } from 'lucide-react';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import { downloadBlob } from '@/utils';
 
@@ -31,6 +31,29 @@ export default function GroupDetailPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [selectedNormativeIds, setSelectedNormativeIds] = useState<string[]>([]);
   const [savingNormatives, setSavingNormatives] = useState(false);
+
+  // AI Group Analysis states
+  const [aiResult, setAiResult] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  const handleAiAnalyze = async () => {
+    if (!id) return;
+    setAiLoading(true);
+    setAiError('');
+    setAiResult('');
+    try {
+      const res = await monitoringApi.analyzeGroup(id);
+      setAiResult(res.data.data || '');
+    } catch (e: any) {
+      const err = e?.response?.data?.error;
+      if (err === 'API_KEY_NOT_SET') setAiError('api_key');
+      else if (err === 'NO_DATA') setAiError('no_data');
+      else setAiError('connection');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const fetchGroupData = async () => {
     if (!id) return;
@@ -287,6 +310,54 @@ export default function GroupDetailPage() {
               <p className="text-2xl font-bold text-white tracking-tight">{group?.submissionsCount || 0}</p>
             </div>
           </div>
+        </div>
+
+        {/* AI Group Analysis */}
+        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden mb-8">
+          <div className="p-5 border-b border-zinc-800 flex items-center justify-between bg-[#18181b]">
+            <div className="flex items-center gap-3">
+              <Brain className="w-5 h-5 text-violet-400" />
+              <div>
+                <h3 className="text-white font-bold text-sm">AI Guruh Tahlili</h3>
+                <p className="text-zinc-500 text-xs mt-0.5">Muammolar, ortda qolayotganlar tahlili va Z avlodi uchun mentorlik yechimlari</p>
+              </div>
+            </div>
+            <button
+              onClick={handleAiAnalyze}
+              disabled={aiLoading}
+              className="px-4 py-2 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-2 transition-all disabled:opacity-50"
+            >
+              {aiLoading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Tahlil qilinmoqda...
+                </>
+              ) : (
+                'Tahlil qilish'
+              )}
+            </button>
+          </div>
+
+          {aiError && (
+            <div className="p-5 border-b border-zinc-800/50 bg-red-500/5 text-red-400 text-xs">
+              {aiError === 'api_key' ? (
+                "⚠️ Sozlamalarda AI API kaliti aniqlanmagan. Iltimos, Sozlamalar sahifasiga o'ting."
+              ) : aiError === 'no_data' ? (
+                "ℹ️ Ushbu guruhda AI tahlil o'tkazish uchun yetarli ma'lumot (monitoring qo'ng'iroqlari yoki normativ topshiriqlari) mavjud emas."
+              ) : (
+                "❌ AI tahlilni generatsiya qilishda xatolik yuz berdi. Provayder API kalitini tekshiring yoki keyinroq qayta urining."
+              )}
+            </div>
+          )}
+
+          {aiResult && (
+            <div 
+              className="p-6 text-zinc-300 text-xs leading-relaxed whitespace-pre-wrap bg-[#09090b]/40 divide-y divide-zinc-800"
+              style={{ maxHeight: '480px', overflowY: 'scroll' }}
+            >
+              {aiResult}
+            </div>
+          )}
         </div>
 
         {/* Students Table */}

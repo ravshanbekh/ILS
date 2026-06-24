@@ -1,4 +1,4 @@
-import { Bell, Sun, Moon } from 'lucide-react';
+import { Bell, Sun, Moon, X, AlertCircle, Info, Clock, AlertTriangle, Brain, TrendingDown } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useState, useEffect } from 'react';
 import { notificationsApi } from '@/api';
@@ -14,6 +14,17 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedNotif, setSelectedNotif] = useState<any>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleNotifClick = async (notif: any) => {
+    setSelectedNotif(notif);
+    setShowModal(true);
+    if (!notif.isRead) {
+      await markAsRead(notif.id);
+    }
+  };
+
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
   });
@@ -130,39 +141,29 @@ export default function Header({ title, subtitle }: HeaderProps) {
                     </div>
                   ) : (
                     notifications.map((notif: any) => {
-                      // Color based on type
-                      const typeConfig: Record<string, { dot: string; bg: string }> = {
-                        ai_alert: { dot: 'bg-violet-500', bg: 'bg-violet-500/5' },
-                        warning: { dot: 'bg-amber-500', bg: 'bg-amber-500/5' },
-                        success: { dot: 'bg-emerald-500', bg: 'bg-emerald-500/5' },
-                        info: { dot: 'bg-blue-500', bg: 'bg-blue-500/5' },
+                      const getIcon = () => {
+                        const t = notif.type || '';
+                        if (t.includes('unchecked')) return <Clock className="w-4 h-4 text-amber-500" />;
+                        if (t.includes('inactive')) return <AlertTriangle className="w-4 h-4 text-red-500" />;
+                        if (t.includes('lagging') || t.includes('rating')) return <TrendingDown className="w-4 h-4 text-orange-500" />;
+                        return <Info className="w-4 h-4 text-blue-500" />;
                       };
-                      const tc = notif.type && typeConfig[notif.type] ? typeConfig[notif.type] : { dot: 'bg-blue-500', bg: 'bg-blue-500/5' };
 
                       return (
                         <div
                           key={notif.id}
-                          className={`p-4 transition-colors ${notif.isRead ? 'opacity-75 hover:bg-zinc-800/30' : `${tc.bg} hover:bg-zinc-800/20`}`}
+                          onClick={() => handleNotifClick(notif)}
+                          className={`p-4 transition-colors cursor-pointer border-b border-zinc-800/50 flex gap-3 items-start hover:bg-zinc-800/30 ${notif.isRead ? 'opacity-70' : 'bg-blue-500/5'}`}
                         >
-                          <div className="flex gap-3">
-                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${notif.isRead ? 'bg-transparent' : tc.dot}`} />
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-sm ${notif.isRead ? 'text-zinc-300' : 'text-white font-medium'} leading-snug`}>
-                                {notif.message}
-                              </p>
-                              <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-wider">
-                                {new Date(notif.createdAt).toLocaleString('uz-UZ', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            </div>
+                          <div className="shrink-0 mt-0.5">{getIcon()}</div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs ${notif.isRead ? 'text-zinc-400' : 'text-white font-semibold'} leading-snug truncate`}>
+                              {notif.title}
+                            </p>
+                            <p className="text-[10px] text-zinc-500 mt-1">
+                              {new Date(notif.createdAt).toLocaleString('uz-UZ', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </p>
                           </div>
-                          {!notif.isRead && (
-                            <button
-                              onClick={() => markAsRead(notif.id)}
-                              className="mt-2 ml-5 text-xs font-medium text-blue-500 hover:text-blue-400"
-                            >
-                              O'qildi deb belgilash
-                            </button>
-                          )}
                         </div>
                       );
                     })
@@ -180,6 +181,53 @@ export default function Header({ title, subtitle }: HeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* Notification Detail Modal */}
+      {showModal && selectedNotif && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#18181b] border border-zinc-700 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-[#18181b] shrink-0">
+              <div className="flex items-center gap-2.5">
+                <Brain className="w-5 h-5 text-violet-400" />
+                <h3 className="text-white font-bold text-sm">Xabarnoma Tafsilotlari</h3>
+              </div>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto space-y-4 max-h-[70vh]">
+              <div>
+                <h4 className="text-white font-bold text-base leading-snug">{selectedNotif.title}</h4>
+                <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-wider">
+                  {new Date(selectedNotif.createdAt).toLocaleString('uz-UZ', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+
+              <div className="h-px bg-zinc-800" />
+
+              <div className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/80">
+                {selectedNotif.body}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-zinc-800 bg-[#18181b] flex justify-end shrink-0">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-semibold transition-colors"
+              >
+                Yopish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

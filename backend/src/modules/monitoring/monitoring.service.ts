@@ -525,6 +525,9 @@ Quyidagi bo'limlar bo'yicha tahlil yozing:
 📈 IJOBIY TOMONLAR
 (Guruhda yaxshi ketayotgan narsalar)
 
+💡 Z AVLODI UCHUN METODOLOGIYA VA USLUB TAVSIYALARI
+(Z avlodi o'quvchilarini darsga jalb qilish, ularning motivatsiyasi va muammolarini yengish uchun 10 yillik tajribali mentor sifatida tavsiya etiladigan zamonaviy, interaktiv darslik metodologiyalari)
+
 💡 UZOQ MUDDATLI TAVSIYALAR
 (O'qituvchining dars berish uslubi va guruhni ushlab qolish bo'yicha 1-3 oylik strategiya)
 
@@ -673,7 +676,7 @@ MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'li
       take: 3,
     });
 
-    const prompt = `Sen 10 yillik tajribali o'quv markaz mentorisisan.
+    const prompt = `Sen EdTech tizimlarida 10 yillik tajribali o'quv markaz mentorisisan.
 ${centerContext ? `O'quv markaz haqida: ${centerContext}` : ''}
 
 O'quvchi haqida to'liq ma'lumot:
@@ -686,11 +689,15 @@ MUZLATISH TARIXI: ${freezes.length > 0 ? freezes.map(f => `${f.reason} — ${f.d
 
 VAZIFA: Ushbu o'quvchi bilan yuzma-yuz suhbat o'tkazish uchun batafsil SCRIPT yoz.
 
+Suhbat va reja uchun maxsus talablar:
+- Z avlodi (Gen Z) o'quvchisining psixologiyasi va o'rganish uslubiga mos, unga qiziq va interaktiv bo'lgan zamonaviy metodologiyalarni dars/uyga vazifa jarayoni uchun tavsiya qil.
+- O'quvchining motivatsiyasini ko'tarish, muammolarini (to'lov, dars qiyinligi, yoki tushunmovchilik) yengish bo'yicha amaliy va o'ziga xos 10 yillik mentor tajribasidan kelib chiquvchi yechimlarni scriptga kirit.
+
 Script strukturasi:
 1. 🤝 SALOMLASHISH va munosabat o'rnatish (2-3 gap)
 2. 📊 O'QUVCHINING HOZIRGI HOLATI haqida suhbat boshlash (3-4 gap)
 3. 💡 MUAMMOLARNI ANIQLASH va tushunish (4-5 savol)
-4. 🎯 YECHIMLAR va motivatsiya (5-6 gap — aniq, amaliy)
+4. 🎯 YECHIMLAR, motivatsiya va Z avlodi uchun metodlar (5-6 gap — aniq, amaliy dars takliflari bilan)
 5. 📋 KELISHILGAN REJA (keyingi qadamlar, sana va maqsadlar)
 6. 🤗 XAYRLASHISH (2-3 gap)
 
