@@ -44,7 +44,7 @@ export default function GroupDetailPage() {
     setAiResult('');
     try {
       const res = await monitoringApi.analyzeGroup(id);
-      setAiResult(res.data.data || '');
+      setAiResult(res.data.data?.analysis || '');
     } catch (e: any) {
       const err = e?.response?.data?.error;
       if (err === 'API_KEY_NOT_SET') setAiError('api_key');
@@ -319,7 +319,7 @@ export default function GroupDetailPage() {
               <Brain className="w-5 h-5 text-violet-400" />
               <div>
                 <h3 className="text-white font-bold text-sm">AI Guruh Tahlili</h3>
-                <p className="text-zinc-500 text-xs mt-0.5">Muammolar, ortda qolayotganlar tahlili va Z avlodi uchun mentorlik yechimlari</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Muammolar, ortda qolayotganlar va guruh faoliyati tahlili</p>
               </div>
             </div>
             <button
