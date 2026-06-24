@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react';
+import { Bell, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useState, useEffect } from 'react';
 import { notificationsApi } from '@/api';
@@ -14,6 +14,22 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
+  });
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   useEffect(() => {
     fetchNotifications();
@@ -66,6 +82,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-5">
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-lg bg-zinc-800/20 hover:bg-zinc-800/50 text-zinc-400 hover:text-white transition-all flex items-center justify-center cursor-pointer"
+          title={theme === 'light' ? 'Tungi rejim' : 'Kungi rejim'}
+        >
+          {theme === 'light' ? <Moon className="w-4.5 h-4.5" /> : <Sun className="w-4.5 h-4.5" />}
+        </button>
+
         <div className="relative">
           <button 
             onClick={() => setIsOpen(!isOpen)}

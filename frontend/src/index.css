@@ -69,3 +69,129 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ========================================================
+   LIGHT MODE OVERRIDES
+   ======================================================== */
+.light {
+  /* Variables */
+  --background: #f9fafb;
+  --foreground: #0f0f12;
+  --card: #ffffff;
+  --card-foreground: #0f0f12;
+  --popover: #ffffff;
+  --popover-foreground: #0f0f12;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #0f0f12;
+  --muted: #f3f4f6;
+  --muted-foreground: #4b5563;
+  --accent: #ede9fe;
+  --accent-foreground: #7c3aed;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #7c3aed;
+
+  /* Global background & text */
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+
+  /* Scrollbar override */
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  /* Force background color replacements for hex code classes */
+  .bg-\[\#09090b\], .bg-\[\#000000\], .bg-black, .bg-zinc-950, .bg-\[\#09090b\]\/95, .bg-\#09090b, main.bg-\[\#09090b\] {
+    background-color: var(--background) !important;
+  }
+  
+  .bg-\[\#18181b\], .bg-zinc-900, .bg-zinc-900\/50, .bg-\[\#18181b\]\/30, .bg-\[\#18181b\]\/90, .bg-\[\#18181b\]\/80, aside.bg-\[\#18181b\] {
+    background-color: var(--card) !important;
+  }
+  
+  .bg-\[\#111113\], .bg-zinc-800, .bg-zinc-800\/50, .bg-zinc-800\/30, .bg-zinc-800\/40, .bg-zinc-900\/20, .bg-zinc-900\/10 {
+    background-color: var(--secondary) !important;
+  }
+
+  /* Text overrides */
+  .text-white, .text-zinc-50, .text-zinc-100, .text-zinc-200 {
+    color: var(--foreground) !important;
+  }
+  
+  .text-zinc-300, .text-zinc-400, .text-zinc-500 {
+    color: var(--muted-foreground) !important;
+  }
+
+  /* Border overrides */
+  .border-zinc-800, .border-zinc-700, .border-zinc-800\/50, .border-zinc-700\/50, .border-zinc-900, header.border-b {
+    border-color: var(--border) !important;
+  }
+
+  /* Blue accent color to Violet accent color */
+  .bg-blue-600, .bg-blue-500, .bg-blue-600\/20, .bg-blue-500\/10 {
+    background-color: var(--primary) !important;
+  }
+  .bg-blue-600\/20, .bg-blue-500\/20, .bg-blue-500\/10 {
+    background-color: var(--accent) !important;
+  }
+  .text-blue-500, .text-blue-400, .text-blue-600 {
+    color: var(--primary) !important;
+  }
+  .border-blue-500, .border-blue-600, .border-blue-500\/20 {
+    border-color: var(--primary) !important;
+  }
+  
+  .hover\:bg-blue-700:hover, .hover\:bg-blue-600:hover {
+    background-color: #6d28d9 !important;
+  }
+
+  /* Hover states for lists/cards */
+  .hover\:bg-zinc-800\/50:hover, .hover\:bg-zinc-800\/30:hover, .hover\:bg-zinc-700:hover, .hover\:bg-zinc-800:hover {
+    background-color: var(--secondary) !important;
+  }
+
+  /* Custom components */
+  .glass-panel {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+  }
+  
+  input, select, textarea {
+    background-color: var(--card) !important;
+    color: var(--foreground) !important;
+    border-color: var(--border) !important;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--primary) !important;
+    --tw-ring-color: var(--primary) !important;
+  }
+
+  /* Recharts tooltip or other components */
+  .recharts-default-tooltip {
+    background-color: var(--card) !important;
+    border-color: var(--border) !important;
+    color: var(--foreground) !important;
+  }
+
+  /* Sidebar Active Links styling */
+  a.bg-zinc-800.text-white {
+    background-color: var(--accent) !important;
+    color: var(--primary) !important;
+  }
+  
+  .text-zinc-400 {
+    color: var(--muted-foreground) !important;
+  }
+
+  .text-gradient {
+    background: linear-gradient(to right, #7c3aed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}

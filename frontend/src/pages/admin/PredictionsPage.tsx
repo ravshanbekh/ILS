@@ -75,10 +75,10 @@ export default function PredictionsPage() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Brain className="w-7 h-7 text-violet-400" />
-            AI Bashoratlar
+            AI Prognozlar
           </h1>
           <p className="text-zinc-400 text-sm mt-1">
-            O'quvchi ketish xavfi va daromad bashorati
+            O'quvchi ketish xavfi va daromad prognozi
           </p>
         </div>
         <button
@@ -94,7 +94,7 @@ export default function PredictionsPage() {
       {/* Summary cards — Dropout */}
       {dropoutLoading ? (
         <div className="flex items-center justify-center h-32 text-zinc-500 gap-2">
-          <Loader2 className="w-5 h-5 animate-spin" /> Dropout bashorati yuklanmoqda...
+          <Loader2 className="w-5 h-5 animate-spin" /> Dropout prognozi yuklanmoqda...
         </div>
       ) : (
         <>
@@ -141,7 +141,7 @@ export default function PredictionsPage() {
           <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
             <div className="px-5 py-3 border-b border-zinc-800 flex items-center gap-2">
               <TrendingDown className="w-4 h-4 text-red-400" />
-              <h2 className="text-white font-semibold text-sm">O'quvchi Ketish Xavfi Bashorati</h2>
+              <h2 className="text-white font-semibold text-sm">O'quvchi Ketish Xavfi Prognozi</h2>
               <span className="ml-auto text-xs text-zinc-500">{filtered.length} ta o'quvchi</span>
             </div>
 
@@ -221,13 +221,13 @@ export default function PredictionsPage() {
       {/* Revenue Forecasting */}
       {revenueLoading ? (
         <div className="flex items-center justify-center h-32 text-zinc-500 gap-2">
-          <Loader2 className="w-5 h-5 animate-spin" /> Daromad bashorati yuklanmoqda...
+          <Loader2 className="w-5 h-5 animate-spin" /> Daromad prognozi yuklanmoqda...
         </div>
       ) : revenueData ? (
         <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-zinc-800 flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-white font-semibold text-sm">Daromad Bashorati (3 Oy)</h2>
+            <h2 className="text-white font-semibold text-sm">Daromad Prognozi (3 Oy)</h2>
             <span className="ml-auto text-xs text-zinc-400">
               {TREND_LABELS[revenueData.trend] || revenueData.trend}
             </span>
@@ -239,7 +239,7 @@ export default function PredictionsPage() {
               { label: "Faol o'quvchilar", value: revenueData.activeStudents, suffix: ' ta' },
               { label: "Oylik to'lov", value: formatMoney(revenueData.monthlyFee), suffix: '' },
               { label: "O'rtacha muzlatish/oy", value: revenueData.summary.avgMonthlyFreeze, suffix: ' ta' },
-              { label: "Maks. bashorat yo'qotish", value: formatMoney(revenueData.summary.maxForecastLoss), suffix: '' },
+              { label: "Maks. prognoz yo'qotish", value: formatMoney(revenueData.summary.maxForecastLoss), suffix: '' },
             ].map(item => (
               <div key={item.label} className="p-4">
                 <p className="text-xs text-zinc-500">{item.label}</p>
@@ -260,7 +260,7 @@ export default function PredictionsPage() {
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <p className="text-xs text-zinc-500">Bashorat muzlatish</p>
+                    <p className="text-xs text-zinc-500">Prognoz muzlatish</p>
                     <p className="text-lg font-bold text-amber-400">{f.projectedFrozen} ta</p>
                   </div>
                   <div>

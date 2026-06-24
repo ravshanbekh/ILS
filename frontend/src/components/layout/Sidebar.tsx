@@ -18,7 +18,7 @@ const adminLinks = [
   { to: '/admin/monitoring', icon: Phone, label: 'Monitoring' },
   { to: '/admin/checklist-stats', icon: ClipboardCheck, label: 'Cheklist Hisobot' },
   { to: '/admin/checklist-manage', icon: ClipboardList, label: 'Cheklist Boshqaruv' },
-  { to: '/admin/predictions', icon: TrendingDown, label: 'AI Bashoratlar' },
+  { to: '/admin/predictions', icon: TrendingDown, label: 'AI Prognozlar' },
   { to: '/admin/rankings', icon: Trophy, label: 'Reyting' },
   { to: '/admin/export', icon: Download, label: 'Eksport' },
   { to: '/admin/settings', icon: Settings, label: 'Sozlamalar' },
