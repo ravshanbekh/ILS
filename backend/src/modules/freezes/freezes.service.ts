@@ -332,7 +332,7 @@ class FreezesService {
   async generateOperatorScript(id: string): Promise<string> {
     // Settings dan API key, model va context olish
     let apiKey = '';
-    let model = 'gemini-2.0-flash';
+    let model = 'gemini-2.5-flash';
     let centerContext = '';
     try {
       const fs = await import('fs');
@@ -342,7 +342,7 @@ class FreezesService {
         const raw = fs.readFileSync(settingsPath, 'utf-8');
         const settings = JSON.parse(raw);
         apiKey = settings.geminiApiKey || '';
-        model = settings.geminiModel || 'gemini-2.0-flash';
+        model = settings.geminiModel || 'gemini-2.5-flash';
         centerContext = settings.centerContext || '';
       }
     } catch (e) {
@@ -450,7 +450,7 @@ Har bir bo'limda operator tilidan tayyor so'zma-so'z gaplarni yozing.`;
   async analyzeWithAI(month: number, year: number): Promise<string> {
     // Settings dan API key olish
     let apiKey = '';
-    let model = 'gemini-2.0-flash';
+    let model = 'gemini-2.5-flash';
     try {
       const fs = await import('fs');
       const path = await import('path');
@@ -459,7 +459,7 @@ Har bir bo'limda operator tilidan tayyor so'zma-so'z gaplarni yozing.`;
         const raw = fs.readFileSync(settingsPath, 'utf-8');
         const settings = JSON.parse(raw);
         apiKey = settings.geminiApiKey || '';
-        model = settings.geminiModel || 'gemini-2.0-flash';
+        model = settings.geminiModel || 'gemini-2.5-flash';
       }
     } catch (e) {
       throw new Error('API_KEY_NOT_SET');

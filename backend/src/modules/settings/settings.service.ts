@@ -28,7 +28,7 @@ const defaultSettings: any = {
     },
   },
   geminiApiKey: '',
-  geminiModel: 'gemini-2.0-flash',
+  geminiModel: 'gemini-2.5-flash',
   centerContext: '',
 };
 
@@ -117,7 +117,7 @@ class SettingsService {
     const settings = this.readSettings();
     return {
       isConfigured: !!(settings as any).geminiApiKey,
-      model: (settings as any).geminiModel || 'gemini-2.0-flash',
+      model: (settings as any).geminiModel || 'gemini-2.5-flash',
       centerContext: (settings as any).centerContext || '',
     };
   }
@@ -144,7 +144,7 @@ class SettingsService {
   async testGeminiConfig() {
     const settings = this.readSettings();
     const apiKey = (settings as any).geminiApiKey;
-    const model = (settings as any).geminiModel || 'gemini-2.0-flash';
+    const model = (settings as any).geminiModel || 'gemini-2.5-flash';
 
     if (!apiKey) return { success: false, message: 'API key kiritilmagan' };
 

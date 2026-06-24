@@ -6,13 +6,13 @@ class NotificationEngine {
   private getSettings(): { apiKey: string; model: string } {
     const settingsPath = path.join(__dirname, '../../../data/settings.json');
     let apiKey = '';
-    let model = 'gemini-2.0-flash';
+    let model = 'gemini-2.5-flash';
     try {
       if (fs.existsSync(settingsPath)) {
         const raw = fs.readFileSync(settingsPath, 'utf-8');
         const s = JSON.parse(raw);
         apiKey = s.geminiApiKey || '';
-        model = s.geminiModel || 'gemini-2.0-flash';
+        model = s.geminiModel || 'gemini-2.5-flash';
       }
     } catch {}
     return { apiKey, model };

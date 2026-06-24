@@ -120,13 +120,13 @@ const startServer = async () => {
         const raw = fs.readFileSync(settingsPath, 'utf-8');
         const settings = JSON.parse(raw);
         if (
-          settings.geminiModel === 'gemini-2.5-flash' ||
           settings.geminiModel === 'gemini-3.5-flash' ||
-          settings.geminiModel === 'gemini-2.5-pro'
+          settings.geminiModel === 'gemini-2.5-pro' ||
+          settings.geminiModel === 'gemini-2.0-flash'
         ) {
-          settings.geminiModel = 'gemini-2.0-flash';
+          settings.geminiModel = 'gemini-2.5-flash';
           fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
-          logger.info('⚙️  Gemini modeli avtomatik ravishda gemini-2.0-flash ga migratsiya qilindi');
+          logger.info('⚙️  Gemini modeli avtomatik ravishda gemini-2.5-flash ga migratsiya qilindi');
         }
       }
     } catch (err) {

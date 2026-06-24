@@ -52,13 +52,13 @@ router.post('/ask', async (req: Request, res: Response, next: NextFunction) => {
 
     const settingsPath = path.join(__dirname, '../../../data/settings.json');
     let apiKey = '';
-    let model = 'gemini-2.0-flash';
+    let model = 'gemini-2.5-flash';
     try {
       if (fs.existsSync(settingsPath)) {
         const raw = fs.readFileSync(settingsPath, 'utf-8');
         const settings = JSON.parse(raw);
         apiKey = settings.geminiApiKey || '';
-        model = settings.geminiModel || 'gemini-2.0-flash';
+        model = settings.geminiModel || 'gemini-2.5-flash';
       }
     } catch {}
 
