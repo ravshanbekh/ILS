@@ -40,6 +40,14 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleDateString('uz-UZ');
 }
 
+function cleanMarkdown(text: string) {
+  if (!text) return '';
+  return text
+    .replace(/#{1,6}\s?/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '');
+}
+
 export default function FrozenStudentsPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -459,7 +467,7 @@ export default function FrozenStudentsPage() {
                     className="bg-zinc-800/50 rounded-xl p-5 text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap border border-zinc-700/50"
                     style={{ maxHeight: '480px', overflowY: 'scroll' }}
                   >
-                    {aiResult}
+                    {cleanMarkdown(aiResult)}
                   </div>
                 )}
 

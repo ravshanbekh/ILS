@@ -458,23 +458,29 @@ ${rawFreezesText}
 
 Quyidagi tuzilish bo'yicha juda chuqur, tanqidiy va professional tahlil tayyorlang:
 
-1. **Kirish**: Salamlashish va umumiy oylik holatga biznes ko'zi bilan baho berish.
-2. **🔍 Yashirin Muammolar (Biz ko'rmayotgan jihatlar)**:
-   - Ro'yxatdagi izohlarni, o'qituvchilarni, guruhlarni va muddatlarni solishtirib, tizimli qanday muammolar borligini ochib bering.
-   - Har bir ketish ortidagi haqiqiy sabablarni tahlil qiling (masalan, onboarding xatolari, o'quv dasturi murakkabligi, moliyaviy muammolarga yondashuv sustligi, o'qituvchining metodikasi va hk).
-3. **👨‍🏫 O'qituvchilar va Guruhlar Tahlili**:
-   - Qaysi o'qituvchidan eng ko'p ketish bo'lyapti va buning sababi nimada bo'lishi mumkin (izohlarga tayanib)?
-   - O'qituvchilarning o'quvchini ushlab qolish mahoratiga baho bering.
-4. **⚡ Tezkor Biznes Yechimlar (Kelgusi 30 kun uchun)**:
-   - Ushbu ketishlarni to'xtatish va yo'qotilgan daromadni tiklash uchun darhol amalga oshirish kerak bo'lgan 3-5 ta chora-tadbir.
-   - O'quvchilarni qaytarish (retention) bo'yicha amaliy skriptlar yoki g'oyalar.
-5. **📋 Uzoq Muddatli Tizimli Tavsiyalar (3-6 oy)**:
-    - IT Live o'quv markazini yanada kuchaytirish, mijozlar sodiqligini (LTV) oshirish uchun biznes jarayonlarni (LMS, KPI, o'qituvchilarni nazorat qilish, sifat nazorati) qanday o'zgartirish kerak?
-6. **📈 Biznes Prognozi**:
-    - Agar bu muammolar hal etilmasa, kelgusi oylarda o'quv markazi daromadi va brend obro'siga ta'siri qanday bo'ladi?
+1. KIRISH
+(Salamlashish va umumiy oylik holatga biznes ko'zi bilan baho berish)
 
-Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida yozing. Har bir bo'limni chiroyli emoji va vizual struktura (ro'yxatlar, qalin shriftlar, muhim joylar uchun iqtiboslar) bilan bezating.
+2. 🔍 YASHIRIN MUAMMOLAR (Biz ko'rmayotgan jihatlar)
+- Ro'yxatdagi izohlarni, o'qituvchilarni, guruhlarni va muddatlarni solishtirib, tizimli qanday muammolar borligini ochib bering.
+- Har bir ketish ortidagi haqiqiy sabablarni tahlil qiling (masalan, onboarding xatolari, o'quv dasturi murakkabligi, moliyaviy muammolarga yondashuv sustligi, o'qituvchining metodikasi va hk).
 
+3. 👨‍🏫 O'QITUVCHILAR VA GURUHLAR TAHLILI
+- Qaysi o'qituvchidan eng ko'p ketish bo'lyapti va buning sababi nimada bo'lishi mumkin (izohlarga tayanib)?
+- O'qituvchilarning o'quvchini ushlab qolish mahoratiga baho bering.
+
+4. ⚡ TEZKOR BIZNES YECHIMLAR (Kelgusi 30 kun uchun)
+- Ushbu ketishlarni to'xtatish va yo'qotilgan daromadni tiklash uchun darhol amalga oshirish kerak bo'lgan 3-5 ta chora-tadbir.
+- O'quvchilarni qaytarish (retention) bo'yicha amaliy skriptlar yoki g'oyalar.
+
+5. 📋 UZOQ MUDDATLI TIZIMLI TAVSIYALAR (3-6 oy)
+- IT Live o'quv markazini yanada kuchaytirish, mijozlar sodiqligini (LTV) oshirish uchun biznes jarayonlarni (LMS, KPI, o'qituvchilarni nazorat qilish, sifat nazorati) qanday o'zgartirish kerak?
+
+6. 📈 BIZNES PROGNOZI
+- Agar bu muammolar hal etilmasa, kelgusi oylarda o'quv markazi daromadi va brend obro'siga ta'siri qanday bo'ladi?
+
+Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida yozing. Bo'limlar orasida bo'sh satr qoldiring.
+HECH QANDAY MARKDOWN BELGILARINI (*, **, #) ISHLATMANG! Sarlavhalarni faqat bosh harflar va emoji bilan yozing.
 MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.`;
 
     return generateText(prompt, 65536, 0.7, false);
