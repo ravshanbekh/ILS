@@ -2,6 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 type BotInstance = InstanceType<typeof TelegramBot>;
 import botService from './bot.service';
 import freezesService from '../freezes/freezes.service';
+import { generateText, getAISettings } from '../../shared/utils/ai';
 import {
   esc,
   welcomeMessage,
@@ -263,22 +264,10 @@ export function registerHandlers(bot: BotInstance) {
           return;
         }
 
-        let apiKey = '';
-        let model = 'gemini-2.5-flash';
-        try {
-          const fs = await import('fs');
-          const path = await import('path');
-          const settingsPath = path.join(__dirname, '../../../data/settings.json');
-          if (fs.existsSync(settingsPath)) {
-            const raw = fs.readFileSync(settingsPath, 'utf-8');
-            const settings = JSON.parse(raw);
-            apiKey = settings.geminiApiKey || '';
-            model = settings.geminiModel || 'gemini-2.5-flash';
-          }
-        } catch (_) {}
+        const { apiKey } = getAISettings();
 
         if (!apiKey) {
-          await bot.sendMessage(chatId, '❌ Gemini AI sozlanmagan (API key topilmadi). Iltimos, admin bilan bog\'laning.', { reply_markup: mainMenuKeyboard() });
+          await bot.sendMessage(chatId, '❌ AI yordamchi hozirda sozlanmagan. Iltimos, admin bilan bog\'laning.', { reply_markup: mainMenuKeyboard() });
           clearState(chatId);
           return;
         }
@@ -309,24 +298,7 @@ Qoidalarga rioya qiling:
 4. Telegram Markdown parsing xatoliklarini oldini olish uchun javobingizda mutlaqo markdown elementlarini (masalan: *, _, \`, [) ishlatmang. Plain text (oddiy matn) shaklida, emojilar va yangi qatorlar bilan chiroyli formatlab yozing.
 5. Javobingiz mazmunan to'liq bo'lsin, lekin juda cho'zilib ketmasligi uchun maksimal 10 ta gapdan oshmasin.`;
 
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Gemini API call failed');
-        }
-
-        const data: any = await response.json();
-        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'AI hozirda javob bera olmaydi.';
+        const responseText = await generateText(prompt, 65536);
 
         await bot.sendMessage(chatId, `🤖 *AI Konsultant javobi:*\n\n${responseText}`, {
           parse_mode: 'Markdown',

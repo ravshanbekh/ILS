@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../../shared/middleware/auth.middleware';
 import fs from 'fs';
 import path from 'path';
+import { generateText, getAISettings } from '../../shared/utils/ai';
 
 const router = Router();
 router.use(authenticate);
@@ -50,17 +51,7 @@ router.post('/ask', async (req: Request, res: Response, next: NextFunction) => {
 
     const userRole = req.user!.role;
 
-    const settingsPath = path.join(__dirname, '../../../data/settings.json');
-    let apiKey = '';
-    let model = 'gemini-2.5-flash';
-    try {
-      if (fs.existsSync(settingsPath)) {
-        const raw = fs.readFileSync(settingsPath, 'utf-8');
-        const settings = JSON.parse(raw);
-        apiKey = settings.geminiApiKey || '';
-        model = settings.geminiModel || 'gemini-2.5-flash';
-      }
-    } catch {}
+    const { apiKey } = getAISettings();
 
     if (!apiKey) {
       return res.json({ success: true, data: { reply: 'Tizimda sun\'iy intellekt sozlanmagan. Adminga murojaat qiling.' } });
@@ -84,29 +75,13 @@ QOIDALAR:
 
 Foydalanuvchi savoli: ${message}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.text();
-      console.error('Gemini chatbot error:', err);
+    try {
+      const reply = await generateText(prompt, 1024);
+      res.json({ success: true, data: { reply } });
+    } catch (err) {
+      console.error('Chatbot error:', err);
       return res.json({ success: true, data: { reply: 'Kechirasiz, hozirgi vaqtda yordamchi bot bilan bog\'lanishda xatolik yuz berdi.' } });
     }
-
-    const data: any = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join('') || 'Javob olinmadi';
-    const cleanReply = reply.replace(/\*\*/g, '').replace(/\*/g, '').replace(/##+ /g, '').replace(/`/g, '').trim();
-
-    res.json({ success: true, data: { reply: cleanReply } });
   } catch (err) {
     next(err);
   }

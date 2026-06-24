@@ -1,6 +1,7 @@
 import prisma from '../../config/database';
 import fs from 'fs';
 import path from 'path';
+import { generateText, getAISettings } from '../../shared/utils/ai';
 
 const MOOD_LABELS: Record<string, string> = {
   yaxshi: '😊 Yaxshi',
@@ -23,25 +24,7 @@ const TAG_LABELS: Record<string, string> = {
 };
 
 class MonitoringService {
-  // ─────────────────────────────────────────────────
-  //  Yordamchi: Settings'dan API sozlamalarini olish
-  // ─────────────────────────────────────────────────
-  private getSettings(): { apiKey: string; model: string; centerContext: string } {
-    const settingsPath = path.join(__dirname, '../../../data/settings.json');
-    let apiKey = '';
-    let model = 'gemini-2.5-flash';
-    let centerContext = '';
-    try {
-      if (fs.existsSync(settingsPath)) {
-        const raw = fs.readFileSync(settingsPath, 'utf-8');
-        const s = JSON.parse(raw);
-        apiKey = s.geminiApiKey || '';
-        model = s.geminiModel || 'gemini-2.5-flash';
-        centerContext = s.centerContext || '';
-      }
-    } catch {}
-    return { apiKey, model, centerContext };
-  }
+
 
   // ─────────────────────────────────────────────────
   //  CALL CRUD
@@ -382,7 +365,7 @@ class MonitoringService {
    * Guruh bo'yicha AI tahlil
    */
   async analyzeGroupWithAI(groupId: string): Promise<string> {
-    const { apiKey, model, centerContext } = this.getSettings();
+    const { apiKey, centerContext } = getAISettings();
     if (!apiKey) throw new Error('API_KEY_NOT_SET');
 
     // Guruh ma'lumotlarini olish
@@ -548,39 +531,14 @@ Quyidagi bo'limlar bo'yicha tahlil yozing:
 Barcha matnni o'zbek tilida, tushunarli va amaliy uslubda yozing.
 MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.text();
-      console.error('Gemini monitoring error:', err);
-      throw new Error('GEMINI_API_ERROR');
-    }
-
-    const data: any = await response.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    let text = parts.map((p: any) => p.text).join('') || '';
-
-    // Markdown tozalash
-    text = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/##+ /g, '').replace(/`/g, '');
-
-    return text.trim();
+    return generateText(prompt, 65536);
   }
 
   /**
    * O'qituvchi bo'yicha AI tahlil (barcha guruhlari bo'yicha)
    */
   async analyzeTeacherWithAI(teacherId: string): Promise<string> {
-    const { apiKey, model, centerContext } = this.getSettings();
+    const { apiKey, centerContext } = getAISettings();
     if (!apiKey) throw new Error('API_KEY_NOT_SET');
 
     const teacher = await prisma.user.findUnique({
@@ -679,32 +637,14 @@ O'zbek tilida yozing.
 
 MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
-        }),
-      }
-    );
-
-    if (!response.ok) throw new Error('GEMINI_API_ERROR');
-
-    const data: any = await response.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    let text = parts.map((p: any) => p.text).join('') || '';
-    text = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/##+ /g, '').replace(/`/g, '');
-    return text.trim();
+    return generateText(prompt, 8192);
   }
 
   /**
    * O'quvchi bilan ishlash AI Script (yuzma-yuz suhbat uchun)
    */
   async generateStudentScript(studentId: string): Promise<string> {
-    const { apiKey, model, centerContext } = this.getSettings();
+    const { apiKey, centerContext } = getAISettings();
     if (!apiKey) throw new Error('API_KEY_NOT_SET');
 
     // O'quvchi ma'lumotlari
@@ -759,29 +699,7 @@ O'zbek tilida, samimiy va professional ohangda.
 Javob tugal va to'liq bo'lsin.
 HECH QANDAY MARKDOWN BELGILARINI (*, **, #) ISHLATMANG! Sarlavhalarni faqat emoji va bosh harflar bilan yozing.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.text();
-      console.error('Gemini generate script error:', err);
-      throw new Error('GEMINI_API_ERROR');
-    }
-
-    const data: any = await response.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    let text = parts.map((p: any) => p.text).join('') || '';
-    text = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/##+ /g, '').replace(/`/g, '');
-    return text.trim();
+    return generateText(prompt, 65536);
   }
 }
 

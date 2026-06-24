@@ -2,6 +2,7 @@ import prisma from '../../config/database';
 import { ApiError } from '../../shared/middleware/errorHandler';
 import fs from 'fs';
 import path from 'path';
+import { generateText, getAISettings } from '../../shared/utils/ai';
 
 class StatisticsService {
   /**
@@ -430,25 +431,8 @@ class StatisticsService {
     };
   }
 
-  private getSettings(): { apiKey: string; model: string; centerContext: string } {
-    const settingsPath = path.join(__dirname, '../../../data/settings.json');
-    let apiKey = '';
-    let model = 'gemini-2.5-flash';
-    let centerContext = '';
-    try {
-      if (fs.existsSync(settingsPath)) {
-        const raw = fs.readFileSync(settingsPath, 'utf-8');
-        const s = JSON.parse(raw);
-        apiKey = s.geminiApiKey || '';
-        model = s.geminiModel || 'gemini-2.5-flash';
-        centerContext = s.centerContext || '';
-      }
-    } catch {}
-    return { apiKey, model, centerContext };
-  }
-
   async analyzeStudentWithAI(studentId: string): Promise<string> {
-    const { apiKey, model, centerContext } = this.getSettings();
+    const { apiKey, centerContext } = getAISettings();
     if (!apiKey) throw new Error('API_KEY_NOT_SET');
 
     // Ma'lumotlarni yig'ish
@@ -511,34 +495,10 @@ Quyidagilarni tahlil qil:
 (Aniq, amaliy maslahatlar — nima qilishi kerak)
 
 O'zbek tilida, tushunarli va amaliy uslubda yozing.
-Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.
+Har bir bo'lim uchun 3-5 ta gap yeting. Javob tugal va to'liq bo'lsin.
 HECH QANDAY MARKDOWN BELGILARINI (*, **, #) ISHLATMANG! Sarlavhalarni faqat bosh harflar va emoji bilan yozing.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.text();
-      console.error('Gemini student analyze error:', err);
-      throw new Error('GEMINI_API_ERROR');
-    }
-
-    const data: any = await response.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    let text = parts.map((p: any) => p.text).join('') || '';
-
-    // Markdown tozalash
-    text = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/##+ /g, '').replace(/`/g, '');
-    return text.trim();
+    return generateText(prompt, 65536);
   }
 }
 

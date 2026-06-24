@@ -1,5 +1,6 @@
 import prisma from '../../config/database';
 import { notifyOperatorsOnFreeze } from '../bot/bot.notifications';
+import { generateText, getAISettings } from '../../shared/utils/ai';
 
 // Human-readable sabab nomlari
 export const FREEZE_REASON_LABELS: Record<string, string> = {
@@ -330,25 +331,7 @@ class FreezesService {
    * O'quvchi uchun operator gaplashish scriptini yaratish
    */
   async generateOperatorScript(id: string): Promise<string> {
-    // Settings dan API key, model va context olish
-    let apiKey = '';
-    let model = 'gemini-2.5-flash';
-    let centerContext = '';
-    try {
-      const fs = await import('fs');
-      const path = await import('path');
-      const settingsPath = path.join(__dirname, '../../../data/settings.json');
-      if (fs.existsSync(settingsPath)) {
-        const raw = fs.readFileSync(settingsPath, 'utf-8');
-        const settings = JSON.parse(raw);
-        apiKey = settings.geminiApiKey || '';
-        model = settings.geminiModel || 'gemini-2.5-flash';
-        centerContext = settings.centerContext || '';
-      }
-    } catch (e) {
-      throw new Error('API_KEY_NOT_SET');
-    }
-
+    const { apiKey, centerContext } = getAISettings();
     if (!apiKey) throw new Error('API_KEY_NOT_SET');
 
     // Freeze ma'lumotlarini olish
@@ -402,69 +385,14 @@ KELISHUV VA YAKUNLASH
 (Mijozni qayta darsga yoki uchrashuvga jalb qilish, keyingi qadamlar va xayrlashuv)
 
 Har bir bo'limda operator tilidan tayyor so'zma-so'z gaplarni yozing.`;
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errBody = await response.text();
-      console.error('Gemini script generation error:', errBody);
-      throw new Error('GEMINI_API_ERROR');
-    }
-
-    const data: any = await response.json();
-    const candidate = data.candidates?.[0];
-    const finishReason = candidate?.finishReason || 'UNKNOWN';
-    if (finishReason !== 'STOP') {
-      console.warn(`[Script] Gemini finish reason: ${finishReason} — script to'liq yaratilmadi!`);
-    }
-    const parts = candidate?.content?.parts || [];
-    let textResult = parts.map((p: any) => p.text).join('') || '';
-
-    // Remove markdown formatting symbols (asterisks, hashtags, underscores, backticks)
-    textResult = textResult
-      .replace(/\*\*/g, '')
-      .replace(/\*/g, '')
-      .replace(/##+/g, '')
-      .replace(/__/g, '')
-      .replace(/`/g, '');
-
-    return textResult.trim();
+    return generateText(prompt, 65536);
   }
 
   /**
    * Gemini AI bilan tahlil
    */
   async analyzeWithAI(month: number, year: number): Promise<string> {
-    // Settings dan API key olish
-    let apiKey = '';
-    let model = 'gemini-2.5-flash';
-    try {
-      const fs = await import('fs');
-      const path = await import('path');
-      const settingsPath = path.join(__dirname, '../../../data/settings.json');
-      if (fs.existsSync(settingsPath)) {
-        const raw = fs.readFileSync(settingsPath, 'utf-8');
-        const settings = JSON.parse(raw);
-        apiKey = settings.geminiApiKey || '';
-        model = settings.geminiModel || 'gemini-2.5-flash';
-      }
-    } catch (e) {
-      throw new Error('API_KEY_NOT_SET');
-    }
-
+    const { apiKey } = getAISettings();
     if (!apiKey) throw new Error('API_KEY_NOT_SET');
 
     // Ma'lumotlarni tayyorlash
@@ -549,29 +477,7 @@ Javobni o'zbek tilida, juda chiroyli, tushunarli, professional va biznes tilida 
 
 MUHIM CHEKLOV: Har bir bo'lim uchun 3-5 ta aniq gap yeting. Javob tugal va to'liq bo'lsin.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 65536 },
-      }),
-    });
-
-    if (!response.ok) {
-      const errBody = await response.text();
-      console.error('Gemini error:', errBody);
-      throw new Error('GEMINI_API_ERROR');
-    }
-
-    const data: any = await response.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    return parts.map((p: any) => p.text).join('') || '';
+    return generateText(prompt, 65536, 0.7, false);
   }
 }
 

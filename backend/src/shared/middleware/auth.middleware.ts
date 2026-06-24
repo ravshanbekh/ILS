@@ -10,13 +10,10 @@ export interface JwtPayload {
   login: string;
 }
 
-// Extend Express Request to include user
 declare global {
   namespace Express {
     interface Request {
       user?: JwtPayload;
-      params: any;
-      query: any;
     }
   }
 }

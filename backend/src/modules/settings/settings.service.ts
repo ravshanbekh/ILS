@@ -30,6 +30,9 @@ const defaultSettings: any = {
   geminiApiKey: '',
   geminiModel: 'gemini-2.5-flash',
   centerContext: '',
+  groqApiKey: '',
+  groqModel: 'llama-3.3-70b-versatile',
+  aiProvider: 'gemini',
 };
 
 class SettingsService {
@@ -110,8 +113,8 @@ class SettingsService {
   }
 
   /**
-   * Gemini konfiguratsiyasini olish
-   * API key ni bermaydi (faqat isConfigured qaytaradi)
+   * Gemini va Groq konfiguratsiyasini olish
+   * API key ni bermaydi (faqat isConfigured va isGroqConfigured qaytaradi)
    */
   async getGeminiStatus() {
     const settings = this.readSettings();
@@ -119,60 +122,115 @@ class SettingsService {
       isConfigured: !!(settings as any).geminiApiKey,
       model: (settings as any).geminiModel || 'gemini-2.5-flash',
       centerContext: (settings as any).centerContext || '',
+      isGroqConfigured: !!(settings as any).groqApiKey,
+      groqModel: (settings as any).groqModel || 'llama-3.3-70b-versatile',
+      aiProvider: (settings as any).aiProvider || 'gemini',
     };
   }
 
   /**
-   * Gemini konfiguratsiyasini yangilash (admin only)
+   * AI konfiguratsiyasini yangilash (admin only)
    */
-  async updateGeminiConfig(data: { apiKey?: string; model?: string; centerContext?: string }) {
+  async updateGeminiConfig(data: {
+    apiKey?: string;
+    model?: string;
+    centerContext?: string;
+    groqApiKey?: string;
+    groqModel?: string;
+    aiProvider?: string;
+  }) {
     const settings = this.readSettings();
     if (data.apiKey !== undefined) (settings as any).geminiApiKey = data.apiKey;
     if (data.model !== undefined) (settings as any).geminiModel = data.model;
     if (data.centerContext !== undefined) (settings as any).centerContext = data.centerContext;
+    if (data.groqApiKey !== undefined) (settings as any).groqApiKey = data.groqApiKey;
+    if (data.groqModel !== undefined) (settings as any).groqModel = data.groqModel;
+    if (data.aiProvider !== undefined) (settings as any).aiProvider = data.aiProvider;
     this.writeSettings(settings);
     return {
       isConfigured: !!(settings as any).geminiApiKey,
       model: (settings as any).geminiModel,
       centerContext: (settings as any).centerContext,
+      isGroqConfigured: !!(settings as any).groqApiKey,
+      groqModel: (settings as any).groqModel,
+      aiProvider: (settings as any).aiProvider,
     };
   }
 
   /**
-   * Gemini API key ni test qilish
+   * AI API key ni test qilish
    */
   async testGeminiConfig() {
     const settings = this.readSettings();
-    const apiKey = (settings as any).geminiApiKey;
-    const model = (settings as any).geminiModel || 'gemini-2.5-flash';
+    const provider = (settings as any).aiProvider || 'gemini';
 
-    if (!apiKey) return { success: false, message: 'API key kiritilmagan' };
+    if (provider === 'groq') {
+      const apiKey = (settings as any).groqApiKey;
+      const model = (settings as any).groqModel || 'llama-3.3-70b-versatile';
 
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey,
-          },
-          body: JSON.stringify({ contents: [{ parts: [{ text: 'Hello' }] }] }),
-        }
-      );
-      if (response.ok) return { success: true, message: 'Gemini ishlayapti ✅' };
-      const errText = await response.text();
-      console.error('Gemini test error:', errText);
+      if (!apiKey) return { success: false, message: 'Groq API key kiritilmagan' };
+
       try {
-        const parsed = JSON.parse(errText);
-        const errMsg = parsed.error?.message || 'Noma\'lum xato';
-        const errCode = parsed.error?.code || response.status;
-        return { success: false, message: `API xatoligi (${errCode}): ${errMsg} ❌` };
-      } catch {
-        return { success: false, message: `API xatoligi (${response.status}): ${errText.substring(0, 100)} ❌` };
+        const response = await fetch(
+          `https://api.groq.com/openai/v1/chat/completions`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: 'user', content: 'Hello' }],
+              max_tokens: 10,
+            }),
+          }
+        );
+        if (response.ok) return { success: true, message: 'Groq ishlayapti ✅' };
+        const errText = await response.text();
+        console.error('Groq test error:', errText);
+        try {
+          const parsed = JSON.parse(errText);
+          const errMsg = parsed.error?.message || 'Noma\'lum xato';
+          return { success: false, message: `Groq API xatoligi: ${errMsg} ❌` };
+        } catch {
+          return { success: false, message: `Groq API xatoligi (${response.status}): ${errText.substring(0, 100)} ❌` };
+        }
+      } catch (e: any) {
+        return { success: false, message: `Groq API bilan bog'lanib bo'lmadi: ${e.message || e}` };
       }
-    } catch (e: any) {
-      return { success: false, message: `Gemini API bilan bog'lanib bo'lmadi: ${e.message || e}` };
+    } else {
+      const apiKey = (settings as any).geminiApiKey;
+      const model = (settings as any).geminiModel || 'gemini-2.5-flash';
+
+      if (!apiKey) return { success: false, message: 'Gemini API key kiritilmagan' };
+
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey,
+            },
+            body: JSON.stringify({ contents: [{ parts: [{ text: 'Hello' }] }] }),
+          }
+        );
+        if (response.ok) return { success: true, message: 'Gemini ishlayapti ✅' };
+        const errText = await response.text();
+        console.error('Gemini test error:', errText);
+        try {
+          const parsed = JSON.parse(errText);
+          const errMsg = parsed.error?.message || 'Noma\'lum xato';
+          const errCode = parsed.error?.code || response.status;
+          return { success: false, message: `API xatoligi (${errCode}): ${errMsg} ❌` };
+        } catch {
+          return { success: false, message: `API xatoligi (${response.status}): ${errText.substring(0, 100)} ❌` };
+        }
+      } catch (e: any) {
+        return { success: false, message: `Gemini API bilan bog'lanib bo'lmadi: ${e.message || e}` };
+      }
     }
   }
 }

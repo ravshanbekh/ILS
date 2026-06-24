@@ -1,22 +1,10 @@
 import prisma from '../../config/database';
 import fs from 'fs';
 import path from 'path';
+import { generateText, getAISettings } from '../../shared/utils/ai';
 
 class NotificationEngine {
-  private getSettings(): { apiKey: string; model: string } {
-    const settingsPath = path.join(__dirname, '../../../data/settings.json');
-    let apiKey = '';
-    let model = 'gemini-2.5-flash';
-    try {
-      if (fs.existsSync(settingsPath)) {
-        const raw = fs.readFileSync(settingsPath, 'utf-8');
-        const s = JSON.parse(raw);
-        apiKey = s.geminiApiKey || '';
-        model = s.geminiModel || 'gemini-2.5-flash';
-      }
-    } catch {}
-    return { apiKey, model };
-  }
+
 
   // Har 6 soatda ishga tushadi (cron yoki server startup)
   async runChecks() {
@@ -175,7 +163,7 @@ class NotificationEngine {
 
   // AI bilan qisqa maslahat generatsiya qilish (har bir notification uchun)
   async generateAIAdvice(notificationType: string, context: string): Promise<string> {
-    const { apiKey, model } = this.getSettings();
+    const { apiKey } = getAISettings();
     if (!apiKey) return '';
     
     try {
@@ -184,22 +172,7 @@ Vaziyat: ${context}
 Qisqa maslahat ber — AYNAN 2-3 gapdan iborat bo'lsin va markdown (*, **, #) belgilaridan foydalanma. Eng muhim qadamni ayt.
 O'zbek tilida.`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 256 },
-          }),
-        }
-      );
-
-      if (!response.ok) return '';
-      const data: any = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      return text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/##+ /g, '').replace(/`/g, '').trim();
+      return await generateText(prompt, 256);
     } catch {
       return '';
     }

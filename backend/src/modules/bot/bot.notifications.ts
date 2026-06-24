@@ -4,6 +4,7 @@ import botService from './bot.service';
 import { checkNotificationMessage, inactivityMessage, newFreezeNotificationMessage } from './bot.messages';
 import { NotifyCheckPayload, NotifyFreezePayload } from './bot.types';
 import logger from '../../shared/utils/logger';
+import { generateText, getAISettings } from '../../shared/utils/ai';
 
 let botInstance: BotInstance | null = null;
 
@@ -131,20 +132,7 @@ export async function sendWeeklyReports() {
   const links = await botService.getAllActiveParentLinks();
   let count = 0;
 
-  // Gemini API key tekshirish
-  let apiKey = '';
-  let model = 'gemini-2.5-flash';
-  try {
-    const fs = await import('fs');
-    const path = await import('path');
-    const settingsPath = path.join(__dirname, '../../../data/settings.json');
-    if (fs.existsSync(settingsPath)) {
-      const raw = fs.readFileSync(settingsPath, 'utf-8');
-      const settings = JSON.parse(raw);
-      apiKey = settings.geminiApiKey || '';
-      model = settings.geminiModel || 'gemini-2.5-flash';
-    }
-  } catch (_) {}
+  const { apiKey } = getAISettings();
 
   for (const link of links) {
     const stats = await botService.getStudentStats(link.studentId);
@@ -154,7 +142,7 @@ export async function sendWeeklyReports() {
 
     let aiSummary = '';
     if (apiKey && weekStats.newSubmissions > 0) {
-      aiSummary = await generateWeeklyAISummary(apiKey, model, stats.student.fullName, weekStats);
+      aiSummary = await generateWeeklyAISummary(stats.student.fullName, weekStats);
     } else {
       aiSummary = weekStats.newSubmissions === 0
         ? '_Bu hafta topshiriq topshirilmadi._'
@@ -191,8 +179,6 @@ async function getDaysSinceLastSubmission(studentId: string): Promise<number> {
 }
 
 async function generateWeeklyAISummary(
-  apiKey: string,
-  model: string,
   studentName: string,
   stats: {
     newSubmissions: number;
@@ -212,20 +198,7 @@ async function generateWeeklyAISummary(
 Ota-ona uchun 2-3 jumlada qisqa, rag'batlantiruvchi va konstruktiv tahlil yozing. O'zbek tilida. Markdown ishlatmang.`;
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.6, maxOutputTokens: 300 },
-        }),
-      }
-    );
-    if (!response.ok) return '_AI tahlil yuklab bo\'lmadi._';
-    const data: any = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '_AI tahlil mavjud emas._';
+    return await generateText(prompt, 300, 0.6);
   } catch {
     return '_AI tahlil yuklab bo\'lmadi._';
   }

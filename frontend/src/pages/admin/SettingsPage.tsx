@@ -32,14 +32,17 @@ export default function SettingsPage() {
   const [profileStatus, setProfileStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [profileError, setProfileError] = useState('');
 
-  // Gemini settings
+  // AI Settings (Gemini & Groq)
+  const [aiProvider, setAiProvider] = useState<'gemini' | 'groq'>('gemini');
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [geminiModel, setGeminiModel] = useState('');
   const [geminiStatus, setGeminiStatus] = useState<any>(null);
-  const [geminiSaving, setGeminiSaving] = useState(false);
-  const [geminiSaveStatus, setGeminiSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [geminiTesting, setGeminiTesting] = useState(false);
-  const [geminiTestResult, setGeminiTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [groqApiKey, setGroqApiKey] = useState('');
+  const [groqModel, setGroqModel] = useState('');
+  const [aiSaving, setAiSaving] = useState(false);
+  const [aiSaveStatus, setAiSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [aiTesting, setAiTesting] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [centerContext, setCenterContext] = useState('');
 
   useEffect(() => {
@@ -72,9 +75,12 @@ export default function SettingsPage() {
 
     settingsApi.getGeminiStatus()
       .then(res => {
-        setGeminiStatus(res.data.data);
-        setGeminiModel(res.data.data?.model || 'gemini-2.5-flash');
-        setCenterContext(res.data.data?.centerContext || '');
+        const data = res.data.data;
+        setGeminiStatus(data);
+        setGeminiModel(data?.model || 'gemini-2.5-flash');
+        setGroqModel(data?.groqModel || 'llama-3.3-70b-versatile');
+        setAiProvider(data?.aiProvider || 'gemini');
+        setCenterContext(data?.centerContext || '');
       })
       .catch(console.error);
   }, []);
@@ -147,37 +153,41 @@ export default function SettingsPage() {
     }
   };
 
-  const handleGeminiSave = async () => {
-    setGeminiSaving(true);
-    setGeminiSaveStatus('idle');
+  const handleAiSave = async () => {
+    setAiSaving(true);
+    setAiSaveStatus('idle');
     try {
       const res = await settingsApi.updateGemini({
         apiKey: geminiApiKey || undefined,
         model: geminiModel || undefined,
+        groqApiKey: groqApiKey || undefined,
+        groqModel: groqModel || undefined,
+        aiProvider: aiProvider,
         centerContext: centerContext
       } as any);
       setGeminiStatus(res.data.data);
-      setGeminiSaveStatus('success');
+      setAiSaveStatus('success');
       setGeminiApiKey('');
-      setTimeout(() => setGeminiSaveStatus('idle'), 3000);
+      setGroqApiKey('');
+      setTimeout(() => setAiSaveStatus('idle'), 3000);
     } catch (e) {
-      setGeminiSaveStatus('error');
-      setTimeout(() => setGeminiSaveStatus('idle'), 3000);
+      setAiSaveStatus('error');
+      setTimeout(() => setAiSaveStatus('idle'), 3000);
     } finally {
-      setGeminiSaving(false);
+      setAiSaving(false);
     }
   };
 
-  const handleGeminiTest = async () => {
-    setGeminiTesting(true);
-    setGeminiTestResult(null);
+  const handleAiTest = async () => {
+    setAiTesting(true);
+    setAiTestResult(null);
     try {
       const res = await settingsApi.testGemini();
-      setGeminiTestResult(res.data.data);
+      setAiTestResult(res.data.data);
     } catch (e: any) {
-      setGeminiTestResult({ success: false, message: e.response?.data?.message || 'Xatolik yuz berdi' });
+      setAiTestResult({ success: false, message: e.response?.data?.message || 'Xatolik yuz berdi' });
     } finally {
-      setGeminiTesting(false);
+      setAiTesting(false);
     }
   };
 
@@ -442,38 +452,91 @@ export default function SettingsPage() {
           </div>
 
           <div className="p-5 space-y-5">
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1.5 font-medium">AI Provayderi</label>
+              <select
+                value={aiProvider}
+                onChange={(e) => setAiProvider(e.target.value as 'gemini' | 'groq')}
+                className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all outline-none"
+              >
+                <option value="gemini">Google Gemini API</option>
+                <option value="groq">Groq Cloud API</option>
+              </select>
+            </div>
+
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#09090b] border border-zinc-800">
-              <div className={`w-2.5 h-2.5 rounded-full ${geminiStatus?.isConfigured ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              <div className={`w-2.5 h-2.5 rounded-full ${
+                aiProvider === 'groq'
+                  ? (geminiStatus?.isGroqConfigured ? 'bg-emerald-500' : 'bg-red-500')
+                  : (geminiStatus?.isConfigured ? 'bg-emerald-500' : 'bg-red-500')
+              }`} />
               <span className="text-sm text-zinc-400">Holat:</span>
-              <span className={`text-sm font-bold ${geminiStatus?.isConfigured ? 'text-emerald-500' : 'text-red-500'}`}>
-                {geminiStatus?.isConfigured ? "Ulangan" : "Ulanmagan"}
+              <span className={`text-sm font-bold ${
+                aiProvider === 'groq'
+                  ? (geminiStatus?.isGroqConfigured ? 'text-emerald-500' : 'text-red-500')
+                  : (geminiStatus?.isConfigured ? 'text-emerald-500' : 'text-red-500')
+              }`}>
+                {aiProvider === 'groq'
+                  ? (geminiStatus?.isGroqConfigured ? "Ulangan (Groq)" : "Ulanmagan (Groq)")
+                  : (geminiStatus?.isConfigured ? "Ulangan (Gemini)" : "Ulanmagan (Gemini)")}
               </span>
             </div>
 
-            <div>
-              <label className="block text-xs text-zinc-500 mb-1.5 font-medium">API Key (mavjudini o'zgartirish uchun)</label>
-              <input
-                type="password"
-                value={geminiApiKey}
-                onChange={(e) => setGeminiApiKey(e.target.value)}
-                placeholder="AIzaSy..."
-                className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Model</label>
-              <select
-                value={geminiModel}
-                onChange={(e) => setGeminiModel(e.target.value)}
-                className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all outline-none"
-              >
-                <option value="gemini-2.5-flash">gemini-2.5-flash (Tavsiya etiladi)</option>
-                <option value="gemini-2.0-flash">gemini-2.0-flash (Tezkor)</option>
-                <option value="gemini-1.5-flash">gemini-1.5-flash (Klassik)</option>
-                <option value="gemini-1.5-pro">gemini-1.5-pro (Tahlil uchun kuchli)</option>
-              </select>
-            </div>
+            {aiProvider === 'gemini' ? (
+              <>
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Gemini API Key (mavjudini o'zgartirish uchun)</label>
+                  <input
+                    type="password"
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    placeholder="AIzaSy..."
+                    className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Model</label>
+                  <select
+                    value={geminiModel}
+                    onChange={(e) => setGeminiModel(e.target.value)}
+                    className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all outline-none"
+                  >
+                    <option value="gemini-2.5-flash">gemini-2.5-flash (Tavsiya etiladi)</option>
+                    <option value="gemini-2.0-flash">gemini-2.0-flash (Tezkor)</option>
+                    <option value="gemini-1.5-flash">gemini-1.5-flash (Klassik)</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro (Tahlil uchun kuchli)</option>
+                  </select>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Groq API Key (mavjudini o'zgartirish uchun)</label>
+                  <input
+                    type="password"
+                    value={groqApiKey}
+                    onChange={(e) => setGroqApiKey(e.target.value)}
+                    placeholder="gsk_..."
+                    className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5 font-medium">Model</label>
+                  <select
+                    value={groqModel}
+                    onChange={(e) => setGroqModel(e.target.value)}
+                    className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all outline-none"
+                  >
+                    <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Tavsiya etiladi)</option>
+                    <option value="llama3-70b-8192">llama3-70b-8192</option>
+                    <option value="llama3-8b-8192">llama3-8b-8192 (Tezkor)</option>
+                    <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
+                  </select>
+                </div>
+              </>
+            )}
 
             <div>
               <label className="block text-xs text-zinc-500 mb-1.5 font-medium">O'quv markazi ma'lumotlari (AI uchun kontekst)</label>
@@ -487,44 +550,44 @@ export default function SettingsPage() {
               <p className="text-xs text-zinc-500 mt-1">Ushbu ma'lumotlar sun'iy intellekt tomonidan har bir o'quvchi uchun individual suhbat skriptlarini yozishda qo'shimcha ma'lumot sifatida ishlatiladi.</p>
             </div>
 
-            {geminiTestResult && (
-              <div className={`p-3 rounded-xl text-sm font-medium flex items-start gap-2 ${geminiTestResult.success ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
-                {geminiTestResult.success ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
-                {geminiTestResult.message}
+            {aiTestResult && (
+              <div className={`p-3 rounded-xl text-sm font-medium flex items-start gap-2 ${aiTestResult.success ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+                {aiTestResult.success ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+                {aiTestResult.message}
               </div>
             )}
           </div>
 
           <div className="p-5 border-t border-zinc-800 flex items-center justify-between bg-[#09090b]/30">
             <div className="flex items-center gap-3">
-              {geminiSaveStatus === 'success' && (
+              {aiSaveStatus === 'success' && (
                 <div className="flex items-center gap-2 text-emerald-500 text-sm font-medium">
                   <CheckCircle2 className="w-4 h-4" />
                   Saqlandi!
                 </div>
               )}
-              {geminiSaveStatus === 'error' && (
+              {aiSaveStatus === 'error' && (
                 <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
                   <AlertCircle className="w-4 h-4" />
                   Xatolik!
                 </div>
               )}
               <button
-                onClick={handleGeminiTest}
-                disabled={geminiTesting || (!geminiStatus?.isConfigured && !geminiApiKey)}
+                onClick={handleAiTest}
+                disabled={aiTesting || (aiProvider === 'gemini' ? (!geminiStatus?.isConfigured && !geminiApiKey) : (!geminiStatus?.isGroqConfigured && !groqApiKey))}
                 className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 transition-colors flex items-center gap-2 disabled:opacity-50"
               >
-                {geminiTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
+                {aiTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
                 Test qilish
               </button>
             </div>
             <button
-              onClick={handleGeminiSave}
-              disabled={geminiSaving || (!geminiApiKey && !geminiModel && !centerContext)}
+              onClick={handleAiSave}
+              disabled={aiSaving || (!geminiApiKey && !geminiModel && !groqApiKey && !groqModel && !centerContext && aiProvider === geminiStatus?.aiProvider)}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all shadow-lg shadow-indigo-500/20"
             >
-              {geminiSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {geminiSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+              {aiSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {aiSaving ? 'Saqlanmoqda...' : 'Saqlash'}
             </button>
           </div>
         </div>
