@@ -1,5 +1,7 @@
 {
   "scripts": {
+    "push": "bash push-to-main.sh",
+    "update": "bash update-and-deploy.sh",
     "up": "docker-compose up -d",
     "down": "docker-compose down",
     "logs": "docker-compose logs -f",
