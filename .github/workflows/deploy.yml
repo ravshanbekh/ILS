@@ -1,0 +1,96 @@
+name: 🚀 Deploy to Server
+
+# main branchga push bo'lganda avtomatik ishga tushadi
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Kod o'zgarganligini loglash
+      - name: 📋 Show changed files
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 🗂️ List changed files
+        run: |
+          echo "O'zgargan fayllar:"
+          git diff --name-only HEAD~1 HEAD || echo "(birinchi commit)"
+
+      # 2. SSH orqali serverga ulanib deploy qilish
+      - name: 🚀 Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            echo "======================================"
+            echo "  Deploy boshlandi: $(date)"
+            echo "======================================"
+
+            cd ~/ILS
+
+            # Oxirgi kodni olish
+            echo "--> git pull origin main"
+            git pull origin main
+
+            # O'zgargan fayllarni aniqlash
+            CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
+            echo "O'zgargan: $CHANGED"
+
+            BACKEND_CHANGED=false
+            FRONTEND_CHANGED=false
+
+            # Backend o'zgardimi?
+            if echo "$CHANGED" | grep -qE "^backend/|^all"; then
+              BACKEND_CHANGED=true
+            fi
+
+            # Frontend o'zgardimi?
+            if echo "$CHANGED" | grep -qE "^frontend/|^all"; then
+              FRONTEND_CHANGED=true
+            fi
+
+            # Backend rebuild
+            if [ "$BACKEND_CHANGED" = "true" ]; then
+              echo ""
+              echo "--> Backend o'zgardi, rebuild qilinmoqda..."
+              docker-compose up -d --build backend
+              echo "[OK] Backend yangilandi"
+            else
+              echo "--> Backend o'zgarmadi, skip."
+            fi
+
+            # Frontend rebuild
+            if [ "$FRONTEND_CHANGED" = "true" ]; then
+              echo ""
+              echo "--> Frontend o'zgardi, rebuild qilinmoqda..."
+              docker-compose up -d --build frontend
+              echo "[OK] Frontend yangilandi"
+            else
+              echo "--> Frontend o'zgarmadi, skip."
+            fi
+
+            # Health check
+            echo ""
+            echo "--> Health check..."
+            sleep 10
+            curl -sf http://127.0.0.1:5050/api/health && echo "[OK] Backend ishlayapti" || echo "[!] Backend javob bermayapti"
+
+            echo ""
+            echo "======================================"
+            echo "  Deploy tugadi: $(date)"
+            echo "======================================"
+
+            # Ishlaayotgan konteynerlar
+            docker ps --format "  -> {{.Names}} | {{.Status}}"
