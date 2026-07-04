@@ -89,11 +89,15 @@ export default function ExamsPage() {
 
   async function activate(exam: Exam) {
     if (!confirm('Imtihonni faollashtirish. 2 soat vaqt beriladi. Tasdiqlansinmi?')) return;
-    await examApi.activate(exam.id);
-    fetchExams();
-    if (selected?.id === exam.id) {
-      const res = await examApi.getById(exam.id);
-      setSelected(res.data.data);
+    try {
+      await examApi.activate(exam.id);
+      fetchExams();
+      if (selected?.id === exam.id) {
+        const res = await examApi.getById(exam.id);
+        setSelected(res.data.data);
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Imtihonni faollashtirishda xatolik yuz berdi');
     }
   }
 

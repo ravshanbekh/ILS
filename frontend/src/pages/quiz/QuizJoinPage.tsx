@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { liveQuizApi } from '../../api';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const SOCKET_URL = (import.meta.env.VITE_API_URL?.replace('/api', '') || '') || window.location.origin;
 
 type Stage = 'enter-code' | 'enter-name' | 'lobby' | 'question' | 'answer-result' | 'leaderboard' | 'finished';
 
@@ -43,8 +43,44 @@ export default function QuizJoinPage() {
 
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
+  function setupSocket(codeToJoin: string, currentPlayer: Player) {
+    const s = io(SOCKET_URL, { transports: ['websocket'] });
+    s.emit('join-room', { code: codeToJoin, role: 'player' });
+
+    s.on('quiz:player-joined', (data) => setPlayerCount(data.playerCount));
+    s.on('quiz:started', (data) => {
+      setCurrentQ(data.question); setSelected(null); setAnswerResult(null); setQuestionStartTime(Date.now()); setStage('question');
+    });
+    s.on('quiz:question', (data) => {
+      setCurrentQ(data); setSelected(null); setAnswerResult(null); setQuestionStartTime(Date.now()); setStage('question');
+    });
+    s.on('quiz:leaderboard', (data) => {
+      setLeaderboard(data.players); setPrevQuestion(data.prevQuestion); setStage('leaderboard');
+    });
+    s.on('quiz:finished', (data) => {
+      setLeaderboard(data.leaderboard); setStage('finished');
+      localStorage.removeItem('quizSession');
+    });
+
+    setSocket(s);
+  }
+
   useEffect(() => {
+    const sessionStr = localStorage.getItem('quizSession');
+    if (sessionStr) {
+      try {
+        const sess = JSON.parse(sessionStr);
+        if (sess && sess.code && sess.player) {
+          setCode(sess.code);
+          setPlayer(sess.player);
+          setStage('lobby');
+          setupSocket(sess.code, sess.player);
+        }
+      } catch (e) {}
+    }
+    
     return () => {
+
       socket?.disconnect();
       clearInterval(timerRef.current);
     };
@@ -90,45 +126,12 @@ export default function QuizJoinPage() {
     try {
       const res = await liveQuizApi.joinQuiz(code.trim(), fullName.trim());
       const p = res.data.data.player;
-      setPlayer({ id: p.id, fullName: p.fullName, score: 0, streak: 0 });
+      const currentPlayer = { id: p.id, fullName: p.fullName, score: 0, streak: 0 };
+      setPlayer(currentPlayer);
       setStage('lobby');
-
-      // Connect socket
-      const s = io(SOCKET_URL, { transports: ['websocket'] });
-      s.emit('join-room', { code: code.trim(), role: 'player' });
-
-      s.on('quiz:player-joined', (data) => {
-        setPlayerCount(data.playerCount);
-      });
-
-      s.on('quiz:started', (data) => {
-        setCurrentQ(data.question);
-        setSelected(null);
-        setAnswerResult(null);
-        setQuestionStartTime(Date.now());
-        setStage('question');
-      });
-
-      s.on('quiz:question', (data) => {
-        setCurrentQ(data);
-        setSelected(null);
-        setAnswerResult(null);
-        setQuestionStartTime(Date.now());
-        setStage('question');
-      });
-
-      s.on('quiz:leaderboard', (data) => {
-        setLeaderboard(data.players);
-        setPrevQuestion(data.prevQuestion);
-        setStage('leaderboard');
-      });
-
-      s.on('quiz:finished', (data) => {
-        setLeaderboard(data.leaderboard);
-        setStage('finished');
-      });
-
-      setSocket(s);
+      
+      localStorage.setItem('quizSession', JSON.stringify({ code: code.trim(), player: currentPlayer }));
+      setupSocket(code.trim(), currentPlayer);
     } catch (e: any) {
       setError(e.response?.data?.error || 'Xatolik');
     } finally { setLoading(false); }

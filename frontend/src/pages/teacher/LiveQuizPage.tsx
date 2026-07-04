@@ -3,7 +3,7 @@ import { liveQuizApi } from '../../api';
 import * as XLSX from 'xlsx';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const SOCKET_URL = (import.meta.env.VITE_API_URL?.replace('/api', '') || '') || window.location.origin;
 
 interface Quiz {
   id: string;
@@ -26,6 +26,7 @@ export default function LiveQuizPage() {
   const [players, setPlayers] = useState<any[]>([]);
   const [manualQ, setManualQ] = useState({ question: '', options: ['','','',''], correct: 0 });
   const [qLoading, setQLoading] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState<any>(null);
 
   useEffect(() => { fetchQuizzes(); }, []);
 
@@ -35,10 +36,17 @@ export default function LiveQuizPage() {
     const s = io(SOCKET_URL, { transports: ['websocket'] });
     s.emit('join-room', { code: selected.code, role: 'teacher' });
     s.on('quiz:player-joined', (data) => {
-      setPlayers(prev => [...prev, { id: data.playerId, fullName: data.fullName, score: 0, streak: 0 }]);
+      setPlayers(prev => [...prev.filter(p => p.id !== data.playerId), { id: data.playerId, fullName: data.fullName, score: 0, streak: 0 }]);
     });
     s.on('quiz:answer-received', (data) => {
-      // Flash answer indicator
+      // flash logic if needed
+    });
+    s.on('quiz:leaderboard', (data) => {
+      setLeaderboardData(data);
+      setPlayers(data.players);
+    });
+    s.on('quiz:question', () => {
+      setLeaderboardData(null);
     });
     setSocket(s);
     return () => { s.disconnect(); };
@@ -327,20 +335,52 @@ export default function LiveQuizPage() {
                   </div>
                 </div>
 
-                {/* Live players */}
-                <div className="bg-zinc-800 rounded-xl p-3 mb-4">
-                  <p className="text-sm font-medium text-zinc-300 mb-2">O'yinchilar ({players.length})</p>
-                  <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                    {players.sort((a, b) => b.score - a.score).map((p, i) => (
-                      <div key={p.id || i} className="flex items-center gap-2 text-sm">
-                        <span className="text-zinc-500 w-5 text-xs">{i+1}</span>
-                        <span className="text-white flex-1">{p.fullName}</span>
-                        <span className="text-violet-400 font-bold">{p.score}</span>
-                        {p.streak >= 2 && <span className="text-amber-400 text-xs">🔥{p.streak}</span>}
+                {/* Live players or Leaderboard stats */}
+                {leaderboardData ? (
+                  <div className="bg-zinc-800 rounded-xl p-4 mb-4 border border-violet-500/30">
+                    <h3 className="text-white font-bold mb-3 text-lg">Natijalar (Reyting)</h3>
+                    <div className="mb-4">
+                      <p className="text-zinc-400 text-sm mb-2">{leaderboardData.prevQuestion?.question}</p>
+                      <div className="flex gap-2 h-24 items-end bg-zinc-900/50 p-3 rounded-lg border border-zinc-700">
+                        {leaderboardData.prevQuestion?.optionCounts.map((oc: any, idx: number) => {
+                          const maxCount = Math.max(...leaderboardData.prevQuestion.optionCounts.map((o:any)=>o.count), 1);
+                          const h = (oc.count / maxCount) * 100;
+                          return (
+                            <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                              <span className="text-xs font-bold text-white">{oc.count}</span>
+                              <div className={`w-full rounded-t-sm transition-all ${oc.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`} style={{ height: `${h}%` }}></div>
+                              <span className="text-xs text-zinc-500">{['A','B','C','D'][idx]}</span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
+                    </div>
+                    <div className="space-y-1 max-h-[250px] overflow-y-auto">
+                      {leaderboardData.players.slice(0, 10).map((p: any, i: number) => (
+                        <div key={p.id || i} className="flex items-center gap-3 bg-zinc-900/80 p-2 rounded border border-zinc-700/50">
+                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i===0?'bg-yellow-500 text-black':i===1?'bg-zinc-300 text-black':i===2?'bg-amber-600 text-white':'bg-zinc-800 text-zinc-400'}`}>{i+1}</span>
+                          <span className="text-white flex-1 font-medium">{p.fullName}</span>
+                          <span className="text-violet-400 font-bold">{p.score}</span>
+                          {p.streak >= 2 && <span className="text-amber-400 text-xs px-1 bg-amber-500/10 rounded">🔥{p.streak}</span>}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-zinc-800 rounded-xl p-3 mb-4">
+                    <p className="text-sm font-medium text-zinc-300 mb-2">O'yinchilar ({players.length})</p>
+                    <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                      {players.map((p, i) => (
+                        <div key={p.id || i} className="flex items-center gap-2 text-sm">
+                          <span className="text-zinc-500 w-5 text-xs">{i+1}</span>
+                          <span className="text-white flex-1">{p.fullName}</span>
+                          <span className="text-violet-400 font-bold">{p.score}</span>
+                          {p.streak >= 2 && <span className="text-amber-400 text-xs">🔥{p.streak}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Controls */}
                 <div className="flex gap-3">
