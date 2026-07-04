@@ -75,29 +75,31 @@
    Inspired by: Linear, Notion, Vercel Dashboard, Coursera
    ======================================================== */
 .light {
-  /* РІвЂќР‚РІвЂќР‚ Design tokens РІвЂќР‚РІвЂќР‚ */
-  --background:          #F1F5F9;
+  /* ─── Design tokens ─── */
+  --background:          #F8FAFC;
   --foreground:          #0F172A;
   --card:                #FFFFFF;
   --card-foreground:     #0F172A;
   --popover:             #FFFFFF;
   --popover-foreground:  #0F172A;
-  --primary:             #3B82F6;
+  --primary:             #2563EB;
   --primary-foreground:  #FFFFFF;
-  --secondary:           #F8FAFC;
-  --secondary-foreground:#334155;
+  --secondary:           #0D9488;
+  --secondary-foreground:#FFFFFF;
   --muted:               #F1F5F9;
   --muted-foreground:    #64748B;
   --accent:              #EFF6FF;
   --accent-foreground:   #2563EB;
   --border:              #E2E8F0;
   --input:               #F8FAFC;
-  --ring:                #3B82F6;
-  --radius:              0.75rem;
+  --ring:                #2563EB;
+  --radius:              12px;
+  --font-sans:           "Hanken Grotesk", sans-serif;
 
-  /* РІвЂќР‚РІвЂќР‚ Page background РІвЂќР‚РІвЂќР‚ */
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+  /* ─── Page background & font ─── */
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  font-family: var(--font-sans) !important;
 
   /* РІвЂќР‚РІвЂќР‚ Scrollbar РІвЂќР‚РІвЂќР‚ */
   ::-webkit-scrollbar-track { background: #F1F5F9; }
@@ -115,56 +117,58 @@
     background: transparent !important;
   }
 
-  /* РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚
-     SIDEBAR РІР‚вЂќ Dark navy (like Linear / Vercel)
-  РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚ */
+  /* ──────────────────────────────────────────────────────────
+     SIDEBAR
+  ────────────────────────────────────────────────────────── */
   aside {
-    background: #0F172A !important;
-    border-right: 1px solid #1E293B !important;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.08) !important;
+    background: #FFFFFF !important;
+    border-right: 1px solid #E2E8F0 !important;
+    box-shadow: none !important;
   }
   aside * {
-    color: #94A3B8 !important;
+    color: #64748B !important;
   }
   aside h1,
-  aside .font-bold,
+  aside .font-bold {
+    color: #0F172A !important;
+  }
   aside .text-white {
-    color: #F8FAFC !important;
+    color: #FFFFFF !important;
   }
   aside p {
-    color: #64748B !important;
+    color: #94A3B8 !important;
   }
 
   /* Active nav link */
   aside a.bg-zinc-800,
   aside a.bg-zinc-800.text-white {
-    background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%) !important;
+    background: #2563EB !important;
     color: #FFFFFF !important;
     border: none !important;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
-    border-radius: 10px !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+    border-radius: 12px !important;
   }
   aside a.bg-zinc-800 *,
   aside a.bg-zinc-800.text-white * {
     color: #FFFFFF !important;
   }
   aside a.bg-zinc-800 svg {
-    color: #BFDBFE !important;
+    color: #FFFFFF !important;
   }
 
   /* Inactive nav hover */
   aside a:not(.bg-zinc-800):hover {
-    background: rgba(255,255,255,0.06) !important;
-    border-radius: 10px !important;
+    background: #F8FAFC !important;
+    border-radius: 12px !important;
   }
   aside a:not(.bg-zinc-800):hover * {
-    color: #E2E8F0 !important;
+    color: #0F172A !important;
   }
 
   /* Sidebar footer user section */
   aside .border-zinc-800,
   aside .border-t {
-    border-color: #1E293B !important;
+    border-color: #E2E8F0 !important;
   }
 
   /* РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚
@@ -210,9 +214,9 @@
     color: #475569 !important;
   }
 
-  /* РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚
-     CARDS РІР‚вЂќ White with soft shadows
-  РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚ */
+  /* ──────────────────────────────────────────────────────────
+     CARDS
+  ────────────────────────────────────────────────────────── */
   .bg-\[\#18181b\],
   .bg-zinc-900,
   .bg-zinc-900\/50,
@@ -222,7 +226,7 @@
   .glass-panel {
     background: #FFFFFF !important;
     border: 1px solid #E2E8F0 !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
     border-radius: 16px !important;
     color: #0F172A !important;
   }
@@ -230,8 +234,7 @@
   .bg-\[\#18181b\]:hover,
   .bg-zinc-900:hover,
   .glass-panel:hover {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.04) !important;
-    border-color: #CBD5E1 !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.05) !important;
     transform: translateY(-1px);
   }
 
@@ -290,26 +293,29 @@
     border-color: #E2E8F0 !important;
   }
 
-  /* РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚
+  /* ──────────────────────────────────────────────────────────
      TABLE
-  РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚ */
+  ────────────────────────────────────────────────────────── */
   table {
     background: #FFFFFF !important;
     color: #0F172A !important;
   }
   thead { background: #F8FAFC !important; }
   th {
-    color: #475569 !important;
+    color: #64748B !important;
     background: #F8FAFC !important;
-    border-bottom: 2px solid #E2E8F0 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
     font-weight: 600 !important;
-    font-size: 0.75rem !important;
+    font-size: 0.8125rem !important;
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
   }
   td {
-    color: #1E293B !important;
+    color: #334155 !important;
     border-bottom: 1px solid #F1F5F9 !important;
+    font-weight: 500 !important;
   }
   tbody { background: #FFFFFF !important; }
   tr:hover td { background: #F8FAFC !important; }
