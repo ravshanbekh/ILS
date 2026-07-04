@@ -305,3 +305,51 @@ export const feedbackApi = {
   getMyAiAnalysis: () => api.get('/feedback/ai-analysis'),
 };
 
+// ============ EXAM API ============
+export const examApi = {
+  // Teacher
+  create: (data: any) => api.post('/exam', data),
+  getMyExams: () => api.get('/exam'),
+  getById: (id: string) => api.get(`/exam/${id}`),
+  activate: (id: string) => api.patch(`/exam/${id}/activate`),
+  complete: (id: string) => api.patch(`/exam/${id}/complete`),
+  delete: (id: string) => api.delete(`/exam/${id}`),
+  addQuestions: (id: string, questions: any[]) => api.post(`/exam/${id}/questions`, { questions }),
+  bulkAddQuestions: (id: string, questions: any[]) => api.post(`/exam/${id}/questions/bulk`, { questions }),
+  deleteQuestion: (examId: string, qId: string) => api.delete(`/exam/${examId}/questions/${qId}`),
+  getResults: (id: string) => api.get(`/exam/${id}/results`),
+  gradeParticipant: (examId: string, participantId: string, data: any) =>
+    api.patch(`/exam/${examId}/grade/${participantId}`, data),
+
+  // Student (public — no auth, just accessCode)
+  getByCode: (code: string) => api.get(`/exam/join/${code}`),
+  startExam: (code: string, credentials: { login: string; password: string }) =>
+    api.post(`/exam/join/${code}/start`, credentials),
+  submitTest: (code: string, data: { participantId: string; answers: any[] }) =>
+    api.post(`/exam/join/${code}/submit-test`, data),
+  submitVideos: (code: string, data: { participantId: string; aiVideoUrl: string; projectVideoUrl: string }) =>
+    api.post(`/exam/join/${code}/submit-videos`, data),
+};
+
+// ============ LIVE QUIZ API ============
+export const liveQuizApi = {
+  // Teacher
+  create: (data: { title: string; timePerQ?: number }) => api.post('/live-quiz', data),
+  getMyQuizzes: () => api.get('/live-quiz'),
+  getById: (id: string) => api.get(`/live-quiz/${id}`),
+  addQuestions: (id: string, questions: any[]) => api.post(`/live-quiz/${id}/questions`, { questions }),
+  bulkAddQuestions: (id: string, questions: any[]) => api.post(`/live-quiz/${id}/questions/bulk`, { questions }),
+  deleteQuestion: (quizId: string, qId: string) => api.delete(`/live-quiz/${quizId}/questions/${qId}`),
+  startQuiz: (id: string) => api.patch(`/live-quiz/${id}/start`),
+  nextQuestion: (id: string) => api.patch(`/live-quiz/${id}/next`),
+  finishQuiz: (id: string) => api.patch(`/live-quiz/${id}/finish`),
+  getStats: (id: string) => api.get(`/live-quiz/${id}/stats`),
+
+  // Player (public)
+  getByCode: (code: string) => api.get(`/live-quiz/join/${code}`),
+  joinQuiz: (code: string, fullName: string) => api.post(`/live-quiz/join/${code}/enter`, { fullName }),
+  submitAnswer: (data: { playerId: string; questionId: string; selected: number; timeMs: number }) =>
+    api.post('/live-quiz/answer', data),
+};
+
+

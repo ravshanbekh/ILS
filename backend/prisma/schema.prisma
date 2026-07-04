@@ -70,6 +70,11 @@ model User {
   telegramLinks       TelegramLink[]    @relation("TelegramStudentLinks")
   feedbackStudent     TelegramFeedback[] @relation("FeedbackStudent")
   feedbackTeacher     TelegramFeedback[] @relation("FeedbackTeacher")
+  // Exam relations
+  createdExams        Exam[]            @relation("ExamCreator")
+  examParticipations  ExamParticipant[] @relation("ExamParticipants")
+  gradedExams         ExamParticipant[] @relation("ExamGrader")
+  createdQuizzes      LiveQuiz[]        @relation("QuizCreator")
 
   @@map("users")
 }
@@ -104,6 +109,7 @@ model Category {
 
   // Relations
   normatives  Normative[]
+  exams       Exam[]
 
   @@map("categories")
 }
@@ -437,3 +443,196 @@ model StudentFeedback {
 
   @@map("student_feedbacks")
 }
+
+// ============================================================
+//  EXAM SYSTEM (3-bosqichli rasmiy imtihon)
+// ============================================================
+
+enum ExamStatus {
+  draft
+  active
+  completed
+  cancelled
+}
+
+enum ExamParticipantStatus {
+  joined
+  in_progress
+  submitted
+  timeout
+}
+
+/// Rasmiy imtihon
+model Exam {
+  id          String     @id @default(uuid()) @db.Uuid
+  title       String     @db.VarChar(200)
+  description String?    @db.VarChar(500)
+  categoryId  String?    @map("category_id") @db.Uuid
+  createdById String     @map("created_by_id") @db.Uuid
+  accessCode  String     @unique @map("access_code") @db.VarChar(20)
+  startsAt    DateTime   @map("starts_at")
+  expiresAt   DateTime   @map("expires_at")
+  status      ExamStatus @default(draft)
+  testCount   Int        @default(20) @map("test_count")
+
+  // Maksimal ballar
+  maxTestScore    Int @default(40) @map("max_test_score")
+  maxAiScore      Int @default(20) @map("max_ai_score")
+  maxProjectScore Int @default(40) @map("max_project_score")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  category     Category?         @relation(fields: [categoryId], references: [id])
+  createdBy    User               @relation("ExamCreator", fields: [createdById], references: [id])
+  questions    ExamQuestion[]
+  participants ExamParticipant[]
+
+  @@map("exams")
+}
+
+/// Imtihon savollari
+model ExamQuestion {
+  id       String @id @default(uuid()) @db.Uuid
+  examId   String @map("exam_id") @db.Uuid
+  question String
+  options  Json   // ["variant A", "variant B", "variant C", "variant D"]
+  correct  Int    // 0-3 (to'g'ri javob indeksi)
+  order    Int    @default(0)
+
+  exam    Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  answers ExamAnswer[]
+
+  @@map("exam_questions")
+}
+
+/// Imtihon ishtirokchisi
+model ExamParticipant {
+  id          String                @id @default(uuid()) @db.Uuid
+  examId      String                @map("exam_id") @db.Uuid
+  studentId   String                @map("student_id") @db.Uuid
+  status      ExamParticipantStatus @default(joined)
+  startedAt   DateTime?             @map("started_at")
+  submittedAt DateTime?             @map("submitted_at")
+
+  // Test natijalari
+  testScore    Int? @map("test_score")
+  correctCount Int? @map("correct_count")
+
+  // Video havolalar
+  aiVideoUrl      String? @map("ai_video_url")
+  projectVideoUrl String? @map("project_video_url")
+
+  // O'qituvchi tomonidan baho
+  aiScore        Int?    @map("ai_score")
+  projectScore   Int?    @map("project_score")
+  totalScore     Int?    @map("total_score")
+  aiComment      String? @map("ai_comment") @db.VarChar(1000)
+  projectComment String? @map("project_comment") @db.VarChar(1000)
+  gradedById     String? @map("graded_by_id") @db.Uuid
+  gradedAt       DateTime? @map("graded_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  exam     Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student  User         @relation("ExamParticipants", fields: [studentId], references: [id])
+  gradedBy User?        @relation("ExamGrader", fields: [gradedById], references: [id])
+  answers  ExamAnswer[]
+
+  @@unique([examId, studentId])
+  @@map("exam_participants")
+}
+
+/// Imtihon javoblari (test bosqichi)
+model ExamAnswer {
+  id             String  @id @default(uuid()) @db.Uuid
+  participantId  String  @map("participant_id") @db.Uuid
+  questionId     String  @map("question_id") @db.Uuid
+  selectedOption Int     @map("selected_option")
+  isCorrect      Boolean @map("is_correct")
+  answeredAt     DateTime @default(now()) @map("answered_at")
+
+  participant ExamParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  question    ExamQuestion    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, questionId])
+  @@map("exam_answers")
+}
+
+// ============================================================
+//  LIVE QUIZ SYSTEM (Kahoot/Wayground uslubi)
+// ============================================================
+
+enum QuizStatus {
+  waiting
+  active
+  finished
+}
+
+/// Real-time interaktiv quiz
+model LiveQuiz {
+  id          String     @id @default(uuid()) @db.Uuid
+  title       String     @db.VarChar(200)
+  code        String     @unique @db.VarChar(10)
+  createdById String     @map("created_by_id") @db.Uuid
+  status      QuizStatus @default(waiting)
+  currentQ    Int        @default(-1) @map("current_q") // -1 = hali boshlanmagan
+  timePerQ    Int        @default(20) @map("time_per_q") // soniyada
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  createdBy User               @relation("QuizCreator", fields: [createdById], references: [id])
+  questions LiveQuizQuestion[]
+  players   LiveQuizPlayer[]
+
+  @@map("live_quizzes")
+}
+
+/// Live quiz savoli
+model LiveQuizQuestion {
+  id       String  @id @default(uuid()) @db.Uuid
+  quizId   String  @map("quiz_id") @db.Uuid
+  question String
+  options  Json    // ["A","B","C","D"]
+  correct  Int
+  order    Int     @default(0)
+  imageUrl String? @map("image_url")
+
+  quiz    LiveQuiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers LiveQuizAnswer[]
+
+  @@map("live_quiz_questions")
+}
+
+/// Live quiz o'yinchisi (tizimdan tashqari, faqat ism bilan)
+model LiveQuizPlayer {
+  id       String   @id @default(uuid()) @db.Uuid
+  quizId   String   @map("quiz_id") @db.Uuid
+  fullName String   @map("full_name") @db.VarChar(100)
+  score    Int      @default(0)
+  streak   Int      @default(0)
+  rank     Int?
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  quiz    LiveQuiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers LiveQuizAnswer[]
+
+  @@map("live_quiz_players")
+}
+
+/// Live quiz javob
+model LiveQuizAnswer {
+  id         String  @id @default(uuid()) @db.Uuid
+  playerId   String  @map("player_id") @db.Uuid
+  questionId String  @map("question_id") @db.Uuid
+  selected   Int
+  isCorrect  Boolean @map("is_correct")
+  timeMs     Int     @map("time_ms") // Javob tezligi (ms)
+  points     Int     @default(0)
+
+  player   LiveQuizPlayer   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  question LiveQuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, questionId])
+  @@map("live_quiz_answers")
+}
+

@@ -37,6 +37,11 @@ import PredictionsPage from '@/pages/admin/PredictionsPage';
 import AIChatbot from '@/components/AIChatbot';
 import { socket } from '@/utils/socket';
 import { useEffect } from 'react';
+import ExamsPage from '@/pages/teacher/ExamsPage';
+import LiveQuizPage from '@/pages/teacher/LiveQuizPage';
+import ExamLobbyPage from '@/pages/exam/ExamLobbyPage';
+import QuizJoinPage from '@/pages/quiz/QuizJoinPage';
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -170,7 +175,17 @@ export default function App() {
               <Route path="/teacher/pending" element={<TeacherPendingPage />} />
               <Route path="/teacher/rankings" element={<StudentRankingPage />} />
               <Route path="/teacher/export" element={<ExportPage />} />
+              <Route path="/teacher/exams" element={<ExamsPage />} />
+              <Route path="/teacher/live-quiz" element={<LiveQuizPage />} />
             </Route>
+
+            {/* Public — Exam (no login needed for page, login via exam form) */}
+            <Route path="/exam/:code" element={<ExamLobbyPage />} />
+
+            {/* Public — Live Quiz player */}
+            <Route path="/quiz/join" element={<QuizJoinPage />} />
+            <Route path="/quiz/join/:code" element={<QuizJoinPage />} />
+
 
             {/* Student routes */}
             <Route

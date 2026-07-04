@@ -8,7 +8,6 @@ import { apiLimiter } from './shared/middleware/rateLimiter';
 import { demoGuard } from './shared/middleware/demoGuard';
 import { initSocket } from './shared/utils/socket';
 
-// Route imports
 import authRoutes from './modules/auth/auth.routes';
 import usersRoutes from './modules/users/users.routes';
 import groupsRoutes from './modules/groups/groups.routes';
@@ -29,12 +28,17 @@ import chatbotRoutes from './modules/chatbot/chatbot.routes';
 import predictionsRoutes from './modules/predictions/predictions.routes';
 import feedbackRoutes from './modules/feedback/feedback.routes';
 import { startBot } from './modules/bot/bot';
+import examRoutes from './modules/exam/exam.routes';
+import liveQuizRoutes from './modules/live-quiz/live-quiz.routes';
+import { initSocketIO } from './modules/live-quiz/live-quiz.gateway';
 
 const app = express();
 const httpServer = createServer(app);
 
-// Initsializatsiya Socket.io
+// Initsializatsiya Socket.io (mavjud)
 initSocket(httpServer);
+// Live Quiz Socket.IO
+initSocketIO(httpServer);
 
 // ============ MIDDLEWARE ============
 
@@ -90,6 +94,8 @@ app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/predictions', predictionsRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/exam', examRoutes);
+app.use('/api/live-quiz', liveQuizRoutes);
 
 // 404 handler
 app.use((_req, res) => {

@@ -3,8 +3,9 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   LayoutDashboard, Users, FolderOpen, BookOpen, ClipboardCheck,
   BarChart3, Trophy, Download, LogOut, GraduationCap, Video, Settings, X, ClipboardList,
-  Snowflake, Star, Phone, TrendingDown
+  Snowflake, Star, Phone, TrendingDown, FileText, Zap
 } from 'lucide-react';
+
 
 const adminLinks = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -31,8 +32,11 @@ const teacherLinks = [
   { to: '/teacher/normatives', icon: BookOpen, label: 'Normativlar' },
   { to: '/teacher/pending', icon: ClipboardCheck, label: 'Tekshirish' },
   { to: '/teacher/rankings', icon: Trophy, label: 'Reyting' },
+  { to: '/teacher/exams', icon: FileText, label: 'Imtihonlar' },
+  { to: '/teacher/live-quiz', icon: Zap, label: 'Live Quiz' },
   { to: '/teacher/export', icon: Download, label: 'Eksport' },
 ];
+
 
 const studentLinks = [
   { to: '/student', icon: LayoutDashboard, label: 'Dashboard' },
