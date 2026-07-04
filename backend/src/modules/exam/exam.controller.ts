@@ -12,8 +12,9 @@ function generateCode(len = 10): string {
 export const createExam = async (req: Request, res: Response) => {
   try {
     const { title, description, categoryId, testCount = 20, maxTestScore = 40, maxAiScore = 20, maxProjectScore = 40 } = req.body;
-    const userId = (req as any).user?.id;
-    if (!title) return res.status(400).json({ error: 'title majburiy' });
+    const userId = (req as any).user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
+
 
     const accessCode = generateCode(10);
     const now = new Date();
@@ -49,7 +50,7 @@ export const createExam = async (req: Request, res: Response) => {
 // ─── O'qituvchi: Mening imtihonlarim ────────────────────────────────────────
 export const getMyExams = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const exams = await prisma.exam.findMany({
       where: { createdById: userId },
       include: {
@@ -68,7 +69,7 @@ export const getMyExams = async (req: Request, res: Response) => {
 export const getExamById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const exam = await prisma.exam.findFirst({
       where: { id, createdById: userId },
       include: {
@@ -88,7 +89,7 @@ export const getExamById = async (req: Request, res: Response) => {
 export const activateExam = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const exam = await prisma.exam.findFirst({ where: { id, createdById: userId } });
     if (!exam) return res.status(404).json({ error: 'Topilmadi' });
 
@@ -116,7 +117,7 @@ export const activateExam = async (req: Request, res: Response) => {
 export const completeExam = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const updated = await prisma.exam.update({
       where: { id, createdById: userId },
       data: { status: 'completed' },
@@ -131,7 +132,7 @@ export const completeExam = async (req: Request, res: Response) => {
 export const deleteExam = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     await prisma.exam.delete({ where: { id, createdById: userId } });
     res.json({ message: 'O\'chirildi' });
   } catch (e: any) {
@@ -205,7 +206,7 @@ export const deleteQuestion = async (req: Request, res: Response) => {
 export const getExamResults = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const exam = await prisma.exam.findFirst({ where: { id, createdById: userId } });
     if (!exam) return res.status(404).json({ error: 'Topilmadi' });
 

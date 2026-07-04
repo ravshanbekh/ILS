@@ -12,7 +12,7 @@ function genCode(): string {
 export const createQuiz = async (req: Request, res: Response) => {
   try {
     const { title, timePerQ = 20 } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
 
     // Unikal 6 xonali kod
     let code = genCode();
@@ -32,7 +32,7 @@ export const createQuiz = async (req: Request, res: Response) => {
 // ─── O'qituvchi: Mening quizlarim ───────────────────────────────────────────
 export const getMyQuizzes = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const quizzes = await prisma.liveQuiz.findMany({
       where: { createdById: userId },
       include: { _count: { select: { questions: true, players: true } } },
@@ -48,7 +48,7 @@ export const getMyQuizzes = async (req: Request, res: Response) => {
 export const getQuizById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.userId;
     const quiz = await prisma.liveQuiz.findFirst({
       where: { id, createdById: userId },
       include: {
