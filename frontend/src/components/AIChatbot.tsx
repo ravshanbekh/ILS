@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { chatbotApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
+import { useLocation } from 'react-router-dom';
 
 interface Message {
   id: string;
@@ -12,6 +13,7 @@ interface Message {
 
 export default function AIChatbot() {
   const { user } = useAuthStore();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -91,6 +93,10 @@ export default function AIChatbot() {
     "Reyting qanday hisoblanadi?",
     "Topshiriq qanday yuboraman?",
   ];
+
+  if (location.pathname.startsWith('/exam') || location.pathname.startsWith('/quiz')) {
+    return null;
+  }
 
   return (
     <>
