@@ -68,9 +68,8 @@ jobs:
 
               # Prisma schema yangilanishlarini qo'llash
               echo "--> Prisma db push..."
-              docker-compose exec -T backend npx prisma db push --schema=prisma/schema.prisma || \
-                docker-compose run --rm backend npx prisma db push --schema=prisma/schema.prisma || \
-                echo "[WARN] Prisma push ishlamadi — qo'lda bajarish kerak bo'lishi mumkin"
+              docker exec tizim_backend npx prisma db push --schema=prisma/schema.prisma || \
+                echo "[WARN] Prisma push ishlamadi (container hali o'zi yangilanadi)"
 
               docker-compose up -d --build backend
               echo "[OK] Backend yangilandi"
