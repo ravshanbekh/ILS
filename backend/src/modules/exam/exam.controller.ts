@@ -37,7 +37,7 @@ export const createExam = async (req: Request, res: Response) => {
       },
       include: {
         category: true,
-        createdBy: { select: { id: true, full_name: true } },
+        createdBy: { select: { id: true, fullName: true } },
       },
     });
 
