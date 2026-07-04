@@ -221,11 +221,19 @@ export default function LiveQuizPage() {
             {tab === 'questions' && (
               <div className="p-4">
                 {/* Import */}
-                <div className="flex gap-3 mb-4 flex-wrap">
+                <div className="flex items-center gap-3 mb-4 flex-wrap">
                   <label className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm cursor-pointer transition">
                     📥 Excel import
                     <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcelImport} />
                   </label>
+                  <a
+                    href="/exam-template.xlsx"
+                    download
+                    className="text-xs text-zinc-400 hover:text-white transition underline"
+                  >Shablon yuklash</a>
+                  <span className="text-xs text-zinc-500 ml-auto">
+                    Format: Savol | A | B | C | D | To'g'ri(0-3)
+                  </span>
                 </div>
 
                 {/* Manual */}
