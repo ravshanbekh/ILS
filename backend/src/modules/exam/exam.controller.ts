@@ -24,7 +24,7 @@ export const createExam = async (req: Request, res: Response) => {
         title,
         description,
         categoryId: categoryId || null,
-        createdById: userId,
+        createdBy: { connect: { id: userId } },
         accessCode,
         startsAt: now,
         expiresAt,
@@ -34,7 +34,7 @@ export const createExam = async (req: Request, res: Response) => {
         maxProjectScore,
         status: 'draft',
       },
-      include: { category: true },
+      include: { category: true, createdBy: { select: { id: true, full_name: true } } },
     });
 
     res.status(201).json({ data: exam });

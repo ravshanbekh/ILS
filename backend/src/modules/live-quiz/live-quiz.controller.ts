@@ -21,7 +21,7 @@ export const createQuiz = async (req: Request, res: Response) => {
     }
 
     const quiz = await prisma.liveQuiz.create({
-      data: { title, code, createdById: userId, timePerQ },
+      data: { title, code, createdBy: { connect: { id: userId } }, timePerQ },
     });
     res.status(201).json({ data: quiz });
   } catch (e: any) {
