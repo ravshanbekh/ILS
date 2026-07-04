@@ -22,8 +22,8 @@ export const createExam = async (req: Request, res: Response) => {
     const exam = await prisma.exam.create({
       data: {
         title,
-        description,
-        categoryId: categoryId || null,
+        description: description || null,
+        ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
         createdBy: { connect: { id: userId } },
         accessCode,
         startsAt: now,
@@ -34,7 +34,10 @@ export const createExam = async (req: Request, res: Response) => {
         maxProjectScore,
         status: 'draft',
       },
-      include: { category: true, createdBy: { select: { id: true, full_name: true } } },
+      include: {
+        category: true,
+        createdBy: { select: { id: true, full_name: true } },
+      },
     });
 
     res.status(201).json({ data: exam });
