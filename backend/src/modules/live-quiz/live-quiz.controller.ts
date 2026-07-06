@@ -1,27 +1,39 @@
 import { Request, Response } from 'express';
 import prisma from '../../config/database';
-
+import path from 'path';
+import fs from 'fs';
 import { getIO } from './live-quiz.gateway';
 
 // ─── Kod generator ───────────────────────────────────────────────────────────
-function genCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+async function genUniqueCode(): Promise<string> {
+  let code = Math.floor(100000 + Math.random() * 900000).toString();
+  while (await prisma.liveQuiz.findFirst({ where: { code, status: { not: 'finished' } } })) {
+    code = Math.floor(100000 + Math.random() * 900000).toString();
+  }
+  return code;
 }
 
-// ─── O'qituvchi: Quiz yaratish ───────────────────────────────────────────────
+// ─── O'qituvchi/Admin: Quiz yaratish ─────────────────────────────────────────
 export const createQuiz = async (req: Request, res: Response) => {
   try {
-    const { title, timePerQ = 20 } = req.body;
+    const { title, description, timePerQ = 20, isGlobal = false } = req.body;
     const userId = (req as any).user?.userId;
+    const userRole = (req as any).user?.role;
 
-    // Unikal 6 xonali kod
-    let code = genCode();
-    while (await prisma.liveQuiz.findFirst({ where: { code, status: { not: 'finished' } } })) {
-      code = genCode();
-    }
+    // Faqat admin global quiz yarata oladi
+    const canBeGlobal = userRole === 'admin' && isGlobal;
+
+    const code = await genUniqueCode();
 
     const quiz = await prisma.liveQuiz.create({
-      data: { title, code, createdBy: { connect: { id: userId } }, timePerQ },
+      data: {
+        title,
+        description: description || null,
+        code,
+        createdBy: { connect: { id: userId } },
+        timePerQ,
+        isGlobal: canBeGlobal,
+      },
     });
     res.status(201).json({ data: quiz });
   } catch (e: any) {
@@ -29,13 +41,16 @@ export const createQuiz = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Mening quizlarim ───────────────────────────────────────────
+// ─── O'qituvchi/Admin: Mening quizlarim ─────────────────────────────────────
 export const getMyQuizzes = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;
     const quizzes = await prisma.liveQuiz.findMany({
       where: { createdById: userId },
-      include: { _count: { select: { questions: true, players: true } } },
+      include: {
+        _count: { select: { questions: true, players: true } },
+        createdBy: { select: { id: true, fullName: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
     res.json({ data: quizzes });
@@ -44,18 +59,52 @@ export const getMyQuizzes = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Quiz batafsil ───────────────────────────────────────────────
+// ─── Global (Markaz) Quizlar — hamma o'qituvchilarga ─────────────────────────
+export const getGlobalQuizzes = async (req: Request, res: Response) => {
+  try {
+    const quizzes = await prisma.liveQuiz.findMany({
+      where: { isGlobal: true },
+      include: {
+        _count: { select: { questions: true, players: true } },
+        createdBy: { select: { id: true, fullName: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ data: quizzes });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── Quiz batafsil ────────────────────────────────────────────────────────────
 export const getQuizById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
-    const quiz = await prisma.liveQuiz.findFirst({
-      where: { id, createdById: userId },
-      include: {
-        questions: { orderBy: { order: 'asc' } },
-        players: { orderBy: { score: 'desc' } },
-      },
-    });
+    const userRole = (req as any).user?.role;
+
+    // Admin global quizni, o'qituvchi o'z quizini ko'ra oladi, global quizni ham ko'ra oladi
+    let quiz;
+    if (userRole === 'admin') {
+      quiz = await prisma.liveQuiz.findFirst({
+        where: { id },
+        include: {
+          questions: { orderBy: { order: 'asc' } },
+          players: { orderBy: { score: 'desc' } },
+          createdBy: { select: { id: true, fullName: true } },
+        },
+      });
+    } else {
+      quiz = await prisma.liveQuiz.findFirst({
+        where: { id, OR: [{ createdById: userId }, { isGlobal: true }] },
+        include: {
+          questions: { orderBy: { order: 'asc' } },
+          players: { orderBy: { score: 'desc' } },
+          createdBy: { select: { id: true, fullName: true } },
+        },
+      });
+    }
+
     if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
     res.json({ data: quiz });
   } catch (e: any) {
@@ -63,7 +112,65 @@ export const getQuizById = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Savol qo'shish ─────────────────────────────────────────────
+// ─── Quiz yangilash (faqat yaratuvchi/admin) ──────────────────────────────────
+export const updateQuiz = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, description, timePerQ, isGlobal } = req.body;
+    const userId = (req as any).user?.userId;
+    const userRole = (req as any).user?.role;
+
+    const quiz = await prisma.liveQuiz.findUnique({ where: { id } });
+    if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
+
+    // Ruxsat: admin hamma narsani, o'qituvchi faqat o'zini (va global quizni emas)
+    if (userRole !== 'admin' && quiz.createdById !== userId) {
+      return res.status(403).json({ error: 'Ruxsat yo\'q. Bu quiz siz yaratmagan.' });
+    }
+    if (userRole !== 'admin' && quiz.isGlobal) {
+      return res.status(403).json({ error: 'Markaz quizini o\'zgartira olmaysiz.' });
+    }
+
+    const updated = await prisma.liveQuiz.update({
+      where: { id },
+      data: {
+        title: title ?? quiz.title,
+        description: description !== undefined ? description : quiz.description,
+        timePerQ: timePerQ ?? quiz.timePerQ,
+        ...(userRole === 'admin' && isGlobal !== undefined ? { isGlobal } : {}),
+      },
+    });
+    res.json({ data: updated });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── Quiz o'chirish (faqat yaratuvchi, global bo'lmagan) ──────────────────────
+export const deleteQuiz = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.userId;
+    const userRole = (req as any).user?.role;
+
+    const quiz = await prisma.liveQuiz.findUnique({ where: { id } });
+    if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
+
+    if (userRole !== 'admin' && quiz.createdById !== userId) {
+      return res.status(403).json({ error: 'Ruxsat yo\'q.' });
+    }
+    if (userRole !== 'admin' && quiz.isGlobal) {
+      return res.status(403).json({ error: 'Markaz quizini o\'chira olmaysiz.' });
+    }
+
+    await prisma.liveQuiz.delete({ where: { id } });
+    res.json({ message: 'Quiz o\'chirildi' });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── Savol qo'shish ───────────────────────────────────────────────────────────
 export const addQuestions = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -84,7 +191,7 @@ export const addQuestions = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Bulk savol ──────────────────────────────────────────────────
+// ─── Bulk savol ───────────────────────────────────────────────────────────────
 export const bulkAddQuestions = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -105,7 +212,7 @@ export const bulkAddQuestions = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Savol o'chirish ─────────────────────────────────────────────
+// ─── Savol o'chirish ──────────────────────────────────────────────────────────
 export const deleteQuestion = async (req: Request, res: Response) => {
   try {
     await prisma.liveQuizQuestion.delete({ where: { id: req.params.qId } });
@@ -115,25 +222,129 @@ export const deleteQuestion = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Quizni boshlash ─────────────────────────────────────────────
+// ─── Rasm yuklash ─────────────────────────────────────────────────────────────
+export const uploadQuizImage = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Rasm yuklanmadi' });
+    const imageUrl = `/uploads/quiz-images/${req.file.filename}`;
+    res.json({ data: { imageUrl } });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── Quizni boshlash — YANGI KOD generatsiya ─────────────────────────────────
 export const startQuiz = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user?.userId;
+    const userRole = (req as any).user?.role;
+
+    // Global quiz ni o'qituvchi ham boshlashi mumkin, lekin faqat o'zi boshqaradi
+    const existingQuiz = await prisma.liveQuiz.findUnique({
+      where: { id },
+      include: { questions: { orderBy: { order: 'asc' } } },
+    });
+    if (!existingQuiz) return res.status(404).json({ error: 'Topilmadi' });
+
+    // Ruxsat tekshirish
+    if (userRole !== 'admin' && existingQuiz.createdById !== userId) {
+      // Global quizni o'qituvchi boshqarish uchun nusxalash kerak
+      return res.status(403).json({ error: 'Siz ushbu quizni boshqara olmaysiz. "Ishlatish" tugmasini bosing.' });
+    }
+
+    if (existingQuiz.questions.length === 0) {
+      return res.status(400).json({ error: 'Savol yo\'q. Avval savol qo\'shing.' });
+    }
+
+    // Har safar yangi kod generatsiya qilish
+    const newCode = await genUniqueCode();
+
+    const quiz = await prisma.liveQuiz.update({
+      where: { id },
+      data: { status: 'waiting', currentQ: -1, code: newCode },
+      include: { questions: { orderBy: { order: 'asc' } } },
+    });
+
+    res.json({ data: quiz });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── O'qituvchi Global Quizni o'z nomiga boshlash (nusxalash) ─────────────────
+export const useGlobalQuiz = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.userId;
+
+    const original = await prisma.liveQuiz.findFirst({
+      where: { id, isGlobal: true },
+      include: { questions: { orderBy: { order: 'asc' } } },
+    });
+    if (!original) return res.status(404).json({ error: 'Markaz quizi topilmadi' });
+
+    const newCode = await genUniqueCode();
+
+    // O'qituvchi uchun yangi "session" quizi yaratiladi
+    const newQuiz = await prisma.liveQuiz.create({
+      data: {
+        title: original.title,
+        description: original.description,
+        code: newCode,
+        createdBy: { connect: { id: userId } },
+        timePerQ: original.timePerQ,
+        isGlobal: false,
+        status: 'waiting',
+      },
+    });
+
+    // Savollarni nusxalash
+    if (original.questions.length > 0) {
+      await prisma.liveQuizQuestion.createMany({
+        data: original.questions.map((q, i) => ({
+          quizId: newQuiz.id,
+          question: q.question,
+          options: q.options as any,
+          correct: q.correct,
+          order: i,
+          imageUrl: q.imageUrl,
+        })),
+      });
+    }
+
+    // To'liq ma'lumot qaytarish
+    const fullQuiz = await prisma.liveQuiz.findUnique({
+      where: { id: newQuiz.id },
+      include: { questions: { orderBy: { order: 'asc' } } },
+    });
+
+    res.status(201).json({ data: fullQuiz });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── O'yin boshlash (status active, 1-savol yuborish) ─────────────────────────
+export const launchQuiz = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
     const quiz = await prisma.liveQuiz.update({
       where: { id },
       data: { status: 'active', currentQ: 0 },
       include: { questions: { orderBy: { order: 'asc' } } },
     });
 
-    // Socket orqali hamma o'yinchiga xabar berish
     const io = getIO();
-    if (io) {
+    if (io && quiz.questions.length > 0) {
       const firstQ = quiz.questions[0];
       io.to(`quiz-${quiz.code}`).emit('quiz:started', {
         question: {
           id: firstQ.id,
           question: firstQ.question,
           options: firstQ.options,
+          imageUrl: firstQ.imageUrl,
           timePerQ: quiz.timePerQ,
           index: 0,
           total: quiz.questions.length,
@@ -147,7 +358,7 @@ export const startQuiz = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Keyingi savol ───────────────────────────────────────────────
+// ─── Keyingi savol ────────────────────────────────────────────────────────────
 export const nextQuestion = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -164,13 +375,11 @@ export const nextQuestion = async (req: Request, res: Response) => {
 
     await prisma.liveQuiz.update({ where: { id }, data: { currentQ: nextIndex } });
 
-    // Leaderboardni hisoblash
     const players = await prisma.liveQuizPlayer.findMany({
       where: { quizId: id },
       orderBy: { score: 'desc' },
     });
 
-    // Oldingi savol statistikasi
     const prevQ = quiz.questions[quiz.currentQ];
     const answers = await prisma.liveQuizAnswer.findMany({
       where: { questionId: prevQ.id },
@@ -184,13 +393,11 @@ export const nextQuestion = async (req: Request, res: Response) => {
 
     const io = getIO();
     if (io) {
-      // Leaderboard ko'rsatish
       io.to(`quiz-${quiz.code}`).emit('quiz:leaderboard', {
         players: players.map((p, i) => ({ rank: i + 1, fullName: p.fullName, score: p.score, streak: p.streak })),
         prevQuestion: { question: prevQ.question, correct: prevQ.correct, optionCounts },
       });
 
-      // Keyin yangi savol
       setTimeout(() => {
         const nextQ = quiz.questions[nextIndex];
         io.to(`quiz-${quiz.code}`).emit('quiz:question', {
@@ -202,7 +409,7 @@ export const nextQuestion = async (req: Request, res: Response) => {
           index: nextIndex,
           total: quiz.questions.length,
         });
-      }, 5000); // 5 soniya leaderboard ko'rsatib keyin yangi savol
+      }, 5000);
     }
 
     res.json({ message: 'Keyingi savol yuborildi', index: nextIndex });
@@ -211,7 +418,7 @@ export const nextQuestion = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Quizni yakunlash ────────────────────────────────────────────
+// ─── Quizni yakunlash ─────────────────────────────────────────────────────────
 export const finishQuiz = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -225,7 +432,6 @@ export const finishQuiz = async (req: Request, res: Response) => {
       orderBy: { score: 'desc' },
     });
 
-    // Rank ni saqlash
     for (let i = 0; i < players.length; i++) {
       await prisma.liveQuizPlayer.update({ where: { id: players[i].id }, data: { rank: i + 1 } });
     }
@@ -243,7 +449,7 @@ export const finishQuiz = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Real-time statistika ───────────────────────────────────────
+// ─── Batafsil statistika ──────────────────────────────────────────────────────
 export const getQuizStats = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -253,7 +459,7 @@ export const getQuizStats = async (req: Request, res: Response) => {
         questions: {
           include: {
             answers: {
-              include: { player: { select: { fullName: true } } },
+              include: { player: { select: { id: true, fullName: true, score: true } } },
             },
           },
           orderBy: { order: 'asc' },
@@ -262,7 +468,78 @@ export const getQuizStats = async (req: Request, res: Response) => {
       },
     });
     if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
-    res.json({ data: quiz });
+
+    // Har bir savol uchun tahlil
+    const questionAnalysis = quiz.questions.map(q => {
+      const totalAnswers = q.answers.length;
+      const correctAnswers = q.answers.filter(a => a.isCorrect).length;
+      const optionDistribution = [0, 1, 2, 3].map(i => ({
+        option: i,
+        label: (q.options as string[])[i] || '',
+        count: q.answers.filter(a => a.selected === i).length,
+        isCorrect: i === q.correct,
+        percentage: totalAnswers > 0 ? Math.round((q.answers.filter(a => a.selected === i).length / totalAnswers) * 100) : 0,
+      }));
+
+      return {
+        id: q.id,
+        question: q.question,
+        imageUrl: q.imageUrl,
+        correct: q.correct,
+        options: q.options,
+        totalAnswers,
+        correctAnswers,
+        incorrectAnswers: totalAnswers - correctAnswers,
+        correctPercentage: totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0,
+        avgTimeMs: totalAnswers > 0 ? Math.round(q.answers.reduce((sum, a) => sum + a.timeMs, 0) / totalAnswers) : 0,
+        optionDistribution,
+      };
+    });
+
+    // Har bir o'yinchi uchun batafsil
+    const playerDetails = quiz.players.map(player => {
+      const playerAnswers = quiz.questions.map(q => {
+        const answer = q.answers.find(a => a.player.id === player.id);
+        return {
+          questionId: q.id,
+          question: q.question,
+          selected: answer?.selected ?? null,
+          isCorrect: answer?.isCorrect ?? false,
+          points: answer?.points ?? 0,
+          timeMs: answer?.timeMs ?? 0,
+        };
+      });
+
+      const correctCount = playerAnswers.filter(a => a.isCorrect).length;
+      return {
+        id: player.id,
+        fullName: player.fullName,
+        score: player.score,
+        rank: player.rank,
+        streak: player.streak,
+        correctCount,
+        totalQuestions: quiz.questions.length,
+        accuracy: quiz.questions.length > 0 ? Math.round((correctCount / quiz.questions.length) * 100) : 0,
+        answers: playerAnswers,
+      };
+    });
+
+    res.json({
+      data: {
+        quiz: {
+          id: quiz.id,
+          title: quiz.title,
+          code: quiz.code,
+          status: quiz.status,
+          timePerQ: quiz.timePerQ,
+          totalQuestions: quiz.questions.length,
+          totalPlayers: quiz.players.length,
+        },
+        leaderboard: quiz.players.map((p, i) => ({ ...p, rank: i + 1 })),
+        questionAnalysis,
+        playerDetails,
+      },
+    });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -299,11 +576,11 @@ export const joinQuiz = async (req: Request, res: Response) => {
       data: { quizId: quiz.id, fullName: fullName.trim() },
     });
 
-    // Socket xabar
     const io = getIO();
     if (io) {
       io.to(`quiz-${quiz.code}`).emit('quiz:player-joined', {
-        playerId: player.id, fullName: player.fullName,
+        playerId: player.id,
+        fullName: player.fullName,
         playerCount: await prisma.liveQuizPlayer.count({ where: { quizId: quiz.id } }),
       });
     }
@@ -325,17 +602,18 @@ export const submitAnswer = async (req: Request, res: Response) => {
     const question = await prisma.liveQuizQuestion.findUnique({ where: { id: questionId } });
     if (!question) return res.status(404).json({ error: 'Savol topilmadi' });
 
-    const isCorrect = question.correct === selected;
+    // Allaqachon javob berganmi?
+    const existing = await prisma.liveQuizAnswer.findUnique({ where: { playerId_questionId: { playerId, questionId } } });
+    if (existing) return res.json({ data: { isCorrect: existing.isCorrect, points: existing.points, streak: player.streak, correct: question.correct } });
 
-    // Tezlik ball: max 1000, kamida 0, vaqtga teskari
+    const isCorrect = question.correct === selected;
     const maxTime = player.quiz.timePerQ * 1000;
     const timeRatio = Math.max(0, 1 - timeMs / maxTime);
     let points = isCorrect ? Math.round(500 + 500 * timeRatio) : 0;
 
-    // Streak bonus
     const newStreak = isCorrect ? player.streak + 1 : 0;
     if (isCorrect && newStreak >= 2) {
-      points += 50 * Math.min(newStreak - 1, 10); // Max 500 bonus
+      points += 50 * Math.min(newStreak - 1, 10);
     }
 
     await prisma.liveQuizAnswer.create({
@@ -346,6 +624,11 @@ export const submitAnswer = async (req: Request, res: Response) => {
       where: { id: playerId },
       data: { score: player.score + points, streak: newStreak },
     });
+
+    const io = getIO();
+    if (io) {
+      io.to(`quiz-${player.quiz.code}`).emit('quiz:answer-received', { playerId, fullName: player.fullName, isCorrect });
+    }
 
     res.json({ data: { isCorrect, points, streak: newStreak, correct: question.correct } });
   } catch (e: any) {

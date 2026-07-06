@@ -1,16 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import { statsApi, feedbackApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
-import { Trophy, Target, Clock, Star, Loader2, TrendingUp, Brain, Sparkles, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { Trophy, Target, Clock, Star, Loader2, TrendingUp, Brain, Sparkles, MessageSquare, Send, CheckCircle2, Zap } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+
+// Animated counter
+function AnimatedScore({ target, duration = 1000 }: { target: number; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+  const raf = useRef<number>();
+  useEffect(() => {
+    const begin = Date.now();
+    const from = 0;
+    function tick() {
+      const p = Math.min((Date.now() - begin) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(from + (target - from) * ease));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    }
+    raf.current = requestAnimationFrame(tick);
+    return () => raf.current && cancelAnimationFrame(raf.current);
+  }, [target]);
+  return <>{display.toLocaleString()}</>;
+}
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [quizHistory, setQuizHistory] = useState<any[]>([]);
+
   // AI Analysis state
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -27,6 +48,11 @@ export default function StudentDashboard() {
         .catch(console.error)
         .finally(() => setLoading(false));
     }
+    // Load quiz history from localStorage
+    try {
+      const raw = localStorage.getItem('quizHistory');
+      if (raw) setQuizHistory(JSON.parse(raw));
+    } catch {}
   }, [user?.id]);
 
   const loadAiAnalysis = async () => {
@@ -239,7 +265,98 @@ export default function StudentDashboard() {
           </div>
         )}
 
+        {/* ⚡ LIVE QUIZ NATIJALARI */}
+        {quizHistory.length > 0 && (
+          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 relative overflow-hidden">
+            {/* Background glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+
+            <div className="flex items-center gap-2 mb-5 relative z-10">
+              <Zap className="w-5 h-5 text-violet-400" />
+              <h3 className="text-base font-bold text-white">Live Quiz natijalari</h3>
+            </div>
+
+            {/* Last quiz — hero card */}
+            {(() => {
+              const last = quizHistory[0];
+              const rankEmoji = last.rank === 1 ? '🥇' : last.rank === 2 ? '🥈' : last.rank === 3 ? '🥉' : '🏅';
+              const isTop3 = last.rank && last.rank <= 3;
+              return (
+                <div className={`rounded-2xl p-5 mb-4 relative overflow-hidden ${isTop3 ? 'bg-gradient-to-br from-violet-900/60 to-purple-900/40 border border-violet-500/40' : 'bg-[#09090b] border border-zinc-800'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-zinc-400 text-xs mb-1">So'nggi quiz</p>
+                      <h4 className="text-white font-bold text-lg leading-tight">{last.quizTitle}</h4>
+                      <p className="text-zinc-500 text-xs mt-1">{new Date(last.date).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                    <div className="text-right ml-4">
+                      <div className="text-4xl mb-1">{rankEmoji}</div>
+                      <div className={`text-3xl font-black ${isTop3 ? 'text-violet-300' : 'text-white'}`}>#{last.rank ?? '?'}</div>
+                      <div className="text-xs text-zinc-500">{last.totalPlayers} nafar ichida</div>
+                    </div>
+                  </div>
+
+                  {/* Score counter */}
+                  <div className="mt-4 flex items-center gap-4">
+                    <div className={`flex-1 rounded-xl p-3 text-center ${isTop3 ? 'bg-white/5' : 'bg-zinc-800'}`}>
+                      <p className="text-xs text-zinc-400 mb-0.5">Ball</p>
+                      <p className={`text-2xl font-black ${isTop3 ? 'text-violet-300' : 'text-white'}`}>
+                        <AnimatedScore target={last.score} />
+                      </p>
+                    </div>
+                    <div className={`flex-1 rounded-xl p-3 text-center ${isTop3 ? 'bg-white/5' : 'bg-zinc-800'}`}>
+                      <p className="text-xs text-zinc-400 mb-0.5">O'rin</p>
+                      <p className={`text-2xl font-black ${last.rank === 1 ? 'text-yellow-400' : last.rank <= 3 ? 'text-violet-300' : 'text-white'}`}>
+                        #{last.rank ?? '?'}
+                      </p>
+                    </div>
+                    {last.totalPlayers > 0 && (
+                      <div className={`flex-1 rounded-xl p-3 text-center ${isTop3 ? 'bg-white/5' : 'bg-zinc-800'}`}>
+                        <p className="text-xs text-zinc-400 mb-0.5">Ishtirokchilar</p>
+                        <p className="text-2xl font-black text-white">{last.totalPlayers}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {isTop3 && (
+                    <div className="mt-3 flex items-center gap-2 bg-violet-500/20 border border-violet-500/30 rounded-xl px-4 py-2">
+                      <span className="text-lg">🎉</span>
+                      <span className="text-violet-300 text-sm font-semibold">
+                        {last.rank === 1 ? 'Birinchi o\'rin! Zo\'r natijaaa!' : last.rank === 2 ? 'Ikkinchi o\'rin! Ajoyib!' : 'Uchinchi o\'rin! Yaxshi!'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* History list */}
+            {quizHistory.length > 1 && (
+              <div className="space-y-2">
+                <p className="text-zinc-500 text-xs uppercase tracking-wider mb-2">Oldingi quizlar</p>
+                {quizHistory.slice(1, 6).map((q: any, i: number) => {
+                  const rankEmoji = q.rank === 1 ? '🥇' : q.rank === 2 ? '🥈' : q.rank === 3 ? '🥉' : '🏅';
+                  return (
+                    <div key={i} className="flex items-center gap-3 bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3">
+                      <span className="text-xl">{rankEmoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{q.quizTitle}</p>
+                        <p className="text-zinc-500 text-xs">{new Date(q.date).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' })}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-violet-400 font-bold">{q.score.toLocaleString()}</p>
+                        <p className="text-zinc-500 text-xs">#{q.rank ?? '?'} o'rin</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* AI Self-Analysis Card */}
+
         <div className="bg-gradient-to-br from-violet-900/20 to-blue-900/10 border border-violet-500/30 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">

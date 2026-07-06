@@ -333,17 +333,27 @@ export const examApi = {
 
 // ============ LIVE QUIZ API ============
 export const liveQuizApi = {
-  // Teacher
-  create: (data: { title: string; timePerQ?: number }) => api.post('/live-quiz', data),
+  // Teacher / Admin — o'z quizlari
+  create: (data: { title: string; description?: string; timePerQ?: number; isGlobal?: boolean }) => api.post('/live-quiz', data),
   getMyQuizzes: () => api.get('/live-quiz'),
+  getGlobalQuizzes: () => api.get('/live-quiz/global'),
   getById: (id: string) => api.get(`/live-quiz/${id}`),
+  update: (id: string, data: { title?: string; description?: string; timePerQ?: number; isGlobal?: boolean }) => api.patch(`/live-quiz/${id}`, data),
+  deleteQuiz: (id: string) => api.delete(`/live-quiz/${id}`),
   addQuestions: (id: string, questions: any[]) => api.post(`/live-quiz/${id}/questions`, { questions }),
   bulkAddQuestions: (id: string, questions: any[]) => api.post(`/live-quiz/${id}/questions/bulk`, { questions }),
   deleteQuestion: (quizId: string, qId: string) => api.delete(`/live-quiz/${quizId}/questions/${qId}`),
-  startQuiz: (id: string) => api.patch(`/live-quiz/${id}/start`),
+  useGlobalQuiz: (id: string) => api.post(`/live-quiz/${id}/use`),    // O'qituvchi global quizni nusxalaydi
+  startQuiz: (id: string) => api.patch(`/live-quiz/${id}/start`),     // Yangi kod generatsiya
+  launchQuiz: (id: string) => api.patch(`/live-quiz/${id}/launch`),   // 1-savolni yuborish
   nextQuestion: (id: string) => api.patch(`/live-quiz/${id}/next`),
   finishQuiz: (id: string) => api.patch(`/live-quiz/${id}/finish`),
   getStats: (id: string) => api.get(`/live-quiz/${id}/stats`),
+  uploadImage: (file: File) => {
+    const form = new FormData();
+    form.append('image', file);
+    return api.post('/live-quiz/upload-image', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
 
   // Player (public)
   getByCode: (code: string) => api.get(`/live-quiz/join/${code}`),

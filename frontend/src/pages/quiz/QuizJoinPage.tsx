@@ -11,11 +11,57 @@ interface QuizQ { id: string; question: string; options: string[]; timePerQ: num
 interface LeaderboardEntry { rank: number; fullName: string; score: number; streak?: number; }
 
 const OPTION_STYLES = [
-  { bg: 'bg-red-500', hover: 'hover:bg-red-400', icon: '▲' },
-  { bg: 'bg-blue-500', hover: 'hover:bg-blue-400', icon: '◆' },
-  { bg: 'bg-yellow-500', hover: 'hover:bg-yellow-400', icon: '●' },
-  { bg: 'bg-emerald-500', hover: 'hover:bg-emerald-400', icon: '■' },
+  { bg: 'bg-red-500',     hover: 'hover:bg-red-400',     icon: '▲', label: 'A' },
+  { bg: 'bg-blue-500',    hover: 'hover:bg-blue-400',    icon: '◆', label: 'B' },
+  { bg: 'bg-yellow-500',  hover: 'hover:bg-yellow-400',  icon: '●', label: 'C' },
+  { bg: 'bg-emerald-500', hover: 'hover:bg-emerald-400', icon: '■', label: 'D' },
 ];
+
+// ─── Score Counter Animation ──────────────────────────────────────────────────
+function AnimatedScore({ target, duration = 1200 }: { target: number; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+  const start = useRef(0);
+  const raf = useRef<number>();
+
+  useEffect(() => {
+    const begin = Date.now();
+    const from = start.current;
+    function tick() {
+      const elapsed = Date.now() - begin;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3); // ease-out-cubic
+      setDisplay(Math.round(from + (target - from) * ease));
+      if (progress < 1) raf.current = requestAnimationFrame(tick);
+      else start.current = target;
+    }
+    raf.current = requestAnimationFrame(tick);
+    return () => raf.current && cancelAnimationFrame(raf.current);
+  }, [target]);
+
+  return <>{display.toLocaleString()}</>;
+}
+
+// ─── Confetti particle ────────────────────────────────────────────────────────
+function Confetti() {
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-10">
+      {Array.from({ length: 50 }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-2 h-3 rounded-sm animate-fall"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: '-10px',
+            backgroundColor: ['#a855f7', '#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#f97316'][i % 6],
+            animationDelay: `${Math.random() * 3}s`,
+            animationDuration: `${2 + Math.random() * 3}s`,
+            transform: `rotate(${Math.random() * 360}deg)`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function QuizJoinPage() {
   const [stage, setStage] = useState<Stage>('enter-code');
@@ -28,7 +74,7 @@ export default function QuizJoinPage() {
   const [loading, setLoading] = useState(false);
   const [playerCount, setPlayerCount] = useState(0);
 
-  // Question
+  // Question state
   const [currentQ, setCurrentQ] = useState<QuizQ | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -41,7 +87,14 @@ export default function QuizJoinPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [prevQuestion, setPrevQuestion] = useState<any>(null);
 
+  // Finished state extras
+  const [myRank, setMyRank] = useState<number | null>(null);
+  const [totalPlayers, setTotalPlayers] = useState(0);
+  const [scoreHistory, setScoreHistory] = useState<Array<{ q: number; pts: number; total: number }>>([]);
+
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const scoreRef = useRef(0);
+  const qIndexRef = useRef(0);
 
   function setupSocket(codeToJoin: string, currentPlayer: Player) {
     const s = io(SOCKET_URL, { transports: ['websocket'] });
@@ -49,17 +102,47 @@ export default function QuizJoinPage() {
 
     s.on('quiz:player-joined', (data) => setPlayerCount(data.playerCount));
     s.on('quiz:started', (data) => {
-      setCurrentQ(data.question); setSelected(null); setAnswerResult(null); setQuestionStartTime(Date.now()); setStage('question');
+      qIndexRef.current = 0;
+      setCurrentQ(data.question);
+      setSelected(null);
+      setAnswerResult(null);
+      setQuestionStartTime(Date.now());
+      setStage('question');
     });
     s.on('quiz:question', (data) => {
-      setCurrentQ(data); setSelected(null); setAnswerResult(null); setQuestionStartTime(Date.now()); setStage('question');
+      qIndexRef.current = data.index;
+      setCurrentQ(data);
+      setSelected(null);
+      setAnswerResult(null);
+      setQuestionStartTime(Date.now());
+      setStage('question');
     });
     s.on('quiz:leaderboard', (data) => {
-      setLeaderboard(data.players); setPrevQuestion(data.prevQuestion); setStage('leaderboard');
+      setLeaderboard(data.players);
+      setPrevQuestion(data.prevQuestion);
+      setStage('leaderboard');
     });
     s.on('quiz:finished', (data) => {
-      setLeaderboard(data.leaderboard); setStage('finished');
+      setLeaderboard(data.leaderboard);
+      setTotalPlayers(data.leaderboard.length);
+      const me = data.leaderboard.find((p: any) => p.fullName === currentPlayer.fullName);
+      setMyRank(me?.rank ?? null);
+      setStage('finished');
       localStorage.removeItem('quizSession');
+
+      // Save to localStorage quiz history
+      try {
+        const history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
+        history.unshift({
+          quizTitle: quizInfo?.title || 'Quiz',
+          fullName: currentPlayer.fullName,
+          score: scoreRef.current,
+          rank: me?.rank ?? null,
+          totalPlayers: data.leaderboard.length,
+          date: new Date().toISOString(),
+        });
+        localStorage.setItem('quizHistory', JSON.stringify(history.slice(0, 20)));
+      } catch {}
     });
 
     setSocket(s);
@@ -70,7 +153,7 @@ export default function QuizJoinPage() {
     if (sessionStr) {
       try {
         const sess = JSON.parse(sessionStr);
-        if (sess && sess.code && sess.player) {
+        if (sess?.code && sess?.player) {
           setCode(sess.code);
           setPlayer(sess.player);
           setStage('lobby');
@@ -78,15 +161,10 @@ export default function QuizJoinPage() {
         }
       } catch (e) {}
     }
-    
-    return () => {
-
-      socket?.disconnect();
-      clearInterval(timerRef.current);
-    };
+    return () => { socket?.disconnect(); clearInterval(timerRef.current); };
   }, []);
 
-  // Timer for current question
+  // Timer
   useEffect(() => {
     if (stage !== 'question' || selected !== null) return;
     clearInterval(timerRef.current);
@@ -95,10 +173,7 @@ export default function QuizJoinPage() {
       setTimeLeft(t => {
         if (t <= 1) {
           clearInterval(timerRef.current);
-          // Auto submit unanswered
-          if (selected === null && player && currentQ) {
-            submitAnswer(-1);
-          }
+          if (selected === null && player && currentQ) submitAnswer(-1);
           return 0;
         }
         return t - 1;
@@ -129,7 +204,6 @@ export default function QuizJoinPage() {
       const currentPlayer = { id: p.id, fullName: p.fullName, score: 0, streak: 0 };
       setPlayer(currentPlayer);
       setStage('lobby');
-      
       localStorage.setItem('quizSession', JSON.stringify({ code: code.trim(), player: currentPlayer }));
       setupSocket(code.trim(), currentPlayer);
     } catch (e: any) {
@@ -144,84 +218,180 @@ export default function QuizJoinPage() {
 
     const timeMs = Date.now() - questionStartTime;
     try {
-      const res = await liveQuizApi.submitAnswer({
-        playerId: player.id,
-        questionId: currentQ.id,
-        selected: optionIdx,
-        timeMs,
-      });
+      const res = await liveQuizApi.submitAnswer({ playerId: player.id, questionId: currentQ.id, selected: optionIdx, timeMs });
       const { isCorrect, points, streak, correct } = res.data.data;
-      setMyScore(s => s + points);
+      const newTotal = myScore + points;
+      scoreRef.current = newTotal;
+      setMyScore(newTotal);
       setMyStreak(streak);
       setAnswerResult({ isCorrect, points, streak, correct });
+
+      // Track score history
+      setScoreHistory(prev => [...prev, { q: qIndexRef.current + 1, pts: points, total: newTotal }]);
       setStage('answer-result');
 
-      // Emit to teacher panel
-      socket?.emit('player:answered', {
-        code: code.trim(),
-        playerId: player.id,
-        fullName: player.fullName,
-        isCorrect,
-      });
+      socket?.emit('player:answered', { code: code.trim(), playerId: player.id, fullName: player.fullName, isCorrect });
     } catch {}
   }
 
   const timerPct = currentQ ? (timeLeft / currentQ.timePerQ) * 100 : 0;
+  const myLeaderboardEntry = leaderboard.find(p => p.fullName === fullName);
+  const myCurrentRank = myLeaderboardEntry?.rank ?? leaderboard.findIndex(p => p.fullName === fullName) + 1;
 
-  // ── RENDER ─────────────────────────────────────────────────────────────────
+  // ── FINISHED STAGE ──────────────────────────────────────────────────────────
+  if (stage === 'finished') {
+    const isTop3 = myRank && myRank <= 3;
+    const rankEmoji = myRank === 1 ? '🥇' : myRank === 2 ? '🥈' : myRank === 3 ? '🥉' : '🏅';
+    const rankColors = ['', 'from-yellow-500 to-amber-400', 'from-zinc-400 to-zinc-300', 'from-amber-700 to-amber-600'];
 
-  if (stage === 'finished') return (
-    <div className="min-h-screen bg-gradient-to-b from-violet-950 via-[#09090b] to-[#09090b] flex items-center justify-center p-4">
-      <div className="w-full max-w-md text-center">
-        <div className="text-6xl mb-4">🏆</div>
-        <h1 className="text-3xl font-black text-white mb-2">Quiz tugadi!</h1>
-        <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl px-6 py-4 mb-6 inline-block">
-          <div className="text-4xl font-black text-violet-300">{myScore}</div>
-          <div className="text-violet-400 text-sm">Sizning ballingiz</div>
-        </div>
-        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden">
-          {leaderboard.slice(0, 10).map((p, i) => (
-            <div key={i} className={`flex items-center gap-3 px-4 py-3 border-b border-zinc-800 last:border-0 ${p.fullName === fullName ? 'bg-violet-500/10' : ''}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-300'}`}>
-                {p.rank}
-              </div>
-              <span className={`flex-1 font-medium ${p.fullName === fullName ? 'text-violet-300' : 'text-white'}`}>{p.fullName}</span>
-              <span className="text-violet-400 font-bold">{p.score}</span>
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-violet-950 via-[#09090b] to-[#09090b] flex flex-col items-center justify-start p-4 pt-10">
+        {isTop3 && <Confetti />}
+
+        {/* My result hero */}
+        <div className="relative z-20 w-full max-w-md mb-6">
+          <div className={`rounded-3xl p-6 text-center ${isTop3 ? `bg-gradient-to-br ${rankColors[myRank!]} text-black shadow-2xl` : 'bg-zinc-900 border border-zinc-700'}`}>
+            <div className="text-7xl mb-3 animate-bounce">{rankEmoji}</div>
+            <h1 className={`text-3xl font-black mb-1 ${isTop3 ? 'text-black' : 'text-white'}`}>{fullName}</h1>
+            <p className={`text-sm mb-4 ${isTop3 ? 'text-black/70' : 'text-zinc-400'}`}>
+              {totalPlayers} o'yinchi ichida
+            </p>
+
+            {/* Rank badge */}
+            <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl mb-4 ${isTop3 ? 'bg-black/20' : 'bg-violet-500/10 border border-violet-500/30'}`}>
+              <span className={`text-5xl font-black ${isTop3 ? 'text-black' : 'text-violet-300'}`}>#{myRank ?? '?'}</span>
+              <span className={`text-sm ${isTop3 ? 'text-black/70' : 'text-zinc-400'}`}>O'rin</span>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 
+            {/* Score */}
+            <div className={`text-6xl font-black mb-1 ${isTop3 ? 'text-black' : 'text-violet-400'}`}>
+              <AnimatedScore target={myScore} duration={1500} />
+            </div>
+            <p className={`text-sm ${isTop3 ? 'text-black/70' : 'text-zinc-400'}`}>ball</p>
+
+            {/* Accuracy */}
+            {scoreHistory.length > 0 && (
+              <div className="mt-4 flex justify-center gap-4">
+                <div className={`text-center ${isTop3 ? 'text-black/80' : 'text-zinc-300'}`}>
+                  <p className="text-xl font-bold">{scoreHistory.filter(s => s.pts > 0).length}</p>
+                  <p className="text-xs">To'g'ri</p>
+                </div>
+                <div className="w-px bg-white/20" />
+                <div className={`text-center ${isTop3 ? 'text-black/80' : 'text-zinc-300'}`}>
+                  <p className="text-xl font-bold">{scoreHistory.length - scoreHistory.filter(s => s.pts > 0).length}</p>
+                  <p className="text-xs">Xato</p>
+                </div>
+                <div className="w-px bg-white/20" />
+                <div className={`text-center ${isTop3 ? 'text-black/80' : 'text-zinc-300'}`}>
+                  <p className="text-xl font-bold">{scoreHistory.length > 0 ? Math.round(scoreHistory.filter(s => s.pts > 0).length / scoreHistory.length * 100) : 0}%</p>
+                  <p className="text-xs">Aniqlik</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Full leaderboard */}
+        <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden mb-6">
+          <div className="px-4 py-3 border-b border-zinc-800">
+            <h2 className="text-white font-bold">🏆 Yakuniy reyting</h2>
+          </div>
+          {leaderboard.slice(0, 15).map((p, i) => {
+            const isMe = p.fullName === fullName;
+            return (
+              <div key={i} className={`flex items-center gap-3 px-4 py-3 border-b border-zinc-800/50 last:border-0 transition-all ${isMe ? 'bg-violet-500/15 border-l-2 border-l-violet-500' : ''}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0
+                  ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                  {p.rank}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`font-semibold truncate ${isMe ? 'text-violet-300' : 'text-white'}`}>
+                    {p.fullName}{isMe ? ' 👈' : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {p.streak && p.streak >= 3 && <span className="text-amber-400 text-xs">🔥{p.streak}</span>}
+                  <span className={`font-bold text-lg ${isMe ? 'text-violet-400' : 'text-white'}`}>{p.score.toLocaleString()}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <button onClick={() => { setStage('enter-code'); setCode(''); setMyScore(0); setMyRank(null); setScoreHistory([]); }}
+          className="px-8 py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition mb-10">
+          Yana o'ynash
+        </button>
+
+        <style>{`
+          @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+          }
+          .animate-fall { animation: fall linear infinite; }
+        `}</style>
+      </div>
+    );
+  }
+
+  // ── LEADERBOARD STAGE ───────────────────────────────────────────────────────
   if (stage === 'leaderboard') return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-[#09090b] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Previous question result */}
         {prevQuestion && (
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 mb-4">
-            <p className="text-zinc-400 text-xs mb-2">Oldingi savol:</p>
-            <p className="text-white font-medium mb-2">{prevQuestion.question}</p>
-            <div className="flex gap-2 flex-wrap">
-              {prevQuestion.optionCounts?.map((o: any) => (
-                <div key={o.option} className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm ${o.isCorrect ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
-                  {['▲','◆','●','■'][o.option]} {o.count}
-                </div>
-              ))}
+            <p className="text-zinc-400 text-xs mb-1">Oldingi savol:</p>
+            <p className="text-white text-sm font-medium mb-3">{prevQuestion.question}</p>
+            <div className="flex gap-2 h-16 items-end">
+              {prevQuestion.optionCounts?.map((o: any, idx: number) => {
+                const maxCount = Math.max(...prevQuestion.optionCounts.map((x: any) => x.count), 1);
+                const h = Math.max((o.count / maxCount) * 100, 4);
+                return (
+                  <div key={o.option} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-xs font-bold text-white">{o.count}</span>
+                    <div className={`w-full rounded-t-sm ${o.isCorrect ? 'bg-emerald-500' : 'bg-zinc-700'}`} style={{ height: `${h}%` }} />
+                    <span className={`text-xs ${o.isCorrect ? 'text-emerald-400 font-bold' : 'text-zinc-500'}`}>{['A', 'B', 'C', 'D'][idx]}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
+
+        {/* My rank spotlight */}
+        {myCurrentRank > 0 && (
+          <div className="bg-violet-500/20 border border-violet-500/40 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-violet-300 text-xs">Sizning o'rningiz</p>
+              <p className="text-white font-bold">{fullName}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-black text-violet-300">#{myCurrentRank}</p>
+              <p className="text-violet-400 text-sm font-bold">
+                <AnimatedScore target={myScore} /> ball
+              </p>
+            </div>
+          </div>
+        )}
+
         <h2 className="text-2xl font-black text-white text-center mb-4">🏅 Reyting</h2>
         <div className="space-y-2">
           {leaderboard.slice(0, 8).map((p, i) => {
             const isMe = p.fullName === fullName;
             return (
-              <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-500 ${isMe ? 'bg-violet-500/20 border border-violet-500/40 scale-[1.02]' : 'bg-zinc-900 border border-zinc-800'}`}>
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-300'}`}>
+              <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
+                ${isMe ? 'bg-violet-500/20 border border-violet-500/40 scale-[1.02]' : 'bg-zinc-900 border border-zinc-800'}`}
+                style={{ animationDelay: `${i * 50}ms` }}>
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0
+                  ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-300'}`}>
                   {p.rank}
                 </div>
-                <span className={`flex-1 font-medium ${isMe ? 'text-violet-300' : 'text-white'}`}>{p.fullName}{isMe ? ' 👈' : ''}</span>
-                {p.streak && p.streak >= 2 ? <span className="text-amber-400 text-xs">🔥×{p.streak}</span> : null}
-                <span className="text-violet-400 font-bold">{p.score}</span>
+                <span className={`flex-1 font-medium ${isMe ? 'text-violet-300' : 'text-white'}`}>
+                  {p.fullName}{isMe ? ' 👈' : ''}
+                </span>
+                {p.streak && p.streak >= 2 && <span className="text-amber-400 text-xs">🔥×{p.streak}</span>}
+                <span className={`font-bold ${isMe ? 'text-violet-400' : 'text-white'}`}>{p.score.toLocaleString()}</span>
               </div>
             );
           })}
@@ -231,44 +401,79 @@ export default function QuizJoinPage() {
     </div>
   );
 
+  // ── ANSWER RESULT STAGE ──────────────────────────────────────────────────────
   if (stage === 'answer-result' && answerResult) return (
-    <div className={`min-h-screen flex flex-col items-center justify-center p-6 transition-all ${answerResult.isCorrect ? 'bg-gradient-to-b from-emerald-950 to-[#09090b]' : 'bg-gradient-to-b from-red-950 to-[#09090b]'}`}>
-      <div className="text-7xl mb-4 animate-bounce">
+    <div className={`min-h-screen flex flex-col items-center justify-center p-6 transition-all
+      ${answerResult.isCorrect ? 'bg-gradient-to-b from-emerald-950 to-[#09090b]' : 'bg-gradient-to-b from-red-950 to-[#09090b]'}`}>
+
+      {/* Correct/Wrong icon */}
+      <div className={`w-28 h-28 rounded-full flex items-center justify-center mb-6 text-6xl
+        ${answerResult.isCorrect ? 'bg-emerald-500/20 border-2 border-emerald-400' : 'bg-red-500/20 border-2 border-red-400'}
+        animate-scale-in`}>
         {answerResult.isCorrect ? '✅' : '❌'}
       </div>
-      <h2 className="text-3xl font-black text-white mb-2">
+
+      <h2 className={`text-4xl font-black mb-4 ${answerResult.isCorrect ? 'text-emerald-300' : 'text-red-300'}`}>
         {answerResult.isCorrect ? 'To\'g\'ri!' : 'Xato!'}
       </h2>
+
       {answerResult.isCorrect ? (
         <div className="text-center">
-          <div className="text-5xl font-black text-emerald-300 mb-1">+{answerResult.points}</div>
-          <div className="text-emerald-400 text-sm">ball</div>
+          {/* Points with counter */}
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-8 py-4 mb-4">
+            <div className="text-6xl font-black text-emerald-300">+{answerResult.points}</div>
+            <div className="text-emerald-400 text-sm mt-1">ball qo'shildi</div>
+          </div>
+
+          {/* Streak */}
           {answerResult.streak >= 2 && (
-            <div className="mt-3 flex items-center gap-2 justify-center bg-amber-500/20 px-4 py-2 rounded-full">
-              <span className="text-2xl">🔥</span>
-              <span className="text-amber-300 font-bold">{answerResult.streak} ketma-ket streak!</span>
+            <div className="flex items-center gap-2 justify-center bg-amber-500/20 border border-amber-500/30 px-6 py-3 rounded-2xl mb-4">
+              <span className="text-3xl">🔥</span>
+              <span className="text-amber-300 font-black text-xl">{answerResult.streak}× streak!</span>
             </div>
           )}
         </div>
       ) : (
-        <p className="text-red-300 text-sm">Streak uzildi. Keyingi savolda yaxshirog'ini qiling!</p>
+        <p className="text-red-300 text-base mb-4 text-center">
+          To'g'ri javob: <strong className="text-white">{['A', 'B', 'C', 'D'][answerResult.correct]}</strong>
+        </p>
       )}
-      <div className="mt-6 bg-white/5 rounded-xl px-6 py-3 text-center">
-        <div className="text-2xl font-black text-white">{myScore}</div>
-        <div className="text-zinc-400 text-xs">Umumiy ball</div>
+
+      {/* Total score panel */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl px-8 py-4 text-center">
+        <div className="text-xs text-zinc-400 mb-1">Jami ball</div>
+        <div className="text-4xl font-black text-white">
+          <AnimatedScore target={myScore} />
+        </div>
+        {myStreak >= 2 && <div className="text-xs text-amber-400 mt-1">🔥 Streak davom etmoqda!</div>}
       </div>
-      <p className="text-zinc-500 text-sm mt-6 animate-pulse">Leaderboard yuklanmoqda...</p>
+
+      <p className="text-zinc-500 text-sm mt-8 animate-pulse">Reyting yuklanmoqda...</p>
+
+      <style>{`
+        @keyframes scale-in { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-scale-in { animation: scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      `}</style>
     </div>
   );
 
+  // ── QUESTION STAGE ───────────────────────────────────────────────────────────
   if (stage === 'question' && currentQ) return (
     <div className="min-h-screen bg-gradient-to-b from-[#0c0c1e] to-[#09090b] flex flex-col">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/30">
-        <div className="text-white font-bold text-sm">{fullName}</div>
-        <div className="flex items-center gap-3">
-          <div className="text-violet-400 font-bold">{myScore} ball</div>
-          {myStreak >= 2 && <span className="text-amber-400 text-sm">🔥×{myStreak}</span>}
+      <div className="flex items-center justify-between px-4 py-3 bg-black/40 backdrop-blur-sm">
+        <div>
+          <p className="text-zinc-400 text-xs">Siz</p>
+          <p className="text-white font-bold text-sm truncate max-w-[140px]">{fullName}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-zinc-400 text-xs">Savol</p>
+          <p className="text-white font-bold">{currentQ.index + 1}/{currentQ.total}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-zinc-400 text-xs">Ball</p>
+          <p className="text-violet-300 font-black text-lg">{myScore.toLocaleString()}</p>
+          {myStreak >= 2 && <p className="text-amber-400 text-xs">🔥×{myStreak}</p>}
         </div>
       </div>
 
@@ -278,21 +483,16 @@ export default function QuizJoinPage() {
           className={`h-full transition-all duration-1000 ${timerPct > 50 ? 'bg-emerald-500' : timerPct > 25 ? 'bg-yellow-500' : 'bg-red-500'}`}
           style={{ width: `${timerPct}%` }}
         />
-        <div className={`absolute right-3 top-0 h-full flex items-center text-xs font-bold ${timerPct < 25 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+        <div className={`absolute right-3 top-0 h-full flex items-center text-xs font-black ${timerPct < 25 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
           {timeLeft}s
         </div>
       </div>
 
-      {/* Question progress */}
-      <div className="text-center py-3 text-zinc-400 text-sm">
-        Savol {currentQ.index + 1} / {currentQ.total}
-      </div>
-
-      {/* Question */}
-      <div className="flex-1 flex flex-col px-4">
-        <div className="bg-white/5 backdrop-blur rounded-2xl p-6 mb-4 text-center min-h-[100px] flex items-center justify-center">
+      {/* Question card */}
+      <div className="flex-1 flex flex-col px-4 pt-4">
+        <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-5 mb-4 flex flex-col items-center justify-center min-h-[120px] text-center">
           {currentQ.imageUrl && (
-            <img src={currentQ.imageUrl} alt="" className="max-h-40 rounded-xl mb-3 mx-auto" />
+            <img src={currentQ.imageUrl} alt="" className="max-h-44 rounded-xl mb-3 mx-auto object-contain" />
           )}
           <p className="text-white text-xl font-bold leading-relaxed">{currentQ.question}</p>
         </div>
@@ -302,12 +502,19 @@ export default function QuizJoinPage() {
           {currentQ.options.map((opt, i) => {
             const style = OPTION_STYLES[i];
             const isChosen = selected === i;
+            const isRevealed = selected !== null;
             return (
               <button
                 key={i}
                 onClick={() => submitAnswer(i)}
-                disabled={selected !== null}
-                className={`${style.bg} ${selected === null ? style.hover : ''} text-white rounded-2xl p-4 flex items-center gap-3 font-semibold text-left transition-all duration-150 active:scale-95 shadow-lg min-h-[80px] ${isChosen ? 'ring-4 ring-white ring-offset-2 ring-offset-transparent' : ''} ${selected !== null && !isChosen ? 'opacity-50' : ''}`}
+                disabled={isRevealed}
+                className={`
+                  ${style.bg} ${!isRevealed ? style.hover : ''} text-white rounded-2xl p-4
+                  flex items-center gap-3 font-semibold text-left transition-all duration-200
+                  active:scale-95 shadow-lg min-h-[80px]
+                  ${isChosen ? 'ring-4 ring-white ring-offset-2 ring-offset-[#09090b] scale-[1.02]' : ''}
+                  ${isRevealed && !isChosen ? 'opacity-40 scale-95' : ''}
+                `}
               >
                 <span className="text-3xl opacity-80 flex-shrink-0">{style.icon}</span>
                 <span className="text-sm leading-tight">{opt}</span>
@@ -319,20 +526,19 @@ export default function QuizJoinPage() {
     </div>
   );
 
+  // ── LOBBY STAGE ──────────────────────────────────────────────────────────────
   if (stage === 'lobby') return (
     <div className="min-h-screen bg-gradient-to-b from-violet-950 to-[#09090b] flex items-center justify-center p-4">
-      <div className="text-center max-w-sm">
-        <div className="w-20 h-20 bg-violet-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse text-4xl">
-          ⚡
-        </div>
+      <div className="text-center max-w-sm w-full">
+        <div className="w-20 h-20 bg-gradient-to-br from-violet-600 to-purple-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl shadow-xl shadow-violet-900/50">⚡</div>
         <h2 className="text-2xl font-black text-white mb-1">{quizInfo?.title}</h2>
         <p className="text-zinc-400 mb-6">Siz: <span className="text-violet-300 font-bold">{fullName}</span></p>
         <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6">
-          <div className="text-5xl font-black text-violet-300 mb-1">{playerCount}</div>
+          <div className="text-5xl font-black text-violet-300 mb-1 transition-all duration-500">{playerCount}</div>
           <div className="text-zinc-400 text-sm mb-4">o'yinchi ulandi</div>
-          <div className="flex justify-center gap-1">
+          <div className="flex justify-center gap-1.5">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+              <div key={i} className="w-2.5 h-2.5 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
             ))}
           </div>
           <p className="text-zinc-500 text-xs mt-3 animate-pulse">O'qituvchi quizni boshlaguncha kuting...</p>
@@ -341,18 +547,19 @@ export default function QuizJoinPage() {
     </div>
   );
 
+  // ── ENTER NAME STAGE ─────────────────────────────────────────────────────────
   if (stage === 'enter-name') return (
     <div className="min-h-screen bg-gradient-to-b from-violet-950 to-[#09090b] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="text-4xl mb-2">👤</div>
+          <div className="text-5xl mb-3">👤</div>
           <h2 className="text-2xl font-black text-white">{quizInfo?.title}</h2>
           <p className="text-zinc-400 text-sm mt-1">{playerCount} o'yinchi ulandi</p>
         </div>
         <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6">
-          <label className="text-zinc-300 text-sm font-medium mb-2 block">Ism va familyangiz</label>
+          <label className="text-zinc-300 text-sm font-medium mb-2 block">Ismingiz</label>
           <input
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-lg font-medium mb-4 focus:border-violet-500 outline-none transition text-center"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-lg font-bold mb-4 focus:border-violet-500 outline-none transition text-center tracking-wide"
             placeholder="Ism Familya"
             value={fullName}
             onChange={e => setFullName(e.target.value)}
@@ -370,15 +577,15 @@ export default function QuizJoinPage() {
     </div>
   );
 
-  // Enter code stage
+  // ── ENTER CODE STAGE ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gradient-to-b from-violet-950 via-[#0c0c1e] to-[#09090b] flex items-center justify-center p-4">
       <div className="w-full max-w-sm text-center">
-        <div className="text-6xl mb-4">⚡</div>
+        <div className="text-7xl mb-4">⚡</div>
         <h1 className="text-4xl font-black text-white mb-2">Live Quiz</h1>
         <p className="text-zinc-400 mb-8">O'qituvchidan kod olib kiriting</p>
 
-        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 shadow-2xl">
+        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 shadow-2xl shadow-violet-900/20">
           <label className="text-zinc-300 text-sm font-medium mb-3 block">6 xonali kod</label>
           <input
             className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-4 text-white text-4xl font-black tracking-widest text-center focus:border-violet-500 outline-none transition mb-4"
@@ -387,6 +594,7 @@ export default function QuizJoinPage() {
             maxLength={6}
             onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
             onKeyDown={e => e.key === 'Enter' && code.length === 6 && checkCode()}
+            autoFocus
           />
           {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
           <button
