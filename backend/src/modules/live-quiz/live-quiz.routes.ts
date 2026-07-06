@@ -40,7 +40,8 @@ router.delete('/:id/questions/:qId', authenticate, quizController.deleteQuestion
 router.post('/:id/use', authenticate, quizController.useGlobalQuiz);   // Global quizni nusxalash
 router.patch('/:id/start', authenticate, quizController.startQuiz);    // Yangi kod + waiting
 router.patch('/:id/launch', authenticate, quizController.launchQuiz);  // 1-savolni yuborish
-router.patch('/:id/next', authenticate, quizController.nextQuestion);
+router.patch('/:id/next', authenticate, quizController.nextQuestion);      // Leaderboard ko'rsatish
+router.patch('/:id/show-question', authenticate, quizController.showQuestion); // Keyingi savolni yuborish
 router.patch('/:id/finish', authenticate, quizController.finishQuiz);
 router.get('/:id/stats', authenticate, quizController.getQuizStats);
 router.post('/upload-image', authenticate, upload.single('image'), quizController.uploadQuizImage);

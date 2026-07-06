@@ -358,7 +358,8 @@ export const launchQuiz = async (req: Request, res: Response) => {
   }
 };
 
-// ─── Keyingi savol ────────────────────────────────────────────────────────────
+// ─── Leaderboard ko'rsatish (Natija fazasi) ───────────────────────────────────
+// Faqat leaderboard emit qiladi, keyingi savolni AVTOMATIK yubormaydi.
 export const nextQuestion = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -370,9 +371,10 @@ export const nextQuestion = async (req: Request, res: Response) => {
 
     const nextIndex = quiz.currentQ + 1;
     if (nextIndex >= quiz.questions.length) {
-      return res.status(400).json({ error: 'Oxirgi savolga yetildi. finish qiling.' });
+      return res.status(400).json({ error: 'Oxirgi savolga yetildi. Quizni yakunlang.' });
     }
 
+    // currentQ ni yangilaymiz (keyingi showQuestion chaqirida ishlatiladi)
     await prisma.liveQuiz.update({ where: { id }, data: { currentQ: nextIndex } });
 
     const players = await prisma.liveQuizPlayer.findMany({
@@ -383,7 +385,6 @@ export const nextQuestion = async (req: Request, res: Response) => {
     const prevQ = quiz.questions[quiz.currentQ];
     const answers = await prisma.liveQuizAnswer.findMany({
       where: { questionId: prevQ.id },
-      include: { player: { select: { fullName: true } } },
     });
     const optionCounts = [0, 1, 2, 3].map(i => ({
       option: i,
@@ -393,26 +394,55 @@ export const nextQuestion = async (req: Request, res: Response) => {
 
     const io = getIO();
     if (io) {
+      // Faqat leaderboard — keyingi savolni O'QITUVCHI tugmasi bosishi bilan yuboramiz
       io.to(`quiz-${quiz.code}`).emit('quiz:leaderboard', {
-        players: players.map((p, i) => ({ rank: i + 1, fullName: p.fullName, score: p.score, streak: p.streak })),
-        prevQuestion: { question: prevQ.question, correct: prevQ.correct, optionCounts },
+        players: players.map((p, i) => ({ rank: i + 1, fullName: p.fullName, score: p.score, streak: p.streak, id: p.id })),
+        prevQuestion: {
+          question: prevQ.question,
+          correct: prevQ.correct,
+          imageUrl: prevQ.imageUrl,
+          optionCounts,
+          totalAnswers: answers.length,
+        },
+        nextIndex,
+        totalQuestions: quiz.questions.length,
       });
-
-      setTimeout(() => {
-        const nextQ = quiz.questions[nextIndex];
-        io.to(`quiz-${quiz.code}`).emit('quiz:question', {
-          id: nextQ.id,
-          question: nextQ.question,
-          options: nextQ.options,
-          imageUrl: nextQ.imageUrl,
-          timePerQ: quiz.timePerQ,
-          index: nextIndex,
-          total: quiz.questions.length,
-        });
-      }, 5000);
     }
 
-    res.json({ message: 'Keyingi savol yuborildi', index: nextIndex });
+    res.json({ message: 'Leaderboard yuborildi', nextIndex });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── Keyingi savolni yuborish (O'qituvchi tugmasi bosishi bilan) ───────────────
+export const showQuestion = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const quiz = await prisma.liveQuiz.findUnique({
+      where: { id },
+      include: { questions: { orderBy: { order: 'asc' } } },
+    });
+    if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
+
+    const q = quiz.questions[quiz.currentQ];
+    if (!q) return res.status(400).json({ error: 'Savol topilmadi' });
+
+    const io = getIO();
+    if (io) {
+      io.to(`quiz-${quiz.code}`).emit('quiz:question', {
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        imageUrl: q.imageUrl,
+        timePerQ: quiz.timePerQ,
+        index: quiz.currentQ,
+        total: quiz.questions.length,
+        startedAt: Date.now(), // Taymer sinxronlash uchun
+      });
+    }
+
+    res.json({ message: 'Savol yuborildi', index: quiz.currentQ });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -625,9 +655,29 @@ export const submitAnswer = async (req: Request, res: Response) => {
       data: { score: player.score + points, streak: newStreak },
     });
 
+    // Real-time: barcha o'yinchilar va o'qituvchiga yangilangan reyting
+    const allPlayers = await prisma.liveQuizPlayer.findMany({
+      where: { quizId: player.quizId },
+      orderBy: { score: 'desc' },
+    });
+    const answeredCount = await prisma.liveQuizAnswer.count({
+      where: { questionId },
+    });
+
     const io = getIO();
     if (io) {
-      io.to(`quiz-${player.quiz.code}`).emit('quiz:answer-received', { playerId, fullName: player.fullName, isCorrect });
+      // Kimlar javob berdi va ballar
+      io.to(`quiz-${player.quiz.code}`).emit('quiz:score-update', {
+        players: allPlayers.map((p, i) => ({
+          id: p.id,
+          fullName: p.fullName,
+          score: p.score,
+          rank: i + 1,
+          streak: p.streak,
+        })),
+        answeredCount,
+        latestAnswer: { playerId, fullName: player.fullName, isCorrect, points },
+      });
     }
 
     res.json({ data: { isCorrect, points, streak: newStreak, correct: question.correct } });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { liveQuizApi } from '../../api';
 import * as XLSX from 'xlsx';
 import { io, Socket } from 'socket.io-client';
@@ -7,18 +7,36 @@ import { useAuthStore } from '@/stores/authStore';
 const SOCKET_URL = (import.meta.env.VITE_API_URL?.replace('/api', '') || '') || window.location.origin;
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
+// ── Animated score counter ────────────────────────────────────────────────────
+function AnimatedNum({ value, duration = 800 }: { value: number; duration?: number }) {
+  const [display, setDisplay] = useState(value);
+  const prev = useRef(value);
+  const raf = useRef<number>();
+  useEffect(() => {
+    const from = prev.current;
+    const begin = Date.now();
+    function tick() {
+      const p = Math.min((Date.now() - begin) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(from + (value - from) * ease));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+      else prev.current = value;
+    }
+    raf.current = requestAnimationFrame(tick);
+    return () => raf.current && cancelAnimationFrame(raf.current);
+  }, [value]);
+  return <>{display.toLocaleString()}</>;
+}
+
 interface Quiz {
-  id: string;
-  title: string;
-  description?: string;
-  code: string;
-  status: 'waiting' | 'active' | 'finished';
-  timePerQ: number;
-  currentQ: number;
-  isGlobal?: boolean;
-  createdBy?: { id: string; fullName: string };
+  id: string; title: string; description?: string; code: string;
+  status: 'waiting' | 'active' | 'finished'; timePerQ: number; currentQ: number;
+  isGlobal?: boolean; createdBy?: { id: string; fullName: string };
   _count?: { questions: number; players: number };
 }
+
+// Faza: 'lobby' → 'question' → 'leaderboard' → 'question' → … → 'finished'
+type GamePhase = 'idle' | 'lobby' | 'question' | 'leaderboard' | 'finished';
 
 export default function LiveQuizPage() {
   const { user } = useAuthStore();
@@ -32,34 +50,86 @@ export default function LiveQuizPage() {
   const [form, setForm] = useState({ title: '', description: '', timePerQ: 20, isGlobal: false });
   const [editForm, setEditForm] = useState({ title: '', description: '', timePerQ: 20, isGlobal: false });
   const [creating, setCreating] = useState(false);
-  const [tab, setTab] = useState<'questions' | 'control' | 'stats'>('questions');
+  const [tab, setTab] = useState<'questions' | 'game' | 'stats'>('questions');
   const [listTab, setListTab] = useState<'my' | 'global'>('my');
+
+  // Game state
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [players, setPlayers] = useState<any[]>([]);
-  const [manualQ, setManualQ] = useState({ question: '', options: ['', '', '', ''], correct: 0, imageUrl: '' });
-  const [qLoading, setQLoading] = useState(false);
+  const [gamePhase, setGamePhase] = useState<GamePhase>('idle');
+  const [players, setPlayers] = useState<any[]>([]);          // Lobby players
+  const [liveScores, setLiveScores] = useState<any[]>([]);    // Real-time leaderboard
+  const [answeredCount, setAnsweredCount] = useState(0);
+  const [currentQData, setCurrentQData] = useState<any>(null); // Current question
+  const [timeLeft, setTimeLeft] = useState(0);
   const [leaderboardData, setLeaderboardData] = useState<any>(null);
   const [statsData, setStatsData] = useState<any>(null);
-  const [statsPlayerSelected, setStatsPlayerSelected] = useState<any>(null);
   const [statsTab, setStatsTab] = useState<'leaderboard' | 'questions' | 'player'>('leaderboard');
+  const [statsPlayerSelected, setStatsPlayerSelected] = useState<any>(null);
+
+  // Questions tab
+  const [manualQ, setManualQ] = useState({ question: '', options: ['', '', '', ''], correct: 0, imageUrl: '' });
+  const [qLoading, setQLoading] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
+
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const totalPlayersRef = useRef(0);
 
   useEffect(() => { fetchAll(); }, []);
 
   useEffect(() => {
     if (!selected) return;
     const s = io(SOCKET_URL, { transports: ['websocket'] });
-    s.emit('join-room', { code: selected.code, role: isAdmin ? 'admin' : 'teacher' });
+    s.emit('join-room', { code: selected.code, role: 'teacher' });
+
     s.on('quiz:player-joined', (data) => {
-      setPlayers(prev => [...prev.filter(p => p.id !== data.playerId), { id: data.playerId, fullName: data.fullName, score: 0, streak: 0 }]);
+      setPlayers(prev => {
+        const exists = prev.find(p => p.id === data.playerId);
+        if (exists) return prev;
+        return [...prev, { id: data.playerId, fullName: data.fullName, score: 0, streak: 0 }];
+      });
+      totalPlayersRef.current = data.playerCount;
     });
+
+    // Real-time score update — savol vaqtida
+    s.on('quiz:score-update', (data) => {
+      setLiveScores(data.players);
+      setAnsweredCount(data.answeredCount);
+    });
+
+    // Leaderboard (teacher presses "Natija") — received by students, teacher triggers it
     s.on('quiz:leaderboard', (data) => {
       setLeaderboardData(data);
-      setPlayers(data.players);
+      setLiveScores(data.players);
+      setGamePhase('leaderboard');
+      clearInterval(timerRef.current);
     });
-    s.on('quiz:question', () => setLeaderboardData(null));
+
+    // Question (teacher presses "Keyingi savol") — received by students
+    s.on('quiz:question', (data) => {
+      setCurrentQData(data);
+      setGamePhase('question');
+      setAnsweredCount(0);
+      setLeaderboardData(null);
+      // Start timer
+      clearInterval(timerRef.current);
+      setTimeLeft(data.timePerQ);
+      timerRef.current = setInterval(() => {
+        setTimeLeft(t => {
+          if (t <= 1) { clearInterval(timerRef.current); return 0; }
+          return t - 1;
+        });
+      }, 1000);
+    });
+
+    s.on('quiz:finished', (data) => {
+      setLiveScores(data.leaderboard.map((p: any, i: number) => ({ ...p, rank: i + 1 })));
+      setGamePhase('finished');
+      clearInterval(timerRef.current);
+      fetchAll();
+    });
+
     setSocket(s);
-    return () => { s.disconnect(); };
+    return () => { s.disconnect(); clearInterval(timerRef.current); };
   }, [selected?.id]);
 
   async function fetchAll() {
@@ -79,9 +149,8 @@ export default function LiveQuizPage() {
       setForm({ title: '', description: '', timePerQ: 20, isGlobal: false });
       await fetchAll();
       loadQuiz(res.data.data);
-    } catch (e: any) {
-      alert(e.response?.data?.error || 'Xato');
-    } finally { setCreating(false); }
+    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    finally { setCreating(false); }
   }
 
   async function saveEdit() {
@@ -92,82 +161,100 @@ export default function LiveQuizPage() {
       await fetchAll();
       const res = await liveQuizApi.getById(selected.id);
       setSelected(res.data.data);
-    } catch (e: any) {
-      alert(e.response?.data?.error || 'Xato');
-    }
+    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
   }
 
   async function handleDeleteQuiz(quiz: Quiz) {
     if (!confirm(`"${quiz.title}" quizini o'chirasizmi?`)) return;
     try {
       await liveQuizApi.deleteQuiz(quiz.id);
-      if (selected?.id === quiz.id) setSelected(null);
+      if (selected?.id === quiz.id) { setSelected(null); setGamePhase('idle'); }
       await fetchAll();
-    } catch (e: any) {
-      alert(e.response?.data?.error || 'Ruxsat yo\'q');
-    }
+    } catch (e: any) { alert(e.response?.data?.error || 'Ruxsat yo\'q'); }
   }
 
   async function loadQuiz(q: Quiz) {
     const res = await liveQuizApi.getById(q.id);
     setSelected(res.data.data);
     setPlayers(res.data.data.players || []);
-    setTab('questions');
+    setLiveScores([]);
+    setAnsweredCount(0);
+    setCurrentQData(null);
     setLeaderboardData(null);
     setStatsData(null);
+    setGamePhase('idle');
+    setTab('questions');
+    clearInterval(timerRef.current);
   }
 
   async function useGlobal(quiz: Quiz) {
-    if (!confirm(`"${quiz.title}" ni o'z nomingizga nusxalab boshlaysizmi? Yangi kod beriladi.`)) return;
+    if (!confirm(`"${quiz.title}" ni nusxalab boshlaysizmi?`)) return;
     try {
       const res = await liveQuizApi.useGlobalQuiz(quiz.id);
       await fetchAll();
       await loadQuiz(res.data.data);
       setListTab('my');
-    } catch (e: any) {
-      alert(e.response?.data?.error || 'Xato');
-    }
+    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
   }
 
+  // ── Game flow: Lobby uchun tayyorlash ───────────────────────────────────────
   async function prepareQuiz() {
-    if (!selected) return;
-    if (!selected.questions?.length) return alert('Savol yo\'q. Avval savol qo\'shing.');
+    if (!selected?.questions?.length) return alert('Savol yo\'q!');
     try {
       const res = await liveQuizApi.startQuiz(selected.id);
-      const updated = res.data.data;
-      setSelected(updated);
+      setSelected((s: any) => ({ ...s, ...res.data.data, code: res.data.data.code }));
       setPlayers([]);
-      setTab('control');
+      setLiveScores([]);
+      setAnsweredCount(0);
+      setGamePhase('lobby');
+      setTab('game');
+    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+  }
+
+  // ── Birinchi savolni yuborish (LOBBY → QUESTION) ─────────────────────────────
+  async function launchFirstQuestion() {
+    if (!selected) return;
+    try {
+      await liveQuizApi.launchQuiz(selected.id);
+      setAnsweredCount(0);
+      // quiz:question event socket orqali keladi → gamePhase = 'question'
+    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+  }
+
+  // ── Natijani ko'rsatish (QUESTION → LEADERBOARD) ─────────────────────────────
+  async function showResults() {
+    if (!selected) return;
+    clearInterval(timerRef.current);
+    try {
+      await liveQuizApi.nextQuestion(selected.id);
+      // quiz:leaderboard event socket orqali keladi → gamePhase = 'leaderboard'
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Xato');
+      // Agar oxirgi savol bo'lsa → yakunlash
+      if (e.response?.status === 400) {
+        await finishQuiz();
+      }
     }
   }
 
-  async function launchQuiz() {
+  // ── Keyingi savolni yuborish (LEADERBOARD → QUESTION) ────────────────────────
+  async function sendNextQuestion() {
     if (!selected) return;
-    const res = await liveQuizApi.launchQuiz(selected.id);
-    setSelected(res.data.data);
-    setLeaderboardData(null);
+    try {
+      await liveQuizApi.showQuestion(selected.id);
+      // quiz:question event socket orqali keladi → gamePhase = 'question'
+    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
   }
 
-  async function nextQ() {
-    if (!selected) return;
-    await liveQuizApi.nextQuestion(selected.id);
-    const res = await liveQuizApi.getById(selected.id);
-    setSelected(res.data.data);
-  }
-
+  // ── Quiz yakunlash ────────────────────────────────────────────────────────────
   async function finishQuiz() {
-    if (!selected || !confirm('Quizni yakunlash?')) return;
-    await liveQuizApi.finishQuiz(selected.id);
-    const statsRes = await liveQuizApi.getStats(selected.id);
-    setStatsData(statsRes.data.data);
-    const res = await liveQuizApi.getById(selected.id);
-    setSelected(res.data.data);
-    setPlayers(res.data.data.players.sort((a: any, b: any) => b.score - a.score));
-    setTab('stats');
-    setStatsTab('leaderboard');
-    await fetchAll();
+    if (!selected) return;
+    if (!confirm('Quizni yakunlash?')) return;
+    try {
+      await liveQuizApi.finishQuiz(selected.id);
+      // quiz:finished event keladi
+      const statsRes = await liveQuizApi.getStats(selected.id);
+      setStatsData(statsRes.data.data);
+    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
   }
 
   async function loadStats() {
@@ -210,9 +297,7 @@ export default function LiveQuizPage() {
     try {
       const res = await liveQuizApi.uploadImage(file);
       setManualQ(q => ({ ...q, imageUrl: res.data.data.imageUrl }));
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Rasm yuklanmadi');
-    }
+    } catch (err: any) { alert(err.response?.data?.error || 'Rasm yuklanmadi'); }
     e.target.value = '';
   }
 
@@ -236,11 +321,10 @@ export default function LiveQuizPage() {
     fetchAll();
   }
 
-  const canEdit = selected && (isAdmin || selected.createdBy?.id === user?.id) && !selected.isGlobal;
-  const canDelete = selected && (isAdmin || selected.createdBy?.id === user?.id) && !selected.isGlobal;
-  const currentQData = selected?.questions?.[selected?.currentQ >= 0 ? selected.currentQ : 0];
   const QUIZ_LINK = `${window.location.origin}/quiz/join`;
   const displayedList = listTab === 'my' ? myQuizzes : globalQuizzes;
+  const timerPct = currentQData ? (timeLeft / currentQData.timePerQ) * 100 : 0;
+  const totalQ = selected?.questions?.length ?? 0;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -269,7 +353,7 @@ export default function LiveQuizPage() {
             {isAdmin && (
               <label className="flex items-center gap-2 mb-4 cursor-pointer">
                 <input type="checkbox" checked={form.isGlobal} onChange={e => setForm(f => ({ ...f, isGlobal: e.target.checked }))} className="w-4 h-4 accent-violet-500" />
-                <span className="text-zinc-300 text-sm">🏫 Markaz quizi (hamma o'qituvchilarga ko'rinadi)</span>
+                <span className="text-zinc-300 text-sm">🏫 Markaz quizi</span>
               </label>
             )}
             <div className="flex gap-2">
@@ -286,11 +370,11 @@ export default function LiveQuizPage() {
       {showEdit && selected && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-sm">
-            <h2 className="text-lg font-bold text-white mb-4">✏️ Quizni tahrirlash</h2>
-            <input className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-3 focus:border-violet-500 outline-none" placeholder="Quiz nomi" value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} />
-            <textarea className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-3 text-sm resize-none focus:border-violet-500 outline-none" rows={2} placeholder="Tavsif" value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} />
+            <h2 className="text-lg font-bold text-white mb-4">✏️ Tahrirlash</h2>
+            <input className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-3 focus:border-violet-500 outline-none" value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} />
+            <textarea className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-3 text-sm resize-none outline-none" rows={2} value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} />
             <div className="flex items-center gap-3 mb-4">
-              <label className="text-zinc-400 text-sm whitespace-nowrap">Har savol vaqti:</label>
+              <label className="text-zinc-400 text-sm">Vaqt:</label>
               <input type="number" min={5} max={120} className="w-20 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white" value={editForm.timePerQ} onChange={e => setEditForm(f => ({ ...f, timePerQ: Number(e.target.value) }))} />
             </div>
             {isAdmin && (
@@ -301,16 +385,15 @@ export default function LiveQuizPage() {
             )}
             <div className="flex gap-2">
               <button onClick={() => setShowEdit(false)} className="flex-1 py-2 bg-zinc-700 text-white rounded-lg">Bekor</button>
-              <button onClick={saveEdit} className="flex-1 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg font-medium">Saqlash</button>
+              <button onClick={saveEdit} className="flex-1 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg">Saqlash</button>
             </div>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Quiz list */}
+        {/* === QUIZ LIST === */}
         <div>
-          {/* Tabs: My / Global */}
           <div className="flex border-b border-zinc-800 mb-3">
             <button onClick={() => setListTab('my')} className={`px-4 py-2 text-sm font-medium transition ${listTab === 'my' ? 'text-violet-400 border-b-2 border-violet-400' : 'text-zinc-400'}`}>
               📂 Mening ({myQuizzes.length})
@@ -320,124 +403,116 @@ export default function LiveQuizPage() {
             </button>
           </div>
 
-          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[75vh] overflow-y-auto pr-1">
             {displayedList.map(q => (
-              <div key={q.id} className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-violet-500/50 ${selected?.id === q.id ? 'border-violet-500' : 'border-zinc-800'}`}
+              <div key={q.id}
+                className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-violet-500/50 ${selected?.id === q.id ? 'border-violet-500' : 'border-zinc-800'}`}
                 onClick={() => loadQuiz(q)}>
                 <div className="flex items-start justify-between mb-1 gap-2">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-white text-sm truncate">{q.title}</h3>
-                    {q.isGlobal && <span className="text-xs text-amber-400">🏫 Markaz quizi</span>}
+                    {q.isGlobal && <span className="text-xs text-amber-400">🏫 Markaz</span>}
                     {q.createdBy && listTab === 'global' && <p className="text-xs text-zinc-500 truncate">{q.createdBy.fullName}</p>}
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${q.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : q.status === 'finished' ? 'bg-zinc-700 text-zinc-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                      {q.status === 'waiting' ? 'Kutmoqda' : q.status === 'active' ? '🟢 Faol' : 'Tugagan'}
-                    </span>
-                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${q.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : q.status === 'finished' ? 'bg-zinc-700 text-zinc-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                    {q.status === 'waiting' ? 'Kutmoqda' : q.status === 'active' ? '🟢 Faol' : 'Tugagan'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-zinc-500 mt-1">
                   <span>📝 {q._count?.questions ?? 0}</span>
                   <span>👥 {q._count?.players ?? 0}</span>
                 </div>
-                <div className="mt-2 font-mono text-xl font-black text-violet-400 tracking-widest">{q.code}</div>
+                <div className="mt-1 font-mono text-xl font-black text-violet-400 tracking-widest">{q.code}</div>
 
-                {/* Buttons for my quizzes */}
                 {listTab === 'my' && (
                   <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
                     {!q.isGlobal && (
-                      <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', timePerQ: q.timePerQ, isGlobal: q.isGlobal ?? false }); setSelected(q); setShowEdit(true); }}
-                        className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition">✏️ Edit</button>
-                    )}
-                    {!q.isGlobal && (
-                      <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition">🗑️ O'chir</button>
+                      <>
+                        <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', timePerQ: q.timePerQ, isGlobal: false }); setSelected(q); setShowEdit(true); }}
+                          className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded">✏️</button>
+                        <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded">🗑️</button>
+                      </>
                     )}
                     {isAdmin && q.isGlobal && (
                       <>
                         <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', timePerQ: q.timePerQ, isGlobal: true }); setSelected(q); setShowEdit(true); }}
-                          className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition">✏️ Edit</button>
-                        <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition">🗑️</button>
+                          className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded">✏️</button>
+                        <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded">🗑️</button>
                       </>
                     )}
                   </div>
                 )}
 
-                {/* Global: use button for teachers */}
                 {listTab === 'global' && !isAdmin && (
                   <button onClick={e => { e.stopPropagation(); useGlobal(q); }}
-                    className="mt-2 w-full px-3 py-1.5 text-xs bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition font-medium">
-                    ▶ Ishlatish (Nusxala va boshlash)
+                    className="mt-2 w-full px-3 py-1.5 text-xs bg-violet-600 hover:bg-violet-500 text-white rounded-lg font-medium">
+                    ▶ Ishlatish
                   </button>
                 )}
                 {listTab === 'global' && isAdmin && (
                   <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
                     <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', timePerQ: q.timePerQ, isGlobal: true }); loadQuiz(q); setShowEdit(true); }}
-                      className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition">✏️ Edit</button>
-                    <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition">🗑️ O'chir</button>
+                      className="px-2 py-1 text-xs bg-zinc-800 text-zinc-300 rounded">✏️</button>
+                    <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded">🗑️</button>
                   </div>
                 )}
               </div>
             ))}
-            {displayedList.length === 0 && <div className="text-zinc-500 text-sm text-center py-8">Hali quiz yo'q</div>}
+            {displayedList.length === 0 && <div className="text-zinc-500 text-sm text-center py-8">Quiz yo'q</div>}
           </div>
         </div>
 
-        {/* Detail panel */}
+        {/* === DETAIL PANEL === */}
         {selected ? (
-          <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-            {/* Selected quiz header */}
-            <div className="bg-zinc-800/60 px-4 py-3 flex items-center justify-between">
+          <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col">
+            {/* Quiz header bar */}
+            <div className="bg-zinc-800/60 px-4 py-3 flex items-center justify-between flex-shrink-0">
               <div>
                 <span className="text-white font-semibold">{selected.title}</span>
-                {selected.isGlobal && <span className="ml-2 text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">🏫 Markaz</span>}
+                {selected.isGlobal && <span className="ml-2 text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">🏫</span>}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="font-mono text-lg font-black text-violet-400">{selected.code}</span>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-zinc-800">
-              {(['questions', 'control', 'stats'] as const).map(t => (
+            <div className="flex border-b border-zinc-800 flex-shrink-0">
+              {(['questions', 'game', 'stats'] as const).map(t => (
                 <button key={t} onClick={() => { setTab(t); if (t === 'stats') loadStats(); }}
                   className={`px-4 py-3 text-sm font-medium transition ${tab === t ? 'text-violet-400 border-b-2 border-violet-400' : 'text-zinc-400 hover:text-white'}`}>
-                  {t === 'questions' ? '📝 Savollar' : t === 'control' ? '🎮 Boshqarish' : '📊 Natijalar'}
+                  {t === 'questions' ? '📝 Savollar' : t === 'game' ? '🎮 O\'yin' : '📊 Natijalar'}
                 </button>
               ))}
             </div>
 
-            {/* === QUESTIONS TAB === */}
+            {/* ═══════════ QUESTIONS TAB ═══════════ */}
             {tab === 'questions' && (
-              <div className="p-4">
-                {/* Import toolbar */}
+              <div className="p-4 overflow-y-auto flex-1">
+                {/* Toolbar */}
                 <div className="flex items-center gap-3 mb-4 flex-wrap">
                   <label className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm cursor-pointer transition">
                     📥 Excel import
                     <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcelImport} />
                   </label>
-                  <a href="/exam-template.xlsx" download className="text-xs text-zinc-400 hover:text-white underline">Shablon yuklash</a>
-                  <span className="text-xs text-zinc-500 ml-auto">Format: Savol | A | B | C | D | To'g'ri(0-3)</span>
+                  <a href="/exam-template.xlsx" download className="text-xs text-zinc-400 hover:text-white underline">Shablon</a>
+                  <span className="text-xs text-zinc-500 ml-auto">Savol | A | B | C | D | To'g'ri(0-3)</span>
                 </div>
 
-                {/* Manual question form */}
+                {/* Manual Q form */}
                 <div className="bg-zinc-800/50 rounded-xl p-4 mb-4">
-                  <h4 className="text-sm font-medium text-white mb-3">Qo'lda savol qo'shish</h4>
-                  <input className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white mb-2 text-sm focus:border-violet-500 outline-none" placeholder="Savol matni..." value={manualQ.question} onChange={e => setManualQ(q => ({ ...q, question: e.target.value }))} />
-
-                  {/* Image upload */}
+                  <h4 className="text-sm font-medium text-white mb-3">Qo'lda savol</h4>
+                  <input className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white mb-2 text-sm focus:border-violet-500 outline-none" placeholder="Savol..." value={manualQ.question} onChange={e => setManualQ(q => ({ ...q, question: e.target.value }))} />
                   <div className="flex items-center gap-2 mb-3">
-                    <button onClick={() => imgInputRef.current?.click()} className="px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded border border-zinc-600 transition">
-                      🖼️ Rasm qo'shish
-                    </button>
-                    <input ref={imgInputRef} type="file" accept="image/png,image/jpeg,image/jpg" className="hidden" onChange={handleImageUpload} />
+                    <button onClick={() => imgInputRef.current?.click()} className="px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded border border-zinc-600">🖼️ Rasm</button>
+                    <input ref={imgInputRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={handleImageUpload} />
                     {manualQ.imageUrl && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <img src={`${API_BASE}${manualQ.imageUrl}`} alt="" className="h-8 w-12 object-cover rounded border border-zinc-600" />
                         <button onClick={() => setManualQ(q => ({ ...q, imageUrl: '' }))} className="text-red-400 text-xs">×</button>
                       </div>
                     )}
                   </div>
-
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     {manualQ.options.map((o, i) => (
                       <div key={i} className="flex items-center gap-2">
@@ -455,14 +530,14 @@ export default function LiveQuizPage() {
                   </button>
                 </div>
 
-                {/* Question list */}
+                {/* Q List */}
                 <div className="space-y-2 max-h-[350px] overflow-y-auto">
                   {(selected.questions || []).map((q: any, i: number) => (
                     <div key={q.id} className="bg-zinc-800 rounded-lg p-3 flex items-start gap-3">
-                      <span className="text-zinc-500 text-sm w-6 flex-shrink-0">{i + 1}.</span>
+                      <span className="text-zinc-500 text-sm w-6">{i + 1}.</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium">{q.question}</p>
-                        {q.imageUrl && <img src={`${API_BASE}${q.imageUrl}`} alt="" className="mt-1 h-16 rounded border border-zinc-700 object-cover" />}
+                        {q.imageUrl && <img src={`${API_BASE}${q.imageUrl}`} alt="" className="mt-1 h-12 rounded border border-zinc-700 object-cover" />}
                         <div className="flex gap-2 mt-1 flex-wrap">
                           {(q.options as string[]).map((o, j) => (
                             <span key={j} className={`text-xs px-2 py-0.5 rounded ${j === q.correct ? 'bg-emerald-500/20 text-emerald-400 font-medium' : 'text-zinc-500'}`}>
@@ -471,118 +546,122 @@ export default function LiveQuizPage() {
                           ))}
                         </div>
                       </div>
-                      <button onClick={() => deleteQuestion(q.id)} className="text-red-400/60 hover:text-red-400 transition text-sm">🗑️</button>
+                      <button onClick={() => deleteQuestion(q.id)} className="text-red-400/60 hover:text-red-400 text-sm">🗑️</button>
                     </div>
                   ))}
                   {!selected.questions?.length && <p className="text-zinc-500 text-sm text-center py-4">Savol yo'q</p>}
                 </div>
 
-                {/* Prepare (new code) button */}
-                {selected.status !== 'active' && (
+                {/* Prepare button */}
+                {gamePhase === 'idle' && (
                   <div className="mt-4 pt-4 border-t border-zinc-800">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="text-white font-semibold">Quizga tayyorlanish</p>
-                        <p className="text-zinc-400 text-xs">Yangi kirish kodi beriladi, o'yinchilar kutadi</p>
-                      </div>
-                      {selected.code && (
-                        <div className="text-center">
-                          <div className="font-mono text-2xl font-black text-violet-400">{selected.code}</div>
-                          <div className="text-xs text-zinc-500">Joriy kod</div>
-                        </div>
-                      )}
-                    </div>
                     <button onClick={prepareQuiz} disabled={!selected.questions?.length}
-                      className="w-full py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold rounded-xl transition disabled:opacity-40">
-                      🔄 Yangi kod olib, tayyorlanish
+                      className="w-full py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold rounded-xl disabled:opacity-40">
+                      🔄 O'yinga tayyorlanish (yangi kod)
+                    </button>
+                  </div>
+                )}
+                {gamePhase !== 'idle' && (
+                  <div className="mt-4 pt-4 border-t border-zinc-800">
+                    <button onClick={() => setTab('game')} className="w-full py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-xl">
+                      🎮 O'yin paneliga o'tish →
                     </button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* === CONTROL TAB === */}
-            {tab === 'control' && (
-              <div className="p-4">
-                {selected.status === 'waiting' ? (
-                  /* Lobby */
+            {/* ═══════════ GAME TAB ═══════════ */}
+            {tab === 'game' && (
+              <div className="p-4 flex-1 overflow-y-auto">
+
+                {/* ── LOBBY PHASE ─────────────────────────────────── */}
+                {gamePhase === 'lobby' && (
                   <div>
-                    <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-4 mb-4 text-center">
-                      <p className="text-zinc-400 text-sm mb-1">Kirish kodi</p>
-                      <div className="font-mono text-4xl font-black text-violet-400 tracking-widest mb-2">{selected.code}</div>
+                    {/* Join code */}
+                    <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/30 rounded-2xl p-5 mb-4 text-center">
+                      <p className="text-zinc-400 text-xs mb-1">O'yinchilar kirish kodi</p>
+                      <div className="font-mono text-5xl font-black text-violet-300 tracking-widest mb-2">{selected?.code}</div>
                       <p className="text-zinc-500 text-xs">{QUIZ_LINK}</p>
                     </div>
+
+                    {/* Live player list */}
                     <div className="bg-zinc-800 rounded-xl p-4 mb-4">
-                      <p className="text-zinc-300 text-sm font-medium mb-2">O'yinchilar ({players.length})</p>
-                      <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-zinc-300 font-medium">O'yinchilar</p>
+                        <span className="text-2xl font-black text-violet-400">{players.length}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1 max-h-[200px] overflow-y-auto">
                         {players.map((p, i) => (
-                          <div key={p.id || i} className="flex items-center gap-2 text-sm bg-zinc-900/50 rounded px-3 py-1.5">
-                            <span className="text-zinc-500 w-4 text-xs">{i + 1}</span>
-                            <span className="text-white">{p.fullName}</span>
+                          <div key={p.id || i} className="flex items-center gap-2 bg-zinc-900/60 rounded-lg px-3 py-1.5">
+                            <span className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white">{p.fullName[0]}</span>
+                            <span className="text-white text-xs truncate">{p.fullName}</span>
                           </div>
                         ))}
-                        {!players.length && <p className="text-zinc-500 text-xs text-center py-2">O'yinchilar kutilmoqda...</p>}
+                        {!players.length && <p className="text-zinc-500 text-xs col-span-2 text-center py-4 animate-pulse">O'yinchilar kutilmoqda...</p>}
                       </div>
                     </div>
-                    <button onClick={launchQuiz} disabled={!players.length}
-                      className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl transition disabled:opacity-40">
+
+                    <button onClick={launchFirstQuestion}
+                      className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-2xl text-lg transition">
                       🚀 O'yinni boshlash ({players.length} o'yinchi)
                     </button>
+                    <p className="text-xs text-zinc-500 text-center mt-2">Tugmani bosganda 1-savol barcha ekraniga chiqadi va taymer boshlanadi</p>
                   </div>
-                ) : selected.status === 'active' ? (
-                  /* Active game */
+                )}
+
+                {/* ── QUESTION PHASE ──────────────────────────────── */}
+                {gamePhase === 'question' && currentQData && (
                   <div>
-                    <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-xl p-4 mb-4">
-                      <div className="text-xs text-violet-400 mb-2">Savol {(selected.currentQ || 0) + 1} / {selected.questions?.length}</div>
-                      <p className="text-white text-base font-semibold mb-2">{currentQData?.question}</p>
-                      {currentQData?.imageUrl && <img src={`${API_BASE}${currentQData.imageUrl}`} alt="" className="mb-3 max-h-32 rounded-lg object-cover border border-violet-500/20" />}
-                      <div className="grid grid-cols-2 gap-2">
-                        {(currentQData?.options as string[] || []).map((o: string, i: number) => (
-                          <div key={i} className={`px-3 py-2 rounded-lg text-sm ${i === currentQData?.correct ? 'bg-emerald-500/20 text-emerald-400 font-medium' : 'bg-zinc-800 text-zinc-400'}`}>
+                    {/* Timer + progress */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-zinc-400 text-sm">Savol {(currentQData.index ?? 0) + 1} / {currentQData.total}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400 text-sm">Javob berdi:</span>
+                          <span className="text-white font-bold">{answeredCount}/{players.length || '?'}</span>
+                        </div>
+                        <span className={`font-black text-2xl ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : timeLeft <= 10 ? 'text-yellow-400' : 'text-white'}`}>
+                          {timeLeft}s
+                        </span>
+                      </div>
+                      <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                        <div className={`h-full transition-all duration-1000 rounded-full ${timerPct > 50 ? 'bg-emerald-500' : timerPct > 25 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${timerPct}%` }} />
+                      </div>
+                    </div>
+
+                    {/* Current question */}
+                    <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-2xl p-4 mb-4">
+                      <p className="text-white font-bold text-base leading-relaxed mb-2">{currentQData.question}</p>
+                      {currentQData.imageUrl && (
+                        <img src={`${API_BASE}${currentQData.imageUrl}`} alt="" className="mb-2 max-h-32 rounded-lg object-cover" />
+                      )}
+                      <div className="grid grid-cols-2 gap-2 mt-3">
+                        {(currentQData.options as string[] || []).map((o: string, i: number) => (
+                          <div key={i} className={`px-3 py-2 rounded-xl text-sm font-medium
+                            ${['bg-red-500/20 text-red-300', 'bg-blue-500/20 text-blue-300', 'bg-yellow-500/20 text-yellow-300', 'bg-emerald-500/20 text-emerald-300'][i]}
+                            ${i === currentQData.correct ? 'ring-2 ring-white/40' : ''}`}>
                             {['▲', '◆', '●', '■'][i]} {o}
+                            {i === currentQData.correct && <span className="ml-1 text-xs">✓</span>}
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {leaderboardData ? (
-                      <div className="bg-zinc-800 rounded-xl p-4 mb-4 border border-violet-500/30">
-                        <h3 className="text-white font-bold mb-3">📊 Natijalar</h3>
-                        <div className="mb-3">
-                          <div className="flex gap-2 h-20 items-end bg-zinc-900/50 p-3 rounded-lg">
-                            {leaderboardData.prevQuestion?.optionCounts.map((oc: any, idx: number) => {
-                              const maxCount = Math.max(...leaderboardData.prevQuestion.optionCounts.map((o: any) => o.count), 1);
-                              const h = (oc.count / maxCount) * 100;
-                              return (
-                                <div key={idx} className="flex-1 flex flex-col items-center gap-1">
-                                  <span className="text-xs font-bold text-white">{oc.count}</span>
-                                  <div className={`w-full rounded-t-sm ${oc.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`} style={{ height: `${h}%` }} />
-                                  <span className="text-xs text-zinc-500">{['A', 'B', 'C', 'D'][idx]}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                          {leaderboardData.players.slice(0, 10).map((p: any, i: number) => (
-                            <div key={p.id || i} className="flex items-center gap-3 bg-zinc-900/80 p-2 rounded">
-                              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-zinc-300 text-black' : i === 2 ? 'bg-amber-600 text-white' : 'bg-zinc-800 text-zinc-400'}`}>{i + 1}</span>
-                              <span className="text-white flex-1 font-medium">{p.fullName}</span>
-                              <span className="text-violet-400 font-bold">{p.score}</span>
-                              {p.streak >= 2 && <span className="text-amber-400 text-xs">🔥{p.streak}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
+                    {/* Live leaderboard (from previous question) */}
+                    {liveScores.length > 0 && (
                       <div className="bg-zinc-800 rounded-xl p-3 mb-4">
-                        <p className="text-sm text-zinc-300 mb-2">O'yinchilar ({players.length})</p>
-                        <div className="space-y-1 max-h-[150px] overflow-y-auto">
-                          {players.map((p, i) => (
+                        <p className="text-zinc-400 text-xs mb-2">Joriy reyting</p>
+                        <div className="space-y-1 max-h-[180px] overflow-y-auto">
+                          {liveScores.slice(0, 8).map((p, i) => (
                             <div key={p.id || i} className="flex items-center gap-2 text-sm">
-                              <span className="text-zinc-500 w-5 text-xs">{i + 1}</span>
-                              <span className="text-white flex-1">{p.fullName}</span>
-                              <span className="text-violet-400 font-bold">{p.score}</span>
+                              <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold
+                                ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-400'}`}>{i + 1}</span>
+                              <span className="text-white flex-1 truncate">{p.fullName}</span>
+                              <span className="text-violet-400 font-bold">
+                                <AnimatedNum value={p.score} />
+                              </span>
                               {p.streak >= 2 && <span className="text-amber-400 text-xs">🔥{p.streak}</span>}
                             </div>
                           ))}
@@ -590,31 +669,132 @@ export default function LiveQuizPage() {
                       </div>
                     )}
 
-                    <div className="flex gap-3">
-                      <button onClick={nextQ} disabled={(selected.currentQ || 0) >= (selected.questions?.length || 0) - 1}
-                        className="flex-1 py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition disabled:opacity-30">→ Keyingi savol</button>
-                      <button onClick={finishQuiz} className="px-6 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/20 rounded-xl transition">Yakunlash</button>
-                    </div>
+                    {/* ACTION: Show Results button */}
+                    <button onClick={showResults}
+                      className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition">
+                      📊 Natijani ko'rsatish
+                    </button>
+                    <p className="text-xs text-zinc-500 text-center mt-1">Barcha o'yinchilar ekraniga leaderboard chiqadi</p>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-zinc-400 mb-4">Quiz tugagan. Natijalarni ko'rish uchun Natijalar tabiga o'ting.</p>
-                    <button onClick={() => { setTab('stats'); loadStats(); }} className="px-6 py-2 bg-violet-600 text-white rounded-lg">📊 Natijalar</button>
+                )}
+
+                {/* ── LEADERBOARD PHASE ────────────────────────────── */}
+                {gamePhase === 'leaderboard' && leaderboardData && (
+                  <div>
+                    {/* Question result */}
+                    {leaderboardData.prevQuestion && (
+                      <div className="bg-zinc-800 rounded-xl p-4 mb-4">
+                        <p className="text-zinc-400 text-xs mb-1">Savol natijasi:</p>
+                        <p className="text-white text-sm font-medium mb-3">{leaderboardData.prevQuestion.question}</p>
+                        <div className="flex gap-2 h-20 items-end">
+                          {leaderboardData.prevQuestion.optionCounts.map((oc: any, idx: number) => {
+                            const maxC = Math.max(...leaderboardData.prevQuestion.optionCounts.map((o: any) => o.count), 1);
+                            const h = Math.max((oc.count / maxC) * 100, 4);
+                            return (
+                              <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                                <span className="text-xs font-bold text-white">{oc.count}</span>
+                                <div className={`w-full rounded-t-sm ${oc.isCorrect ? 'bg-emerald-500' : 'bg-rose-500/60'}`} style={{ height: `${h}%` }} />
+                                <span className={`text-xs ${oc.isCorrect ? 'text-emerald-400 font-bold' : 'text-zinc-500'}`}>{['A', 'B', 'C', 'D'][idx]}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <p className="text-xs text-zinc-500 mt-2">{leaderboardData.prevQuestion.totalAnswers} javob berildi</p>
+                      </div>
+                    )}
+
+                    {/* Animated Leaderboard */}
+                    <div className="bg-zinc-800 rounded-xl p-4 mb-4">
+                      <h3 className="text-white font-bold mb-3">🏆 Reyting</h3>
+                      <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                        {(leaderboardData.players || []).map((p: any, i: number) => (
+                          <div key={p.id || i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all
+                            ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' : i === 1 ? 'bg-zinc-400/10' : i === 2 ? 'bg-amber-700/10' : 'bg-zinc-900/60'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0
+                              ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-300 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
+                              {i + 1}
+                            </div>
+                            <span className="text-white flex-1 font-medium truncate">{p.fullName}</span>
+                            {p.streak >= 2 && <span className="text-amber-400 text-xs">🔥{p.streak}</span>}
+                            <span className="text-violet-400 font-black text-lg">
+                              <AnimatedNum value={p.score} duration={1000} />
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* NEXT buttons */}
+                    <div className="flex gap-3">
+                      {leaderboardData.nextIndex < leaderboardData.totalQuestions ? (
+                        <button onClick={sendNextQuestion}
+                          className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold rounded-xl">
+                          → {leaderboardData.nextIndex + 1}-savol boshlash
+                        </button>
+                      ) : (
+                        <button onClick={sendNextQuestion}
+                          className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold rounded-xl">
+                          → Oxirgi savol
+                        </button>
+                      )}
+                      <button onClick={finishQuiz}
+                        className="px-5 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/20 rounded-xl">
+                        Yakunlash
+                      </button>
+                    </div>
+                    <p className="text-xs text-zinc-500 text-center mt-1">
+                      Tugmani bosganda keyingi savol barcha ekraniga chiqadi va taymer boshlanadi
+                    </p>
+                  </div>
+                )}
+
+                {/* ── FINISHED PHASE ───────────────────────────────── */}
+                {gamePhase === 'finished' && (
+                  <div>
+                    <div className="text-center mb-4">
+                      <div className="text-4xl mb-2">🏆</div>
+                      <h3 className="text-white font-black text-xl">Quiz yakunlandi!</h3>
+                      <p className="text-zinc-400 text-sm">{liveScores.length} o'yinchi qatnashdi</p>
+                    </div>
+                    <div className="space-y-2 mb-4 max-h-[300px] overflow-y-auto">
+                      {liveScores.map((p, i) => (
+                        <div key={p.id || i} className={`flex items-center gap-3 px-4 py-3 rounded-xl
+                          ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' : i === 1 ? 'bg-zinc-400/10' : i === 2 ? 'bg-amber-700/10' : 'bg-zinc-800'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm
+                            ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-300 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-300'}`}>{i + 1}</div>
+                          <span className="text-white flex-1 font-medium">{p.fullName}</span>
+                          <span className="text-violet-400 font-black text-lg">{p.score?.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => { setTab('stats'); loadStats(); }} className="w-full py-2 bg-violet-600/20 text-violet-400 border border-violet-500/30 rounded-xl">
+                      📊 Batafsil statistika
+                    </button>
+                  </div>
+                )}
+
+                {/* Idle state */}
+                {gamePhase === 'idle' && (
+                  <div className="text-center py-12">
+                    <p className="text-zinc-500 mb-4">Quiz hali boshlanmagan</p>
+                    <button onClick={() => setTab('questions')} className="px-6 py-2 bg-violet-600 text-white rounded-xl">
+                      📝 Savollar tabiga o'tish
+                    </button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* === STATS TAB === */}
+            {/* ═══════════ STATS TAB ═══════════ */}
             {tab === 'stats' && (
-              <div className="p-4">
+              <div className="p-4 overflow-y-auto flex-1">
                 {!statsData ? (
                   <div className="text-center py-8 text-zinc-500">
                     <p>Ma'lumot yuklanmoqda...</p>
+                    <button onClick={loadStats} className="mt-3 px-4 py-2 bg-zinc-800 text-white rounded-lg text-sm">Yuklash</button>
                   </div>
                 ) : (
                   <div>
-                    {/* Summary */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
                       <div className="bg-zinc-800 rounded-xl p-3 text-center">
                         <p className="text-2xl font-bold text-violet-400">{statsData.quiz.totalPlayers}</p>
@@ -626,62 +806,49 @@ export default function LiveQuizPage() {
                       </div>
                       <div className="bg-zinc-800 rounded-xl p-3 text-center">
                         <p className="text-2xl font-bold text-amber-400">
-                          {statsData.questionAnalysis.length > 0
-                            ? Math.round(statsData.questionAnalysis.reduce((s: number, q: any) => s + q.correctPercentage, 0) / statsData.questionAnalysis.length)
-                            : 0}%
+                          {statsData.questionAnalysis.length > 0 ? Math.round(statsData.questionAnalysis.reduce((s: number, q: any) => s + q.correctPercentage, 0) / statsData.questionAnalysis.length) : 0}%
                         </p>
-                        <p className="text-xs text-zinc-500">O'rtacha to'g'ri</p>
+                        <p className="text-xs text-zinc-500">O'rtacha</p>
                       </div>
                     </div>
 
-                    {/* Stats tabs */}
                     <div className="flex border-b border-zinc-700 mb-4">
                       {(['leaderboard', 'questions', 'player'] as const).map(st => (
                         <button key={st} onClick={() => setStatsTab(st)}
                           className={`px-3 py-2 text-xs font-medium transition ${statsTab === st ? 'text-violet-400 border-b-2 border-violet-400' : 'text-zinc-400'}`}>
-                          {st === 'leaderboard' ? '🏆 Reyting' : st === 'questions' ? '📊 Savollar tahlili' : '👤 O\'yinchi profili'}
+                          {st === 'leaderboard' ? '🏆 Reyting' : st === 'questions' ? '📊 Savollar' : '👤 O\'yinchi'}
                         </button>
                       ))}
                     </div>
 
-                    {/* Leaderboard */}
                     {statsTab === 'leaderboard' && (
                       <div className="space-y-2 max-h-[400px] overflow-y-auto">
                         {statsData.leaderboard.map((p: any, i: number) => (
                           <div key={p.id} onClick={() => { setStatsPlayerSelected(statsData.playerDetails.find((pd: any) => pd.id === p.id)); setStatsTab('player'); }}
-                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition hover:ring-1 hover:ring-violet-500/50 ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' : i === 1 ? 'bg-zinc-400/10 border border-zinc-400/20' : i === 2 ? 'bg-amber-700/10 border border-amber-700/20' : 'bg-zinc-800'}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-300'}`}>{i + 1}</div>
+                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:ring-1 hover:ring-violet-500/50
+                              ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' : i === 1 ? 'bg-zinc-400/10' : i === 2 ? 'bg-amber-700/10' : 'bg-zinc-800'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                              ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-300'}`}>{i + 1}</div>
                             <span className="flex-1 text-white font-medium">{p.fullName}</span>
                             <div className="text-right">
                               <p className="text-violet-400 font-bold text-lg">{p.score}</p>
-                              <p className="text-xs text-zinc-500">{statsData.playerDetails.find((pd: any) => pd.id === p.id)?.accuracy ?? 0}% to'g'ri</p>
+                              <p className="text-xs text-zinc-500">{statsData.playerDetails.find((pd: any) => pd.id === p.id)?.accuracy ?? 0}%</p>
                             </div>
                           </div>
                         ))}
-                        {!statsData.leaderboard.length && <p className="text-zinc-500 text-center py-6">O'yinchilar yo'q</p>}
                       </div>
                     )}
 
-                    {/* Question analysis */}
                     {statsTab === 'questions' && (
                       <div className="space-y-4 max-h-[400px] overflow-y-auto">
                         {statsData.questionAnalysis.map((q: any, i: number) => (
                           <div key={q.id} className="bg-zinc-800 rounded-xl p-4">
                             <div className="flex items-start gap-2 mb-3">
                               <span className="text-zinc-500 text-sm">{i + 1}.</span>
-                              <div className="flex-1">
-                                <p className="text-white text-sm font-medium">{q.question}</p>
-                                {q.imageUrl && <img src={`${API_BASE}${q.imageUrl}`} alt="" className="mt-1 h-16 rounded object-cover" />}
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                <span className={`text-sm font-bold ${q.correctPercentage >= 70 ? 'text-emerald-400' : q.correctPercentage >= 40 ? 'text-amber-400' : 'text-red-400'}`}>
-                                  {q.correctPercentage}%
-                                </span>
-                                <p className="text-xs text-zinc-500">to'g'ri</p>
-                              </div>
+                              <p className="text-white text-sm font-medium flex-1">{q.question}</p>
+                              <span className={`text-sm font-bold ${q.correctPercentage >= 70 ? 'text-emerald-400' : q.correctPercentage >= 40 ? 'text-amber-400' : 'text-red-400'}`}>{q.correctPercentage}%</span>
                             </div>
-                            {/* Bar chart */}
-                            <div className="flex gap-2 h-16 items-end">
+                            <div className="flex gap-2 h-14 items-end">
                               {q.optionDistribution.map((od: any, idx: number) => (
                                 <div key={idx} className="flex-1 flex flex-col items-center gap-1">
                                   <span className="text-xs text-white">{od.count}</span>
@@ -690,18 +857,16 @@ export default function LiveQuizPage() {
                                 </div>
                               ))}
                             </div>
-                            <p className="text-xs text-zinc-500 mt-1">{q.totalAnswers} javob • O'rtacha vaqt: {(q.avgTimeMs / 1000).toFixed(1)}s</p>
                           </div>
                         ))}
                       </div>
                     )}
 
-                    {/* Player profile */}
                     {statsTab === 'player' && (
                       <div>
                         {statsPlayerSelected ? (
                           <div>
-                            <button onClick={() => setStatsPlayerSelected(null)} className="text-xs text-zinc-400 hover:text-white mb-4 flex items-center gap-1">← Orqaga</button>
+                            <button onClick={() => setStatsPlayerSelected(null)} className="text-xs text-zinc-400 hover:text-white mb-4">← Orqaga</button>
                             <div className="bg-zinc-800 rounded-xl p-4 mb-4">
                               <h3 className="text-white font-bold text-lg">{statsPlayerSelected.fullName}</h3>
                               <div className="grid grid-cols-3 gap-3 mt-3">
@@ -710,15 +875,13 @@ export default function LiveQuizPage() {
                                 <div className="text-center"><p className="text-amber-400 font-bold text-xl">{statsPlayerSelected.accuracy}%</p><p className="text-xs text-zinc-500">To'g'ri</p></div>
                               </div>
                             </div>
-                            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                            <div className="space-y-2 max-h-[280px] overflow-y-auto">
                               {statsPlayerSelected.answers.map((a: any, i: number) => (
                                 <div key={a.questionId} className={`flex items-start gap-3 p-3 rounded-lg ${a.isCorrect ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
-                                  <span className={`text-sm font-bold mt-0.5 ${a.isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>{a.isCorrect ? '✓' : '✗'}</span>
-                                  <div className="flex-1 min-w-0">
+                                  <span className={`text-sm font-bold ${a.isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>{a.isCorrect ? '✓' : '✗'}</span>
+                                  <div className="flex-1">
                                     <p className="text-white text-sm">{i + 1}. {a.question}</p>
-                                    <p className="text-xs text-zinc-500 mt-0.5">
-                                      {a.selected !== null ? `${['A', 'B', 'C', 'D'][a.selected]} tanlandi` : 'Javob bermadi'} • {a.points} ball • {(a.timeMs / 1000).toFixed(1)}s
-                                    </p>
+                                    <p className="text-xs text-zinc-500 mt-0.5">{a.selected !== null ? `${['A', 'B', 'C', 'D'][a.selected]} • ` : 'Javob bermadi • '}{a.points} ball • {(a.timeMs / 1000).toFixed(1)}s</p>
                                   </div>
                                 </div>
                               ))}
@@ -726,19 +889,15 @@ export default function LiveQuizPage() {
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            <p className="text-zinc-400 text-sm mb-3">O'yinchini bosing — batafsil ko'rasiz:</p>
                             {statsData.playerDetails.map((p: any, i: number) => (
                               <button key={p.id} onClick={() => setStatsPlayerSelected(p)}
-                                className="w-full flex items-center gap-3 p-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition text-left">
+                                className="w-full flex items-center gap-3 p-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-left">
                                 <span className="text-zinc-500 text-sm w-5">{i + 1}</span>
                                 <span className="text-white flex-1">{p.fullName}</span>
-                                <div className="text-right">
-                                  <p className="text-violet-400 font-bold">{p.score}</p>
-                                  <p className="text-xs text-zinc-500">{p.accuracy}%</p>
-                                </div>
+                                <p className="text-violet-400 font-bold">{p.score}</p>
+                                <p className="text-xs text-zinc-500">{p.accuracy}%</p>
                               </button>
                             ))}
-                            {!statsData.playerDetails.length && <p className="text-zinc-500 text-center py-6">O'yinchilar yo'q</p>}
                           </div>
                         )}
                       </div>

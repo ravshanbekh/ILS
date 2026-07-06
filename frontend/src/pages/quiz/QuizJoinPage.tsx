@@ -129,20 +129,6 @@ export default function QuizJoinPage() {
       setMyRank(me?.rank ?? null);
       setStage('finished');
       localStorage.removeItem('quizSession');
-
-      // Save to localStorage quiz history
-      try {
-        const history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
-        history.unshift({
-          quizTitle: quizInfo?.title || 'Quiz',
-          fullName: currentPlayer.fullName,
-          score: scoreRef.current,
-          rank: me?.rank ?? null,
-          totalPlayers: data.leaderboard.length,
-          date: new Date().toISOString(),
-        });
-        localStorage.setItem('quizHistory', JSON.stringify(history.slice(0, 20)));
-      } catch {}
     });
 
     setSocket(s);
