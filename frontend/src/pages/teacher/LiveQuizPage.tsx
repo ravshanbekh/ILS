@@ -90,6 +90,11 @@ export default function LiveQuizPage() {
       totalPlayersRef.current = data.playerCount;
     });
 
+    s.on('quiz:player-left', (data) => {
+      setPlayers(prev => prev.filter(p => p.id !== data.playerId));
+      totalPlayersRef.current = data.playerCount;
+    });
+
     // Real-time score update — savol vaqtida
     s.on('quiz:score-update', (data) => {
       setLiveScores(data.players);
@@ -600,9 +605,22 @@ export default function LiveQuizPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-1 max-h-[200px] overflow-y-auto">
                         {players.map((p, i) => (
-                          <div key={p.id || i} className="flex items-center gap-2 bg-zinc-900/60 rounded-lg px-3 py-1.5">
-                            <span className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white">{p.fullName[0]}</span>
-                            <span className="text-white text-xs truncate">{p.fullName}</span>
+                          <div key={p.id || i} className="flex items-center justify-between bg-zinc-900/60 rounded-lg px-3 py-1.5 group">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              <span className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">{p.fullName[0]}</span>
+                              <span className="text-white text-xs truncate">{p.fullName}</span>
+                            </div>
+                            <button
+                              onClick={async () => {
+                                if (!window.confirm(`Rostdan ham ${p.fullName} ni chiqarib yubormoqchimisiz?`)) return;
+                                try { await liveQuizApi.kickPlayer(selected!.id, p.id); }
+                                catch(e:any) { alert(e.response?.data?.error || "Xatolik"); }
+                              }}
+                              className="text-red-500 opacity-0 group-hover:opacity-100 transition hover:bg-red-500/20 rounded p-1"
+                              title="O'yinchini chiqarib yuborish"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
                           </div>
                         ))}
                         {!players.length && <p className="text-zinc-500 text-xs col-span-2 text-center py-4 animate-pulse">O'yinchilar kutilmoqda...</p>}

@@ -621,6 +621,62 @@ export const joinQuiz = async (req: Request, res: Response) => {
   }
 };
 
+// ─── O'yinchi: Ismni o'zgartirish ────────────────────────────────────────────
+export const updatePlayerName = async (req: Request, res: Response) => {
+  try {
+    const { playerId } = req.params;
+    const { fullName } = req.body;
+    if (!fullName?.trim()) return res.status(400).json({ error: 'Ism majburiy' });
+
+    const player = await prisma.liveQuizPlayer.update({
+      where: { id: playerId },
+      data: { fullName: fullName.trim() },
+      include: { quiz: true },
+    });
+
+    const io = getIO();
+    if (io) {
+      // O'qituvchiga ro'yxatni yangilash uchun event
+      const players = await prisma.liveQuizPlayer.findMany({
+        where: { quizId: player.quizId },
+        orderBy: { score: 'desc' },
+      });
+      io.to(`quiz-${player.quiz.code}`).emit('quiz:score-update', {
+        players: players.map((p, i) => ({ ...p, rank: i + 1 })),
+        answeredCount: 0,
+      });
+    }
+    res.json({ data: player });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── O'qituvchi: O'yinchini chiqarib yuborish ─────────────────────────────────
+export const kickPlayer = async (req: Request, res: Response) => {
+  try {
+    const { id, playerId } = req.params;
+    const userId = (req as any).user?.userId;
+
+    const quiz = await prisma.liveQuiz.findUnique({ where: { id } });
+    if (!quiz || quiz.createdById !== userId) return res.status(403).json({ error: 'Ruxsat yo\'q' });
+
+    await prisma.liveQuizPlayer.delete({ where: { id: playerId } });
+
+    const io = getIO();
+    if (io) {
+      io.to(`quiz-${quiz.code}`).emit('quiz:player-kicked', { playerId });
+      // Qolganlar uchun o'yinchilar sonini yangilash
+      const playerCount = await prisma.liveQuizPlayer.count({ where: { quizId: quiz.id } });
+      io.to(`quiz-${quiz.code}`).emit('quiz:player-left', { playerId, playerCount });
+    }
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+
 // ─── O'yinchi: Javob yuborish ─────────────────────────────────────────────────
 export const submitAnswer = async (req: Request, res: Response) => {
   try {

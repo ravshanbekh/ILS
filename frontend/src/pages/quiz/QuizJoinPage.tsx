@@ -74,6 +74,8 @@ export default function QuizJoinPage() {
   const [loading, setLoading] = useState(false);
   const [playerCount, setPlayerCount] = useState(0);
 
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameVal, setEditNameVal] = useState('');
   // Question state
   const [currentQ, setCurrentQ] = useState<QuizQ | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -130,6 +132,16 @@ export default function QuizJoinPage() {
       setStage('finished');
       localStorage.removeItem('quizSession');
     });
+    s.on('quiz:player-kicked', (data) => {
+      if (data.playerId === currentPlayer.id) {
+        alert("Siz o'yindan chetlatildingiz");
+        setStage('code');
+        setPlayer(null);
+        setCode('');
+        localStorage.removeItem('quizSession');
+        s.disconnect();
+      }
+    });
 
     setSocket(s);
   }
@@ -178,6 +190,21 @@ export default function QuizJoinPage() {
       setStage('enter-name');
     } catch (e: any) {
       setError(e.response?.data?.error || 'Kod topilmadi');
+    } finally { setLoading(false); }
+  }
+
+  async function updateName() {
+    if (!editNameVal.trim() || !player) return;
+    setLoading(true);
+    try {
+      await liveQuizApi.updatePlayerName(player.id, editNameVal.trim());
+      const newName = editNameVal.trim();
+      setFullName(newName);
+      setPlayer({ ...player, fullName: newName });
+      localStorage.setItem('quizSession', JSON.stringify({ code: code.trim(), player: { ...player, fullName: newName } }));
+      setIsEditingName(false);
+    } catch (e: any) {
+      alert("Xatolik yuz berdi");
     } finally { setLoading(false); }
   }
 
@@ -518,7 +545,27 @@ export default function QuizJoinPage() {
       <div className="text-center max-w-sm w-full">
         <div className="w-20 h-20 bg-gradient-to-br from-violet-600 to-purple-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl shadow-xl shadow-violet-900/50">⚡</div>
         <h2 className="text-2xl font-black text-white mb-1">{quizInfo?.title}</h2>
-        <p className="text-zinc-400 mb-6">Siz: <span className="text-violet-300 font-bold">{fullName}</span></p>
+        <div className="mb-6 bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800">
+          <p className="text-zinc-400 text-sm mb-1">Siz:</p>
+          {isEditingName ? (
+            <div className="flex gap-2 justify-center">
+              <input 
+                className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1 text-white outline-none w-3/4"
+                value={editNameVal}
+                onChange={e => setEditNameVal(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && updateName()}
+                autoFocus
+              />
+              <button onClick={updateName} disabled={loading} className="px-3 bg-violet-600 rounded-lg text-white">✓</button>
+              <button onClick={() => setIsEditingName(false)} className="px-3 bg-zinc-700 rounded-lg text-white">✕</button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-violet-300 font-bold text-lg">{fullName}</span>
+              <button onClick={() => { setEditNameVal(fullName); setIsEditingName(true); }} className="text-zinc-500 hover:text-white" title="Ismni o'zgartirish">✎</button>
+            </div>
+          )}
+        </div>
         <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6">
           <div className="text-5xl font-black text-violet-300 mb-1 transition-all duration-500">{playerCount}</div>
           <div className="text-zinc-400 text-sm mb-4">o'yinchi ulandi</div>
