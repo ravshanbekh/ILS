@@ -100,7 +100,10 @@ export default function QuizJoinPage() {
 
   function setupSocket(codeToJoin: string, currentPlayer: Player) {
     const s = io(SOCKET_URL, { transports: ['websocket'] });
-    s.emit('join-room', { code: codeToJoin, role: 'player' });
+    
+    s.on('connect', () => {
+      s.emit('join-room', { code: codeToJoin, role: 'player' });
+    });
 
     s.on('quiz:player-joined', (data) => setPlayerCount(data.playerCount));
     s.on('quiz:started', (data) => {

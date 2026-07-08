@@ -79,7 +79,10 @@ export default function LiveQuizPage() {
   useEffect(() => {
     if (!selected?.code) return; // Only connect if we have a generated code
     const s = io(SOCKET_URL, { transports: ['websocket'] });
-    s.emit('join-room', { code: selected.code, role: 'teacher' });
+    
+    s.on('connect', () => {
+      s.emit('join-room', { code: selected.code, role: 'teacher' });
+    });
 
     s.on('quiz:player-joined', (data) => {
       setPlayers(prev => {
