@@ -77,7 +77,7 @@ export default function LiveQuizPage() {
   useEffect(() => { fetchAll(); }, []);
 
   useEffect(() => {
-    if (!selected) return;
+    if (!selected?.code) return; // Only connect if we have a generated code
     const s = io(SOCKET_URL, { transports: ['websocket'] });
     s.emit('join-room', { code: selected.code, role: 'teacher' });
 
@@ -130,7 +130,7 @@ export default function LiveQuizPage() {
 
     setSocket(s);
     return () => { s.disconnect(); clearInterval(timerRef.current); };
-  }, [selected?.id]);
+  }, [selected?.code]); // <--- Dependency on code! Reconnects when code is generated.
 
   async function fetchAll() {
     const [myRes, globalRes] = await Promise.all([
@@ -175,16 +175,23 @@ export default function LiveQuizPage() {
 
   async function loadQuiz(q: Quiz) {
     const res = await liveQuizApi.getById(q.id);
-    setSelected(res.data.data);
-    setPlayers(res.data.data.players || []);
+    const loadedQuiz = res.data.data;
+    setSelected(loadedQuiz);
+    setPlayers(loadedQuiz.players || []);
     setLiveScores([]);
     setAnsweredCount(0);
     setCurrentQData(null);
     setLeaderboardData(null);
     setStatsData(null);
-    setGamePhase('idle');
-    setTab('questions');
     clearInterval(timerRef.current);
+
+    if (loadedQuiz.status === 'waiting' || loadedQuiz.status === 'active') {
+      setTab('game');
+      setGamePhase('lobby'); // Allows teacher to see connected players and resume
+    } else {
+      setGamePhase('idle');
+      setTab('questions');
+    }
   }
 
   async function useGlobal(quiz: Quiz) {
