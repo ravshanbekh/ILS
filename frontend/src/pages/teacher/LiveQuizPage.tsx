@@ -622,7 +622,7 @@ export default function LiveQuizPage() {
                                 try { await liveQuizApi.kickPlayer(selected!.id, p.id); }
                                 catch(e:any) { alert(e.response?.data?.error || "Xatolik"); }
                               }}
-                              className="text-red-500 opacity-0 group-hover:opacity-100 transition hover:bg-red-500/20 rounded p-1"
+                              className="text-red-500 transition hover:bg-red-500/20 rounded p-1"
                               title="O'yinchini chiqarib yuborish"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -694,6 +694,17 @@ export default function LiveQuizPage() {
                                 <AnimatedNum value={p.score} />
                               </span>
                               {p.streak >= 2 && <span className="text-amber-400 text-xs">🔥{p.streak}</span>}
+                              <button
+                                onClick={async () => {
+                                  if (!window.confirm(`Rostdan ham ${p.fullName} ni chiqarib yubormoqchimisiz?`)) return;
+                                  try { await liveQuizApi.kickPlayer(selected!.id, p.id); }
+                                  catch(e:any) { alert(e.response?.data?.error || "Xatolik"); }
+                                }}
+                                className="text-red-500 transition hover:bg-red-500/20 rounded p-1 ml-auto"
+                                title="O'yinchini chiqarib yuborish"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -750,6 +761,17 @@ export default function LiveQuizPage() {
                             <span className="text-violet-400 font-black text-lg">
                               <AnimatedNum value={p.score} duration={1000} />
                             </span>
+                            <button
+                                onClick={async () => {
+                                  if (!window.confirm(`Rostdan ham ${p.fullName} ni chiqarib yubormoqchimisiz?`)) return;
+                                  try { await liveQuizApi.kickPlayer(selected!.id, p.id); }
+                                  catch(e:any) { alert(e.response?.data?.error || "Xatolik"); }
+                                }}
+                                className="text-red-500 transition hover:bg-red-500/20 rounded p-1"
+                                title="O'yinchini chiqarib yuborish"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                              </button>
                           </div>
                         ))}
                       </div>
