@@ -20,7 +20,9 @@ interface Exam {
 }
 
 interface Question {
+  id?: string;
   question: string;
+  imageUrl?: string;
   options: string[];
   correct: number;
 }
@@ -55,6 +57,8 @@ export default function ExamsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [qLoading, setQLoading] = useState(false);
   const [manualQ, setManualQ] = useState<Question>({ question: '', options: ['', '', '', ''], correct: 0 });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [editingQId, setEditingQId] = useState<string | null>(null);
 
   // Results
   const [results, setResults] = useState<any>(null);
@@ -139,10 +143,23 @@ export default function ExamsPage() {
     if (!selected || !manualQ.question.trim()) return;
     setQLoading(true);
     try {
-      await examApi.addQuestions(selected.id, [manualQ]);
+      const form = new FormData();
+      form.append('question', manualQ.question);
+      form.append('options', JSON.stringify(manualQ.options));
+      form.append('correct', manualQ.correct.toString());
+      if (imageFile) form.append('image', imageFile);
+      else if (manualQ.imageUrl === null) form.append('imageUrl', ''); // for clearing image
+
+      if (editingQId) {
+        await examApi.updateQuestionWithImage(selected.id, editingQId, form);
+      } else {
+        await examApi.addQuestionWithImage(selected.id, form);
+      }
       const res = await examApi.getById(selected.id);
       setQuestions(res.data.data.questions);
       setManualQ({ question: '', options: ['', '', '', ''], correct: 0 });
+      setImageFile(null);
+      setEditingQId(null);
       fetchExams();
     } finally { setQLoading(false); }
   }
@@ -326,13 +343,39 @@ export default function ExamsPage() {
 
                 {/* Manual add */}
                 <div className="bg-zinc-800/50 rounded-xl p-4 mb-4">
-                  <h4 className="text-sm font-medium text-white mb-3">Qo'lda savol qo'shish</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-white">{editingQId ? 'Savolni tahrirlash' : 'Q\'olda savol qo\'shish'}</h4>
+                    {editingQId && (
+                      <button onClick={() => { setEditingQId(null); setManualQ({ question: '', options: ['', '', '', ''], correct: 0 }); setImageFile(null); }} className="text-xs text-zinc-400 hover:text-white">
+                        Bekor qilish
+                      </button>
+                    )}
+                  </div>
                   <input
                     className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white mb-2 text-sm focus:border-blue-500 outline-none"
                     placeholder="Savol matni..."
                     value={manualQ.question}
                     onChange={e => setManualQ(q => ({ ...q, question: e.target.value }))}
                   />
+                  
+                  {/* Image Upload */}
+                  <div className="mb-3 flex items-center gap-3">
+                    <label className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg text-xs cursor-pointer transition">
+                      🖼️ Rasm {imageFile || manualQ.imageUrl ? 'o\'zgartirish' : 'qo\'shish'}
+                      <input type="file" accept="image/*" className="hidden" onChange={e => {
+                        if (e.target.files?.[0]) setImageFile(e.target.files[0]);
+                      }} />
+                    </label>
+                    {(imageFile || manualQ.imageUrl) && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-blue-400">Rasm tanlandi</span>
+                        <button onClick={() => { setImageFile(null); setManualQ(q => ({ ...q, imageUrl: undefined })); }} className="text-xs text-red-400 hover:text-red-300">
+                          Olib tashlash
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     {manualQ.options.map((opt, i) => (
                       <div key={i} className="flex items-center gap-2">
@@ -353,7 +396,7 @@ export default function ExamsPage() {
                     onClick={addManualQ}
                     disabled={qLoading || !manualQ.question.trim()}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition disabled:opacity-50"
-                  >{qLoading ? '...' : '+ Qo\'shish'}</button>
+                  >{qLoading ? '...' : (editingQId ? 'Saqlash' : '+ Qo\'shish')}</button>
                 </div>
 
                 {/* Question list */}
@@ -362,7 +405,10 @@ export default function ExamsPage() {
                     <div key={q.id || i} className="bg-zinc-800 rounded-lg p-3 group">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <p className="text-sm text-white font-medium mb-1">{i + 1}. {q.question}</p>
+                          <p className="text-sm text-white font-medium mb-1">
+                            {i + 1}. {q.question}
+                            {q.imageUrl && <span className="ml-2 text-xs text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">🖼️ Rasm</span>}
+                          </p>
                           <div className="grid grid-cols-2 gap-1">
                             {(q.options as string[]).map((o, j) => (
                               <span key={j} className={`text-xs px-2 py-1 rounded ${j === q.correct ? 'bg-emerald-500/20 text-emerald-400 font-medium' : 'text-zinc-400'}`}>
@@ -371,10 +417,22 @@ export default function ExamsPage() {
                             ))}
                           </div>
                         </div>
-                        <button
-                          onClick={() => deleteQ(q.id)}
-                          className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-lg transition"
-                        >×</button>
+                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-3 transition">
+                          <button
+                            onClick={() => {
+                              setEditingQId(q.id);
+                              setManualQ({ question: q.question, options: q.options, correct: q.correct, imageUrl: q.imageUrl });
+                              setImageFile(null);
+                            }}
+                            className="text-blue-400 hover:text-blue-300 text-sm"
+                            title="Tahrirlash"
+                          >✏️</button>
+                          <button
+                            onClick={() => deleteQ(q.id)}
+                            className="text-red-400 hover:text-red-300 text-lg"
+                            title="O'chirish"
+                          >×</button>
+                        </div>
                       </div>
                     </div>
                   ))}

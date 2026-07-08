@@ -11,7 +11,7 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 function AnimatedNum({ value, duration = 800 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(value);
   const prev = useRef(value);
-  const raf = useRef<number>();
+  const raf = useRef<number>(0);
   useEffect(() => {
     const from = prev.current;
     const begin = Date.now();
@@ -23,7 +23,7 @@ function AnimatedNum({ value, duration = 800 }: { value: number; duration?: numb
       else prev.current = value;
     }
     raf.current = requestAnimationFrame(tick);
-    return () => raf.current && cancelAnimationFrame(raf.current);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
   }, [value]);
   return <>{display.toLocaleString()}</>;
 }
@@ -71,7 +71,7 @@ export default function LiveQuizPage() {
   const [qLoading, setQLoading] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
   const [editingQId, setEditingQId] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<number>(0);
   const totalPlayersRef = useRef(0);
 
   useEffect(() => { fetchAll(); }, []);

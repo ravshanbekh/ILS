@@ -21,7 +21,7 @@ const OPTION_STYLES = [
 function AnimatedScore({ target, duration = 1200 }: { target: number; duration?: number }) {
   const [display, setDisplay] = useState(0);
   const start = useRef(0);
-  const raf = useRef<number>();
+  const raf = useRef<number>(0);
 
   useEffect(() => {
     const begin = Date.now();
@@ -35,7 +35,7 @@ function AnimatedScore({ target, duration = 1200 }: { target: number; duration?:
       else start.current = target;
     }
     raf.current = requestAnimationFrame(tick);
-    return () => raf.current && cancelAnimationFrame(raf.current);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
   }, [target]);
 
   return <>{display.toLocaleString()}</>;
@@ -94,7 +94,7 @@ export default function QuizJoinPage() {
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [scoreHistory, setScoreHistory] = useState<Array<{ q: number; pts: number; total: number }>>([]);
 
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<number>(0);
   const scoreRef = useRef(0);
   const qIndexRef = useRef(0);
 
@@ -138,7 +138,7 @@ export default function QuizJoinPage() {
     s.on('quiz:player-kicked', (data) => {
       if (data.playerId === currentPlayer.id) {
         alert("Siz o'yindan chetlatildingiz");
-        setStage('code');
+        setStage('enter-code');
         setPlayer(null);
         setCode('');
         localStorage.removeItem('quizSession');

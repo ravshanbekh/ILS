@@ -140,14 +140,26 @@ export const deleteExam = async (req: Request, res: Response) => {
   }
 };
 
-// ─── O'qituvchi: Savol qo'shish (bitta) ─────────────────────────────────────
+// ─── O'qituvchi: Savol qo'shish (bitta yoki ko'p) ────────────────────────────────
 export const addQuestions = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { questions } = req.body; // [{ question, options: [], correct }]
-    if (!Array.isArray(questions) || questions.length === 0) {
-      return res.status(400).json({ error: 'questions array kerak' });
+    let questions = req.body.questions;
+    
+    // Agar form-data orqali 1 ta savol kelsa
+    if (!questions && req.body.question) {
+      questions = [{
+        question: req.body.question,
+        options: JSON.parse(req.body.options || '[]'),
+        correct: parseInt(req.body.correct || '0', 10),
+      }];
+    } else if (typeof questions === 'string') {
+      questions = JSON.parse(questions);
     }
+    
+    if (!Array.isArray(questions)) return res.status(400).json({ error: 'Savollar formati noto\'g\'ri' });
+
+    const imageUrl = req.file ? `/uploads/exam-images/${req.file.filename}` : undefined;
 
     const existing = await prisma.examQuestion.count({ where: { examId: id } });
     const data = questions.map((q: any, i: number) => ({
@@ -155,12 +167,40 @@ export const addQuestions = async (req: Request, res: Response) => {
       question: q.question,
       options: q.options,
       correct: q.correct,
+      imageUrl: imageUrl || q.imageUrl,
       order: existing + i,
     }));
 
     await prisma.examQuestion.createMany({ data });
     const total = await prisma.examQuestion.count({ where: { examId: id } });
     res.status(201).json({ message: `${questions.length} ta savol qo'shildi`, total });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── O'qituvchi: Savolni tahrirlash ──────────────────────────────────────────
+export const updateQuestion = async (req: Request, res: Response) => {
+  try {
+    const { id, qId } = req.params;
+    
+    const updateData: any = {};
+    if (req.body.question) updateData.question = req.body.question;
+    if (req.body.options) updateData.options = typeof req.body.options === 'string' ? JSON.parse(req.body.options) : req.body.options;
+    if (req.body.correct !== undefined) updateData.correct = parseInt(req.body.correct, 10);
+    
+    if (req.file) {
+      updateData.imageUrl = `/uploads/exam-images/${req.file.filename}`;
+    } else if (req.body.imageUrl === '') {
+      updateData.imageUrl = null;
+    }
+
+    await prisma.examQuestion.update({
+      where: { id: qId },
+      data: updateData,
+    });
+    
+    res.json({ message: 'Savol tahrirlandi' });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -371,7 +411,8 @@ async function getRandomQuestions(examId: string, count: number) {
     const newOptions = [...opts].sort(() => Math.random() - 0.5);
     return { 
       id: q.id, 
-      question: q.question, 
+      question: q.question,
+      imageUrl: q.imageUrl,
       options: newOptions,
     };
   });

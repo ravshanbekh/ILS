@@ -493,12 +493,13 @@ model Exam {
 
 /// Imtihon savollari
 model ExamQuestion {
-  id       String @id @default(uuid()) @db.Uuid
-  examId   String @map("exam_id") @db.Uuid
+  id       String  @id @default(uuid()) @db.Uuid
+  examId   String  @map("exam_id") @db.Uuid
   question String
-  options  Json   // ["variant A", "variant B", "variant C", "variant D"]
-  correct  Int    // 0-3 (to'g'ri javob indeksi)
-  order    Int    @default(0)
+  imageUrl String? @map("image_url")
+  options  Json    // ["variant A", "variant B", "variant C", "variant D"]
+  correct  Int     // 0-3 (to'g'ri javob indeksi)
+  order    Int     @default(0)
 
   exam    Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
   answers ExamAnswer[]

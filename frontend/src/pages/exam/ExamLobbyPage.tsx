@@ -21,6 +21,7 @@ interface ExamInfo {
 interface Question {
   id: string;
   question: string;
+  imageUrl?: string;
   options: string[];
   correct: number;
   order: number;
@@ -302,8 +303,11 @@ export default function ExamLobbyPage() {
         {/* Question */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 pb-4">
           <div className="w-full max-w-2xl">
-            <div className="bg-white/5 backdrop-blur rounded-2xl p-6 mb-4 text-center min-h-[100px] flex items-center justify-center">
+            <div className="bg-white/5 backdrop-blur rounded-2xl p-6 mb-4 text-center min-h-[100px] flex flex-col items-center justify-center gap-4">
               <p className="text-white text-xl font-semibold leading-relaxed">{q.question}</p>
+              {q.imageUrl && (
+                <img src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${q.imageUrl}`} alt="Savol rasmi" className="max-h-60 rounded-xl object-contain shadow-lg" />
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
