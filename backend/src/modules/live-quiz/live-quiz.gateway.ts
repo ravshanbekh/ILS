@@ -3,13 +3,8 @@ import { Server as HttpServer } from 'http';
 
 let io: SocketIOServer | null = null;
 
-export function initSocketIO(httpServer: HttpServer) {
-  io = new SocketIOServer(httpServer, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST'],
-    },
-  });
+export function initSocketIO(socketIoServer: SocketIOServer) {
+  io = socketIoServer;
 
   io.on('connection', (socket) => {
     console.log(`[Socket] Yangi ulanish: ${socket.id}`);

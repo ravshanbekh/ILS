@@ -36,9 +36,9 @@ const app = express();
 const httpServer = createServer(app);
 
 // Initsializatsiya Socket.io (mavjud)
-initSocket(httpServer);
+const socketIoServer = initSocket(httpServer);
 // Live Quiz Socket.IO
-initSocketIO(httpServer);
+initSocketIO(socketIoServer);
 
 // ============ MIDDLEWARE ============
 
