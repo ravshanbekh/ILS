@@ -358,12 +358,12 @@ export const submitVideos = async (req: Request, res: Response) => {
 async function getRandomQuestions(examId: string, count: number) {
   const all = await prisma.examQuestion.findMany({ where: { examId } });
   const shuffled = all.sort(() => Math.random() - 0.5).slice(0, count);
-  // Options ham random bo'lsin (correct indeksni saqlagan holda)
+  
   return shuffled.map(q => {
-    const opts = q.options as string[];
-    const indices = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
-    const newOptions = indices.map(i => opts[i]);
-    const newCorrect = indices.indexOf(q.correct);
-    return { ...q, options: newOptions, correct: newCorrect };
+    return { 
+      id: q.id, 
+      question: q.question, 
+      options: q.options,
+    };
   });
 }
