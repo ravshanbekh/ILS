@@ -110,7 +110,7 @@ export default function LiveQuizPage() {
     });
 
     // Question (teacher presses "Keyingi savol") — received by students
-    s.on('quiz:question', (data) => {
+    const onQuestion = (data: any) => {
       setCurrentQData(data);
       setGamePhase('question');
       setAnsweredCount(0);
@@ -124,7 +124,10 @@ export default function LiveQuizPage() {
           return t - 1;
         });
       }, 1000);
-    });
+    };
+
+    s.on('quiz:question', onQuestion);
+    s.on('quiz:started', (data) => onQuestion(data.question));
 
     s.on('quiz:finished', (data) => {
       setLiveScores(data.leaderboard.map((p: any, i: number) => ({ ...p, rank: i + 1 })));
