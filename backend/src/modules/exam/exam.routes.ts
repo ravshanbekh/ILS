@@ -37,6 +37,10 @@ router.patch('/:id/activate', authenticate, examController.activateExam);
 router.patch('/:id/complete', authenticate, examController.completeExam);
 router.delete('/:id', authenticate, examController.deleteExam);
 
+// Global imtihonlar (Admin + Teachers)
+router.get('/global', authenticate, examController.getGlobalExams);
+router.post('/global/:id/activate', authenticate, examController.activateGlobalExam);
+
 // Savollar (qo'lda + Excel import)
 router.post('/:id/questions', authenticate, upload.single('image'), examController.addQuestions);
 router.post('/:id/questions/bulk', authenticate, examController.bulkAddQuestions);

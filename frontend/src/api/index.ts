@@ -314,6 +314,10 @@ export const examApi = {
   activate: (id: string) => api.patch(`/exam/${id}/activate`),
   complete: (id: string) => api.patch(`/exam/${id}/complete`),
   delete: (id: string) => api.delete(`/exam/${id}`),
+  
+  // Global
+  getGlobalExams: () => api.get('/exam/global'),
+  activateGlobalExam: (id: string) => api.post(`/exam/global/${id}/activate`),
   addQuestions: (id: string, questions: any[]) => api.post(`/exam/${id}/questions`, { questions }),
   addQuestionWithImage: (id: string, form: FormData) => api.post(`/exam/${id}/questions`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
   bulkAddQuestions: (id: string, questions: any[]) => api.post(`/exam/${id}/questions/bulk`, { questions }),

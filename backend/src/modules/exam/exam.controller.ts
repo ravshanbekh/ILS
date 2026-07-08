@@ -11,8 +11,9 @@ function generateCode(len = 10): string {
 // ─── O'qituvchi: Imtihon yaratish ────────────────────────────────────────────
 export const createExam = async (req: Request, res: Response) => {
   try {
-    const { title, description, categoryId, testCount = 20, maxTestScore = 40, maxAiScore = 20, maxProjectScore = 40 } = req.body;
+    const { title, description, categoryId, testCount = 20, maxTestScore = 40, maxAiScore = 20, maxProjectScore = 40, isGlobal } = req.body;
     const userId = (req as any).user?.userId;
+    const userRole = (req as any).user?.role;
     if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
 
 
@@ -34,6 +35,7 @@ export const createExam = async (req: Request, res: Response) => {
         maxAiScore,
         maxProjectScore,
         status: 'draft',
+        isGlobal: Boolean(isGlobal && userRole === 'admin'),
       },
       include: {
         category: true,
@@ -65,6 +67,60 @@ export const getMyExams = async (req: Request, res: Response) => {
   }
 };
 
+// ─── Markaz: Global imtihonlar ──────────────────────────────────────────────
+export const getGlobalExams = async (req: Request, res: Response) => {
+  try {
+    const exams = await prisma.exam.findMany({
+      where: { isGlobal: true },
+      include: {
+        category: true,
+        _count: { select: { questions: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ data: exams });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// ─── O'qituvchi: Global imtihonni aktivlashtirish ───────────────────────────
+export const activateGlobalExam = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.userId;
+    
+    const globalExam = await prisma.exam.findFirst({ where: { id, isGlobal: true } });
+    if (!globalExam) return res.status(404).json({ error: 'Global imtihon topilmadi' });
+
+    const accessCode = generateCode(10);
+    const now = new Date();
+    
+    const newExam = await prisma.exam.create({
+      data: {
+        title: globalExam.title,
+        description: globalExam.description,
+        categoryId: globalExam.categoryId,
+        createdById: userId,
+        accessCode,
+        startsAt: now,
+        expiresAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),
+        status: 'active',
+        testCount: globalExam.testCount,
+        maxTestScore: globalExam.maxTestScore,
+        maxAiScore: globalExam.maxAiScore,
+        maxProjectScore: globalExam.maxProjectScore,
+        isGlobal: false,
+        templateId: globalExam.id,
+      }
+    });
+
+    res.status(201).json({ data: newExam, message: 'Global imtihon aktivlashtirildi' });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
 // ─── O'qituvchi: Imtihon batafsil ───────────────────────────────────────────
 export const getExamById = async (req: Request, res: Response) => {
   try {
@@ -79,6 +135,15 @@ export const getExamById = async (req: Request, res: Response) => {
       },
     });
     if (!exam) return res.status(404).json({ error: 'Topilmadi' });
+
+    if (exam.templateId) {
+      const templateQuestions = await prisma.examQuestion.findMany({
+        where: { examId: exam.templateId },
+        orderBy: { order: 'asc' }
+      });
+      (exam as any).questions = templateQuestions;
+    }
+
     res.json({ data: exam });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -93,7 +158,7 @@ export const activateExam = async (req: Request, res: Response) => {
     const exam = await prisma.exam.findFirst({ where: { id, createdById: userId } });
     if (!exam) return res.status(404).json({ error: 'Topilmadi' });
 
-    const qCount = await prisma.examQuestion.count({ where: { examId: id } });
+    const qCount = await prisma.examQuestion.count({ where: { examId: exam.templateId || id } });
     if (qCount < exam.testCount) {
       return res.status(400).json({ error: `Kamida ${exam.testCount} ta savol kerak (hozir ${qCount} ta)` });
     }
@@ -403,7 +468,9 @@ export const submitVideos = async (req: Request, res: Response) => {
 
 // ─── Helper: Random savollar ─────────────────────────────────────────────────
 async function getRandomQuestions(examId: string, count: number) {
-  const all = await prisma.examQuestion.findMany({ where: { examId } });
+  const exam = await prisma.exam.findUnique({ where: { id: examId } });
+  const actualExamId = exam?.templateId || examId;
+  const all = await prisma.examQuestion.findMany({ where: { examId: actualExamId } });
   const shuffled = all.sort(() => Math.random() - 0.5).slice(0, count);
   
   return shuffled.map(q => {

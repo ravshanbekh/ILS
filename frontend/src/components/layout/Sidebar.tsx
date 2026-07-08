@@ -23,6 +23,8 @@ const adminLinks = [
   { to: '/admin/rankings', icon: Trophy, label: 'Reyting' },
   { to: '/admin/export', icon: Download, label: 'Eksport' },
   { to: '/admin/settings', icon: Settings, label: 'Sozlamalar' },
+  { to: '/admin/exams', icon: FileText, label: 'Imtihonlar' },
+  { to: '/admin/live-quiz', icon: Zap, label: 'Live Quiz' },
 ];
 
 const teacherLinks = [

@@ -156,6 +156,8 @@ export default function App() {
               <Route path="/admin/checklist-stats" element={<ChecklistStatsPage />} />
               <Route path="/admin/checklist-manage" element={<ChecklistManagePage />} />
               <Route path="/admin/predictions" element={<PredictionsPage />} />
+              <Route path="/admin/exams" element={<ExamsPage />} />
+              <Route path="/admin/live-quiz" element={<LiveQuizPage />} />
             </Route>
 
             {/* Teacher routes */}

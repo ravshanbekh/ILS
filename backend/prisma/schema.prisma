@@ -54,27 +54,27 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
-  teacherGroups  Group[]          @relation("TeacherGroups")
-  groupStudents  GroupStudent[]
-  submissions    Submission[]     @relation("StudentSubmissions")
-  checkedBy      Submission[]     @relation("CheckedByTeacher")
-  notifications       Notification[]
-  auditLogs           AuditLog[]
-  checklistEntries    DailyChecklistEntry[]
-  frozenEntries       StudentFreeze[]   @relation("FrozenStudents")
-  frozenByEntries     StudentFreeze[]   @relation("FrozenBy")
-  monitoringCalls     MonitoringCall[]  @relation("MonitoringCalledBy")
-  monitoringNotes     MonitoringNote[]  @relation("MonitoringNotes")
-  feedbacksWritten    StudentFeedback[] @relation("FeedbackByStudent")
-  feedbacksReceived   StudentFeedback[] @relation("FeedbackForTeacher")
-  telegramLinks       TelegramLink[]    @relation("TelegramStudentLinks")
-  feedbackStudent     TelegramFeedback[] @relation("FeedbackStudent")
-  feedbackTeacher     TelegramFeedback[] @relation("FeedbackTeacher")
+  teacherGroups      Group[]               @relation("TeacherGroups")
+  groupStudents      GroupStudent[]
+  submissions        Submission[]          @relation("StudentSubmissions")
+  checkedBy          Submission[]          @relation("CheckedByTeacher")
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+  checklistEntries   DailyChecklistEntry[]
+  frozenEntries      StudentFreeze[]       @relation("FrozenStudents")
+  frozenByEntries    StudentFreeze[]       @relation("FrozenBy")
+  monitoringCalls    MonitoringCall[]      @relation("MonitoringCalledBy")
+  monitoringNotes    MonitoringNote[]      @relation("MonitoringNotes")
+  feedbacksWritten   StudentFeedback[]     @relation("FeedbackByStudent")
+  feedbacksReceived  StudentFeedback[]     @relation("FeedbackForTeacher")
+  telegramLinks      TelegramLink[]        @relation("TelegramStudentLinks")
+  feedbackStudent    TelegramFeedback[]    @relation("FeedbackStudent")
+  feedbackTeacher    TelegramFeedback[]    @relation("FeedbackTeacher")
   // Exam relations
-  createdExams        Exam[]            @relation("ExamCreator")
-  examParticipations  ExamParticipant[] @relation("ExamParticipants")
-  gradedExams         ExamParticipant[] @relation("ExamGrader")
-  createdQuizzes      LiveQuiz[]        @relation("QuizCreator")
+  createdExams       Exam[]                @relation("ExamCreator")
+  examParticipations ExamParticipant[]     @relation("ExamParticipants")
+  gradedExams        ExamParticipant[]     @relation("ExamGrader")
+  createdQuizzes     LiveQuiz[]            @relation("QuizCreator")
 
   @@map("users")
 }
@@ -88,11 +88,11 @@ model Group {
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  teacher        User?            @relation("TeacherGroups", fields: [teacherId], references: [id])
-  groupStudents  GroupStudent[]
+  teacher         User?             @relation("TeacherGroups", fields: [teacherId], references: [id])
+  groupStudents   GroupStudent[]
   groupNormatives GroupNormative[]
-  submissions    Submission[]
-  rankingCache   RankingCache[]
+  submissions     Submission[]
+  rankingCache    RankingCache[]
   monitoringCalls MonitoringCall[]
   feedbacks       StudentFeedback[]
 
@@ -101,15 +101,15 @@ model Group {
 
 /// Kategoriyalar (Yo'nalishlar: Foundation, Frontend, Backend)
 model Category {
-  id          String      @id @default(uuid()) @db.Uuid
-  name        String      @unique @db.VarChar(100)
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(100)
   description String?
-  isActive    Boolean     @default(true) @map("is_active")
-  createdAt   DateTime    @default(now()) @map("created_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
-  normatives  Normative[]
-  exams       Exam[]
+  normatives Normative[]
+  exams      Exam[]
 
   @@map("categories")
 }
@@ -143,7 +143,7 @@ model Normative {
   createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
-  category        Category?         @relation(fields: [categoryId], references: [id])
+  category        Category?        @relation(fields: [categoryId], references: [id])
   groupNormatives GroupNormative[]
   submissions     Submission[]
 
@@ -177,10 +177,10 @@ model Submission {
   canResubmit Boolean          @default(false) @map("can_resubmit")
 
   // O'qituvchi tekshirgandan so'ng
-  checkedById String?          @map("checked_by") @db.Uuid
-  checkedAt   DateTime?        @map("checked_at")
+  checkedById String?           @map("checked_by") @db.Uuid
+  checkedAt   DateTime?         @map("checked_at")
   result      SubmissionResult?
-  score       Int              @default(0)
+  score       Int               @default(0)
   comment     String?
 
   // Relations
@@ -195,15 +195,15 @@ model Submission {
 
 /// Reyting Cache (kunlik hisoblash)
 model RankingCache {
-  id           String   @id @default(uuid()) @db.Uuid
-  studentId    String   @map("student_id") @db.Uuid
-  groupId      String?  @map("group_id") @db.Uuid
-  totalScore   Int      @default(0) @map("total_score")
-  completed    Int      @default(0)
-  pending      Int      @default(0)
-  rankInGroup  Int?     @map("rank_in_group")
-  rankOverall  Int?     @map("rank_overall")
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  id          String   @id @default(uuid()) @db.Uuid
+  studentId   String   @map("student_id") @db.Uuid
+  groupId     String?  @map("group_id") @db.Uuid
+  totalScore  Int      @default(0) @map("total_score")
+  completed   Int      @default(0)
+  pending     Int      @default(0)
+  rankInGroup Int?     @map("rank_in_group")
+  rankOverall Int?     @map("rank_overall")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
   group Group? @relation(fields: [groupId], references: [id])
@@ -263,12 +263,12 @@ model ChecklistItem {
 
 /// Kunlik Checklist yozuvlari (kim, qachon, bajarildimi)
 model DailyChecklistEntry {
-  id              String        @id @default(uuid()) @db.Uuid
-  userId          String        @map("user_id") @db.Uuid
-  checklistItemId String        @map("checklist_item_id") @db.Uuid
-  date            DateTime      @db.Date
-  isDone          Boolean       @default(false) @map("is_done")
-  doneAt          DateTime?     @map("done_at")
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  checklistItemId String    @map("checklist_item_id") @db.Uuid
+  date            DateTime  @db.Date
+  isDone          Boolean   @default(false) @map("is_done")
+  doneAt          DateTime? @map("done_at")
 
   // Relations
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -281,19 +281,19 @@ model DailyChecklistEntry {
 // ============ FREEZE SYSTEM ============
 
 enum FreezeReason {
-  moliyaviy           // Moliyaviy (to'lov)
-  kochib_ketish       // Ko'chib/safarga ketish
+  moliyaviy // Moliyaviy (to'lov)
+  kochib_ketish // Ko'chib/safarga ketish
   vaqtincha_toxtatgan // Vaqtincha to'xtatgan (qaytish rejasi bor)
-  kasallik            // Kasallik
-  kanikul             // Lager/Kanikul (vaqtinchalik)
-  boshqa_fan          // Boshqa fan/sertifikatga o'tish
-  kurs_tugadi         // Kurs tugadi, davomi yo'q
-  motivatsiya         // Motivatsiya/oilaviy sabab
-  ish_tadbir          // Ishga ketish/oilaviy tadbir
-  universitet         // Universitet sessiyasi
-  shaxsiy             // Shaxsiy sabab
+  kasallik // Kasallik
+  kanikul // Lager/Kanikul (vaqtinchalik)
+  boshqa_fan // Boshqa fan/sertifikatga o'tish
+  kurs_tugadi // Kurs tugadi, davomi yo'q
+  motivatsiya // Motivatsiya/oilaviy sabab
+  ish_tadbir // Ishga ketish/oilaviy tadbir
+  universitet // Universitet sessiyasi
+  shaxsiy // Shaxsiy sabab
   oqituvchidan_norozi // O'qituvchidan norozilik
-  boshqa              // Boshqa
+  boshqa // Boshqa
   sabab_korsatilmagan // Sabab ko'rsatilmagan
 }
 
@@ -303,24 +303,24 @@ model StudentFreeze {
   studentId    String       @map("student_id") @db.Uuid
   frozenById   String       @map("frozen_by_id") @db.Uuid
   frozenAt     DateTime     @default(now()) @map("frozen_at")
-  month        Int          // Muzlatilgan oy (1-12)
-  year         Int          // Muzlatilgan yil (2025, 2026...)
+  month        Int // Muzlatilgan oy (1-12)
+  year         Int // Muzlatilgan yil (2025, 2026...)
   reason       FreezeReason // Sabab kategoriyasi
   detailedNote String?      @map("detailed_note") @db.VarChar(1000)
   phone        String?      @db.VarChar(30)
   startDate    DateTime?    @map("start_date") // Kursga kirgan sana
-  filial       String?      @db.VarChar(100)  // Filial (Beeline, Stomatologiya...)
+  filial       String?      @db.VarChar(100) // Filial (Beeline, Stomatologiya...)
 
   // Muzlatish vaqtidagi snapshot (o'zgarmas qoladi)
-  studentName  String       @map("student_name") @db.VarChar(200)
-  teacherName  String?      @map("teacher_name") @db.VarChar(200)
-  groupName    String?      @map("group_name")   @db.VarChar(100)
+  studentName String  @map("student_name") @db.VarChar(200)
+  teacherName String? @map("teacher_name") @db.VarChar(200)
+  groupName   String? @map("group_name") @db.VarChar(100)
 
-  createdAt    DateTime     @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
   student  User @relation("FrozenStudents", fields: [studentId], references: [id])
-  frozenBy User @relation("FrozenBy",       fields: [frozenById],  references: [id])
+  frozenBy User @relation("FrozenBy", fields: [frozenById], references: [id])
 
   @@map("student_freezes")
 }
@@ -328,24 +328,24 @@ model StudentFreeze {
 // ============ MONITORING SYSTEM ============
 
 enum MonitoringMood {
-  yaxshi          // 😊 Hamma narsa yaxshi
-  oddiy           // 😐 Alohida shikoyat yo'q
-  yomon           // 😟 Muammo bor, norozilik
-  javob_bermadi   // 📵 Telefonga javob bermadi
+  yaxshi // 😊 Hamma narsa yaxshi
+  oddiy // 😐 Alohida shikoyat yo'q
+  yomon // 😟 Muammo bor, norozilik
+  javob_bermadi // 📵 Telefonga javob bermadi
 }
 
 /// Monitoring qo'ng'iroq sessiyasi (administrator qaysi guruhga qo'ng'iroq qildi)
 model MonitoringCall {
-  id          String   @id @default(uuid()) @db.Uuid
-  groupId     String   @map("group_id") @db.Uuid
-  calledById  String   @map("called_by_id") @db.Uuid
-  callDate    DateTime @default(now()) @map("call_date")
-  summary     String?  @db.VarChar(500)  // Umumiy qisqa izoh
-  createdAt   DateTime @default(now()) @map("created_at")
+  id         String   @id @default(uuid()) @db.Uuid
+  groupId    String   @map("group_id") @db.Uuid
+  calledById String   @map("called_by_id") @db.Uuid
+  callDate   DateTime @default(now()) @map("call_date")
+  summary    String?  @db.VarChar(500) // Umumiy qisqa izoh
+  createdAt  DateTime @default(now()) @map("created_at")
 
   // Relations
-  group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  calledBy User   @relation("MonitoringCalledBy", fields: [calledById], references: [id])
+  group    Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  calledBy User             @relation("MonitoringCalledBy", fields: [calledById], references: [id])
   notes    MonitoringNote[]
 
   @@map("monitoring_calls")
@@ -353,12 +353,12 @@ model MonitoringCall {
 
 /// Har bir o'quvchi uchun monitoring fikri
 model MonitoringNote {
-  id       String          @id @default(uuid()) @db.Uuid
-  callId   String          @map("call_id") @db.Uuid
+  id        String         @id @default(uuid()) @db.Uuid
+  callId    String         @map("call_id") @db.Uuid
   studentId String         @map("student_id") @db.Uuid
-  mood     MonitoringMood
-  note     String          @db.VarChar(2000)
-  tags     String[]        @default([])
+  mood      MonitoringMood
+  note      String         @db.VarChar(2000)
+  tags      String[]       @default([])
   createdAt DateTime       @default(now()) @map("created_at")
   updatedAt DateTime       @updatedAt @map("updated_at")
 
@@ -373,20 +373,20 @@ model MonitoringNote {
 
 /// Telegram Chat bog'lanishi (Ota-ona/Operator → O'quvchi)
 model TelegramLink {
-  id           String   @id @default(uuid()) @db.Uuid
-  telegramId   BigInt   @unique @map("telegram_id")        // Telegram user ID
-  chatId       BigInt   @map("chat_id")                    // Telegram chat ID
-  studentId    String   @map("student_id") @db.Uuid        // Bog'langan o'quvchi
-  role         String   @default("parent") @db.VarChar(20) // "parent" | "operator"
-  fullName     String?  @map("full_name") @db.VarChar(200)
-  username     String?  @db.VarChar(100)                    // @username
-  isActive     Boolean  @default(true) @map("is_active")
-  language     String   @default("uz") @db.VarChar(5)      // "uz" | "ru"
-  notifyOnCheck    Boolean @default(true) @map("notify_on_check")
-  notifyOnRank     Boolean @default(true) @map("notify_on_rank")
-  notifyWeekly     Boolean @default(true) @map("notify_weekly")
-  notifyInactivity Boolean @default(true) @map("notify_inactivity")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id               String   @id @default(uuid()) @db.Uuid
+  telegramId       BigInt   @unique @map("telegram_id") // Telegram user ID
+  chatId           BigInt   @map("chat_id") // Telegram chat ID
+  studentId        String   @map("student_id") @db.Uuid // Bog'langan o'quvchi
+  role             String   @default("parent") @db.VarChar(20) // "parent" | "operator"
+  fullName         String?  @map("full_name") @db.VarChar(200)
+  username         String?  @db.VarChar(100) // @username
+  isActive         Boolean  @default(true) @map("is_active")
+  language         String   @default("uz") @db.VarChar(5) // "uz" | "ru"
+  notifyOnCheck    Boolean  @default(true) @map("notify_on_check")
+  notifyOnRank     Boolean  @default(true) @map("notify_on_rank")
+  notifyWeekly     Boolean  @default(true) @map("notify_weekly")
+  notifyInactivity Boolean  @default(true) @map("notify_inactivity")
+  createdAt        DateTime @default(now()) @map("created_at")
 
   // Relations
   student User @relation("TelegramStudentLinks", fields: [studentId], references: [id])
@@ -415,13 +415,13 @@ model TelegramFeedback {
 
 /// AI tomonidan yaratilgan tahlil hisobotlari (cache)
 model MonitoringAIReport {
-  id          String   @id @default(uuid()) @db.Uuid
-  groupId     String?  @map("group_id") @db.Uuid
-  teacherId   String?  @map("teacher_id") @db.Uuid
-  reportType  String   @db.VarChar(50)  // "group_analysis" | "teacher_analysis" | "overall"
-  content     String   // AI javob matni (plain text)
-  period      String   @db.VarChar(20)  // "2026-06"
-  createdAt   DateTime @default(now()) @map("created_at")
+  id         String   @id @default(uuid()) @db.Uuid
+  groupId    String?  @map("group_id") @db.Uuid
+  teacherId  String?  @map("teacher_id") @db.Uuid
+  reportType String   @db.VarChar(50) // "group_analysis" | "teacher_analysis" | "overall"
+  content    String // AI javob matni (plain text)
+  period     String   @db.VarChar(20) // "2026-06"
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@map("monitoring_ai_reports")
 }
@@ -432,7 +432,7 @@ model StudentFeedback {
   studentId   String   @map("student_id") @db.Uuid
   teacherId   String   @map("teacher_id") @db.Uuid
   groupId     String   @map("group_id") @db.Uuid
-  rating      Int      // 1-5
+  rating      Int // 1-5
   comment     String?  @db.VarChar(500)
   isAnonymous Boolean  @default(true) @map("is_anonymous")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -474,6 +474,8 @@ model Exam {
   expiresAt   DateTime   @map("expires_at")
   status      ExamStatus @default(draft)
   testCount   Int        @default(20) @map("test_count")
+  isGlobal    Boolean    @default(false) @map("is_global")
+  templateId  String?    @map("template_id") @db.Uuid
 
   // Maksimal ballar
   maxTestScore    Int @default(40) @map("max_test_score")
@@ -484,7 +486,9 @@ model Exam {
 
   // Relations
   category     Category?         @relation(fields: [categoryId], references: [id])
-  createdBy    User               @relation("ExamCreator", fields: [createdById], references: [id])
+  createdBy    User              @relation("ExamCreator", fields: [createdById], references: [id])
+  template     Exam?             @relation("ExamTemplate", fields: [templateId], references: [id])
+  sessions     Exam[]            @relation("ExamTemplate")
   questions    ExamQuestion[]
   participants ExamParticipant[]
 
@@ -497,8 +501,8 @@ model ExamQuestion {
   examId   String  @map("exam_id") @db.Uuid
   question String
   imageUrl String? @map("image_url")
-  options  Json    // ["variant A", "variant B", "variant C", "variant D"]
-  correct  Int     // 0-3 (to'g'ri javob indeksi)
+  options  Json // ["variant A", "variant B", "variant C", "variant D"]
+  correct  Int // 0-3 (to'g'ri javob indeksi)
   order    Int     @default(0)
 
   exam    Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
@@ -525,12 +529,12 @@ model ExamParticipant {
   projectVideoUrl String? @map("project_video_url")
 
   // O'qituvchi tomonidan baho
-  aiScore        Int?    @map("ai_score")
-  projectScore   Int?    @map("project_score")
-  totalScore     Int?    @map("total_score")
-  aiComment      String? @map("ai_comment") @db.VarChar(1000)
-  projectComment String? @map("project_comment") @db.VarChar(1000)
-  gradedById     String? @map("graded_by_id") @db.Uuid
+  aiScore        Int?      @map("ai_score")
+  projectScore   Int?      @map("project_score")
+  totalScore     Int?      @map("total_score")
+  aiComment      String?   @map("ai_comment") @db.VarChar(1000)
+  projectComment String?   @map("project_comment") @db.VarChar(1000)
+  gradedById     String?   @map("graded_by_id") @db.Uuid
   gradedAt       DateTime? @map("graded_at")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -546,11 +550,11 @@ model ExamParticipant {
 
 /// Imtihon javoblari (test bosqichi)
 model ExamAnswer {
-  id             String  @id @default(uuid()) @db.Uuid
-  participantId  String  @map("participant_id") @db.Uuid
-  questionId     String  @map("question_id") @db.Uuid
-  selectedOption Int     @map("selected_option")
-  isCorrect      Boolean @map("is_correct")
+  id             String   @id @default(uuid()) @db.Uuid
+  participantId  String   @map("participant_id") @db.Uuid
+  questionId     String   @map("question_id") @db.Uuid
+  selectedOption Int      @map("selected_option")
+  isCorrect      Boolean  @map("is_correct")
   answeredAt     DateTime @default(now()) @map("answered_at")
 
   participant ExamParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
@@ -595,7 +599,7 @@ model LiveQuizQuestion {
   id       String  @id @default(uuid()) @db.Uuid
   quizId   String  @map("quiz_id") @db.Uuid
   question String
-  options  Json    // ["A","B","C","D"]
+  options  Json // ["A","B","C","D"]
   correct  Int
   order    Int     @default(0)
   imageUrl String? @map("image_url")
@@ -638,4 +642,3 @@ model LiveQuizAnswer {
   @@unique([playerId, questionId])
   @@map("live_quiz_answers")
 }
-

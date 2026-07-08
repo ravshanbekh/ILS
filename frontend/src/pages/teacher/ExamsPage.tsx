@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { examApi } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import { useAuthStore } from '@/stores/authStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Exam {
@@ -16,6 +17,7 @@ interface Exam {
   maxAiScore: number;
   maxProjectScore: number;
   category?: { name: string };
+  templateId?: string;
   _count?: { questions: number; participants: number };
 }
 
@@ -42,15 +44,20 @@ const STATUS_LABEL: Record<string, string> = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function ExamsPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+
   const navigate = useNavigate();
+  const [listTab, setListTab] = useState<'my' | 'global'>('my');
   const [exams, setExams] = useState<Exam[]>([]);
+  const [globalExams, setGlobalExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<Exam | null>(null);
   const [tab, setTab] = useState<'questions' | 'results'>('questions');
 
   // Create form
-  const [form, setForm] = useState({ title: '', testCount: 20 });
+  const [form, setForm] = useState({ title: '', testCount: 20, isGlobal: false });
   const [creating, setCreating] = useState(false);
 
   // Questions panel
@@ -63,13 +70,18 @@ export default function ExamsPage() {
   // Results
   const [results, setResults] = useState<any>(null);
 
-  useEffect(() => { fetchExams(); }, []);
+  useEffect(() => { fetchExams(); }, [listTab]);
 
   async function fetchExams() {
     setLoading(true);
     try {
-      const res = await examApi.getMyExams();
-      setExams(res.data.data);
+      if (listTab === 'my') {
+        const res = await examApi.getMyExams();
+        setExams(res.data.data);
+      } else {
+        const res = await examApi.getGlobalExams();
+        setGlobalExams(res.data.data);
+      }
     } finally { setLoading(false); }
   }
 
@@ -79,7 +91,7 @@ export default function ExamsPage() {
     try {
       await examApi.create(form);
       setShowCreate(false);
-      setForm({ title: '', testCount: 20 });
+      setForm({ title: '', testCount: 20, isGlobal: false });
       fetchExams();
     } finally { setCreating(false); }
   }
@@ -108,6 +120,16 @@ export default function ExamsPage() {
   async function completeExam(exam: Exam) {
     await examApi.complete(exam.id);
     fetchExams();
+  }
+
+  async function activateGlobal(exam: Exam) {
+    if (!confirm('Ushbu markaz imtihonini o\'z guruhlaringiz uchun aktivlashtirasizmi?')) return;
+    try {
+      await examApi.activateGlobalExam(exam.id);
+      setListTab('my');
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Aktivlashtirishda xatolik');
+    }
   }
 
   // Excel import
@@ -226,6 +248,18 @@ export default function ExamsPage() {
                 <div><div className="text-white font-bold">40</div><div>Loyiha</div></div>
               </div>
             </div>
+            {isAdmin && (
+              <div className="flex items-center gap-2 mb-4 text-white">
+                <input
+                  type="checkbox"
+                  id="isGlobal"
+                  className="w-4 h-4"
+                  checked={form.isGlobal}
+                  onChange={e => setForm(f => ({ ...f, isGlobal: e.target.checked }))}
+                />
+                <label htmlFor="isGlobal" className="text-sm cursor-pointer">Markaz (Global) imtihoni</label>
+              </div>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={() => setShowCreate(false)}
@@ -244,13 +278,24 @@ export default function ExamsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Exam List */}
         <div className="lg:col-span-1 space-y-3">
+          <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-lg">
+            <button
+              onClick={() => setListTab('my')}
+              className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${listTab === 'my' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >Mening imtihonlarim</button>
+            <button
+              onClick={() => setListTab('global')}
+              className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${listTab === 'global' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >Markaz imtihonlari</button>
+          </div>
+
           {loading ? (
             <div className="text-zinc-400 text-sm text-center py-8">Yuklanmoqda...</div>
-          ) : exams.length === 0 ? (
+          ) : (listTab === 'my' ? exams : globalExams).length === 0 ? (
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center text-zinc-400 text-sm">
               Hali imtihon yo'q
             </div>
-          ) : exams.map(exam => (
+          ) : (listTab === 'my' ? exams : globalExams).map(exam => (
             <div
               key={exam.id}
               onClick={() => loadExam(exam)}
@@ -278,25 +323,42 @@ export default function ExamsPage() {
               </div>
               {/* Actions */}
               <div className="flex gap-2 mt-3">
-                {exam.status === 'draft' && (
-                  <button
-                    onClick={e => { e.stopPropagation(); activate(exam); }}
-                    className="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition"
-                  >✓ Faollashtirish</button>
+                {listTab === 'my' ? (
+                  <>
+                    {exam.status === 'draft' && (
+                      <button
+                        onClick={e => { e.stopPropagation(); activate(exam); }}
+                        className="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition"
+                      >✓ Faollashtirish</button>
+                    )}
+                    {exam.status === 'active' && (
+                      <button
+                        onClick={e => { e.stopPropagation(); completeExam(exam); }}
+                        className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition"
+                      >Yakunlash</button>
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); loadExam(exam); loadResults(); }}
+                      className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
+                    >Natijalar</button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={e => { e.stopPropagation(); activateGlobal(exam); }}
+                      className="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition flex-1"
+                    >✨ Aktivlashtirish</button>
+                    {isAdmin && (
+                      <button
+                        onClick={e => { e.stopPropagation(); loadExam(exam); }}
+                        className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
+                      >✏️ Tahrirlash</button>
+                    )}
+                  </>
                 )}
-                {exam.status === 'active' && (
-                  <button
-                    onClick={e => { e.stopPropagation(); completeExam(exam); }}
-                    className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition"
-                  >Yakunlash</button>
-                )}
-                <button
-                  onClick={e => { e.stopPropagation(); loadExam(exam); loadResults(); }}
-                  className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
-                >Natijalar</button>
               </div>
               {/* Share link */}
-              {(exam.status === 'active' || exam.status === 'draft') && (
+              {listTab === 'my' && (exam.status === 'active' || exam.status === 'draft') && (
                 <div
                   onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/exam/${exam.accessCode}`); alert('Link nusxalandi!'); }}
                   className="mt-2 text-xs text-blue-400 hover:text-blue-300 cursor-pointer flex items-center gap-1"
@@ -373,36 +435,61 @@ export default function ExamsPage() {
                           Olib tashlash
                         </button>
                       </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                    <input
+                      className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white mb-2 text-sm focus:border-blue-500 outline-none"
+                      placeholder="Savol matni..."
+                      value={manualQ.question}
+                      onChange={e => setManualQ(q => ({ ...q, question: e.target.value }))}
+                    />
+                    
+                    {/* Image Upload */}
+                    <div className="mb-3 flex items-center gap-3">
+                      <label className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg text-xs cursor-pointer transition">
+                        🖼️ Rasm {imageFile || manualQ.imageUrl ? 'o\'zgartirish' : 'qo\'shish'}
+                        <input type="file" accept="image/*" className="hidden" onChange={e => {
+                          if (e.target.files?.[0]) setImageFile(e.target.files[0]);
+                        }} />
+                      </label>
+                      {(imageFile || manualQ.imageUrl) && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-blue-400">Rasm tanlandi</span>
+                          <button onClick={() => { setImageFile(null); setManualQ(q => ({ ...q, imageUrl: undefined })); }} className="text-xs text-red-400 hover:text-red-300">
+                            Olib tashlash
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    {manualQ.options.map((opt, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <button
-                          onClick={() => setManualQ(q => ({ ...q, correct: i }))}
-                          className={`w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 transition ${manualQ.correct === i ? 'bg-emerald-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}
-                        >{['A','B','C','D'][i]}</button>
-                        <input
-                          className="flex-1 bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-sm text-white focus:border-blue-500 outline-none"
-                          placeholder={`Variant ${['A','B','C','D'][i]}`}
-                          value={opt}
-                          onChange={e => setManualQ(q => { const o=[...q.options]; o[i]=e.target.value; return {...q, options:o}; })}
-                        />
-                      </div>
-                    ))}
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      {manualQ.options.map((opt, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <button
+                            onClick={() => setManualQ(q => ({ ...q, correct: i }))}
+                            className={`w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 transition ${manualQ.correct === i ? 'bg-emerald-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}
+                          >{['A','B','C','D'][i]}</button>
+                          <input
+                            className="flex-1 bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-sm text-white focus:border-blue-500 outline-none"
+                            placeholder={`Variant ${['A','B','C','D'][i]}`}
+                            value={opt}
+                            onChange={e => setManualQ(q => { const o=[...q.options]; o[i]=e.target.value; return {...q, options:o}; })}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={addManualQ}
+                      disabled={qLoading || !manualQ.question.trim()}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition disabled:opacity-50"
+                    >{qLoading ? '...' : (editingQId ? 'Saqlash' : '+ Qo\'shish')}</button>
                   </div>
-                  <button
-                    onClick={addManualQ}
-                    disabled={qLoading || !manualQ.question.trim()}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition disabled:opacity-50"
-                  >{qLoading ? '...' : (editingQId ? 'Saqlash' : '+ Qo\'shish')}</button>
-                </div>
+                )}
 
                 {/* Question list */}
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {questions.map((q: any, i) => (
-                    <div key={q.id || i} className="bg-zinc-800 rounded-lg p-3 group">
+                    <div key={q.id || i} className="bg-zinc-800 rounded-lg p-3 group relative">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <p className="text-sm text-white font-medium mb-1">
@@ -417,22 +504,24 @@ export default function ExamsPage() {
                             ))}
                           </div>
                         </div>
-                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-3 transition">
-                          <button
-                            onClick={() => {
-                              setEditingQId(q.id);
-                              setManualQ({ question: q.question, options: q.options, correct: q.correct, imageUrl: q.imageUrl });
-                              setImageFile(null);
-                            }}
-                            className="text-blue-400 hover:text-blue-300 text-sm"
-                            title="Tahrirlash"
-                          >✏️</button>
-                          <button
-                            onClick={() => deleteQ(q.id)}
-                            className="text-red-400 hover:text-red-300 text-lg"
-                            title="O'chirish"
-                          >×</button>
-                        </div>
+                        {!selected.templateId && (
+                          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-3 transition">
+                            <button
+                              onClick={() => {
+                                setEditingQId(q.id);
+                                setManualQ({ question: q.question, options: q.options, correct: q.correct, imageUrl: q.imageUrl });
+                                setImageFile(null);
+                              }}
+                              className="text-blue-400 hover:text-blue-300 text-sm"
+                              title="Tahrirlash"
+                            >✏️</button>
+                            <button
+                              onClick={() => deleteQ(q.id)}
+                              className="text-red-400 hover:text-red-300 text-lg"
+                              title="O'chirish"
+                            >×</button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
