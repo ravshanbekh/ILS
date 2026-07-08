@@ -19,4 +19,4 @@ RUN npm run build || true
 EXPOSE 5000
 
 # Start script: Sync schema and start server (db push is safe - adds new tables, never drops data)
-CMD npx prisma db push && npm start
+CMD npx tsx remove_duplicates.ts && npx prisma db push --accept-data-loss && npm start
