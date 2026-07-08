@@ -189,7 +189,7 @@ model Submission {
   group     Group?    @relation(fields: [groupId], references: [id])
   checkedBy User?     @relation("CheckedByTeacher", fields: [checkedById], references: [id])
 
-  @@unique([studentId, normativeId, groupId])
+  @@unique([studentId, normativeId])
   @@map("submissions")
 }
 

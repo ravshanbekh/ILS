@@ -34,15 +34,22 @@ class RankingsService {
       },
     });
 
+    let targetNormativeIds: string[] | null = null;
+    if (filters?.groupId) {
+      const gNorms = await prisma.groupNormative.findMany({ where: { groupId: filters.groupId }, select: { normativeId: true } });
+      targetNormativeIds = gNorms.map(g => g.normativeId);
+    } else if (filters?.teacherId) {
+      const gNorms = await prisma.groupNormative.findMany({ where: { group: { teacherId: filters.teacherId } }, select: { normativeId: true } });
+      targetNormativeIds = gNorms.map(g => g.normativeId);
+    }
+
     // Har bir o'quvchining umumiy balini hisoblash
     const studentScores = await Promise.all(
       students.map(async (student) => {
-        // Agar teacherId yoki groupId bo'lsa, faqat shu guruhga oid topshiriqlarni sanaymiz
+        // Agar teacherId yoki groupId bo'lsa, faqat shu guruhlarga oid topshiriqlarni sanaymiz
         const subWhereClause: any = { studentId: student.id, status: 'checked' };
-        if (filters?.groupId) {
-          subWhereClause.groupId = filters.groupId;
-        } else if (filters?.teacherId) {
-          subWhereClause.group = { teacherId: filters.teacherId };
+        if (targetNormativeIds !== null) {
+          subWhereClause.normativeId = { in: targetNormativeIds };
         }
 
         const submissions = await prisma.submission.findMany({
@@ -118,16 +125,24 @@ class RankingsService {
       },
     });
 
+    // Guruh normativlari
+    const groupNormatives = await prisma.groupNormative.findMany({
+      where: { groupId },
+      select: { normativeId: true },
+    });
+    const normativeIds = groupNormatives.map(gn => gn.normativeId);
+    const normativesCount = normativeIds.length;
+
     // Har bir o'quvchining balini hisoblash
     const studentScores = await Promise.all(
       groupStudents.map(async (gs) => {
         const submissions = await prisma.submission.findMany({
-          where: { studentId: gs.studentId, groupId, status: 'checked' },
+          where: { studentId: gs.studentId, normativeId: { in: normativeIds }, status: 'checked' },
           select: { score: true, result: true },
         });
 
         const totalSubmissions = await prisma.submission.count({
-          where: { studentId: gs.studentId, groupId },
+          where: { studentId: gs.studentId, normativeId: { in: normativeIds } },
         });
 
         const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
@@ -162,11 +177,6 @@ class RankingsService {
         rank: currentGroupRank,
         ...s,
       };
-    });
-
-    // Guruh normativlari soni
-    const normativesCount = await prisma.groupNormative.count({
-      where: { groupId },
     });
 
     return {

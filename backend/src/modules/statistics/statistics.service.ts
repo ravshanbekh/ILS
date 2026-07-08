@@ -72,8 +72,20 @@ class StatisticsService {
         const groupIds = groups.map((g) => g.id);
         const studentsCount = groups.reduce((sum, g) => sum + g.groupStudents.length, 0);
 
+        const groupNormatives = await prisma.groupNormative.findMany({
+          where: { groupId: { in: groupIds } },
+          select: { normativeId: true }
+        });
+        const normativeIds = groupNormatives.map(gn => gn.normativeId);
+
+        const studentsInGroups = await prisma.groupStudent.findMany({
+          where: { groupId: { in: groupIds } },
+          select: { studentId: true }
+        });
+        const studentIds = studentsInGroups.map(gs => gs.studentId);
+
         const submissions = await prisma.submission.findMany({
-          where: { groupId: { in: groupIds }, status: 'checked' },
+          where: { studentId: { in: studentIds }, normativeId: { in: normativeIds }, status: 'checked' },
           select: { score: true, result: true },
         });
 
@@ -144,8 +156,14 @@ class StatisticsService {
     // Guruhlar bo'yicha statistika
     const groupStats = await Promise.all(
       groups.map(async (group) => {
+        const groupNormatives = await prisma.groupNormative.findMany({ where: { groupId: group.id }, select: { normativeId: true } });
+        const normativeIds = groupNormatives.map(gn => gn.normativeId);
+        
+        const groupStudents = await prisma.groupStudent.findMany({ where: { groupId: group.id }, select: { studentId: true } });
+        const studentIds = groupStudents.map(gs => gs.studentId);
+
         const submissions = await prisma.submission.findMany({
-          where: { groupId: group.id, status: 'checked' },
+          where: { studentId: { in: studentIds }, normativeId: { in: normativeIds }, status: 'checked' },
           select: { score: true, result: true },
         });
 
@@ -203,11 +221,13 @@ class StatisticsService {
 
     if (!group) throw ApiError.notFound('Guruh topilmadi');
 
+    const normativeIds = group.groupNormatives.map(gn => gn.normative.id);
+
     // Har bir o'quvchining natijalari
     const studentStats = await Promise.all(
       group.groupStudents.map(async (gs) => {
         const submissions = await prisma.submission.findMany({
-          where: { studentId: gs.studentId, groupId },
+          where: { studentId: gs.studentId, normativeId: { in: normativeIds } },
           include: {
             normative: { select: { taskNumber: true, maxScore: true } },
           },
@@ -314,10 +334,16 @@ class StatisticsService {
           select: { studentId: true },
         });
 
+        const groupNormatives = await prisma.groupNormative.findMany({
+          where: { groupId: gs.groupId },
+          select: { normativeId: true }
+        });
+        const normativeIds = groupNormatives.map(gn => gn.normativeId);
+
         const scores = await Promise.all(
           allStudentsInGroup.map(async (s) => {
             const subs = await prisma.submission.findMany({
-              where: { studentId: s.studentId, groupId: gs.groupId, status: 'checked' },
+              where: { studentId: s.studentId, normativeId: { in: normativeIds }, status: 'checked' },
             });
             return {
               studentId: s.studentId,

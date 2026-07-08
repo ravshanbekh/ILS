@@ -175,7 +175,6 @@ class SubmissionsService {
       where: {
         studentId,
         normativeId: data.normativeId,
-        ...(groupId ? { groupId } : {}),
       },
     });
 
@@ -194,6 +193,7 @@ class SubmissionsService {
       const updatedSubmission = await prisma.submission.update({
         where: { id: existing.id },
         data: {
+          groupId: groupId,
           youtubeUrl: data.youtubeUrl,
           status: 'pending',
           result: null,
