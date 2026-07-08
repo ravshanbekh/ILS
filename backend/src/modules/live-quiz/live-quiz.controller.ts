@@ -212,6 +212,26 @@ export const bulkAddQuestions = async (req: Request, res: Response) => {
   }
 };
 
+// ─── Savol tahrirlash ─────────────────────────────────────────────────────────
+export const updateQuestion = async (req: Request, res: Response) => {
+  try {
+    const { qId } = req.params;
+    const { question, options, correct, imageUrl } = req.body;
+    const updated = await prisma.liveQuizQuestion.update({
+      where: { id: qId },
+      data: {
+        question,
+        options,
+        correct,
+        ...(imageUrl !== undefined && { imageUrl }),
+      },
+    });
+    res.json({ data: updated });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
 // ─── Savol o'chirish ──────────────────────────────────────────────────────────
 export const deleteQuestion = async (req: Request, res: Response) => {
   try {

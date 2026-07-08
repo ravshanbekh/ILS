@@ -342,6 +342,7 @@ export const liveQuizApi = {
   deleteQuiz: (id: string) => api.delete(`/live-quiz/${id}`),
   addQuestions: (id: string, questions: any[]) => api.post(`/live-quiz/${id}/questions`, { questions }),
   bulkAddQuestions: (id: string, questions: any[]) => api.post(`/live-quiz/${id}/questions/bulk`, { questions }),
+  updateQuestion: (quizId: string, qId: string, data: any) => api.patch(`/live-quiz/${quizId}/questions/${qId}`, data),
   deleteQuestion: (quizId: string, qId: string) => api.delete(`/live-quiz/${quizId}/questions/${qId}`),
   useGlobalQuiz: (id: string) => api.post(`/live-quiz/${id}/use`),
   startQuiz: (id: string) => api.patch(`/live-quiz/${id}/start`),     // Yangi kod + lobby

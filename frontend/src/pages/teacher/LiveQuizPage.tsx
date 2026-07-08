@@ -70,7 +70,7 @@ export default function LiveQuizPage() {
   const [manualQ, setManualQ] = useState({ question: '', options: ['', '', '', ''], correct: 0, imageUrl: '' });
   const [qLoading, setQLoading] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
-
+  const [editingQId, setEditingQId] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const totalPlayersRef = useRef(0);
 
@@ -323,7 +323,12 @@ export default function LiveQuizPage() {
     if (!selected || !manualQ.question.trim()) return;
     setQLoading(true);
     try {
-      await liveQuizApi.addQuestions(selected.id, [{ ...manualQ, imageUrl: manualQ.imageUrl || null }]);
+      if (editingQId) {
+        await liveQuizApi.updateQuestion(selected.id, editingQId, { ...manualQ, imageUrl: manualQ.imageUrl || null });
+        setEditingQId(null);
+      } else {
+        await liveQuizApi.addQuestions(selected.id, [{ ...manualQ, imageUrl: manualQ.imageUrl || null }]);
+      }
       const res = await liveQuizApi.getById(selected.id);
       setSelected(res.data.data);
       setManualQ({ question: '', options: ['', '', '', ''], correct: 0, imageUrl: '' });
@@ -519,7 +524,12 @@ export default function LiveQuizPage() {
 
                 {/* Manual Q form */}
                 <div className="bg-zinc-800/50 rounded-xl p-4 mb-4">
-                  <h4 className="text-sm font-medium text-white mb-3">Qo'lda savol</h4>
+                  <h4 className="text-sm font-medium text-white mb-3">
+                    {editingQId ? 'Savolni tahrirlash' : 'Qo\'lda savol'}
+                    {editingQId && (
+                      <button onClick={() => { setEditingQId(null); setManualQ({ question: '', options: ['', '', '', ''], correct: 0, imageUrl: '' }); }} className="ml-3 text-xs text-zinc-400 hover:text-white border border-zinc-600 rounded px-2 py-0.5">Bekor qilish</button>
+                    )}
+                  </h4>
                   <input className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white mb-2 text-sm focus:border-violet-500 outline-none" placeholder="Savol..." value={manualQ.question} onChange={e => setManualQ(q => ({ ...q, question: e.target.value }))} />
                   <div className="flex items-center gap-2 mb-3">
                     <button onClick={() => imgInputRef.current?.click()} className="px-3 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded border border-zinc-600">🖼️ Rasm</button>
@@ -544,7 +554,7 @@ export default function LiveQuizPage() {
                     ))}
                   </div>
                   <button onClick={addManualQ} disabled={qLoading || !manualQ.question.trim()} className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm disabled:opacity-50">
-                    {qLoading ? '...' : '+ Qo\'shish'}
+                    {qLoading ? '...' : editingQId ? 'Saqlash' : '+ Qo\'shish'}
                   </button>
                 </div>
 
@@ -564,7 +574,18 @@ export default function LiveQuizPage() {
                           ))}
                         </div>
                       </div>
-                      <button onClick={() => deleteQuestion(q.id)} className="text-red-400/60 hover:text-red-400 text-sm">🗑️</button>
+                      <div className="flex flex-col items-center gap-2">
+                        <button onClick={() => {
+                          setEditingQId(q.id);
+                          setManualQ({
+                            question: q.question,
+                            options: q.options,
+                            correct: q.correct,
+                            imageUrl: q.imageUrl || '',
+                          });
+                        }} className="text-blue-400/60 hover:text-blue-400 text-sm">✏️</button>
+                        <button onClick={() => deleteQuestion(q.id)} className="text-red-400/60 hover:text-red-400 text-sm">🗑️</button>
+                      </div>
                     </div>
                   ))}
                   {!selected.questions?.length && <p className="text-zinc-500 text-sm text-center py-4">Savol yo'q</p>}

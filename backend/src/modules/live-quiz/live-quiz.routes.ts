@@ -36,6 +36,7 @@ router.patch('/:id', authenticate, quizController.updateQuiz);
 router.delete('/:id', authenticate, quizController.deleteQuiz);
 router.post('/:id/questions', authenticate, quizController.addQuestions);
 router.post('/:id/questions/bulk', authenticate, quizController.bulkAddQuestions);
+router.patch('/:id/questions/:qId', authenticate, quizController.updateQuestion);
 router.delete('/:id/questions/:qId', authenticate, quizController.deleteQuestion);
 router.post('/:id/use', authenticate, quizController.useGlobalQuiz);   // Global quizni nusxalash
 router.patch('/:id/start', authenticate, quizController.startQuiz);    // Yangi kod + waiting
