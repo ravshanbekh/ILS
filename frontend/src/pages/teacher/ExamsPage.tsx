@@ -387,24 +387,25 @@ export default function ExamsPage() {
 
             {tab === 'questions' ? (
               <div className="p-4">
-                {/* Import toolbar */}
-                <div className="flex items-center gap-3 mb-4 flex-wrap">
-                  <label className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium cursor-pointer transition">
-                    📥 Excel import
-                    <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelImport} />
-                  </label>
-                  <a
-                    href="/exam-template.xlsx"
-                    download
-                    className="text-xs text-zinc-400 hover:text-white transition underline"
-                  >Shablon yuklash</a>
-                  <span className="text-xs text-zinc-500 ml-auto">
-                    Format: Savol | A | B | C | D | To'g'ri(0-3)
-                  </span>
-                </div>
+                {/* Import and Add Forms (Only if not a session exam) */}
+                {!selected.templateId && (
+                  <>
+                    <div className="flex items-center gap-3 mb-4 flex-wrap">
+                      <label className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium cursor-pointer transition">
+                        📥 Excel import
+                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelImport} />
+                      </label>
+                      <a
+                        href="/exam-template.xlsx"
+                        download
+                        className="text-xs text-zinc-400 hover:text-white transition underline"
+                      >Shablon yuklash</a>
+                      <span className="text-xs text-zinc-500 ml-auto">
+                        Format: Savol | A | B | C | D | To'g'ri(0-3)
+                      </span>
+                    </div>
 
-                {/* Manual add */}
-                <div className="bg-zinc-800/50 rounded-xl p-4 mb-4">
+                    <div className="bg-zinc-800/50 rounded-xl p-4 mb-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-medium text-white">{editingQId ? 'Savolni tahrirlash' : 'Q\'olda savol qo\'shish'}</h4>
                     {editingQId && (
@@ -435,32 +436,8 @@ export default function ExamsPage() {
                           Olib tashlash
                         </button>
                       </div>
-                      )}
-                    </div>
-                    <input
-                      className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white mb-2 text-sm focus:border-blue-500 outline-none"
-                      placeholder="Savol matni..."
-                      value={manualQ.question}
-                      onChange={e => setManualQ(q => ({ ...q, question: e.target.value }))}
-                    />
-                    
-                    {/* Image Upload */}
-                    <div className="mb-3 flex items-center gap-3">
-                      <label className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg text-xs cursor-pointer transition">
-                        🖼️ Rasm {imageFile || manualQ.imageUrl ? 'o\'zgartirish' : 'qo\'shish'}
-                        <input type="file" accept="image/*" className="hidden" onChange={e => {
-                          if (e.target.files?.[0]) setImageFile(e.target.files[0]);
-                        }} />
-                      </label>
-                      {(imageFile || manualQ.imageUrl) && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-blue-400">Rasm tanlandi</span>
-                          <button onClick={() => { setImageFile(null); setManualQ(q => ({ ...q, imageUrl: undefined })); }} className="text-xs text-red-400 hover:text-red-300">
-                            Olib tashlash
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    )}
+                  </div>
 
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       {manualQ.options.map((opt, i) => (
@@ -483,7 +460,8 @@ export default function ExamsPage() {
                       disabled={qLoading || !manualQ.question.trim()}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition disabled:opacity-50"
                     >{qLoading ? '...' : (editingQId ? 'Saqlash' : '+ Qo\'shish')}</button>
-                  </div>
+                    </div>
+                  </>
                 )}
 
                 {/* Question list */}
