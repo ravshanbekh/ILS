@@ -314,9 +314,16 @@ export const submitTest = async (req: Request, res: Response) => {
     for (const a of answers) {
       const q = await prisma.examQuestion.findUnique({ where: { id: a.questionId } });
       if (!q) continue;
-      const isCorrect = q.correct === a.selectedOption;
+      
+      const dbOptions = q.options as string[];
+      const correctText = dbOptions[q.correct as number];
+      const isCorrect = a.selectedText === correctText;
       if (isCorrect) correct++;
-      answerData.push({ participantId, questionId: a.questionId, selectedOption: a.selectedOption, isCorrect });
+      
+      // Original indeksni topish (agar matn bilan kelgan bo'lsa)
+      const originalSelectedOption = a.selectedText ? dbOptions.indexOf(a.selectedText) : a.selectedOption;
+
+      answerData.push({ participantId, questionId: a.questionId, selectedOption: originalSelectedOption, isCorrect });
     }
 
     // Ball hisoblash (40 ball max, to'g'ri/jami * max)
@@ -360,10 +367,12 @@ async function getRandomQuestions(examId: string, count: number) {
   const shuffled = all.sort(() => Math.random() - 0.5).slice(0, count);
   
   return shuffled.map(q => {
+    const opts = q.options as string[];
+    const newOptions = [...opts].sort(() => Math.random() - 0.5);
     return { 
       id: q.id, 
       question: q.question, 
-      options: q.options,
+      options: newOptions,
     };
   });
 }

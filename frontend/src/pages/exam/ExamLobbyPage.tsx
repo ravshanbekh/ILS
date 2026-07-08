@@ -113,10 +113,14 @@ export default function ExamLobbyPage() {
   async function submitTest() {
     setLoading(true);
     try {
-      const answerArr = questions.map(q => ({
-        questionId: q.id,
-        selectedOption: answers[q.id] ?? -1,
-      }));
+      const answerArr = questions.map(q => {
+        const optIdx = answers[q.id];
+        return {
+          questionId: q.id,
+          selectedOption: optIdx ?? -1,
+          selectedText: optIdx !== undefined ? q.options[optIdx] : null,
+        };
+      });
       const res = await examApi.submitTest(code!, { participantId, answers: answerArr });
       setTestResult(res.data.data);
       setTestDone(true);
