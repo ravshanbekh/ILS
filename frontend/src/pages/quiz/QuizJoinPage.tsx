@@ -98,6 +98,21 @@ export default function QuizJoinPage() {
   const scoreRef = useRef(0);
   const qIndexRef = useRef(0);
 
+  function leaveQuiz() {
+    localStorage.removeItem('quizSession');
+    socket?.disconnect();
+    setSocket(null);
+    setPlayer(null);
+    setCode('');
+    setFullName('');
+    setQuizInfo(null);
+    setStage('enter-code');
+    setError('');
+    setMyScore(0);
+    setMyStreak(0);
+    setScoreHistory([]);
+  }
+
   function setupSocket(codeToJoin: string, currentPlayer: Player) {
     const s = io(SOCKET_URL, { transports: ['websocket'] });
     
@@ -138,11 +153,7 @@ export default function QuizJoinPage() {
     s.on('quiz:player-kicked', (data) => {
       if (data.playerId === currentPlayer.id) {
         alert("Siz o'yindan chetlatildingiz");
-        setStage('enter-code');
-        setPlayer(null);
-        setCode('');
-        localStorage.removeItem('quizSession');
-        s.disconnect();
+        leaveQuiz();
       }
     });
 
@@ -155,12 +166,23 @@ export default function QuizJoinPage() {
       try {
         const sess = JSON.parse(sessionStr);
         if (sess?.code && sess?.player) {
-          setCode(sess.code);
-          setPlayer(sess.player);
-          setStage('lobby');
-          setupSocket(sess.code, sess.player);
+          // Verify session is still valid
+          liveQuizApi.getByCode(sess.code).then((res) => {
+            setCode(sess.code);
+            setPlayer(sess.player);
+            setFullName(sess.player.fullName);
+            setQuizInfo(res.data.data);
+            setPlayerCount(res.data.data.playerCount || 0);
+            setStage('lobby');
+            setupSocket(sess.code, sess.player);
+          }).catch(() => {
+            // Quiz no longer exists or ended — clear stale session
+            localStorage.removeItem('quizSession');
+          });
         }
-      } catch (e) {}
+      } catch (e) {
+        localStorage.removeItem('quizSession');
+      }
     }
     return () => { socket?.disconnect(); clearInterval(timerRef.current); };
   }, []);
@@ -334,7 +356,7 @@ export default function QuizJoinPage() {
           })}
         </div>
 
-        <button onClick={() => { setStage('enter-code'); setCode(''); setMyScore(0); setMyRank(null); setScoreHistory([]); }}
+        <button onClick={leaveQuiz}
           className="px-8 py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition mb-10">
           Yana o'ynash
         </button>
@@ -579,6 +601,10 @@ export default function QuizJoinPage() {
           </div>
           <p className="text-zinc-500 text-xs mt-3 animate-pulse">O'qituvchi quizni boshlaguncha kuting...</p>
         </div>
+        <button
+          onClick={leaveQuiz}
+          className="mt-4 w-full py-3 bg-zinc-800 hover:bg-red-600/80 border border-zinc-700 hover:border-red-500 text-zinc-400 hover:text-white rounded-xl font-medium transition-all duration-200"
+        >🚪 Chiqish</button>
       </div>
     </div>
   );
