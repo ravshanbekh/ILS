@@ -584,8 +584,9 @@ model LiveQuiz {
   status      QuizStatus @default(waiting)
   currentQ    Int        @default(-1) @map("current_q") // -1 = hali boshlanmagan
   timePerQ    Int        @default(20) @map("time_per_q") // soniyada
-  isGlobal    Boolean    @default(false) @map("is_global") // Admin tomonidan yaratilgan markaz quizlari
-  createdAt   DateTime   @default(now()) @map("created_at")
+  isGlobal          Boolean    @default(false) @map("is_global") // Admin tomonidan yaratilgan markaz quizlari
+  activeQuestionIds Json?      @map("active_question_ids") // Random tanlangan 20 ta savol IDlari
+  createdAt         DateTime   @default(now()) @map("created_at")
 
   createdBy User               @relation("QuizCreator", fields: [createdById], references: [id])
   questions LiveQuizQuestion[]

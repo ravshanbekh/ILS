@@ -13,6 +13,23 @@ async function genUniqueCode(): Promise<string> {
   return code;
 }
 
+function selectRandomQuestionIds(allQuestions: { id: string }[], limit = 20): string[] {
+  const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, limit).map(q => q.id);
+}
+
+function filterActiveQuestions(quiz: any) {
+  if (!quiz) return quiz;
+  const activeIds = quiz.activeQuestionIds as string[] | null;
+  if (!activeIds || activeIds.length === 0) return quiz;
+  const questionsMap = new Map(quiz.questions.map((q: any) => [q.id, q]));
+  const activeQuestions = activeIds
+    .map(id => questionsMap.get(id))
+    .filter(q => q !== undefined);
+  quiz.questions = activeQuestions;
+  return quiz;
+}
+
 // ─── O'qituvchi/Admin: Quiz yaratish ─────────────────────────────────────────
 export const createQuiz = async (req: Request, res: Response) => {
   try {
@@ -106,6 +123,9 @@ export const getQuizById = async (req: Request, res: Response) => {
     }
 
     if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
+    if (quiz.status === 'active' || quiz.status === 'waiting') {
+      filterActiveQuestions(quiz);
+    }
     res.json({ data: quiz });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -280,11 +300,15 @@ export const startQuiz = async (req: Request, res: Response) => {
     // Har safar yangi kod generatsiya qilish
     const newCode = await genUniqueCode();
 
-    const quiz = await prisma.liveQuiz.update({
+    const activeQuestionIds = selectRandomQuestionIds(existingQuiz.questions, 20);
+
+    let quiz = await prisma.liveQuiz.update({
       where: { id },
-      data: { status: 'waiting', currentQ: -1, code: newCode },
+      data: { status: 'waiting', currentQ: -1, code: newCode, activeQuestionIds },
       include: { questions: { orderBy: { order: 'asc' } } },
     });
+
+    filterActiveQuestions(quiz);
 
     res.json({ data: quiz });
   } catch (e: any) {
@@ -334,10 +358,21 @@ export const useGlobalQuiz = async (req: Request, res: Response) => {
     }
 
     // To'liq ma'lumot qaytarish
-    const fullQuiz = await prisma.liveQuiz.findUnique({
+    let fullQuiz = await prisma.liveQuiz.findUnique({
       where: { id: newQuiz.id },
       include: { questions: { orderBy: { order: 'asc' } } },
     });
+
+    if (fullQuiz && fullQuiz.questions.length > 0) {
+      const activeQuestionIds = selectRandomQuestionIds(fullQuiz.questions, 20);
+      fullQuiz = await prisma.liveQuiz.update({
+        where: { id: newQuiz.id },
+        data: { activeQuestionIds },
+        include: { questions: { orderBy: { order: 'asc' } } },
+      });
+    }
+
+    filterActiveQuestions(fullQuiz);
 
     res.status(201).json({ data: fullQuiz });
   } catch (e: any) {
@@ -350,11 +385,13 @@ export const launchQuiz = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const quiz = await prisma.liveQuiz.update({
+    let quiz = await prisma.liveQuiz.update({
       where: { id },
       data: { status: 'active', currentQ: 0 },
       include: { questions: { orderBy: { order: 'asc' } } },
     });
+
+    filterActiveQuestions(quiz);
 
     const io = getIO();
     if (io && quiz.questions.length > 0) {
@@ -388,6 +425,8 @@ export const nextQuestion = async (req: Request, res: Response) => {
       include: { questions: { orderBy: { order: 'asc' } } },
     });
     if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
+
+    filterActiveQuestions(quiz);
 
     const nextIndex = quiz.currentQ + 1;
     if (nextIndex >= quiz.questions.length) {
@@ -444,6 +483,8 @@ export const showQuestion = async (req: Request, res: Response) => {
       include: { questions: { orderBy: { order: 'asc' } } },
     });
     if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
+
+    filterActiveQuestions(quiz);
 
     const q = quiz.questions[quiz.currentQ];
     if (!q) return res.status(400).json({ error: 'Savol topilmadi' });
@@ -518,6 +559,8 @@ export const getQuizStats = async (req: Request, res: Response) => {
       },
     });
     if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
+
+    filterActiveQuestions(quiz);
 
     // Har bir savol uchun tahlil
     const questionAnalysis = quiz.questions.map(q => {
