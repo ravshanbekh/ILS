@@ -54,4 +54,6 @@ router.put('/player/:playerId', quizController.updatePlayerName);
 router.post('/answer', quizController.submitAnswer);
 router.delete('/:id/player/:playerId', authenticate, quizController.kickPlayer);
 
+router.post('/player/:playerId/leave', quizController.leaveQuiz);
+
 export default router;

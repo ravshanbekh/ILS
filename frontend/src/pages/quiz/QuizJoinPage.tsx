@@ -99,6 +99,9 @@ export default function QuizJoinPage() {
   const qIndexRef = useRef(0);
 
   function leaveQuiz() {
+    if (player?.id) {
+      liveQuizApi.leaveQuiz(player.id).catch(() => {});
+    }
     localStorage.removeItem('quizSession');
     socket?.disconnect();
     setSocket(null);

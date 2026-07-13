@@ -370,6 +370,7 @@ export const liveQuizApi = {
   submitAnswer: (data: { playerId: string; questionId: string; selected: number; timeMs: number }) =>
     api.post('/live-quiz/answer', data),
   kickPlayer: (quizId: string, playerId: string) => api.delete(`/live-quiz/${quizId}/player/${playerId}`),
+  leaveQuiz: (playerId: string) => api.post(`/live-quiz/player/${playerId}/leave`),
 };
 
 

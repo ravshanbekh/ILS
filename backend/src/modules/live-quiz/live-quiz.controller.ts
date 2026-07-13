@@ -761,3 +761,26 @@ export const submitAnswer = async (req: Request, res: Response) => {
     res.status(500).json({ error: e.message });
   }
 };
+
+export const leaveQuiz = async (req: Request, res: Response) => {
+  try {
+    const { playerId } = req.params;
+    const player = await prisma.liveQuizPlayer.findUnique({
+      where: { id: playerId },
+      include: { quiz: true }
+    });
+    if (!player) return res.status(404).json({ error: 'O\'yinchi topilmadi' });
+
+    await prisma.liveQuizPlayer.delete({ where: { id: playerId } });
+
+    const io = getIO();
+    if (io) {
+      const playerCount = await prisma.liveQuizPlayer.count({ where: { quizId: player.quizId } });
+      io.to(`quiz-${player.quiz.code}`).emit('quiz:player-left', { playerId, playerCount });
+    }
+
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
