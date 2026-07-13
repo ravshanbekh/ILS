@@ -117,7 +117,7 @@ export default function QuizJoinPage() {
     const s = io(SOCKET_URL, { transports: ['websocket'] });
     
     s.on('connect', () => {
-      s.emit('join-room', { code: codeToJoin, role: 'player' });
+      s.emit('join-room', { code: codeToJoin, role: 'player', playerId: currentPlayer.id });
     });
 
     s.on('quiz:player-joined', (data) => setPlayerCount(data.playerCount));
