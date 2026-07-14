@@ -297,6 +297,11 @@ export const startQuiz = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Savol yo\'q. Avval savol qo\'shing.' });
     }
 
+    // Eski o'yinchilarni va ularning natijalarini tozalash (cascade delete orqali javoblar ham o'chadi)
+    await prisma.liveQuizPlayer.deleteMany({
+      where: { quizId: id }
+    });
+
     // Har safar yangi kod generatsiya qilish
     const newCode = await genUniqueCode();
 
