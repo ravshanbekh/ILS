@@ -474,11 +474,7 @@ export default function QuizJoinPage() {
             </div>
           )}
         </div>
-      ) : (
-        <p className="text-red-300 text-base mb-4 text-center">
-          To'g'ri javob: <strong className="text-white">{['A', 'B', 'C', 'D'][answerResult.correct]}</strong>
-        </p>
-      )}
+      ) : null}
 
       {/* Total score panel */}
       <div className="bg-white/5 border border-white/10 rounded-2xl px-8 py-4 text-center">
