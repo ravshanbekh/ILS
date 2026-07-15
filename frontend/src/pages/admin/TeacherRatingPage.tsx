@@ -19,12 +19,14 @@ export default function TeacherRatingPage() {
   const [selectedKpiTeacher, setSelectedKpiTeacher] = useState<any>(null);
   const [kpiDetails, setKpiDetails] = useState<any>(null);
   const [loadingKpi, setLoadingKpi] = useState(false);
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
 
   const prevMonth = () => { if (month === 1) { setMonth(12); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const nextMonth = () => { if (month === 12) { setMonth(1); setYear(y => y + 1); } else setMonth(m => m + 1); };
 
   const loadKpiDetails = async (teacher: any) => {
     setSelectedKpiTeacher(teacher);
+    setExpandedStudentId(null);
     setLoadingKpi(true);
     try {
       const res = await freezesApi.getTeacherKpiDetails(teacher.teacherId, month, year);
@@ -190,7 +192,7 @@ export default function TeacherRatingPage() {
 
       {/* KPI Details Modal */}
       {selectedKpiTeacher && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in" onClick={() => { setSelectedKpiTeacher(null); setKpiDetails(null); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in" onClick={() => { setSelectedKpiTeacher(null); setKpiDetails(null); setExpandedStudentId(null); }}>
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl flex flex-col max-h-[85vh] animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -228,28 +230,61 @@ export default function TeacherRatingPage() {
                     <span className="text-center">Topshiriq (Koef)</span>
                     <span className="text-right">Kof. %</span>
                   </div>
-                  {kpiDetails.studentDetails.map((s: any) => (
-                    <div key={s.studentId} className="grid grid-cols-[1fr_120px_100px] gap-2 px-3 py-2.5 rounded-lg bg-zinc-950/40 border border-zinc-800/30 items-center">
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold text-white truncate">{s.fullName}</div>
-                        <div className="text-[10px] text-zinc-500 truncate mt-0.5">{s.groupName}</div>
+                  {kpiDetails.studentDetails.map((s: any) => {
+                    const isExpanded = expandedStudentId === s.studentId;
+                    return (
+                      <div key={s.studentId} className="rounded-lg bg-zinc-950/40 border border-zinc-800/30 overflow-hidden">
+                        <div 
+                          onClick={() => setExpandedStudentId(isExpanded ? null : s.studentId)}
+                          className="grid grid-cols-[1fr_120px_100px] gap-2 px-3 py-2.5 hover:bg-zinc-800/20 cursor-pointer items-center transition-colors"
+                          title="Batafsil topshiriqlar ro'yxatini ko'rish uchun bosing"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-white truncate">{s.fullName}</div>
+                            <div className="text-[10px] text-zinc-500 truncate mt-0.5">{s.groupName}</div>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-sm font-bold text-zinc-300 font-mono">{s.submissionsCount} ta</span>
+                            <span className="text-[10px] text-zinc-500 font-mono ml-1">({s.coefficient})</span>
+                          </div>
+                          <div className="text-right font-black text-blue-400 font-mono text-sm flex items-center justify-end gap-1.5">
+                            <span>{s.percent}%</span>
+                            <span className="text-[10px] text-zinc-600">{isExpanded ? '▲' : '▼'}</span>
+                          </div>
+                        </div>
+
+                        {/* Expandable proof section */}
+                        {isExpanded && (
+                          <div className="px-3 py-2 bg-zinc-950/80 border-t border-zinc-800/50 space-y-1.5">
+                            <div className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 mb-1">Topshirilgan normativlar (Isbot):</div>
+                            {s.submissions && s.submissions.length > 0 ? (
+                              <div className="space-y-1">
+                                {s.submissions.map((sub: any) => (
+                                  <div key={sub.id} className="flex items-center justify-between text-xs text-zinc-400 py-0.5 border-b border-zinc-900 last:border-b-0">
+                                    <span className="truncate">
+                                      <span className="font-semibold text-blue-500 font-mono">#{sub.taskNumber}</span> {sub.title}
+                                    </span>
+                                    <span className="text-[10px] text-zinc-500 font-mono flex-shrink-0 ml-2">
+                                      {new Date(sub.submittedAt).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-zinc-650 italic py-1">Bu oyda muvaffaqiyatli topshirilgan normativlar yo'q</div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-center">
-                        <span className="text-sm font-bold text-zinc-300 font-mono">{s.submissionsCount}</span>
-                        <span className="text-[10px] text-zinc-500 font-mono ml-1">({s.coefficient})</span>
-                      </div>
-                      <div className="text-right font-black text-blue-400 font-mono text-sm">
-                        {s.percent}%
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             <div className="mt-6 pt-4 border-t border-zinc-800 flex justify-end">
               <button 
-                onClick={() => { setSelectedKpiTeacher(null); setKpiDetails(null); }}
+                onClick={() => { setSelectedKpiTeacher(null); setKpiDetails(null); setExpandedStudentId(null); }}
                 className="px-5 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-sm transition-colors"
               >
                 Yopish

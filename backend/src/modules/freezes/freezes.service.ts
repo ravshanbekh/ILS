@@ -381,7 +381,7 @@ class FreezesService {
 
     const studentDetails = await Promise.all(
       groupStudents.map(async (gs) => {
-        const checkedCount = await prisma.submission.count({
+        const submissions = await prisma.submission.findMany({
           where: {
             studentId: gs.studentId,
             status: 'checked',
@@ -391,8 +391,15 @@ class FreezesService {
               lte: endOfMonth,
             },
           },
+          include: {
+            normative: {
+              select: { taskNumber: true, title: true }
+            }
+          },
+          orderBy: { submittedAt: 'asc' }
         });
 
+        const checkedCount = submissions.length;
         const coefficient = Math.min(checkedCount / 8, 1.0);
 
         return {
@@ -402,6 +409,13 @@ class FreezesService {
           submissionsCount: checkedCount,
           coefficient: +coefficient.toFixed(4),
           percent: +(coefficient * 100).toFixed(1),
+          submissions: submissions.map(sub => ({
+            id: sub.id,
+            taskNumber: sub.normative.taskNumber,
+            title: sub.normative.title,
+            submittedAt: sub.submittedAt,
+            score: sub.score
+          }))
         };
       })
     );
