@@ -16,6 +16,7 @@ export default function TeacherNormativesPage() {
 
   // Assign modal
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [viewingNormative, setViewingNormative] = useState<any>(null);
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [selectedNormativeIds, setSelectedNormativeIds] = useState<string[]>([]);
   const [assigning, setAssigning] = useState(false);
@@ -171,13 +172,13 @@ export default function TeacherNormativesPage() {
                   </div>
 
                   {/* Title */}
-                  <div className="min-w-0">
+                  <div className="min-w-0 cursor-pointer hover:text-blue-400 transition-colors" onClick={() => setViewingNormative(norm)}>
                     <p className="text-white font-medium text-sm truncate">{norm.title}</p>
                   </div>
-
+ 
                   {/* Description */}
-                  <div className="min-w-0">
-                    <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
+                  <div className="min-w-0 cursor-pointer" onClick={() => setViewingNormative(norm)}>
+                    <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed hover:text-zinc-300 transition-colors">
                       {norm.description || '—'}
                     </p>
                   </div>
@@ -334,6 +335,79 @@ export default function TeacherNormativesPage() {
               >
                 {assigning ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                 Biriktirish ({selectedNormativeIds.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Details Modal */}
+      {viewingNormative && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in" onClick={() => setViewingNormative(null)}>
+          <div className="bg-[#18181b] rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-black text-sm">
+                  {viewingNormative.taskNumber}
+                </span>
+                <h2 className="text-lg font-bold text-white">Normativ Tafsilotlari</h2>
+              </div>
+              <button 
+                onClick={() => setViewingNormative(null)} 
+                className="text-zinc-400 hover:text-white transition-colors text-xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-1">Qaysi funksiya (Sarlavha)</span>
+                <div className="text-white font-semibold text-base">{viewingNormative.title}</div>
+              </div>
+
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-1">Nima qila olsin (Tavsif)</span>
+                <div className="text-zinc-300 text-sm bg-[#09090b] border border-zinc-800/80 rounded-xl p-4 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto custom-scrollbar">
+                  {viewingNormative.description || <span className="text-zinc-600 italic">Tavsif kiritilmagan</span>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-1">Ball</span>
+                  <div className="text-blue-400 font-bold font-mono text-sm">{viewingNormative.maxScore} ball</div>
+                </div>
+                
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-1">Maksimal Vaqti</span>
+                  <div className="text-amber-500 font-bold font-mono text-sm">
+                    {viewingNormative.timeLimit ? `${viewingNormative.timeLimit} sek` : '-'}
+                  </div>
+                </div>
+              </div>
+
+              {viewingNormative.url && (
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-1">Manba URL</span>
+                  <a 
+                    href={viewingNormative.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-400 hover:text-blue-300 text-sm underline break-all flex items-center gap-1.5"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" />
+                    {viewingNormative.url}
+                  </a>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-zinc-800 flex justify-end">
+              <button 
+                onClick={() => setViewingNormative(null)}
+                className="px-5 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-sm transition-colors"
+              >
+                Yopish
               </button>
             </div>
           </div>
