@@ -180,6 +180,10 @@ export const freezesApi = {
 
   // Bekor qilish (admin only)
   unfreeze: (id: string) => api.delete(`/freezes/${id}`),
+
+  // O'qituvchi KPI batafsil ma'lumotlari
+  getTeacherKpiDetails: (teacherId: string, month: number, year: number) =>
+    api.get(`/freezes/teacher-rating/${teacherId}/kpi`, { params: { month, year } }),
 };
 
 export const notificationsApi = {

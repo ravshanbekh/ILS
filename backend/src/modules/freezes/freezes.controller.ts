@@ -93,6 +93,23 @@ class FreezesController {
   }
 
   /**
+   * GET /api/freezes/teacher-rating/:teacherId/kpi — O'qituvchi KPI batafsil
+   */
+  async getTeacherKpiDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { teacherId } = req.params;
+      const now = new Date();
+      const month = req.query.month ? parseInt(req.query.month as string) : now.getMonth() + 1;
+      const year = req.query.year ? parseInt(req.query.year as string) : now.getFullYear();
+
+      const data = await freezesService.getTeacherKpiDetails(teacherId, month, year);
+      return res.json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * POST /api/freezes/ai-analyze — Gemini AI tahlil
    * Roles: admin, filial_rahbari, kassir
    */

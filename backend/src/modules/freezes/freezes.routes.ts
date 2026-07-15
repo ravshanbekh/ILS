@@ -38,6 +38,12 @@ router.get(
   freezesController.getTeacherRating
 );
 
+router.get(
+  '/teacher-rating/:teacherId/kpi',
+  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'filial_rahbari', 'teacher'),
+  freezesController.getTeacherKpiDetails
+);
+
 // ============================================================
 // RO'YXAT (GET) — admin, administrator, sotuv_operatori, kassir, filial_rahbari
 // ============================================================

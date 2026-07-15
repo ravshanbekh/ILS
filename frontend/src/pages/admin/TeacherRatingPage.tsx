@@ -15,8 +15,27 @@ export default function TeacherRatingPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // KPI modal states
+  const [selectedKpiTeacher, setSelectedKpiTeacher] = useState<any>(null);
+  const [kpiDetails, setKpiDetails] = useState<any>(null);
+  const [loadingKpi, setLoadingKpi] = useState(false);
+
   const prevMonth = () => { if (month === 1) { setMonth(12); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const nextMonth = () => { if (month === 12) { setMonth(1); setYear(y => y + 1); } else setMonth(m => m + 1); };
+
+  const loadKpiDetails = async (teacher: any) => {
+    setSelectedKpiTeacher(teacher);
+    setLoadingKpi(true);
+    try {
+      const res = await freezesApi.getTeacherKpiDetails(teacher.teacherId, month, year);
+      setKpiDetails(res.data.data);
+    } catch (err) {
+      console.error(err);
+      setKpiDetails(null);
+    } finally {
+      setLoadingKpi(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -103,6 +122,7 @@ export default function TeacherRatingPage() {
                     <th className="px-4 py-3 text-center">Aktiv o'q.</th>
                     <th className="px-4 py-3 text-center">Ketgan</th>
                     <th className="px-4 py-3 text-center">O'rt. oy</th>
+                    <th className="px-4 py-3 text-center">KPI (Normativlar)</th>
                     <th className="px-4 py-3 text-center">Ulushi %</th>
                   </tr>
                 </thead>
@@ -118,6 +138,15 @@ export default function TeacherRatingPage() {
                         <td className="px-4 py-3 text-center text-zinc-400">{t.activeStudents}</td>
                         <td className="px-4 py-3 text-center font-bold text-red-400">{t.frozenCount}</td>
                         <td className="px-4 py-3 text-center text-zinc-300">{t.avgDuration}</td>
+                        <td className="px-4 py-3 text-center">
+                          <button 
+                            onClick={() => loadKpiDetails(t)}
+                            className="px-2.5 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-xs font-bold flex items-center gap-1.5 mx-auto"
+                            title="KPI batafsil ma'lumotlari"
+                          >
+                            <span>📊 {t.kpiPercent}%</span>
+                          </button>
+                        </td>
                         <td className="px-4 py-3 text-center">
                           <span className={`font-bold ${c.text}`}>{t.dropoutPercent}% {c.badge}</span>
                         </td>
@@ -158,6 +187,77 @@ export default function TeacherRatingPage() {
           </>
         )}
       </div>
+
+      {/* KPI Details Modal */}
+      {selectedKpiTeacher && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in" onClick={() => { setSelectedKpiTeacher(null); setKpiDetails(null); }}>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl flex flex-col max-h-[85vh] animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span>📈 KPI Batafsil:</span>
+                <span className="text-blue-400">{selectedKpiTeacher.teacher}</span>
+              </h3>
+              <button 
+                onClick={() => { setSelectedKpiTeacher(null); setKpiDetails(null); }}
+                className="text-zinc-400 hover:text-white transition-colors font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {loadingKpi ? (
+              <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 text-blue-500 animate-spin" /></div>
+            ) : !kpiDetails ? (
+              <div className="text-center py-10 text-zinc-500">Tafsilotlar yuklanmadi</div>
+            ) : (
+              <div className="space-y-4 flex flex-col flex-1 overflow-hidden">
+                <div className="flex items-center justify-between bg-zinc-800/40 p-4 rounded-xl border border-zinc-800">
+                  <div>
+                    <div className="text-xs text-zinc-500 font-bold uppercase tracking-wider">O'quvchilar soni</div>
+                    <div className="text-xl font-bold text-white font-mono mt-0.5">{kpiDetails.totalStudents} ta</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-zinc-500 font-bold uppercase tracking-wider">O'rtacha KPI</div>
+                    <div className="text-xl font-black text-blue-400 font-mono mt-0.5">{kpiDetails.averageKpiPercent}%</div>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  <div className="grid grid-cols-[1fr_120px_100px] gap-2 px-3 py-1.5 text-xs text-zinc-500 font-bold uppercase tracking-wider border-b border-zinc-800/50">
+                    <span>O'quvchi / Guruh</span>
+                    <span className="text-center">Topshiriq (Koef)</span>
+                    <span className="text-right">Kof. %</span>
+                  </div>
+                  {kpiDetails.studentDetails.map((s: any) => (
+                    <div key={s.studentId} className="grid grid-cols-[1fr_120px_100px] gap-2 px-3 py-2.5 rounded-lg bg-zinc-950/40 border border-zinc-800/30 items-center">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-white truncate">{s.fullName}</div>
+                        <div className="text-[10px] text-zinc-500 truncate mt-0.5">{s.groupName}</div>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-sm font-bold text-zinc-300 font-mono">{s.submissionsCount}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono ml-1">({s.coefficient})</span>
+                      </div>
+                      <div className="text-right font-black text-blue-400 font-mono text-sm">
+                        {s.percent}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 pt-4 border-t border-zinc-800 flex justify-end">
+              <button 
+                onClick={() => { setSelectedKpiTeacher(null); setKpiDetails(null); }}
+                className="px-5 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-sm transition-colors"
+              >
+                Yopish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

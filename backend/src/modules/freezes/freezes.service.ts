@@ -265,6 +265,9 @@ class FreezesService {
       select: { id: true, fullName: true },
     });
 
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+
     const result = await Promise.all(
       teachers.map(async (teacher) => {
         // Joriy aktiv o'quvchilar
@@ -301,6 +304,39 @@ class FreezesService {
             ? +(durations.reduce((s, d) => s + d, 0) / durations.length).toFixed(2)
             : 0;
 
+        // KPI koeffitsiyenti hisoblash: o'quvchilarning normativ topshirishi boyicha
+        const groupStudents = await prisma.groupStudent.findMany({
+          where: {
+            group: { teacherId: teacher.id, isActive: true },
+            student: { isActive: true },
+          },
+          select: { studentId: true },
+        });
+
+        let sumCoefficient = 0;
+        const totalStudentsForKpi = groupStudents.length;
+
+        if (totalStudentsForKpi > 0) {
+          for (const gs of groupStudents) {
+            const checkedCount = await prisma.submission.count({
+              where: {
+                studentId: gs.studentId,
+                status: 'checked',
+                result: { in: ['green', 'blue'] },
+                submittedAt: {
+                  gte: startOfMonth,
+                  lte: endOfMonth,
+                },
+              },
+            });
+            sumCoefficient += Math.min(checkedCount / 8, 1.0);
+          }
+        }
+
+        const kpiPercent = totalStudentsForKpi > 0
+          ? +((sumCoefficient / totalStudentsForKpi) * 100).toFixed(1)
+          : 0;
+
         return {
           teacherId: teacher.id,
           teacher: teacher.fullName,
@@ -309,6 +345,7 @@ class FreezesService {
           studentsAtStart,
           dropoutPercent,
           avgDuration,
+          kpiPercent,
         };
       })
     );
@@ -318,6 +355,69 @@ class FreezesService {
     filtered.sort((a, b) => a.dropoutPercent - b.dropoutPercent);
 
     return filtered.map((r, i) => ({ rank: i + 1, ...r }));
+  }
+
+  /**
+   * O'qituvchining KPI batafsil ma'lumotlarini olish
+   */
+  async getTeacherKpiDetails(teacherId: string, month: number, year: number) {
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const groupStudents = await prisma.groupStudent.findMany({
+      where: {
+        group: { teacherId, isActive: true },
+        student: { isActive: true },
+      },
+      include: {
+        student: {
+          select: { id: true, fullName: true },
+        },
+        group: {
+          select: { name: true },
+        },
+      },
+    });
+
+    const studentDetails = await Promise.all(
+      groupStudents.map(async (gs) => {
+        const checkedCount = await prisma.submission.count({
+          where: {
+            studentId: gs.studentId,
+            status: 'checked',
+            result: { in: ['green', 'blue'] },
+            submittedAt: {
+              gte: startOfMonth,
+              lte: endOfMonth,
+            },
+          },
+        });
+
+        const coefficient = Math.min(checkedCount / 8, 1.0);
+
+        return {
+          studentId: gs.studentId,
+          fullName: gs.student.fullName,
+          groupName: gs.group.name,
+          submissionsCount: checkedCount,
+          coefficient: +coefficient.toFixed(4),
+          percent: +(coefficient * 100).toFixed(1),
+        };
+      })
+    );
+
+    const totalStudents = studentDetails.length;
+    const sumCoefficient = studentDetails.reduce((sum, s) => sum + s.coefficient, 0);
+    const averageKpiPercent = totalStudents > 0
+      ? +((sumCoefficient / totalStudents) * 100).toFixed(1)
+      : 0;
+
+    return {
+      teacherId,
+      totalStudents,
+      averageKpiPercent,
+      studentDetails,
+    };
   }
 
   /**
