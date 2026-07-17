@@ -482,6 +482,10 @@ model Exam {
   maxAiScore      Int @default(20) @map("max_ai_score")
   maxProjectScore Int @default(40) @map("max_project_score")
 
+  // Dinamik bosqich nomlari
+  step2Name String @default("AI video taqdimot") @map("step2_name") @db.VarChar(100)
+  step3Name String @default("Loyiha (Youtube link)") @map("step3_name") @db.VarChar(100)
+
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -574,6 +578,19 @@ enum QuizStatus {
   finished
 }
 
+/// Real-time interaktiv quiz musiqalari
+model QuizMusic {
+  id        String   @id @default(uuid()) @db.Uuid
+  title     String   @db.VarChar(150)
+  url       String   // music file path / url
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  liveQuizzes LiveQuiz[]
+
+  @@map("quiz_musics")
+}
+
 /// Real-time interaktiv quiz
 model LiveQuiz {
   id          String     @id @default(uuid()) @db.Uuid
@@ -586,9 +603,11 @@ model LiveQuiz {
   timePerQ    Int        @default(20) @map("time_per_q") // soniyada
   isGlobal          Boolean    @default(false) @map("is_global") // Admin tomonidan yaratilgan markaz quizlari
   activeQuestionIds Json?      @map("active_question_ids") // Random tanlangan 20 ta savol IDlari
+  musicId           String?    @map("music_id") @db.Uuid
   createdAt         DateTime   @default(now()) @map("created_at")
 
   createdBy User               @relation("QuizCreator", fields: [createdById], references: [id])
+  music     QuizMusic?         @relation(fields: [musicId], references: [id])
   questions LiveQuizQuestion[]
   players   LiveQuizPlayer[]
 

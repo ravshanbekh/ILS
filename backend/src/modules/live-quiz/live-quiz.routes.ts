@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, json } from 'express';
 import { authenticate } from '../../shared/middleware/auth.middleware';
 import * as quizController from './live-quiz.controller';
 import multer from 'multer';
@@ -27,15 +27,39 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
+// ── Multer (Musiqa yuklash) ──────────────────────────────────────────────────
+const musicUploadDir = path.join(process.cwd(), 'uploads', 'quiz-music');
+if (!fs.existsSync(musicUploadDir)) fs.mkdirSync(musicUploadDir, { recursive: true });
+
+const musicStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, musicUploadDir),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `music-${Date.now()}${ext}`);
+  },
+});
+const uploadMusic = multer({
+  storage: musicStorage,
+  fileFilter: (_req, file, cb) => {
+    if (/audio\/(mpeg|mp3|wav|ogg)/.test(file.mimetype) || file.originalname.endsWith('.mp3') || file.originalname.endsWith('.wav') || file.originalname.endsWith('.ogg')) cb(null, true);
+    else cb(new Error('Faqat MP3/WAV/OGG audio fayl yuklanadi'));
+  },
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
+});
+
 // ── O'qituvchi/Admin ──────────────────────────────────────────────────────────
 router.post('/', authenticate, quizController.createQuiz);
 router.get('/', authenticate, quizController.getMyQuizzes);
 router.get('/global', authenticate, quizController.getGlobalQuizzes);
+router.get('/music', authenticate, quizController.getQuizMusics);
+router.post('/music', authenticate, uploadMusic.single('music'), quizController.uploadQuizMusic);
+router.delete('/music/:musicId', authenticate, quizController.deleteQuizMusic);
+
 router.get('/:id', authenticate, quizController.getQuizById);
 router.patch('/:id', authenticate, quizController.updateQuiz);
 router.delete('/:id', authenticate, quizController.deleteQuiz);
 router.post('/:id/questions', authenticate, quizController.addQuestions);
-router.post('/:id/questions/bulk', authenticate, quizController.bulkAddQuestions);
+router.post('/:id/questions/bulk', authenticate, json({ limit: '5mb' }), quizController.bulkAddQuestions);
 router.patch('/:id/questions/:qId', authenticate, quizController.updateQuestion);
 router.delete('/:id/questions/:qId', authenticate, quizController.deleteQuestion);
 router.post('/:id/use', authenticate, quizController.useGlobalQuiz);   // Global quizni nusxalash

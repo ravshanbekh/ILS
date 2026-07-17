@@ -13,9 +13,12 @@ export const errorHandler = (
   _next: NextFunction
 ) => {
   const statusCode = err.statusCode || 500;
-  const message = err.message || 'Ichki server xatosi';
+  // 500 (kutilmagan/ichki) xatolarda haqiqiy xabar (masalan Prisma xato matni) mijozga chiqarilmaydi —
+  // faqat operatsion deb belgilangan yoki 5xx bo'lmagan xatolarning xabari ko'rsatiladi.
+  const exposeMessage = statusCode < 500 || err.isOperational === true;
+  const message = exposeMessage && err.message ? err.message : 'Ichki server xatosi';
 
-  logger.error(`${statusCode} - ${message}`, {
+  logger.error(`${statusCode} - ${err.message || message}`, {
     method: req.method,
     url: req.url,
     stack: err.stack,

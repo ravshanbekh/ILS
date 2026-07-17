@@ -1,19 +1,23 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/database';
 
 
 // ─── O'qituvchi: Video bahosi va kommentariya qo'yish ────────────────────────
-export const gradeParticipant = async (req: Request, res: Response) => {
+export const gradeParticipant = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id, participantId } = req.params;
     const { aiScore, projectScore, aiComment, projectComment } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
 
     const participant = await prisma.examParticipant.findFirst({
       where: { id: participantId, examId: id },
       include: { exam: true },
     });
     if (!participant) return res.status(404).json({ error: 'Ishtirokchi topilmadi' });
+    if (participant.exam.createdById !== userId) {
+      return res.status(403).json({ error: 'Bu imtihonni baholash uchun ruxsatingiz yo\'q' });
+    }
 
     // Validate max scores
     const exam = participant.exam;
@@ -46,6 +50,6 @@ export const gradeParticipant = async (req: Request, res: Response) => {
 
     res.json({ data: updated });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, json } from 'express';
 import usersController from './users.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 
@@ -19,8 +19,8 @@ router.get('/', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir',
 // GET /api/users/:id — Bitta foydalanuvchi
 router.get('/:id', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher'), usersController.getById);
 
-// POST /api/users/bulk — Ko'p foydalanuvchi yaratish (bulk import)
-router.post('/bulk', roleGuard('admin', 'teacher'), usersController.bulkCreate);
+// POST /api/users/bulk — Ko'p foydalanuvchi yaratish (bulk import, Excel'dan yuzlab qator kelishi mumkin)
+router.post('/bulk', roleGuard('admin', 'teacher'), json({ limit: '5mb' }), usersController.bulkCreate);
 
 // POST /api/users — Yangi foydalanuvchi yaratish (admin yoki teacher)
 router.post('/', roleGuard('admin', 'teacher'), usersController.create);

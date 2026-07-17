@@ -1,6 +1,8 @@
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
+import helmet from 'helmet';
+import path from 'path';
 import { env } from './config/env';
 import logger from './shared/utils/logger';
 import { errorHandler } from './shared/middleware/errorHandler';
@@ -33,6 +35,7 @@ import liveQuizRoutes from './modules/live-quiz/live-quiz.routes';
 import { initSocketIO } from './modules/live-quiz/live-quiz.gateway';
 
 const app = express();
+app.set('trust proxy', 1); // nginx orqasida turgani uchun — rate limit va req.ip to'g'ri ishlashi uchun
 const httpServer = createServer(app);
 
 // Initsializatsiya Socket.io (mavjud)
@@ -42,6 +45,14 @@ initSocketIO(socketIoServer);
 
 // ============ MIDDLEWARE ============
 
+// Xavfsizlik headerlari (X-Content-Type-Options, X-Frame-Options va h.k.)
+// crossOriginResourcePolicy 'cross-origin' — frontend boshqa origin/portda turgani uchun
+// /uploads dagi rasmlar va API javoblari bloklanmasligi kerak.
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+// Serve uploads statically
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 // CORS
 app.use(cors({
   origin: env.CORS_ORIGIN,
@@ -50,9 +61,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Body parser
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Body parser — global kichik limit, katta hajm kerak bo'lgan route'larga (backup restore,
+// bulk import) alohida limit shu route'larning o'zida beriladi.
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ limit: '2mb', extended: true }));
 
 // Rate limiting
 app.use('/api/', apiLimiter);

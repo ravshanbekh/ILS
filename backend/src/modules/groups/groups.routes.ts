@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, json } from 'express';
 import groupsController from './groups.controller';
 import normativesController from '../normatives/normatives.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
@@ -27,7 +27,7 @@ router.delete('/:id', roleGuard('admin'), groupsController.delete);
 router.post('/:id/students', roleGuard('admin', 'teacher'), groupsController.addStudent);
 
 // POST /api/groups/:id/students/bulk — Ko'plab o'quvchi qo'shish
-router.post('/:id/students/bulk', roleGuard('admin', 'teacher'), groupsController.addStudents);
+router.post('/:id/students/bulk', roleGuard('admin', 'teacher'), json({ limit: '5mb' }), groupsController.addStudents);
 
 // DELETE /api/groups/:id/students/:studentId — O'quvchini chiqarish
 router.delete('/:id/students/:studentId', roleGuard('admin', 'teacher'), groupsController.removeStudent);

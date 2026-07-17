@@ -35,3 +35,16 @@ export const env = {
   // Telegram Bot
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
 };
+
+// Production'da zaif yoki yo'q JWT secretlar bilan ishga tushishni oldini olish
+if (env.isProd) {
+  if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+    throw new Error('PRODUCTION XATO: JWT_SECRET va JWT_REFRESH_SECRET .env da majburiy!');
+  }
+  if (env.JWT_SECRET === 'dev-secret' || env.JWT_SECRET.length < 32) {
+    throw new Error('PRODUCTION XATO: JWT_SECRET juda qisqa yoki default qiymatda!');
+  }
+  if (env.JWT_REFRESH_SECRET === 'dev-refresh-secret' || env.JWT_REFRESH_SECRET.length < 32) {
+    throw new Error('PRODUCTION XATO: JWT_REFRESH_SECRET juda qisqa yoki default qiymatda!');
+  }
+}

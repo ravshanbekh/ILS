@@ -1,5 +1,15 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import prisma from '../../config/database';
+import { env } from '../../config/env';
+
+interface ExamSessionPayload {
+  type: 'exam_session';
+  participantId: string;
+  examId: string;
+  studentId: string;
+  questionIds: string[];
+}
 
 // Generate unique access code
 function generateCode(len = 10): string {
@@ -7,11 +17,59 @@ function generateCode(len = 10): string {
   return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
+function createExamSessionToken(
+  participant: { id: string; examId: string; studentId: string },
+  expiresAt: Date,
+  questionIds: string[]
+): string {
+  const expiresIn = Math.max(1, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
+  return jwt.sign(
+    {
+      type: 'exam_session',
+      participantId: participant.id,
+      examId: participant.examId,
+      studentId: participant.studentId,
+      questionIds,
+    } satisfies ExamSessionPayload,
+    env.JWT_SECRET,
+    { expiresIn }
+  );
+}
+
+function verifyExamSessionToken(token: unknown): ExamSessionPayload | null {
+  if (typeof token !== 'string' || !token) return null;
+
+  try {
+    const payload = jwt.verify(token, env.JWT_SECRET) as ExamSessionPayload;
+    if (
+      payload.type !== 'exam_session' ||
+      typeof payload.participantId !== 'string' ||
+      typeof payload.examId !== 'string' ||
+      typeof payload.studentId !== 'string' ||
+      !Array.isArray(payload.questionIds) ||
+      !payload.questionIds.every(id => typeof id === 'string')
+    ) {
+      return null;
+    }
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+async function isExamOwner(examId: string, userId: string): Promise<boolean> {
+  const exam = await prisma.exam.findFirst({
+    where: { id: examId, createdById: userId },
+    select: { id: true },
+  });
+  return Boolean(exam);
+}
+
 
 // ─── O'qituvchi: Imtihon yaratish ────────────────────────────────────────────
-export const createExam = async (req: Request, res: Response) => {
+export const createExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { title, description, categoryId, testCount = 20, maxTestScore = 40, maxAiScore = 20, maxProjectScore = 40, isGlobal } = req.body;
+    const { title, description, categoryId, testCount = 20, maxTestScore = 40, maxAiScore = 20, maxProjectScore = 40, isGlobal, step2Name, step3Name } = req.body;
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
     if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
@@ -36,6 +94,8 @@ export const createExam = async (req: Request, res: Response) => {
         maxProjectScore,
         status: 'draft',
         isGlobal: Boolean(isGlobal && userRole === 'admin'),
+        step2Name: step2Name || undefined,
+        step3Name: step3Name || undefined,
       },
       include: {
         category: true,
@@ -45,12 +105,12 @@ export const createExam = async (req: Request, res: Response) => {
 
     res.status(201).json({ data: exam });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Mening imtihonlarim ────────────────────────────────────────
-export const getMyExams = async (req: Request, res: Response) => {
+export const getMyExams = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user?.userId;
     const exams = await prisma.exam.findMany({
@@ -63,12 +123,12 @@ export const getMyExams = async (req: Request, res: Response) => {
     });
     res.json({ data: exams });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Markaz: Global imtihonlar ──────────────────────────────────────────────
-export const getGlobalExams = async (req: Request, res: Response) => {
+export const getGlobalExams = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const exams = await prisma.exam.findMany({
       where: { isGlobal: true },
@@ -80,12 +140,12 @@ export const getGlobalExams = async (req: Request, res: Response) => {
     });
     res.json({ data: exams });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Global imtihonni aktivlashtirish ───────────────────────────
-export const activateGlobalExam = async (req: Request, res: Response) => {
+export const activateGlobalExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
@@ -110,6 +170,8 @@ export const activateGlobalExam = async (req: Request, res: Response) => {
         maxTestScore: globalExam.maxTestScore,
         maxAiScore: globalExam.maxAiScore,
         maxProjectScore: globalExam.maxProjectScore,
+        step2Name: globalExam.step2Name,
+        step3Name: globalExam.step3Name,
         isGlobal: false,
         templateId: globalExam.id,
       }
@@ -117,12 +179,12 @@ export const activateGlobalExam = async (req: Request, res: Response) => {
 
     res.status(201).json({ data: newExam, message: 'Global imtihon aktivlashtirildi' });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Imtihon batafsil ───────────────────────────────────────────
-export const getExamById = async (req: Request, res: Response) => {
+export const getExamById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
@@ -146,12 +208,12 @@ export const getExamById = async (req: Request, res: Response) => {
 
     res.json({ data: exam });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Aktivlashtirish ────────────────────────────────────────────
-export const activateExam = async (req: Request, res: Response) => {
+export const activateExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
@@ -174,12 +236,12 @@ export const activateExam = async (req: Request, res: Response) => {
     });
     res.json({ data: updated });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Yakunlash ───────────────────────────────────────────────────
-export const completeExam = async (req: Request, res: Response) => {
+export const completeExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
@@ -189,26 +251,32 @@ export const completeExam = async (req: Request, res: Response) => {
     });
     res.json({ data: updated });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: O'chirish ───────────────────────────────────────────────────
-export const deleteExam = async (req: Request, res: Response) => {
+export const deleteExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
     await prisma.exam.delete({ where: { id, createdById: userId } });
     res.json({ message: 'O\'chirildi' });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Savol qo'shish (bitta yoki ko'p) ────────────────────────────────
-export const addQuestions = async (req: Request, res: Response) => {
+export const addQuestions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
+    if (!(await isExamOwner(id, userId))) {
+      return res.status(403).json({ error: 'Bu imtihonni tahrirlash uchun ruxsatingiz yo\'q' });
+    }
+
     let questions = req.body.questions;
     
     // Agar form-data orqali 1 ta savol kelsa
@@ -240,14 +308,22 @@ export const addQuestions = async (req: Request, res: Response) => {
     const total = await prisma.examQuestion.count({ where: { examId: id } });
     res.status(201).json({ message: `${questions.length} ta savol qo'shildi`, total });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Savolni tahrirlash ──────────────────────────────────────────
-export const updateQuestion = async (req: Request, res: Response) => {
+export const updateQuestion = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id, qId } = req.params;
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
+    if (!(await isExamOwner(id, userId))) {
+      return res.status(403).json({ error: 'Bu imtihonni tahrirlash uchun ruxsatingiz yo\'q' });
+    }
+
+    const question = await prisma.examQuestion.findFirst({ where: { id: qId, examId: id } });
+    if (!question) return res.status(404).json({ error: 'Savol topilmadi' });
     
     const updateData: any = {};
     if (req.body.question) updateData.question = req.body.question;
@@ -267,14 +343,20 @@ export const updateQuestion = async (req: Request, res: Response) => {
     
     res.json({ message: 'Savol tahrirlandi' });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Bulk savol (Excel import'dan) ──────────────────────────────
-export const bulkAddQuestions = async (req: Request, res: Response) => {
+export const bulkAddQuestions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
+    if (!(await isExamOwner(id, userId))) {
+      return res.status(403).json({ error: 'Bu imtihonni tahrirlash uchun ruxsatingiz yo\'q' });
+    }
+
     const { questions } = req.body;
     if (!Array.isArray(questions)) return res.status(400).json({ error: 'Array kerak' });
 
@@ -292,23 +374,32 @@ export const bulkAddQuestions = async (req: Request, res: Response) => {
     await prisma.examQuestion.createMany({ data });
     res.json({ message: `${data.length} ta savol saqlandi` });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Savol o'chirish ─────────────────────────────────────────────
-export const deleteQuestion = async (req: Request, res: Response) => {
+export const deleteQuestion = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { qId } = req.params;
+    const { id, qId } = req.params;
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
+    if (!(await isExamOwner(id, userId))) {
+      return res.status(403).json({ error: 'Bu imtihonni tahrirlash uchun ruxsatingiz yo\'q' });
+    }
+
+    const question = await prisma.examQuestion.findFirst({ where: { id: qId, examId: id } });
+    if (!question) return res.status(404).json({ error: 'Savol topilmadi' });
+
     await prisma.examQuestion.delete({ where: { id: qId } });
     res.json({ message: 'O\'chirildi' });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: Natijalar ───────────────────────────────────────────────────
-export const getExamResults = async (req: Request, res: Response) => {
+export const getExamResults = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
@@ -326,12 +417,12 @@ export const getExamResults = async (req: Request, res: Response) => {
 
     res.json({ data: { exam, participants } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'quvchi: Imtihonni kod bilan topish ────────────────────────────────────
-export const getExamByCode = async (req: Request, res: Response) => {
+export const getExamByCode = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code } = req.params;
     const exam = await prisma.exam.findFirst({
@@ -349,12 +440,12 @@ export const getExamByCode = async (req: Request, res: Response) => {
     const questionCount = await prisma.examQuestion.count({ where: { examId: exam.id } });
     res.json({ data: { ...exam, questionCount } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'quvchi: Imtihonni boshlash (login kerak) ──────────────────────────────
-export const startExam = async (req: Request, res: Response) => {
+export const startExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code } = req.params;
     const { login, password } = req.body;
@@ -362,7 +453,7 @@ export const startExam = async (req: Request, res: Response) => {
     // Login tekshirish
     const bcrypt = await import('bcryptjs');
     const student = await prisma.user.findFirst({ where: { login } });
-    if (!student || !(await bcrypt.default.compare(password, student.passwordHash))) {
+    if (!student || !student.isActive || !(await bcrypt.default.compare(password, student.passwordHash))) {
       return res.status(401).json({ error: 'Login yoki parol noto\'g\'ri' });
     }
 
@@ -384,7 +475,8 @@ export const startExam = async (req: Request, res: Response) => {
     if (existing?.status === 'in_progress') {
       // Sessiyani davom ettirish
       const randomQs = await getRandomQuestions(exam.id, exam.testCount);
-      return res.json({ data: { participant: existing, questions: randomQs, student: { id: student.id, fullName: student.fullName } } });
+      const sessionToken = createExamSessionToken(existing, exam.expiresAt, randomQs.map(q => q.id));
+      return res.json({ data: { participant: existing, questions: randomQs, sessionToken, student: { id: student.id, fullName: student.fullName } } });
     }
 
     // Yangi ishtirokchi
@@ -393,67 +485,135 @@ export const startExam = async (req: Request, res: Response) => {
     });
 
     const questions = await getRandomQuestions(exam.id, exam.testCount);
-    res.json({ data: { participant, questions, student: { id: student.id, fullName: student.fullName } } });
+    const sessionToken = createExamSessionToken(participant, exam.expiresAt, questions.map(q => q.id));
+    res.json({ data: { participant, questions, sessionToken, student: { id: student.id, fullName: student.fullName } } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'quvchi: Test topshirish ───────────────────────────────────────────────
-export const submitTest = async (req: Request, res: Response) => {
+export const submitTest = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code } = req.params;
-    const { participantId, answers } = req.body;
+    const { participantId, answers, sessionToken } = req.body;
     // answers: [{ questionId, selectedOption }]
 
-    const participant = await prisma.examParticipant.findUnique({
-      where: { id: participantId },
-      include: { exam: true },
+    if (typeof participantId !== 'string' || !Array.isArray(answers)) {
+      return res.status(400).json({ error: 'Topshirish ma\'lumotlari noto\'g\'ri' });
+    }
+
+    const exam = await prisma.exam.findFirst({
+      where: { accessCode: code.toUpperCase(), status: 'active' },
+    });
+    if (!exam) return res.status(404).json({ error: 'Faol imtihon topilmadi' });
+    if (new Date() > exam.expiresAt) return res.status(410).json({ error: 'Imtihon vaqti tugagan' });
+
+    const participant = await prisma.examParticipant.findFirst({
+      where: { id: participantId, examId: exam.id },
     });
     if (!participant) return res.status(404).json({ error: 'Ishtirokchi topilmadi' });
     if (participant.status === 'submitted') return res.status(409).json({ error: 'Allaqachon topshirilgan' });
+    if (participant.testScore !== null) return res.status(409).json({ error: 'Test allaqachon topshirilgan' });
+
+    const session = verifyExamSessionToken(sessionToken);
+    if (
+      !session ||
+      session.participantId !== participant.id ||
+      session.examId !== exam.id ||
+      session.studentId !== participant.studentId
+    ) {
+      return res.status(401).json({ error: 'Imtihon sessiyasi yaroqsiz yoki muddati tugagan' });
+    }
+
+    const allowedQuestionIds = new Set(session.questionIds);
+    const uniqueAnswers = new Map<string, any>();
+    for (const answer of answers) {
+      if (!answer || typeof answer.questionId !== 'string' || !allowedQuestionIds.has(answer.questionId)) {
+        return res.status(400).json({ error: 'Javoblarda ushbu sessiyaga tegishli bo\'lmagan savol bor' });
+      }
+      if (uniqueAnswers.has(answer.questionId)) {
+        return res.status(400).json({ error: 'Bir savolga takroriy javob yuborilgan' });
+      }
+      uniqueAnswers.set(answer.questionId, answer);
+    }
+
+    const actualExamId = exam.templateId || exam.id;
+    const questions = await prisma.examQuestion.findMany({
+      where: { id: { in: [...uniqueAnswers.keys()] }, examId: actualExamId },
+    });
+    if (questions.length !== uniqueAnswers.size) {
+      return res.status(400).json({ error: 'Savollardan biri bu imtihonga tegishli emas' });
+    }
 
     // Javoblarni tekshirish
     let correct = 0;
     const answerData: any[] = [];
-    for (const a of answers) {
-      const q = await prisma.examQuestion.findUnique({ where: { id: a.questionId } });
-      if (!q) continue;
-      
+    for (const q of questions) {
+      const a = uniqueAnswers.get(q.id);
       const dbOptions = q.options as string[];
       const correctText = dbOptions[q.correct as number];
       const isCorrect = a.selectedText === correctText;
       if (isCorrect) correct++;
-      
-      // Original indeksni topish (agar matn bilan kelgan bo'lsa)
-      const originalSelectedOption = a.selectedText ? dbOptions.indexOf(a.selectedText) : a.selectedOption;
 
-      answerData.push({ participantId, questionId: a.questionId, selectedOption: originalSelectedOption, isCorrect });
+      const selectedText = typeof a.selectedText === 'string' ? a.selectedText : null;
+      const originalSelectedOption = selectedText === null ? -1 : dbOptions.indexOf(selectedText);
+      if (selectedText !== null && originalSelectedOption === -1) {
+        return res.status(400).json({ error: 'Tanlangan javob varianti noto\'g\'ri' });
+      }
+
+      answerData.push({ participantId, questionId: q.id, selectedOption: originalSelectedOption, isCorrect });
     }
 
     // Ball hisoblash (40 ball max, to'g'ri/jami * max)
-    const exam = participant.exam;
     const testScore = Math.round((correct / exam.testCount) * exam.maxTestScore);
 
-    await prisma.examAnswer.createMany({ data: answerData, skipDuplicates: true });
-    await prisma.examParticipant.update({
-      where: { id: participantId },
-      data: { testScore, correctCount: correct, status: 'in_progress' },
-    });
+    await prisma.$transaction([
+      prisma.examAnswer.createMany({ data: answerData, skipDuplicates: true }),
+      prisma.examParticipant.update({
+        where: { id: participantId },
+        data: { testScore, correctCount: correct, status: 'in_progress' },
+      }),
+    ]);
 
     res.json({ data: { correct, total: exam.testCount, testScore } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'quvchi: Video linklar yuborish ────────────────────────────────────────
-export const submitVideos = async (req: Request, res: Response) => {
+export const submitVideos = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { participantId, aiVideoUrl, projectVideoUrl } = req.body;
+    const { code } = req.params;
+    const { participantId, aiVideoUrl, projectVideoUrl, sessionToken } = req.body;
 
-    const participant = await prisma.examParticipant.findUnique({ where: { id: participantId } });
+    if (typeof participantId !== 'string') {
+      return res.status(400).json({ error: 'Ishtirokchi ID noto\'g\'ri' });
+    }
+
+    const exam = await prisma.exam.findFirst({
+      where: { accessCode: code.toUpperCase(), status: 'active' },
+    });
+    if (!exam) return res.status(404).json({ error: 'Faol imtihon topilmadi' });
+    if (new Date() > exam.expiresAt) return res.status(410).json({ error: 'Imtihon vaqti tugagan' });
+
+    const participant = await prisma.examParticipant.findFirst({
+      where: { id: participantId, examId: exam.id },
+    });
     if (!participant) return res.status(404).json({ error: 'Ishtirokchi topilmadi' });
+    if (participant.status === 'submitted') return res.status(409).json({ error: 'Allaqachon topshirilgan' });
+    if (participant.testScore === null) return res.status(409).json({ error: 'Avval testni topshiring' });
+
+    const session = verifyExamSessionToken(sessionToken);
+    if (
+      !session ||
+      session.participantId !== participant.id ||
+      session.examId !== exam.id ||
+      session.studentId !== participant.studentId
+    ) {
+      return res.status(401).json({ error: 'Imtihon sessiyasi yaroqsiz yoki muddati tugagan' });
+    }
 
     await prisma.examParticipant.update({
       where: { id: participantId },
@@ -462,7 +622,7 @@ export const submitVideos = async (req: Request, res: Response) => {
 
     res.json({ message: 'Imtihon muvaffaqiyatli topshirildi' });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 

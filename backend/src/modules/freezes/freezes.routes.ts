@@ -34,7 +34,7 @@ router.get(
 
 router.get(
   '/teacher-rating',
-  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'filial_rahbari'),
+  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'filial_rahbari', 'teacher'),
   freezesController.getTeacherRating
 );
 

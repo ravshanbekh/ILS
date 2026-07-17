@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/database';
 import path from 'path';
 import fs from 'fs';
@@ -31,7 +31,7 @@ function filterActiveQuestions(quiz: any) {
 }
 
 // ─── O'qituvchi/Admin: Quiz yaratish ─────────────────────────────────────────
-export const createQuiz = async (req: Request, res: Response) => {
+export const createQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { title, description, timePerQ = 20, isGlobal = false } = req.body;
     const userId = (req as any).user?.userId;
@@ -54,12 +54,12 @@ export const createQuiz = async (req: Request, res: Response) => {
     });
     res.status(201).json({ data: quiz });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi/Admin: Mening quizlarim ─────────────────────────────────────
-export const getMyQuizzes = async (req: Request, res: Response) => {
+export const getMyQuizzes = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user?.userId;
     const quizzes = await prisma.liveQuiz.findMany({
@@ -72,12 +72,12 @@ export const getMyQuizzes = async (req: Request, res: Response) => {
     });
     res.json({ data: quizzes });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Global (Markaz) Quizlar — hamma o'qituvchilarga ─────────────────────────
-export const getGlobalQuizzes = async (req: Request, res: Response) => {
+export const getGlobalQuizzes = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const quizzes = await prisma.liveQuiz.findMany({
       where: { isGlobal: true },
@@ -89,12 +89,12 @@ export const getGlobalQuizzes = async (req: Request, res: Response) => {
     });
     res.json({ data: quizzes });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Quiz batafsil ────────────────────────────────────────────────────────────
-export const getQuizById = async (req: Request, res: Response) => {
+export const getQuizById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
@@ -109,6 +109,7 @@ export const getQuizById = async (req: Request, res: Response) => {
           questions: { orderBy: { order: 'asc' } },
           players: { orderBy: { score: 'desc' } },
           createdBy: { select: { id: true, fullName: true } },
+          music: true,
         },
       });
     } else {
@@ -118,6 +119,7 @@ export const getQuizById = async (req: Request, res: Response) => {
           questions: { orderBy: { order: 'asc' } },
           players: { orderBy: { score: 'desc' } },
           createdBy: { select: { id: true, fullName: true } },
+          music: true,
         },
       });
     }
@@ -128,12 +130,12 @@ export const getQuizById = async (req: Request, res: Response) => {
     }
     res.json({ data: quiz });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Quiz yangilash (faqat yaratuvchi/admin) ──────────────────────────────────
-export const updateQuiz = async (req: Request, res: Response) => {
+export const updateQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { title, description, timePerQ, isGlobal } = req.body;
@@ -162,12 +164,12 @@ export const updateQuiz = async (req: Request, res: Response) => {
     });
     res.json({ data: updated });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Quiz o'chirish (faqat yaratuvchi, global bo'lmagan) ──────────────────────
-export const deleteQuiz = async (req: Request, res: Response) => {
+export const deleteQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
@@ -186,12 +188,12 @@ export const deleteQuiz = async (req: Request, res: Response) => {
     await prisma.liveQuiz.delete({ where: { id } });
     res.json({ message: 'Quiz o\'chirildi' });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Savol qo'shish ───────────────────────────────────────────────────────────
-export const addQuestions = async (req: Request, res: Response) => {
+export const addQuestions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { questions } = req.body;
@@ -207,12 +209,12 @@ export const addQuestions = async (req: Request, res: Response) => {
     await prisma.liveQuizQuestion.createMany({ data });
     res.status(201).json({ message: `${data.length} ta savol qo'shildi` });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Bulk savol ───────────────────────────────────────────────────────────────
-export const bulkAddQuestions = async (req: Request, res: Response) => {
+export const bulkAddQuestions = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { questions } = req.body;
@@ -228,12 +230,12 @@ export const bulkAddQuestions = async (req: Request, res: Response) => {
     await prisma.liveQuizQuestion.createMany({ data });
     res.json({ message: `${data.length} ta savol saqlandi` });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Savol tahrirlash ─────────────────────────────────────────────────────────
-export const updateQuestion = async (req: Request, res: Response) => {
+export const updateQuestion = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { qId } = req.params;
     const { question, options, correct, imageUrl } = req.body;
@@ -248,33 +250,33 @@ export const updateQuestion = async (req: Request, res: Response) => {
     });
     res.json({ data: updated });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Savol o'chirish ──────────────────────────────────────────────────────────
-export const deleteQuestion = async (req: Request, res: Response) => {
+export const deleteQuestion = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await prisma.liveQuizQuestion.delete({ where: { id: req.params.qId } });
     res.json({ message: 'O\'chirildi' });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Rasm yuklash ─────────────────────────────────────────────────────────────
-export const uploadQuizImage = async (req: Request, res: Response) => {
+export const uploadQuizImage = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Rasm yuklanmadi' });
     const imageUrl = `/uploads/quiz-images/${req.file.filename}`;
     res.json({ data: { imageUrl } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Quizni boshlash — YANGI KOD generatsiya ─────────────────────────────────
-export const startQuiz = async (req: Request, res: Response) => {
+export const startQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
@@ -302,6 +304,8 @@ export const startQuiz = async (req: Request, res: Response) => {
       where: { quizId: id }
     });
 
+    const { musicId } = req.body;
+
     // Har safar yangi kod generatsiya qilish
     const newCode = await genUniqueCode();
 
@@ -309,20 +313,20 @@ export const startQuiz = async (req: Request, res: Response) => {
 
     let quiz = await prisma.liveQuiz.update({
       where: { id },
-      data: { status: 'waiting', currentQ: -1, code: newCode, activeQuestionIds },
-      include: { questions: { orderBy: { order: 'asc' } } },
+      data: { status: 'waiting', currentQ: -1, code: newCode, activeQuestionIds, musicId: musicId || null },
+      include: { questions: { orderBy: { order: 'asc' } }, music: true },
     });
 
     filterActiveQuestions(quiz);
 
     res.json({ data: quiz });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi Global Quizni o'z nomiga boshlash (nusxalash) ─────────────────
-export const useGlobalQuiz = async (req: Request, res: Response) => {
+export const useGlobalQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
@@ -365,7 +369,7 @@ export const useGlobalQuiz = async (req: Request, res: Response) => {
     // To'liq ma'lumot qaytarish
     let fullQuiz = await prisma.liveQuiz.findUnique({
       where: { id: newQuiz.id },
-      include: { questions: { orderBy: { order: 'asc' } } },
+      include: { questions: { orderBy: { order: 'asc' } }, music: true },
     });
 
     if (fullQuiz && fullQuiz.questions.length > 0) {
@@ -373,7 +377,7 @@ export const useGlobalQuiz = async (req: Request, res: Response) => {
       fullQuiz = await prisma.liveQuiz.update({
         where: { id: newQuiz.id },
         data: { activeQuestionIds },
-        include: { questions: { orderBy: { order: 'asc' } } },
+        include: { questions: { orderBy: { order: 'asc' } }, music: true },
       });
     }
 
@@ -381,19 +385,19 @@ export const useGlobalQuiz = async (req: Request, res: Response) => {
 
     res.status(201).json({ data: fullQuiz });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'yin boshlash (status active, 1-savol yuborish) ─────────────────────────
-export const launchQuiz = async (req: Request, res: Response) => {
+export const launchQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
 
     let quiz = await prisma.liveQuiz.update({
       where: { id },
       data: { status: 'active', currentQ: 0 },
-      include: { questions: { orderBy: { order: 'asc' } } },
+      include: { questions: { orderBy: { order: 'asc' } }, music: true },
     });
 
     filterActiveQuestions(quiz);
@@ -416,13 +420,13 @@ export const launchQuiz = async (req: Request, res: Response) => {
 
     res.json({ data: quiz });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Leaderboard ko'rsatish (Natija fazasi) ───────────────────────────────────
 // Faqat leaderboard emit qiladi, keyingi savolni AVTOMATIK yubormaydi.
-export const nextQuestion = async (req: Request, res: Response) => {
+export const nextQuestion = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const quiz = await prisma.liveQuiz.findUnique({
@@ -475,12 +479,12 @@ export const nextQuestion = async (req: Request, res: Response) => {
 
     res.json({ message: 'Leaderboard yuborildi', nextIndex });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Keyingi savolni yuborish (O'qituvchi tugmasi bosishi bilan) ───────────────
-export const showQuestion = async (req: Request, res: Response) => {
+export const showQuestion = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const quiz = await prisma.liveQuiz.findUnique({
@@ -510,12 +514,12 @@ export const showQuestion = async (req: Request, res: Response) => {
 
     res.json({ message: 'Savol yuborildi', index: quiz.currentQ });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Quizni yakunlash ─────────────────────────────────────────────────────────
-export const finishQuiz = async (req: Request, res: Response) => {
+export const finishQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const quiz = await prisma.liveQuiz.update({
@@ -541,12 +545,12 @@ export const finishQuiz = async (req: Request, res: Response) => {
 
     res.json({ data: { quiz, playerCount: players.length } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── Batafsil statistika ──────────────────────────────────────────────────────
-export const getQuizStats = async (req: Request, res: Response) => {
+export const getQuizStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const quiz = await prisma.liveQuiz.findUnique({
@@ -639,12 +643,12 @@ export const getQuizStats = async (req: Request, res: Response) => {
       },
     });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'yinchi: Kodni tekshirish ───────────────────────────────────────────────
-export const getQuizByCode = async (req: Request, res: Response) => {
+export const getQuizByCode = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code } = req.params;
     const quiz = await prisma.liveQuiz.findFirst({
@@ -655,12 +659,12 @@ export const getQuizByCode = async (req: Request, res: Response) => {
     if (quiz.status === 'finished') return res.status(410).json({ error: 'Quiz tugagan' });
     res.json({ data: { id: quiz.id, title: quiz.title, status: quiz.status, playerCount: (quiz as any)._count.players } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'yinchi: Kirish (ism bilan) ────────────────────────────────────────────
-export const joinQuiz = async (req: Request, res: Response) => {
+export const joinQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code } = req.params;
     const { fullName } = req.body;
@@ -685,12 +689,12 @@ export const joinQuiz = async (req: Request, res: Response) => {
 
     res.json({ data: { player, quiz: { id: quiz.id, title: quiz.title, status: quiz.status, code: quiz.code } } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'yinchi: Ismni o'zgartirish ────────────────────────────────────────────
-export const updatePlayerName = async (req: Request, res: Response) => {
+export const updatePlayerName = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { playerId } = req.params;
     const { fullName } = req.body;
@@ -716,12 +720,12 @@ export const updatePlayerName = async (req: Request, res: Response) => {
     }
     res.json({ data: player });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 // ─── O'qituvchi: O'yinchini chiqarib yuborish ─────────────────────────────────
-export const kickPlayer = async (req: Request, res: Response) => {
+export const kickPlayer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id, playerId } = req.params;
     const userId = (req as any).user?.userId;
@@ -740,13 +744,13 @@ export const kickPlayer = async (req: Request, res: Response) => {
     }
     res.json({ success: true });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
 
 // ─── O'yinchi: Javob yuborish ─────────────────────────────────────────────────
-export const submitAnswer = async (req: Request, res: Response) => {
+export const submitAnswer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { playerId, questionId, selected, timeMs } = req.body;
 
@@ -806,11 +810,11 @@ export const submitAnswer = async (req: Request, res: Response) => {
 
     res.json({ data: { isCorrect, points, streak: newStreak, correct: question.correct } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
   }
 };
 
-export const leaveQuiz = async (req: Request, res: Response) => {
+export const leaveQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { playerId } = req.params;
     const player = await prisma.liveQuizPlayer.findUnique({
@@ -829,6 +833,76 @@ export const leaveQuiz = async (req: Request, res: Response) => {
 
     res.json({ success: true });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    next(e);
+  }
+};
+
+// ─── Quiz Musiqa Tizimi ───────────────────────────────────────────────────────
+export const getQuizMusics = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const musics = await prisma.quizMusic.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ data: musics });
+  } catch (e: any) {
+    next(e);
+  }
+};
+
+export const uploadQuizMusic = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userRole = (req as any).user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Faqat administrator musiqa yuklay oladi' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Fayl yuklanmadi' });
+    }
+
+    const { title } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: 'Musiqa sarlavhasi kiritilishi shart' });
+    }
+
+    const url = `/uploads/quiz-music/${req.file.filename}`;
+
+    const music = await prisma.quizMusic.create({
+      data: { title, url },
+    });
+
+    res.status(201).json({ data: music });
+  } catch (e: any) {
+    next(e);
+  }
+};
+
+export const deleteQuizMusic = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userRole = (req as any).user?.role;
+    if (userRole !== 'admin') {
+      return res.status(403).json({ error: 'Faqat administrator musiqa o\'chira oladi' });
+    }
+
+    const { musicId } = req.params;
+
+    const music = await prisma.quizMusic.findUnique({ where: { id: musicId } });
+    if (!music) return res.status(404).json({ error: 'Musiqa topilmadi' });
+
+    const filePath = path.join(process.cwd(), music.url);
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (err) {
+        console.error('Musiqa faylini o\'chirishda xatolik:', err);
+      }
+    }
+
+    await prisma.quizMusic.delete({ where: { id: musicId } });
+
+    res.json({ message: 'Musiqa o\'chirildi' });
+  } catch (e: any) {
+    next(e);
   }
 };
