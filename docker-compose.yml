@@ -6,12 +6,12 @@ services:
     container_name: tizim_db
     environment:
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD .env faylda kerak — TUZATISH_REJASI.md 2.2 ga qarang}
       POSTGRES_DB: normativ_tizim
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5440:5432"
+      - "127.0.0.1:5440:5432" # faqat localhost — tashqi internetdan yopiq
     restart: unless-stopped
 
   backend:
