@@ -16,6 +16,8 @@ interface Exam {
   maxTestScore: number;
   maxAiScore: number;
   maxProjectScore: number;
+  step2Name: string;
+  step3Name: string;
   category?: { name: string };
   templateId?: string;
   _count?: { questions: number; participants: number };
@@ -57,7 +59,7 @@ export default function ExamsPage() {
   const [tab, setTab] = useState<'questions' | 'results'>('questions');
 
   // Create form
-  const [form, setForm] = useState({ title: '', testCount: 20, isGlobal: false });
+  const [form, setForm] = useState({ title: '', testCount: 20, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)' });
   const [creating, setCreating] = useState(false);
 
   // Questions panel
@@ -91,7 +93,7 @@ export default function ExamsPage() {
     try {
       await examApi.create(form);
       setShowCreate(false);
-      setForm({ title: '', testCount: 20, isGlobal: false });
+      setForm({ title: '', testCount: 20, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)' });
       fetchExams();
     } finally { setCreating(false); }
   }
@@ -231,7 +233,7 @@ export default function ExamsPage() {
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
             />
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-3">
               <label className="text-zinc-400 text-sm whitespace-nowrap">Test soni:</label>
               <input
                 type="number"
@@ -241,11 +243,29 @@ export default function ExamsPage() {
                 min={5} max={100}
               />
             </div>
+            <div className="mb-3">
+              <label className="text-zinc-400 text-xs block mb-1">2-bosqich nomi (Faqat link qoldiradi):</label>
+              <input
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                placeholder="AI video taqdimot"
+                value={form.step2Name}
+                onChange={e => setForm(f => ({ ...f, step2Name: e.target.value }))}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="text-zinc-400 text-xs block mb-1">3-bosqich nomi (Faqat link qoldiradi):</label>
+              <input
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                placeholder="Loyiha (Youtube link)"
+                value={form.step3Name}
+                onChange={e => setForm(f => ({ ...f, step3Name: e.target.value }))}
+              />
+            </div>
             <div className="bg-zinc-800 rounded-lg p-3 text-sm text-zinc-400 mb-4">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div><div className="text-white font-bold">40</div><div>Test</div></div>
-                <div><div className="text-white font-bold">20</div><div>AI video</div></div>
-                <div><div className="text-white font-bold">40</div><div>Loyiha</div></div>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div><div className="text-white font-bold">40</div><div className="truncate">Test</div></div>
+                <div><div className="text-white font-bold">20</div><div className="truncate">{form.step2Name || '2-bosqich'}</div></div>
+                <div><div className="text-white font-bold">40</div><div className="truncate">{form.step3Name || '3-bosqich'}</div></div>
               </div>
             </div>
             {isAdmin && (
@@ -564,27 +584,29 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
             </div>
             <div className="bg-zinc-700/50 rounded-lg p-2 text-center">
               <div className="text-purple-400 font-bold">{p.aiScore ?? '—'}</div>
-              <div className="text-zinc-500 text-xs">AI video (/{exam.maxAiScore})</div>
+              <div className="text-zinc-500 text-xs truncate" title={exam.step2Name}>{exam.step2Name} (/{exam.maxAiScore})</div>
             </div>
             <div className="bg-zinc-700/50 rounded-lg p-2 text-center">
               <div className="text-emerald-400 font-bold">{p.projectScore ?? '—'}</div>
-              <div className="text-zinc-500 text-xs">Loyiha (/{exam.maxProjectScore})</div>
+              <div className="text-zinc-500 text-xs truncate" title={exam.step3Name}>{exam.step3Name} (/{exam.maxProjectScore})</div>
             </div>
           </div>
 
           {/* Videos */}
           {(p.aiVideoUrl || p.projectVideoUrl) && (
-            <div className="flex gap-2 mb-3 text-xs">
+            <div className="flex flex-wrap gap-2 mb-3 text-xs">
               {p.aiVideoUrl && (
                 <a href={p.aiVideoUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 px-3 py-1.5 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 rounded-lg transition border border-purple-500/20">
-                  🎬 AI video
+                  className="flex items-center gap-1 px-3 py-1.5 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 rounded-lg transition border border-purple-500/20 max-w-[200px] truncate"
+                  title={exam.step2Name}>
+                  🎬 {exam.step2Name}
                 </a>
               )}
               {p.projectVideoUrl && (
                 <a href={p.projectVideoUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition border border-emerald-500/20">
-                  💼 Loyiha video
+                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition border border-emerald-500/20 max-w-[200px] truncate"
+                  title={exam.step3Name}>
+                  💼 {exam.step3Name}
                 </a>
               )}
             </div>
@@ -596,7 +618,7 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
               <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs text-zinc-400">AI ball (/{exam.maxAiScore})</label>
+                    <label className="text-xs text-zinc-400 truncate block" title={exam.step2Name}>{exam.step2Name} (/{exam.maxAiScore})</label>
                     <input type="number" max={exam.maxAiScore} min={0}
                       className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm mt-1"
                       value={scoreForm[p.id]?.aiScore ?? ''}
@@ -604,7 +626,7 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-zinc-400">Loyiha ball (/{exam.maxProjectScore})</label>
+                    <label className="text-xs text-zinc-400 truncate block" title={exam.step3Name}>{exam.step3Name} (/{exam.maxProjectScore})</label>
                     <input type="number" max={exam.maxProjectScore} min={0}
                       className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm mt-1"
                       value={scoreForm[p.id]?.projectScore ?? ''}
@@ -614,14 +636,14 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
                 </div>
                 <textarea
                   className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-xs"
-                  placeholder="AI video kommentariya..."
+                  placeholder={`${exam.step2Name} kommentariya...`}
                   rows={2}
                   value={scoreForm[p.id]?.aiComment ?? ''}
                   onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], aiComment: e.target.value } }))}
                 />
                 <textarea
                   className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-xs"
-                  placeholder="Loyiha video kommentariya..."
+                  placeholder={`${exam.step3Name} kommentariya...`}
                   rows={2}
                   value={scoreForm[p.id]?.projectComment ?? ''}
                   onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], projectComment: e.target.value } }))}

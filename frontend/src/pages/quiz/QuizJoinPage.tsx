@@ -97,6 +97,73 @@ export default function QuizJoinPage() {
   const timerRef = useRef<number>(0);
   const scoreRef = useRef(0);
   const qIndexRef = useRef(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
+
+  // Kahoot-style click sound using Web Audio API
+  function playClickSound(correct?: boolean) {
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      if (correct === undefined) {
+        // Click/select sound: short upward beep
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.12);
+      } else if (correct) {
+        // Correct answer: cheerful ding-ding
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.setValueAtTime(900, ctx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.35, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+      } else {
+        // Wrong answer: low buzz
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.25);
+      }
+    } catch (e) {
+      // Audio API not available — silently fail
+    }
+  }
+
+  // Start lobby music
+  function startLobbyMusic(musicUrl: string) {
+    stopLobbyMusic();
+    const audio = new Audio(musicUrl);
+    audio.loop = true;
+    audio.volume = 0.4;
+    audio.play().catch(() => {});
+    audioRef.current = audio;
+  }
+
+  function stopLobbyMusic() {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+  }
 
   function leaveQuiz() {
     if (player?.id) {
@@ -125,6 +192,7 @@ export default function QuizJoinPage() {
 
     s.on('quiz:player-joined', (data) => setPlayerCount(data.playerCount));
     s.on('quiz:started', (data) => {
+      stopLobbyMusic(); // Stop music when game starts
       qIndexRef.current = 0;
       setCurrentQ(data.question);
       setSelected(null);
@@ -133,6 +201,7 @@ export default function QuizJoinPage() {
       setStage('question');
     });
     s.on('quiz:question', (data) => {
+      stopLobbyMusic();
       qIndexRef.current = data.index;
       setCurrentQ(data);
       setSelected(null);
@@ -187,7 +256,7 @@ export default function QuizJoinPage() {
         localStorage.removeItem('quizSession');
       }
     }
-    return () => { socket?.disconnect(); clearInterval(timerRef.current); };
+    return () => { socket?.disconnect(); clearInterval(timerRef.current); stopLobbyMusic(); };
   }, []);
 
   // Timer
@@ -247,6 +316,11 @@ export default function QuizJoinPage() {
       setStage('lobby');
       localStorage.setItem('quizSession', JSON.stringify({ code: code.trim(), player: currentPlayer }));
       setupSocket(code.trim(), currentPlayer);
+      // Start lobby music if quiz has one
+      const music = quizInfo?.music;
+      if (music?.url) {
+        startLobbyMusic(`${API_BASE}${music.url}`);
+      }
     } catch (e: any) {
       setError(e.response?.data?.error || 'Xatolik');
     } finally { setLoading(false); }
@@ -256,6 +330,7 @@ export default function QuizJoinPage() {
     if (!player || !currentQ || selected !== null) return;
     clearInterval(timerRef.current);
     setSelected(optionIdx);
+    playClickSound(); // click sound immediately
 
     const timeMs = Date.now() - questionStartTime;
     try {
@@ -266,6 +341,7 @@ export default function QuizJoinPage() {
       setMyScore(newTotal);
       setMyStreak(streak);
       setAnswerResult({ isCorrect, points, streak, correct });
+      playClickSound(isCorrect); // correct/wrong feedback sound
 
       // Track score history
       setScoreHistory(prev => [...prev, { q: qIndexRef.current + 1, pts: points, total: newTotal }]);

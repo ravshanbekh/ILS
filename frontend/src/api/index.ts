@@ -335,9 +335,9 @@ export const examApi = {
   getByCode: (code: string) => api.get(`/exam/join/${code}`),
   startExam: (code: string, credentials: { login: string; password: string }) =>
     api.post(`/exam/join/${code}/start`, credentials),
-  submitTest: (code: string, data: { participantId: string; answers: any[] }) =>
+  submitTest: (code: string, data: { participantId: string; sessionToken: string; answers: any[] }) =>
     api.post(`/exam/join/${code}/submit-test`, data),
-  submitVideos: (code: string, data: { participantId: string; aiVideoUrl: string; projectVideoUrl: string }) =>
+  submitVideos: (code: string, data: { participantId: string; sessionToken: string; aiVideoUrl: string; projectVideoUrl: string }) =>
     api.post(`/exam/join/${code}/submit-videos`, data),
 };
 
@@ -355,12 +355,20 @@ export const liveQuizApi = {
   updateQuestion: (quizId: string, qId: string, data: any) => api.patch(`/live-quiz/${quizId}/questions/${qId}`, data),
   deleteQuestion: (quizId: string, qId: string) => api.delete(`/live-quiz/${quizId}/questions/${qId}`),
   useGlobalQuiz: (id: string) => api.post(`/live-quiz/${id}/use`),
-  startQuiz: (id: string) => api.patch(`/live-quiz/${id}/start`),     // Yangi kod + lobby
+  startQuiz: (id: string, musicId?: string) => api.patch(`/live-quiz/${id}/start`, { musicId }),     // Yangi kod + lobby
   launchQuiz: (id: string) => api.patch(`/live-quiz/${id}/launch`),   // 1-savolni yuborish (taymer ishga tushadi)
   showQuestion: (id: string) => api.patch(`/live-quiz/${id}/show-question`), // Joriy savol index ni yuborish
   nextQuestion: (id: string) => api.patch(`/live-quiz/${id}/next`),   // Leaderboard ko'rsatish (savol o'tmaydi)
   finishQuiz: (id: string) => api.patch(`/live-quiz/${id}/finish`),
   getStats: (id: string) => api.get(`/live-quiz/${id}/stats`),
+  getMusics: () => api.get('/live-quiz/music'),
+  uploadMusic: (title: string, file: File) => {
+    const form = new FormData();
+    form.append('title', title);
+    form.append('music', file);
+    return api.post('/live-quiz/music', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+  deleteMusic: (id: string) => api.delete(`/live-quiz/music/${id}`),
   uploadImage: (file: File) => {
     const form = new FormData();
     form.append('image', file);

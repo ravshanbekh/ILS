@@ -74,7 +74,43 @@ export default function LiveQuizPage() {
   const timerRef = useRef<number>(0);
   const totalPlayersRef = useRef(0);
 
-  useEffect(() => { fetchAll(); }, []);
+  // Music state
+  const [musics, setMusics] = useState<any[]>([]);
+  const [selectedMusicId, setSelectedMusicId] = useState<string | null>(null);
+  const [showMusicManager, setShowMusicManager] = useState(false);
+  const [musicUploadForm, setMusicUploadForm] = useState({ title: '' });
+  const [musicUploading, setMusicUploading] = useState(false);
+  const musicFileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { fetchAll(); fetchMusics(); }, []);
+
+  async function fetchMusics() {
+    try {
+      const res = await liveQuizApi.getMusics();
+      setMusics(res.data.data);
+    } catch {}
+  }
+
+  async function uploadMusic() {
+    if (!musicUploadForm.title || !musicFileRef.current?.files?.[0]) return;
+    setMusicUploading(true);
+    try {
+      await liveQuizApi.uploadMusic(musicUploadForm.title, musicFileRef.current.files[0]);
+      setMusicUploadForm({ title: '' });
+      if (musicFileRef.current) musicFileRef.current.value = '';
+      await fetchMusics();
+    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    finally { setMusicUploading(false); }
+  }
+
+  async function deleteMusic(id: string) {
+    if (!confirm('Musiqani o\'chirasizmi?')) return;
+    try {
+      await liveQuizApi.deleteMusic(id);
+      if (selectedMusicId === id) setSelectedMusicId(null);
+      await fetchMusics();
+    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+  }
 
   useEffect(() => {
     if (!selected?.code) return; // Only connect if we have a generated code
@@ -219,7 +255,7 @@ export default function LiveQuizPage() {
   async function prepareQuiz() {
     if (!selected?.questions?.length) return alert('Savol yo\'q!');
     try {
-      const res = await liveQuizApi.startQuiz(selected.id);
+      const res = await liveQuizApi.startQuiz(selected.id, selectedMusicId || undefined);
       setSelected((s: any) => ({ ...s, ...res.data.data, code: res.data.data.code }));
       setPlayers([]);
       setLiveScores([]);
@@ -410,6 +446,60 @@ export default function LiveQuizPage() {
               <button onClick={() => setShowEdit(false)} className="flex-1 py-2 bg-zinc-700 text-white rounded-lg">Bekor</button>
               <button onClick={saveEdit} className="flex-1 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg">Saqlash</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Music Manager Modal (Admin only) */}
+      {showMusicManager && isAdmin && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white">🎵 Musiqa boshqarish</h2>
+              <button onClick={() => setShowMusicManager(false)} className="text-zinc-400 hover:text-white text-xl leading-none">×</button>
+            </div>
+
+            {/* Upload new music */}
+            <div className="bg-zinc-800 rounded-xl p-4 mb-4">
+              <h3 className="text-sm font-medium text-zinc-300 mb-3">Yangi musiqa yuklash</h3>
+              <input
+                className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm mb-2 focus:border-violet-500 outline-none"
+                placeholder="Musiqa nomi *"
+                value={musicUploadForm.title}
+                onChange={e => setMusicUploadForm(f => ({ ...f, title: e.target.value }))}
+              />
+              <div className="flex items-center gap-2">
+                <label className="flex-1 flex items-center gap-2 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 rounded-lg text-sm text-zinc-300 cursor-pointer transition">
+                  📎 Audio fayl tanlang (MP3/WAV)
+                  <input ref={musicFileRef} type="file" accept="audio/mp3,audio/mpeg,audio/wav,audio/ogg,.mp3,.wav,.ogg" className="hidden" />
+                </label>
+                <button
+                  onClick={uploadMusic}
+                  disabled={musicUploading || !musicUploadForm.title}
+                  className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm disabled:opacity-50 transition"
+                >
+                  {musicUploading ? '...' : 'Yuklash'}
+                </button>
+              </div>
+            </div>
+
+            {/* Music list */}
+            <div className="space-y-2 max-h-[260px] overflow-y-auto">
+              {musics.length === 0 ? (
+                <p className="text-zinc-500 text-sm text-center py-4">Hali musiqa yuklanmagan</p>
+              ) : musics.map(m => (
+                <div key={m.id} className="flex items-center gap-3 bg-zinc-800 rounded-xl px-3 py-2.5">
+                  <span className="text-xl">🎵</span>
+                  <span className="text-white text-sm flex-1 truncate">{m.title}</span>
+                  <audio src={`${API_BASE}${m.url}`} controls className="h-7 w-32 opacity-80" />
+                  <button onClick={() => deleteMusic(m.id)} className="text-red-400 hover:text-red-300 text-sm px-2">🗑️</button>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => setShowMusicManager(false)} className="w-full mt-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl text-sm transition">
+              Yopish
+            </button>
           </div>
         </div>
       )}
@@ -622,6 +712,46 @@ export default function LiveQuizPage() {
                       <p className="text-zinc-400 text-xs mb-1">O'yinchilar kirish kodi</p>
                       <div className="font-mono text-5xl font-black text-violet-300 tracking-widest mb-2">{selected?.code}</div>
                       <p className="text-zinc-500 text-xs">{QUIZ_LINK}</p>
+                    </div>
+
+                    {/* Music selector */}
+                    <div className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-4 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-zinc-300 font-medium text-sm">🎵 Lobby musiqasi</p>
+                        {isAdmin && (
+                          <button onClick={() => setShowMusicManager(true)}
+                            className="text-xs text-violet-400 hover:text-violet-300 border border-violet-500/30 px-2 py-1 rounded-lg transition">
+                            + Musiqa boshqarish
+                          </button>
+                        )}
+                      </div>
+                      {musics.length === 0 ? (
+                        <p className="text-zinc-500 text-xs text-center py-2">
+                          {isAdmin ? 'Musiqa yuklanmagan. "+ Musiqa boshqarish" tugmasi orqali qo\'shing.' : 'Admin hali musiqa yuklamagan.'}
+                        </p>
+                      ) : (
+                        <div className="space-y-1 max-h-[140px] overflow-y-auto">
+                          <button
+                            onClick={() => setSelectedMusicId(null)}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${
+                              selectedMusicId === null ? 'bg-zinc-600 text-white' : 'text-zinc-400 hover:bg-zinc-700'
+                            }`}>
+                            <span>🔇</span> Musiqa yo'q
+                          </button>
+                          {musics.map(m => (
+                            <button
+                              key={m.id}
+                              onClick={() => setSelectedMusicId(m.id)}
+                              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${
+                                selectedMusicId === m.id ? 'bg-violet-600/30 text-violet-300 border border-violet-500/50' : 'text-zinc-300 hover:bg-zinc-700'
+                              }`}>
+                              <span>🎵</span>
+                              <span className="flex-1 text-left truncate">{m.title}</span>
+                              {selectedMusicId === m.id && <span className="text-violet-400">✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Live player list */}

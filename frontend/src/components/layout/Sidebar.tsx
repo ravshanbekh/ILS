@@ -36,6 +36,7 @@ const teacherLinks = [
   { to: '/teacher/rankings', icon: Trophy, label: 'Reyting' },
   { to: '/teacher/exams', icon: FileText, label: 'Imtihonlar' },
   { to: '/teacher/live-quiz', icon: Zap, label: 'Live Quiz' },
+  { to: '/teacher/teacher-rating', icon: Star, label: "O'qituvchi reytingi" },
   { to: '/teacher/export', icon: Download, label: 'Eksport' },
 ];
 

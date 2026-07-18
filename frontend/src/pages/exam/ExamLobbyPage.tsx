@@ -14,6 +14,8 @@ interface ExamInfo {
   maxTestScore: number;
   maxAiScore: number;
   maxProjectScore: number;
+  step2Name: string;
+  step3Name: string;
   createdBy: { fullName: string };
   category?: { name: string };
 }
@@ -42,6 +44,7 @@ export default function ExamLobbyPage() {
 
   // Exam session
   const [participantId, setParticipantId] = useState('');
+  const [sessionToken, setSessionToken] = useState('');
   const [student, setStudent] = useState<{ id: string; fullName: string } | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
 
@@ -92,8 +95,9 @@ export default function ExamLobbyPage() {
     setLoading(true); setError('');
     try {
       const res = await examApi.startExam(code!, { login, password });
-      const { participant, questions: qs, student: st } = res.data.data;
+      const { participant, questions: qs, sessionToken: token, student: st } = res.data.data;
       setParticipantId(participant.id);
+      setSessionToken(token);
       setStudent(st);
       setQuestions(qs);
       setStage('test');
@@ -122,7 +126,7 @@ export default function ExamLobbyPage() {
           selectedText: optIdx !== undefined ? q.options[optIdx] : null,
         };
       });
-      const res = await examApi.submitTest(code!, { participantId, answers: answerArr });
+      const res = await examApi.submitTest(code!, { participantId, sessionToken, answers: answerArr });
       setTestResult(res.data.data);
       setTestDone(true);
       setStage('video');
@@ -140,7 +144,7 @@ export default function ExamLobbyPage() {
     if (!aiVideoUrl || !projectVideoUrl) return;
     setSubmitting(true);
     try {
-      await examApi.submitVideos(code!, { participantId, aiVideoUrl, projectVideoUrl });
+      await examApi.submitVideos(code!, { participantId, sessionToken, aiVideoUrl, projectVideoUrl });
       setStage('done');
     } catch (e: any) {
       setError(e.response?.data?.error || 'Xatolik');
@@ -197,20 +201,20 @@ export default function ExamLobbyPage() {
         )}
 
         <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 shadow-2xl">
-          <h2 className="text-xl font-bold text-white mb-1">📹 Video topshiriqlar</h2>
-          <p className="text-zinc-400 text-sm mb-6">YouTube video linklaringizni yuboring</p>
+          <h2 className="text-xl font-bold text-white mb-1">🔗 Link topshiriqlar</h2>
+          <p className="text-zinc-400 text-sm mb-6">Har bir bosqich uchun linkni yuboring</p>
 
-          {/* Stage 2: AI video */}
+          {/* Stage 2: Dynamic */}
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-2">
               <span className="w-6 h-6 bg-purple-500 rounded-full text-white text-xs flex items-center justify-center font-bold">2</span>
-              <label className="text-white font-medium">AI yordamida yasagan video</label>
+              <label className="text-white font-medium">{examInfo?.step2Name || 'AI video linki'}</label>
               <span className="ml-auto text-xs text-zinc-400">max 20 ball</span>
             </div>
             <input
               type="url"
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:border-purple-500 outline-none transition"
-              placeholder="https://youtube.com/watch?v=..."
+              placeholder="https://..."
               value={aiVideoUrl}
               onChange={e => setAiVideoUrl(e.target.value)}
             />
@@ -221,17 +225,17 @@ export default function ExamLobbyPage() {
             )}
           </div>
 
-          {/* Stage 3: Project video */}
+          {/* Stage 3: Dynamic */}
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
               <span className="w-6 h-6 bg-emerald-500 rounded-full text-white text-xs flex items-center justify-center font-bold">3</span>
-              <label className="text-white font-medium">Loyihani tushuntirgan video</label>
+              <label className="text-white font-medium">{examInfo?.step3Name || 'Loyiha linki'}</label>
               <span className="ml-auto text-xs text-zinc-400">max 40 ball</span>
             </div>
             <input
               type="url"
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:border-emerald-500 outline-none transition"
-              placeholder="https://youtube.com/watch?v=..."
+              placeholder="https://..."
               value={projectVideoUrl}
               onChange={e => setProjectVideoUrl(e.target.value)}
             />
@@ -430,9 +434,9 @@ export default function ExamLobbyPage() {
           {/* 3 stage info */}
           <div className="mt-5 space-y-2">
             {[
-              { n: 1, label: 'Test — 20 ta savol', pts: '40 ball', color: 'text-blue-400' },
-              { n: 2, label: 'AI video linki', pts: '20 ball', color: 'text-purple-400' },
-              { n: 3, label: 'Loyiha video linki', pts: '40 ball', color: 'text-emerald-400' },
+              { n: 1, label: `Test — ${examInfo?.testCount ?? 20} ta savol`, pts: '40 ball', color: 'text-blue-400' },
+              { n: 2, label: examInfo?.step2Name || 'AI video linki', pts: '20 ball', color: 'text-purple-400' },
+              { n: 3, label: examInfo?.step3Name || 'Loyiha linki', pts: '40 ball', color: 'text-emerald-400' },
             ].map(s => (
               <div key={s.n} className="flex items-center gap-3 text-sm">
                 <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-zinc-800 ${s.color}`}>{s.n}</span>
