@@ -817,11 +817,16 @@ export const submitAnswer = async (req: Request, res: Response, next: NextFuncti
     const isCorrect = question.correct === selected;
     const maxTime = player.quiz.timePerQ * 1000;
     const timeRatio = Math.max(0, 1 - timeMs / maxTime);
+    // Oddiy holat: tezlikka qarab 500..1000 ball
     let points = isCorrect ? Math.round(500 + 500 * timeRatio) : 0;
 
     const newStreak = isCorrect ? player.streak + 1 : 0;
+    // Streak bonusi 3-streakda maksimumga yetadi va undan keyin O'SMAYDI:
+    // 2-streak: +100 (maks 1100), 3+ streak: +200 (maks 1200).
+    // 4, 5, 10... streaklarda ham bonus +200 ligicha qoladi — jami ball
+    // hech qachon 1200 dan oshmaydi.
     if (isCorrect && newStreak >= 2) {
-      points += 50 * Math.min(newStreak - 1, 10);
+      points += 100 * Math.min(newStreak - 1, 2);
     }
 
     await prisma.liveQuizAnswer.create({
