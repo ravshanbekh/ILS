@@ -693,6 +693,56 @@ export const joinQuiz = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
+// ─── O'yinchi: Sessiyani tiklash (refresh'dan keyin) ─────────────────────────
+// localStorage'dagi sessiya tiklanganda chaqiriladi. Agar o'yinchi DB'da hali
+// bor bo'lsa — o'shani qaytaradi. Agar o'chirilgan bo'lsa (masalan, lobby'da
+// uzilib qolib tozalangan) — xuddi shu ism bilan qayta yaratadi. Shu tufayli
+// "bola o'ynayapti-yu, o'qituvchi ro'yxatida yo'q" (ghost player) holati
+// o'z-o'zidan davolanadi.
+export const rejoinQuiz = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { code } = req.params;
+    const { playerId, fullName } = req.body;
+
+    const quiz = await prisma.liveQuiz.findFirst({ where: { code } });
+    if (!quiz) return res.status(404).json({ error: 'Quiz topilmadi' });
+    if (quiz.status === 'finished') return res.status(410).json({ error: 'Quiz tugagan' });
+
+    let player = typeof playerId === 'string' && playerId
+      ? await prisma.liveQuizPlayer.findFirst({ where: { id: playerId, quizId: quiz.id } })
+      : null;
+
+    let recreated = false;
+    if (!player) {
+      if (!fullName?.trim()) return res.status(400).json({ error: 'Ism majburiy' });
+      player = await prisma.liveQuizPlayer.create({
+        data: { quizId: quiz.id, fullName: fullName.trim() },
+      });
+      recreated = true;
+
+      const io = getIO();
+      if (io) {
+        io.to(`quiz-${quiz.code}`).emit('quiz:player-joined', {
+          playerId: player.id,
+          fullName: player.fullName,
+          playerCount: await prisma.liveQuizPlayer.count({ where: { quizId: quiz.id } }),
+        });
+      }
+    }
+
+    const playerCount = await prisma.liveQuizPlayer.count({ where: { quizId: quiz.id } });
+    res.json({
+      data: {
+        player,
+        recreated,
+        quiz: { id: quiz.id, title: quiz.title, status: quiz.status, code: quiz.code, playerCount },
+      },
+    });
+  } catch (e: any) {
+    next(e);
+  }
+};
+
 // ─── O'yinchi: Ismni o'zgartirish ────────────────────────────────────────────
 export const updatePlayerName = async (req: Request, res: Response, next: NextFunction) => {
   try {

@@ -74,6 +74,7 @@ router.post('/upload-image', authenticate, upload.single('image'), quizControlle
 // ── O'yinchi (Public) ─────────────────────────────────────────────────────────
 router.get('/join/:code', quizController.getQuizByCode);
 router.post('/join/:code/enter', quizController.joinQuiz);
+router.post('/join/:code/rejoin', quizController.rejoinQuiz);
 router.put('/player/:playerId', quizController.updatePlayerName);
 router.post('/answer', quizController.submitAnswer);
 router.delete('/:id/player/:playerId', authenticate, quizController.kickPlayer);

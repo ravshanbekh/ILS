@@ -118,6 +118,12 @@ export default function LiveQuizPage() {
     
     s.on('connect', () => {
       s.emit('join-room', { code: selected.code, role: 'teacher' });
+      // Reconnect paytida o'tkazib yuborilgan player-joined/left eventlarni
+      // DB'dan qayta yuklab sinxronlaymiz — ro'yxat hech qachon "orqada qolmasin"
+      liveQuizApi.getById(selected.id).then(res => {
+        const q = res.data.data;
+        if (q?.players) setPlayers(q.players);
+      }).catch(() => {});
     });
 
     s.on('quiz:player-joined', (data) => {
@@ -126,11 +132,17 @@ export default function LiveQuizPage() {
         if (exists) return prev;
         return [...prev, { id: data.playerId, fullName: data.fullName, score: 0, streak: 0 }];
       });
+      // O'yin o'rtasida qo'shilgan o'quvchi "Joriy reyting"da ham darhol ko'rinsin
+      setLiveScores(prev => {
+        if (!prev.length || prev.find(p => p.id === data.playerId)) return prev;
+        return [...prev, { id: data.playerId, fullName: data.fullName, score: 0, streak: 0 }];
+      });
       totalPlayersRef.current = data.playerCount;
     });
 
     s.on('quiz:player-left', (data) => {
       setPlayers(prev => prev.filter(p => p.id !== data.playerId));
+      setLiveScores(prev => prev.filter(p => p.id !== data.playerId));
       totalPlayersRef.current = data.playerCount;
     });
 
@@ -834,9 +846,9 @@ export default function LiveQuizPage() {
                     {/* Live leaderboard (from previous question) */}
                     {liveScores.length > 0 && (
                       <div className="bg-zinc-800 rounded-xl p-3 mb-4">
-                        <p className="text-zinc-400 text-xs mb-2">Joriy reyting</p>
+                        <p className="text-zinc-400 text-xs mb-2">Joriy reyting ({liveScores.length} o'yinchi)</p>
                         <div className="space-y-1 max-h-[180px] overflow-y-auto">
-                          {liveScores.slice(0, 8).map((p, i) => (
+                          {liveScores.map((p, i) => (
                             <div key={p.id || i} className="flex items-center gap-2 text-sm">
                               <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold
                                 ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-400'}`}>{i + 1}</span>

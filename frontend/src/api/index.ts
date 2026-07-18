@@ -378,6 +378,8 @@ export const liveQuizApi = {
   // Player (public)
   getByCode: (code: string) => api.get(`/live-quiz/join/${code}`),
   joinQuiz: (code: string, fullName: string) => api.post(`/live-quiz/join/${code}/enter`, { fullName }),
+  rejoinQuiz: (code: string, playerId: string | null, fullName: string) =>
+    api.post(`/live-quiz/join/${code}/rejoin`, { playerId, fullName }),
   updatePlayerName: (playerId: string, fullName: string) => api.put(`/live-quiz/player/${playerId}`, { fullName }),
   submitAnswer: (data: { playerId: string; questionId: string; selected: number; timeMs: number }) =>
     api.post('/live-quiz/answer', data),

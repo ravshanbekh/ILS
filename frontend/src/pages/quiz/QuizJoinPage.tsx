@@ -183,6 +183,30 @@ export default function QuizJoinPage() {
     setScoreHistory([]);
   }
 
+  // O'yin davomida chiqishda tasdiq so'raladi — ballar o'chib ketadi
+  function requestLeave() {
+    const inGame = stage === 'question' || stage === 'answer-result' || stage === 'leaderboard';
+    if (inGame && !window.confirm("O'yindan chiqasizmi? To'plagan ballaringiz o'chib ketadi.")) return;
+    leaveQuiz();
+  }
+
+  // Sessiyani "davolash": player DB'dan o'chirilgan bo'lsa (masalan, lobby'da
+  // uzilib tozalangan), xuddi shu ism bilan qayta yaratib qaytaradi.
+  async function healSession(): Promise<Player | null> {
+    const name = player?.fullName || fullName;
+    if (!code.trim() || !name) return null;
+    try {
+      const res = await liveQuizApi.rejoinQuiz(code.trim(), player?.id ?? null, name);
+      const dbPlayer = res.data.data.player;
+      const healed: Player = { id: dbPlayer.id, fullName: dbPlayer.fullName, score: dbPlayer.score ?? 0, streak: dbPlayer.streak ?? 0 };
+      setPlayer(healed);
+      localStorage.setItem('quizSession', JSON.stringify({ code: code.trim(), player: healed }));
+      return healed;
+    } catch {
+      return null;
+    }
+  }
+
   function setupSocket(codeToJoin: string, currentPlayer: Player) {
     const s = io(SOCKET_URL, { transports: ['websocket'] });
     
@@ -238,17 +262,24 @@ export default function QuizJoinPage() {
       try {
         const sess = JSON.parse(sessionStr);
         if (sess?.code && sess?.player) {
-          // Verify session is still valid
-          liveQuizApi.getByCode(sess.code).then((res) => {
+          // Sessiyani serverda tekshirib tiklaymiz: player DB'da bo'lmasa
+          // (lobby'da uzilib o'chirilgan bo'lishi mumkin) qayta yaratiladi —
+          // shunda o'qituvchi ro'yxatida ham qayta ko'rinadi.
+          liveQuizApi.rejoinQuiz(sess.code, sess.player.id ?? null, sess.player.fullName).then((res) => {
+            const { player: dbPlayer, quiz } = res.data.data;
+            const restored: Player = { id: dbPlayer.id, fullName: dbPlayer.fullName, score: dbPlayer.score ?? 0, streak: dbPlayer.streak ?? 0 };
             setCode(sess.code);
-            setPlayer(sess.player);
-            setFullName(sess.player.fullName);
-            setQuizInfo(res.data.data);
-            setPlayerCount(res.data.data.playerCount || 0);
+            setPlayer(restored);
+            setFullName(restored.fullName);
+            setMyScore(dbPlayer.score ?? 0);
+            setMyStreak(dbPlayer.streak ?? 0);
+            setQuizInfo(quiz);
+            setPlayerCount(quiz.playerCount || 0);
+            localStorage.setItem('quizSession', JSON.stringify({ code: sess.code, player: restored }));
             setStage('lobby');
-            setupSocket(sess.code, sess.player);
+            setupSocket(sess.code, restored);
           }).catch(() => {
-            // Quiz no longer exists or ended — clear stale session
+            // Quiz tugagan yoki mavjud emas — eski sessiyani tozalaymiz
             localStorage.removeItem('quizSession');
           });
         }
@@ -334,7 +365,18 @@ export default function QuizJoinPage() {
 
     const timeMs = Date.now() - questionStartTime;
     try {
-      const res = await liveQuizApi.submitAnswer({ playerId: player.id, questionId: currentQ.id, selected: optionIdx, timeMs });
+      let effectivePlayer = player;
+      let res;
+      try {
+        res = await liveQuizApi.submitAnswer({ playerId: player.id, questionId: currentQ.id, selected: optionIdx, timeMs });
+      } catch (e: any) {
+        // 404 = player DB'da yo'q (ghost) — sessiyani davolab bir marta qayta yuboramiz
+        if (e?.response?.status !== 404) throw e;
+        const healed = await healSession();
+        if (!healed) throw e;
+        effectivePlayer = healed;
+        res = await liveQuizApi.submitAnswer({ playerId: healed.id, questionId: currentQ.id, selected: optionIdx, timeMs });
+      }
       const { isCorrect, points, streak, correct } = res.data.data;
       const newTotal = myScore + points;
       scoreRef.current = newTotal;
@@ -347,7 +389,7 @@ export default function QuizJoinPage() {
       setScoreHistory(prev => [...prev, { q: qIndexRef.current + 1, pts: points, total: newTotal }]);
       setStage('answer-result');
 
-      socket?.emit('player:answered', { code: code.trim(), playerId: player.id, fullName: player.fullName, isCorrect });
+      socket?.emit('player:answered', { code: code.trim(), playerId: effectivePlayer.id, fullName: effectivePlayer.fullName, isCorrect });
     } catch {}
   }
 
@@ -514,6 +556,10 @@ export default function QuizJoinPage() {
           })}
         </div>
         <p className="text-center text-zinc-500 text-sm mt-6 animate-pulse">Keyingi savol yuklanmoqda...</p>
+        <button onClick={requestLeave}
+          className="mt-4 w-full py-2.5 bg-zinc-900 hover:bg-red-600/80 border border-zinc-800 hover:border-red-500 text-zinc-500 hover:text-white rounded-xl text-sm font-medium transition-all duration-200">
+          🚪 O'yindan chiqish
+        </button>
       </div>
     </div>
   );
@@ -522,6 +568,11 @@ export default function QuizJoinPage() {
   if (stage === 'answer-result' && answerResult) return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-6 transition-all
       ${answerResult.isCorrect ? 'bg-gradient-to-b from-emerald-950 to-[#09090b]' : 'bg-gradient-to-b from-red-950 to-[#09090b]'}`}>
+
+      <button onClick={requestLeave} title="O'yindan chiqish"
+        className="fixed top-3 left-3 z-30 w-8 h-8 flex items-center justify-center rounded-lg bg-black/40 hover:bg-red-600/80 text-zinc-400 hover:text-white transition text-sm">
+        🚪
+      </button>
 
       {/* Correct/Wrong icon */}
       <div className={`w-28 h-28 rounded-full flex items-center justify-center mb-6 text-6xl
@@ -575,9 +626,15 @@ export default function QuizJoinPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#0c0c1e] to-[#09090b] flex flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/40 backdrop-blur-sm">
-        <div>
-          <p className="text-zinc-400 text-xs">Siz</p>
-          <p className="text-white font-bold text-sm truncate max-w-[140px]">{fullName}</p>
+        <div className="flex items-center gap-2">
+          <button onClick={requestLeave} title="O'yindan chiqish"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-800/80 hover:bg-red-600/80 text-zinc-400 hover:text-white transition text-sm flex-shrink-0">
+            🚪
+          </button>
+          <div>
+            <p className="text-zinc-400 text-xs">Siz</p>
+            <p className="text-white font-bold text-sm truncate max-w-[120px]">{fullName}</p>
+          </div>
         </div>
         <div className="text-center">
           <p className="text-zinc-400 text-xs">Savol</p>
