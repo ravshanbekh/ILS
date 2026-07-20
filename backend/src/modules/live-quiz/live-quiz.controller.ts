@@ -218,12 +218,15 @@ export const bulkAddQuestions = async (req: Request, res: Response, next: NextFu
   try {
     const { id } = req.params;
     const { questions } = req.body;
+    if (!Array.isArray(questions)) {
+      return res.status(400).json({ error: 'Savollar ro\'yxat ko\'rinishida bo\'lishi kerak' });
+    }
     await prisma.liveQuizQuestion.deleteMany({ where: { quizId: id } });
-    const data = (questions as any[]).map((q, i) => ({
+    const data = questions.map((q, i) => ({
       quizId: id,
-      question: q.question,
-      options: q.options,
-      correct: q.correct,
+      question: String(q.question || ''),
+      options: Array.isArray(q.options) ? q.options : [],
+      correct: (typeof q.correct === 'number' && !isNaN(q.correct)) ? q.correct : 0,
       order: i,
       imageUrl: q.imageUrl || null,
     }));

@@ -144,11 +144,37 @@ export default function ExamsPage() {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows: any[] = XLSX.utils.sheet_to_json(ws, { header: 1 });
       // Format: [savol, A, B, C, D, to'g'ri(0-3)]
-      const parsed: Question[] = rows.slice(1).filter(r => r[0]).map(r => ({
-        question: String(r[0]),
-        options: [String(r[1] || ''), String(r[2] || ''), String(r[3] || ''), String(r[4] || '')],
-        correct: Number(r[5] ?? 0),
-      }));
+      const parsed: Question[] = rows.slice(1).filter(r => r[0]).map(r => {
+        const correctVal = r[5];
+        let correctIdx = 0;
+        if (typeof correctVal === 'string') {
+          const val = correctVal.trim().toUpperCase();
+          if (val === 'A' || val === '1') correctIdx = 0;
+          else if (val === 'B' || val === '2') correctIdx = 1;
+          else if (val === 'C' || val === '3') correctIdx = 2;
+          else if (val === 'D' || val === '4') correctIdx = 3;
+          else {
+            const parsedNum = parseInt(val, 10);
+            if (!isNaN(parsedNum)) {
+              if (parsedNum >= 1 && parsedNum <= 4) correctIdx = parsedNum - 1;
+              else correctIdx = parsedNum;
+            }
+          }
+        } else if (typeof correctVal === 'number') {
+          if (correctVal >= 1 && correctVal <= 4) correctIdx = correctVal - 1;
+          else correctIdx = correctVal;
+        }
+
+        if (isNaN(correctIdx) || correctIdx < 0 || correctIdx > 3) {
+          correctIdx = 0;
+        }
+
+        return {
+          question: String(r[0]),
+          options: [String(r[1] || ''), String(r[2] || ''), String(r[3] || ''), String(r[4] || '')],
+          correct: correctIdx,
+        };
+      });
       if (parsed.length === 0) return alert('Hech qanday savol topilmadi');
       setQLoading(true);
       try {
@@ -157,6 +183,8 @@ export default function ExamsPage() {
         setQuestions(res.data.data.questions);
         alert(`${parsed.length} ta savol import qilindi`);
         fetchExams();
+      } catch (err: any) {
+        alert(err.response?.data?.error || 'Importda xatolik yuz berdi');
       } finally { setQLoading(false); }
     };
     reader.readAsBinaryString(file);

@@ -369,9 +369,9 @@ export const bulkAddQuestions = async (req: Request, res: Response, next: NextFu
 
     const data = questions.map((q: any, i: number) => ({
       examId: id,
-      question: q.question,
-      options: q.options,
-      correct: q.correct,
+      question: String(q.question || ''),
+      options: Array.isArray(q.options) ? q.options : [],
+      correct: (typeof q.correct === 'number' && !isNaN(q.correct)) ? q.correct : 0,
       order: i,
     }));
 
