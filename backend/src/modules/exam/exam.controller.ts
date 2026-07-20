@@ -69,7 +69,7 @@ async function isExamOwner(examId: string, userId: string): Promise<boolean> {
 // ─── O'qituvchi: Imtihon yaratish ────────────────────────────────────────────
 export const createExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { title, description, categoryId, testCount = 20, maxTestScore = 40, maxAiScore = 20, maxProjectScore = 40, isGlobal, step2Name, step3Name } = req.body;
+    const { title, description, categoryId, testCount = 20, maxTestScore = 40, maxAiScore = 20, maxProjectScore = 40, isGlobal, step2Name, step3Name, step2Type, step2Desc, step3Type, step3Desc } = req.body;
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
     if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
@@ -96,6 +96,10 @@ export const createExam = async (req: Request, res: Response, next: NextFunction
         isGlobal: Boolean(isGlobal && userRole === 'admin'),
         step2Name: step2Name || undefined,
         step3Name: step3Name || undefined,
+        step2Type: step2Type || 'link',
+        step3Type: step3Type || 'link',
+        step2Desc: step2Desc || '',
+        step3Desc: step3Desc || '',
       },
       include: {
         category: true,
@@ -586,7 +590,7 @@ export const submitTest = async (req: Request, res: Response, next: NextFunction
 export const submitVideos = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { code } = req.params;
-    const { participantId, aiVideoUrl, projectVideoUrl, sessionToken } = req.body;
+    const { participantId, aiVideoUrl, projectVideoUrl, step2Content, step3Content, sessionToken } = req.body;
 
     if (typeof participantId !== 'string') {
       return res.status(400).json({ error: 'Ishtirokchi ID noto\'g\'ri' });
@@ -615,9 +619,20 @@ export const submitVideos = async (req: Request, res: Response, next: NextFuncti
       return res.status(401).json({ error: 'Imtihon sessiyasi yaroqsiz yoki muddati tugagan' });
     }
 
+    // Turga qarab to'g'ri maydonni saqlash
+    const s2IsLink = exam.step2Type === 'link';
+    const s3IsLink = exam.step3Type === 'link';
+
     await prisma.examParticipant.update({
       where: { id: participantId },
-      data: { aiVideoUrl, projectVideoUrl, status: 'submitted', submittedAt: new Date() },
+      data: {
+        aiVideoUrl: s2IsLink ? (aiVideoUrl || null) : null,
+        projectVideoUrl: s3IsLink ? (projectVideoUrl || null) : null,
+        step2Content: !s2IsLink ? (step2Content || null) : null,
+        step3Content: !s3IsLink ? (step3Content || null) : null,
+        status: 'submitted',
+        submittedAt: new Date(),
+      },
     });
 
     res.json({ message: 'Imtihon muvaffaqiyatli topshirildi' });

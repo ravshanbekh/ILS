@@ -486,6 +486,14 @@ model Exam {
   step2Name String @default("AI video taqdimot") @map("step2_name") @db.VarChar(100)
   step3Name String @default("Loyiha (Youtube link)") @map("step3_name") @db.VarChar(100)
 
+  // Dinamik bosqich turlari: link | code | text
+  step2Type String @default("link") @map("step2_type") @db.VarChar(20)
+  step3Type String @default("link") @map("step3_type") @db.VarChar(20)
+
+  // Bosqich tavsiflari (qoidalar, ko'rsatmalar)
+  step2Desc String @default("") @map("step2_desc") @db.VarChar(500)
+  step3Desc String @default("") @map("step3_desc") @db.VarChar(500)
+
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -528,9 +536,13 @@ model ExamParticipant {
   testScore    Int? @map("test_score")
   correctCount Int? @map("correct_count")
 
-  // Video havolalar
+  // Video havolalar (link turi uchun)
   aiVideoUrl      String? @map("ai_video_url")
   projectVideoUrl String? @map("project_video_url")
+
+  // Matn/kod topshirishlar (code | text turi uchun)
+  step2Content String? @map("step2_content") @db.Text
+  step3Content String? @map("step3_content") @db.Text
 
   // O'qituvchi tomonidan baho
   aiScore        Int?      @map("ai_score")

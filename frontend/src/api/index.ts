@@ -337,7 +337,7 @@ export const examApi = {
     api.post(`/exam/join/${code}/start`, credentials),
   submitTest: (code: string, data: { participantId: string; sessionToken: string; answers: any[] }) =>
     api.post(`/exam/join/${code}/submit-test`, data),
-  submitVideos: (code: string, data: { participantId: string; sessionToken: string; aiVideoUrl: string; projectVideoUrl: string }) =>
+  submitVideos: (code: string, data: { participantId: string; sessionToken: string; aiVideoUrl?: string; projectVideoUrl?: string; step2Content?: string; step3Content?: string }) =>
     api.post(`/exam/join/${code}/submit-videos`, data),
 };
 

@@ -59,7 +59,7 @@ export default function ExamsPage() {
   const [tab, setTab] = useState<'questions' | 'results'>('questions');
 
   // Create form
-  const [form, setForm] = useState({ title: '', testCount: 20, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)' });
+  const [form, setForm] = useState({ title: '', testCount: 20, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
   const [creating, setCreating] = useState(false);
 
   // Questions panel
@@ -93,7 +93,7 @@ export default function ExamsPage() {
     try {
       await examApi.create(form);
       setShowCreate(false);
-      setForm({ title: '', testCount: 20, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)' });
+      setForm({ title: '', testCount: 20, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
       fetchExams();
     } finally { setCreating(false); }
   }
@@ -224,8 +224,8 @@ export default function ExamsPage() {
 
       {/* Create Modal */}
       {showCreate && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl my-4">
             <h2 className="text-lg font-bold text-white mb-4">Yangi imtihon yaratish</h2>
             <input
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-3 focus:border-blue-500 outline-none"
@@ -233,7 +233,7 @@ export default function ExamsPage() {
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
             />
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-4">
               <label className="text-zinc-400 text-sm whitespace-nowrap">Test soni:</label>
               <input
                 type="number"
@@ -243,31 +243,87 @@ export default function ExamsPage() {
                 min={5} max={100}
               />
             </div>
-            <div className="mb-3">
-              <label className="text-zinc-400 text-xs block mb-1">2-bosqich nomi (Faqat link qoldiradi):</label>
-              <input
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
-                placeholder="AI video taqdimot"
-                value={form.step2Name}
-                onChange={e => setForm(f => ({ ...f, step2Name: e.target.value }))}
-              />
+
+            {/* 1-bosqich: Test (o'zgarmas) */}
+            <div className="mb-3 bg-zinc-800/50 border border-zinc-700 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+                <span className="text-white font-medium text-sm">Test — {form.testCount} ta savol</span>
+                <span className="ml-auto text-blue-400 text-xs font-bold">40 ball</span>
+              </div>
+              <p className="text-zinc-500 text-xs pl-8">O'quvchilar test savollarini yechadi. (O'zgarmaydi)</p>
             </div>
-            <div className="mb-4">
-              <label className="text-zinc-400 text-xs block mb-1">3-bosqich nomi (Faqat link qoldiradi):</label>
-              <input
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
-                placeholder="Loyiha (Youtube link)"
-                value={form.step3Name}
-                onChange={e => setForm(f => ({ ...f, step3Name: e.target.value }))}
-              />
-            </div>
-            <div className="bg-zinc-800 rounded-lg p-3 text-sm text-zinc-400 mb-4">
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div><div className="text-white font-bold">40</div><div className="truncate">Test</div></div>
-                <div><div className="text-white font-bold">20</div><div className="truncate">{form.step2Name || '2-bosqich'}</div></div>
-                <div><div className="text-white font-bold">40</div><div className="truncate">{form.step3Name || '3-bosqich'}</div></div>
+
+            {/* 2-bosqich: Dinamik */}
+            <div className="mb-3 bg-zinc-800/50 border border-purple-500/30 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+                <span className="text-white font-medium text-sm">2-bosqich</span>
+                <span className="ml-auto text-purple-400 text-xs font-bold">20 ball</span>
+              </div>
+              <div className="space-y-2 pl-0">
+                <input
+                  className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-1.5 text-white text-sm focus:border-purple-500 outline-none"
+                  placeholder="Bosqich nomi (masalan: AI video taqdimot)"
+                  value={form.step2Name}
+                  onChange={e => setForm(f => ({ ...f, step2Name: e.target.value }))}
+                />
+                <div className="flex gap-2">
+                  {(['link', 'code', 'text'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setForm(f => ({ ...f, step2Type: t }))}
+                      className={`flex-1 py-1.5 text-xs rounded-lg font-medium transition border ${form.step2Type === t ? 'bg-purple-600 border-purple-500 text-white' : 'bg-zinc-800 border-zinc-600 text-zinc-400 hover:border-zinc-500'}`}
+                    >
+                      {t === 'link' ? '🔗 Link' : t === 'code' ? '💻 Kod' : '📝 Matn'}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-1.5 text-white text-xs focus:border-purple-500 outline-none resize-none"
+                  placeholder="O'quvchilarga ko'rsatiladigan qoidalar/tavsif (ixtiyoriy)"
+                  rows={2}
+                  value={form.step2Desc}
+                  onChange={e => setForm(f => ({ ...f, step2Desc: e.target.value }))}
+                />
               </div>
             </div>
+
+            {/* 3-bosqich: Dinamik */}
+            <div className="mb-4 bg-zinc-800/50 border border-emerald-500/30 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">3</span>
+                <span className="text-white font-medium text-sm">3-bosqich</span>
+                <span className="ml-auto text-emerald-400 text-xs font-bold">40 ball</span>
+              </div>
+              <div className="space-y-2 pl-0">
+                <input
+                  className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-1.5 text-white text-sm focus:border-emerald-500 outline-none"
+                  placeholder="Bosqich nomi (masalan: GitHub loyiha linki)"
+                  value={form.step3Name}
+                  onChange={e => setForm(f => ({ ...f, step3Name: e.target.value }))}
+                />
+                <div className="flex gap-2">
+                  {(['link', 'code', 'text'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setForm(f => ({ ...f, step3Type: t }))}
+                      className={`flex-1 py-1.5 text-xs rounded-lg font-medium transition border ${form.step3Type === t ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-zinc-800 border-zinc-600 text-zinc-400 hover:border-zinc-500'}`}
+                    >
+                      {t === 'link' ? '🔗 Link' : t === 'code' ? '💻 Kod' : '📝 Matn'}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-1.5 text-white text-xs focus:border-emerald-500 outline-none resize-none"
+                  placeholder="O'quvchilarga ko'rsatiladigan qoidalar/tavsif (ixtiyoriy)"
+                  rows={2}
+                  value={form.step3Desc}
+                  onChange={e => setForm(f => ({ ...f, step3Desc: e.target.value }))}
+                />
+              </div>
+            </div>
+
             {isAdmin && (
               <div className="flex items-center gap-2 mb-4 text-white">
                 <input
@@ -294,6 +350,7 @@ export default function ExamsPage() {
           </div>
         </div>
       )}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Exam List */}

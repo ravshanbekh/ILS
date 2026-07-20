@@ -16,6 +16,10 @@ interface ExamInfo {
   maxProjectScore: number;
   step2Name: string;
   step3Name: string;
+  step2Type: string;
+  step3Type: string;
+  step2Desc: string;
+  step3Desc: string;
   createdBy: { fullName: string };
   category?: { name: string };
 }
@@ -58,6 +62,8 @@ export default function ExamLobbyPage() {
   // Video
   const [aiVideoUrl, setAiVideoUrl] = useState('');
   const [projectVideoUrl, setProjectVideoUrl] = useState('');
+  const [step2Content, setStep2Content] = useState('');
+  const [step3Content, setStep3Content] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // Lookup exam on load
@@ -141,10 +147,19 @@ export default function ExamLobbyPage() {
   }
 
   async function submitVideos() {
-    if (!aiVideoUrl || !projectVideoUrl) return;
+    const s2Type = examInfo?.step2Type || 'link';
+    const s3Type = examInfo?.step3Type || 'link';
+    const s2Val = s2Type === 'link' ? aiVideoUrl : step2Content;
+    const s3Val = s3Type === 'link' ? projectVideoUrl : step3Content;
+    if (!s2Val || !s3Val) return;
     setSubmitting(true);
     try {
-      await examApi.submitVideos(code!, { participantId, sessionToken, aiVideoUrl, projectVideoUrl });
+      await examApi.submitVideos(code!, {
+        participantId,
+        sessionToken,
+        ...(s2Type === 'link' ? { aiVideoUrl } : { step2Content }),
+        ...(s3Type === 'link' ? { projectVideoUrl } : { step3Content }),
+      });
       setStage('done');
     } catch (e: any) {
       setError(e.response?.data?.error || 'Xatolik');
@@ -190,7 +205,14 @@ export default function ExamLobbyPage() {
     </div>
   );
 
-  if (stage === 'video') return (
+  if (stage === 'video') {
+    const s2Type = examInfo?.step2Type || 'link';
+    const s3Type = examInfo?.step3Type || 'link';
+    const s2Val = s2Type === 'link' ? aiVideoUrl : step2Content;
+    const s3Val = s3Type === 'link' ? projectVideoUrl : step3Content;
+    const canSubmit = !submitting && !!s2Val.trim() && !!s3Val.trim();
+
+    return (
     <div className="min-h-screen bg-gradient-to-br from-purple-950 via-[#09090b] to-[#09090b] flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         {testResult && (
@@ -201,48 +223,78 @@ export default function ExamLobbyPage() {
         )}
 
         <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 shadow-2xl">
-          <h2 className="text-xl font-bold text-white mb-1">🔗 Link topshiriqlar</h2>
-          <p className="text-zinc-400 text-sm mb-6">Har bir bosqich uchun linkni yuboring</p>
+          <h2 className="text-xl font-bold text-white mb-1">📋 Topshiriqlar</h2>
+          <p className="text-zinc-400 text-sm mb-6">Har bir bosqich uchun topshiring</p>
 
           {/* Stage 2: Dynamic */}
           <div className="mb-5">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <span className="w-6 h-6 bg-purple-500 rounded-full text-white text-xs flex items-center justify-center font-bold">2</span>
               <label className="text-white font-medium">{examInfo?.step2Name || 'AI video linki'}</label>
               <span className="ml-auto text-xs text-zinc-400">max 20 ball</span>
             </div>
-            <input
-              type="url"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:border-purple-500 outline-none transition"
-              placeholder="https://..."
-              value={aiVideoUrl}
-              onChange={e => setAiVideoUrl(e.target.value)}
-            />
-            {aiVideoUrl && (
-              <a href={aiVideoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:underline mt-1 inline-block">
-                ▶ Tekshirish
-              </a>
+            {examInfo?.step2Desc && (
+              <p className="text-zinc-400 text-xs mb-2 pl-8 italic">{examInfo.step2Desc}</p>
+            )}
+            {s2Type === 'link' ? (
+              <>
+                <input
+                  type="url"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:border-purple-500 outline-none transition"
+                  placeholder="https://..."
+                  value={aiVideoUrl}
+                  onChange={e => setAiVideoUrl(e.target.value)}
+                />
+                {aiVideoUrl && (
+                  <a href={aiVideoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:underline mt-1 inline-block">
+                    ▶ Tekshirish
+                  </a>
+                )}
+              </>
+            ) : (
+              <textarea
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:border-purple-500 outline-none transition resize-none font-mono"
+                placeholder={s2Type === 'code' ? '// Kodingizni bu yerga yozing...' : 'Javobingizni bu yerga yozing...'}
+                rows={6}
+                value={step2Content}
+                onChange={e => setStep2Content(e.target.value)}
+              />
             )}
           </div>
 
           {/* Stage 3: Dynamic */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <span className="w-6 h-6 bg-emerald-500 rounded-full text-white text-xs flex items-center justify-center font-bold">3</span>
               <label className="text-white font-medium">{examInfo?.step3Name || 'Loyiha linki'}</label>
               <span className="ml-auto text-xs text-zinc-400">max 40 ball</span>
             </div>
-            <input
-              type="url"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:border-emerald-500 outline-none transition"
-              placeholder="https://..."
-              value={projectVideoUrl}
-              onChange={e => setProjectVideoUrl(e.target.value)}
-            />
-            {projectVideoUrl && (
-              <a href={projectVideoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 hover:underline mt-1 inline-block">
-                ▶ Tekshirish
-              </a>
+            {examInfo?.step3Desc && (
+              <p className="text-zinc-400 text-xs mb-2 pl-8 italic">{examInfo.step3Desc}</p>
+            )}
+            {s3Type === 'link' ? (
+              <>
+                <input
+                  type="url"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:border-emerald-500 outline-none transition"
+                  placeholder="https://..."
+                  value={projectVideoUrl}
+                  onChange={e => setProjectVideoUrl(e.target.value)}
+                />
+                {projectVideoUrl && (
+                  <a href={projectVideoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 hover:underline mt-1 inline-block">
+                    ▶ Tekshirish
+                  </a>
+                )}
+              </>
+            ) : (
+              <textarea
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:border-emerald-500 outline-none transition resize-none font-mono"
+                placeholder={s3Type === 'code' ? '// Kodingizni bu yerga yozing...' : 'Javobingizni bu yerga yozing...'}
+                rows={6}
+                value={step3Content}
+                onChange={e => setStep3Content(e.target.value)}
+              />
             )}
           </div>
 
@@ -250,7 +302,7 @@ export default function ExamLobbyPage() {
 
           <button
             onClick={submitVideos}
-            disabled={submitting || !aiVideoUrl || !projectVideoUrl}
+            disabled={!canSubmit}
             className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Yuklanmoqda...' : '✓ Imtihonni yakunlash'}
@@ -259,6 +311,8 @@ export default function ExamLobbyPage() {
       </div>
     </div>
   );
+  }
+
 
   if (stage === 'test' && questions.length > 0) {
     const q = questions[currentQ];
@@ -432,16 +486,19 @@ export default function ExamLobbyPage() {
           )}
 
           {/* 3 stage info */}
-          <div className="mt-5 space-y-2">
+          <div className="mt-5 space-y-3">
             {[
-              { n: 1, label: `Test — ${examInfo?.testCount ?? 20} ta savol`, pts: '40 ball', color: 'text-blue-400' },
-              { n: 2, label: examInfo?.step2Name || 'AI video linki', pts: '20 ball', color: 'text-purple-400' },
-              { n: 3, label: examInfo?.step3Name || 'Loyiha linki', pts: '40 ball', color: 'text-emerald-400' },
+              { n: 1, label: `Test — ${examInfo?.testCount ?? 20} ta savol`, pts: '40 ball', color: 'text-blue-400', border: 'border-blue-500/20', desc: `${examInfo?.testCount ?? 20} ta savolga javob bering. Har savolga 1 urinish.` },
+              { n: 2, label: examInfo?.step2Name || 'AI video linki', pts: '20 ball', color: 'text-purple-400', border: 'border-purple-500/20', desc: examInfo?.step2Desc || (examInfo?.step2Type === 'code' ? "Kodingizni to'g'ridan-to'g'ri yozing." : examInfo?.step2Type === 'text' ? "Matn javob yozing." : "Havola (link) kiriting.") },
+              { n: 3, label: examInfo?.step3Name || 'Loyiha linki', pts: '40 ball', color: 'text-emerald-400', border: 'border-emerald-500/20', desc: examInfo?.step3Desc || (examInfo?.step3Type === 'code' ? "Kodingizni to'g'ridan-to'g'ri yozing." : examInfo?.step3Type === 'text' ? "Matn javob yozing." : "Havola (link) kiriting.") },
             ].map(s => (
-              <div key={s.n} className="flex items-center gap-3 text-sm">
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-zinc-800 ${s.color}`}>{s.n}</span>
-                <span className="text-zinc-400 flex-1">{s.label}</span>
-                <span className={`font-bold ${s.color}`}>{s.pts}</span>
+              <div key={s.n} className={`bg-zinc-800/50 border ${s.border} rounded-lg p-2.5`}>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-zinc-800 ${s.color}`}>{s.n}</span>
+                  <span className="text-white flex-1 font-medium">{s.label}</span>
+                  <span className={`font-bold ${s.color} text-xs`}>{s.pts}</span>
+                </div>
+                <p className="text-zinc-500 text-xs mt-1 pl-8">{s.desc}</p>
               </div>
             ))}
           </div>
