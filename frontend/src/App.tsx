@@ -179,7 +179,6 @@ export default function App() {
               <Route path="/teacher/export" element={<ExportPage />} />
               <Route path="/teacher/exams" element={<ExamsPage />} />
               <Route path="/teacher/live-quiz" element={<LiveQuizPage />} />
-              <Route path="/teacher/teacher-rating" element={<TeacherRatingPage />} />
             </Route>
 
             {/* Public — Exam (no login needed for page, login via exam form) */}
