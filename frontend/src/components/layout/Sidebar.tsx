@@ -25,6 +25,7 @@ const adminLinks = [
   { to: '/admin/settings', icon: Settings, label: 'Sozlamalar' },
   { to: '/admin/exams', icon: FileText, label: 'Imtihonlar' },
   { to: '/admin/live-quiz', icon: Zap, label: 'Live Quiz' },
+  { to: '/admin/lessons', icon: BookOpen, label: 'Darsliklar' },
 ];
 
 const teacherLinks = [
@@ -36,6 +37,7 @@ const teacherLinks = [
   { to: '/teacher/rankings', icon: Trophy, label: 'Reyting' },
   { to: '/teacher/exams', icon: FileText, label: 'Imtihonlar' },
   { to: '/teacher/live-quiz', icon: Zap, label: 'Live Quiz' },
+  { to: '/teacher/lessons', icon: BookOpen, label: 'Darsliklar' },
   { to: '/teacher/export', icon: Download, label: 'Eksport' },
 ];
 

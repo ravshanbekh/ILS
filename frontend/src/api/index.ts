@@ -387,4 +387,28 @@ export const liveQuizApi = {
   leaveQuiz: (playerId: string) => api.post(`/live-quiz/player/${playerId}/leave`),
 };
 
+export const lessonsApi = {
+  // Papkalar
+  getFolders: () => api.get('/lessons/folders'),
+  createFolder: (data: { name: string; description?: string; icon?: string; order?: number }) =>
+    api.post('/lessons/folders', data),
+  updateFolder: (id: string, data: { name?: string; description?: string; icon?: string; order?: number }) =>
+    api.patch(`/lessons/folders/${id}`, data),
+  deleteFolder: (id: string) => api.delete(`/lessons/folders/${id}`),
 
+  // Darsliklar
+  getItems: (folderId: string) => api.get(`/lessons/folders/${folderId}/items`),
+  addItem: (folderId: string, data: { title: string; url: string; type?: string; order?: number }) =>
+    api.post(`/lessons/folders/${folderId}/items`, data),
+  updateItem: (itemId: string, data: { title?: string; url?: string; type?: string; order?: number }) =>
+    api.patch(`/lessons/items/${itemId}`, data),
+  deleteItem: (itemId: string) => api.delete(`/lessons/items/${itemId}`),
+
+  // Ruxsatlar
+  getFolderAccess: (folderId: string) => api.get(`/lessons/folders/${folderId}/access`),
+  syncAccess: (folderId: string, teacherIds: string[]) =>
+    api.post(`/lessons/folders/${folderId}/access`, { teacherIds }),
+
+  // O'qituvchilar ro'yxati
+  getTeachers: () => api.get('/lessons/teachers'),
+};

@@ -41,6 +41,7 @@ import ExamsPage from '@/pages/teacher/ExamsPage';
 import LiveQuizPage from '@/pages/teacher/LiveQuizPage';
 import ExamLobbyPage from '@/pages/exam/ExamLobbyPage';
 import QuizJoinPage from '@/pages/quiz/QuizJoinPage';
+import LessonsPage from '@/pages/shared/LessonsPage';
 
 
 const queryClient = new QueryClient({
@@ -158,6 +159,7 @@ export default function App() {
               <Route path="/admin/predictions" element={<PredictionsPage />} />
               <Route path="/admin/exams" element={<ExamsPage />} />
               <Route path="/admin/live-quiz" element={<LiveQuizPage />} />
+              <Route path="/admin/lessons" element={<LessonsPage />} />
             </Route>
 
             {/* Teacher routes */}
@@ -179,6 +181,7 @@ export default function App() {
               <Route path="/teacher/export" element={<ExportPage />} />
               <Route path="/teacher/exams" element={<ExamsPage />} />
               <Route path="/teacher/live-quiz" element={<LiveQuizPage />} />
+              <Route path="/teacher/lessons" element={<LessonsPage />} />
             </Route>
 
             {/* Public — Exam (no login needed for page, login via exam form) */}

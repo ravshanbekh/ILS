@@ -32,6 +32,7 @@ import feedbackRoutes from './modules/feedback/feedback.routes';
 import { startBot } from './modules/bot/bot';
 import examRoutes from './modules/exam/exam.routes';
 import liveQuizRoutes from './modules/live-quiz/live-quiz.routes';
+import lessonsRoutes from './modules/lessons/lessons.routes';
 import { initSocketIO } from './modules/live-quiz/live-quiz.gateway';
 
 const app = express();
@@ -108,6 +109,7 @@ app.use('/api/predictions', predictionsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/exam', examRoutes);
 app.use('/api/live-quiz', liveQuizRoutes);
+app.use('/api/lessons', lessonsRoutes);
 
 // 404 handler
 app.use((_req, res) => {

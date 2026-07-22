@@ -75,6 +75,9 @@ model User {
   examParticipations ExamParticipant[]     @relation("ExamParticipants")
   gradedExams        ExamParticipant[]     @relation("ExamGrader")
   createdQuizzes     LiveQuiz[]            @relation("QuizCreator")
+  // Lessons relations
+  createdFolders     LessonFolder[]        @relation("FolderCreator")
+  lessonAccess       LessonFolderAccess[]  @relation("TeacherAccess")
 
   @@map("users")
 }
@@ -673,4 +676,54 @@ model LiveQuizAnswer {
 
   @@unique([playerId, questionId])
   @@map("live_quiz_answers")
+}
+
+// ============================================================
+//  DARSLIKLAR (Lesson Folders & Items)
+// ============================================================
+
+/// Darslik papkasi (Foundation, Frontend, Backend...)
+model LessonFolder {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  icon        String   @default("📁") @db.VarChar(10)
+  order       Int      @default(0)
+  createdById String   @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  createdBy User                 @relation("FolderCreator", fields: [createdById], references: [id])
+  items     LessonItem[]
+  access    LessonFolderAccess[]
+
+  @@map("lesson_folders")
+}
+
+/// Darslik (Canva / PPTX / Video link)
+model LessonItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  folderId  String   @map("folder_id") @db.Uuid
+  title     String   @db.VarChar(200)
+  url       String
+  type      String   @default("link") @db.VarChar(20)
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  folder LessonFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@map("lesson_items")
+}
+
+/// Papkaga o'qituvchi ruxsati
+model LessonFolderAccess {
+  id        String   @id @default(uuid()) @db.Uuid
+  folderId  String   @map("folder_id") @db.Uuid
+  teacherId String   @map("teacher_id") @db.Uuid
+  grantedAt DateTime @default(now()) @map("granted_at")
+
+  folder  LessonFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  teacher User         @relation("TeacherAccess", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, teacherId])
+  @@map("lesson_folder_access")
 }
