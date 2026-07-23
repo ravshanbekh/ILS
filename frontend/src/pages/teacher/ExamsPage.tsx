@@ -13,6 +13,7 @@ interface Exam {
   startsAt: string;
   expiresAt: string;
   testCount: number;
+  durationHours?: number;
   maxTestScore: number;
   maxAiScore: number;
   maxProjectScore: number;
@@ -59,7 +60,7 @@ export default function ExamsPage() {
   const [tab, setTab] = useState<'questions' | 'results'>('questions');
 
   // Create form
-  const [form, setForm] = useState({ title: '', testCount: 20, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
+  const [form, setForm] = useState({ title: '', testCount: 20, durationHours: 2, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
   const [creating, setCreating] = useState(false);
 
   // Questions panel
@@ -98,7 +99,7 @@ export default function ExamsPage() {
     try {
       await examApi.create(form);
       setShowCreate(false);
-      setForm({ title: '', testCount: 20, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
+      setForm({ title: '', testCount: 20, durationHours: 2, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
       fetchExams();
     } finally { setCreating(false); }
   }
@@ -156,6 +157,7 @@ export default function ExamsPage() {
       step2Name: exam.step2Name,
       step3Name: exam.step3Name,
       testCount: exam.testCount,
+      durationHours: exam.durationHours || 2,
       maxTestScore: exam.maxTestScore,
       maxAiScore: exam.maxAiScore,
       maxProjectScore: exam.maxProjectScore,
@@ -309,15 +311,28 @@ export default function ExamsPage() {
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
             />
-            <div className="flex items-center gap-3 mb-4">
-              <label className="text-zinc-400 text-sm whitespace-nowrap">Test soni:</label>
-              <input
-                type="number"
-                className="w-24 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none"
-                value={form.testCount}
-                onChange={e => setForm(f => ({ ...f, testCount: Number(e.target.value) }))}
-                min={5} max={100}
-              />
+            <div className="flex gap-3 mb-4">
+              <div className="flex-1">
+                <label className="text-zinc-400 text-xs block mb-1">Test soni:</label>
+                <input
+                  type="number"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                  value={form.testCount}
+                  onChange={e => setForm(f => ({ ...f, testCount: Number(e.target.value) }))}
+                  min={5} max={200}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-zinc-400 text-xs block mb-1">Vaqt (soatda):</label>
+                <input
+                  type="number"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                  value={form.durationHours}
+                  onChange={e => setForm(f => ({ ...f, durationHours: Number(e.target.value) }))}
+                  min={1} max={72}
+                  placeholder="2"
+                />
+              </div>
             </div>
 
             {/* 1-bosqich: Test (o'zgarmas) */}
@@ -462,7 +477,8 @@ export default function ExamsPage() {
               </div>
               <div className="text-xs text-zinc-500 space-y-1">
                 <div className="flex items-center gap-3">
-                  <span>📝 {exam._count?.questions ?? 0} savol</span>
+                  <span>📝 {exam._count?.questions ?? 0} savol ({exam.testCount} ta tushadi)</span>
+                  <span>⏱️ {exam.durationHours || 2} soat</span>
                   <span>👥 {exam._count?.participants ?? 0} ishtirok</span>
                 </div>
                 <div className="font-mono bg-zinc-800 px-2 py-1 rounded text-zinc-300 select-all">
@@ -706,13 +722,21 @@ export default function ExamsPage() {
                 onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
               />
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               <div>
                 <label className="text-zinc-400 text-xs block mb-1">Test soni</label>
                 <input type="number" min={1} max={200}
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
                   value={editForm.testCount ?? ''}
                   onChange={e => setEditForm(f => ({ ...f, testCount: Number(e.target.value) }))}
+                />
+              </div>
+              <div>
+                <label className="text-zinc-400 text-xs block mb-1">Vaqt (soat)</label>
+                <input type="number" min={1} max={72}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                  value={editForm.durationHours ?? ''}
+                  onChange={e => setEditForm(f => ({ ...f, durationHours: Number(e.target.value) }))}
                 />
               </div>
               <div>

@@ -70,15 +70,15 @@ async function isExamOwner(examId: string, userId: string, userRole?: string): P
 // ─── O'qituvchi: Imtihon yaratish ────────────────────────────────────────────
 export const createExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { title, description, categoryId, testCount = 20, maxTestScore = 40, maxAiScore = 20, maxProjectScore = 40, isGlobal, step2Name, step3Name, step2Type, step2Desc, step3Type, step3Desc } = req.body;
+    const { title, description, categoryId, testCount = 20, durationHours = 2, maxTestScore = 40, maxAiScore = 20, maxProjectScore = 40, isGlobal, step2Name, step3Name, step2Type, step2Desc, step3Type, step3Desc } = req.body;
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
     if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
 
-
     const accessCode = generateCode(10);
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000); // +2 soat
+    const hours = Number(durationHours) || 2;
+    const expiresAt = new Date(now.getTime() + hours * 60 * 60 * 1000);
 
     const exam = await prisma.exam.create({
       data: {
@@ -90,6 +90,7 @@ export const createExam = async (req: Request, res: Response, next: NextFunction
         startsAt: now,
         expiresAt,
         testCount,
+        durationHours: hours,
         maxTestScore,
         maxAiScore,
         maxProjectScore,
@@ -160,6 +161,8 @@ export const activateGlobalExam = async (req: Request, res: Response, next: Next
 
     const accessCode = generateCode(10);
     const now = new Date();
+    const hours = globalExam.durationHours || 2;
+    const expiresAt = new Date(now.getTime() + hours * 60 * 60 * 1000);
     
     const newExam = await prisma.exam.create({
       data: {
@@ -169,9 +172,10 @@ export const activateGlobalExam = async (req: Request, res: Response, next: Next
         createdById: userId,
         accessCode,
         startsAt: now,
-        expiresAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),
+        expiresAt,
         status: 'active',
         testCount: globalExam.testCount,
+        durationHours: hours,
         maxTestScore: globalExam.maxTestScore,
         maxAiScore: globalExam.maxAiScore,
         maxProjectScore: globalExam.maxProjectScore,
@@ -231,12 +235,13 @@ export const activateExam = async (req: Request, res: Response, next: NextFuncti
     }
 
     const now = new Date();
+    const hours = exam.durationHours || 2;
     const updated = await prisma.exam.update({
       where: { id },
       data: {
         status: 'active',
         startsAt: now,
-        expiresAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),
+        expiresAt: new Date(now.getTime() + hours * 60 * 60 * 1000),
       },
     });
     res.json({ data: updated });
@@ -283,12 +288,15 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
     const { id } = req.params;
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
-    const { title, step2Name, step3Name, testCount, maxTestScore, maxAiScore, maxProjectScore, step2Type, step2Desc, step3Type, step3Desc } = req.body;
+    const { title, step2Name, step3Name, testCount, durationHours, maxTestScore, maxAiScore, maxProjectScore, step2Type, step2Desc, step3Type, step3Desc } = req.body;
 
     // Admin har qanday, teacher faqat o'zining imtihonini
     const where = userRole === 'admin' ? { id } : { id, createdById: userId };
     const exam = await prisma.exam.findFirst({ where, select: { id: true } });
     if (!exam) return res.status(404).json({ error: "Topilmadi yoki ruxsatingiz yo'q" });
+
+    const hours = durationHours !== undefined ? Number(durationHours) : undefined;
+    const now = new Date();
 
     const updated = await prisma.exam.update({
       where: { id },
@@ -297,6 +305,7 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
         ...(step2Name !== undefined && { step2Name }),
         ...(step3Name !== undefined && { step3Name }),
         ...(testCount !== undefined && { testCount: Number(testCount) }),
+        ...(hours !== undefined && { durationHours: hours, expiresAt: new Date(now.getTime() + hours * 60 * 60 * 1000) }),
         ...(maxTestScore !== undefined && { maxTestScore: Number(maxTestScore) }),
         ...(maxAiScore !== undefined && { maxAiScore: Number(maxAiScore) }),
         ...(maxProjectScore !== undefined && { maxProjectScore: Number(maxProjectScore) }),

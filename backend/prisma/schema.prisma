@@ -477,6 +477,7 @@ model Exam {
   expiresAt   DateTime   @map("expires_at")
   status      ExamStatus @default(draft)
   testCount   Int        @default(20) @map("test_count")
+  durationHours Int      @default(2) @map("duration_hours")
   isGlobal    Boolean    @default(false) @map("is_global")
   templateId  String?    @map("template_id") @db.Uuid
 
