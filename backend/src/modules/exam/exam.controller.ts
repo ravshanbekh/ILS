@@ -259,17 +259,58 @@ export const completeExam = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-// ─── O'qituvchi: O'chirish ───────────────────────────────────────────────────
+// ─── O'qituvchi/Admin: O'chirish ────────────────────────────────────────────
 export const deleteExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
-    await prisma.exam.delete({ where: { id, createdById: userId } });
-    res.json({ message: 'O\'chirildi' });
+    const userRole = (req as any).user?.role;
+    // Admin har qanday imtihonni o'chirishi mumkin
+    const where = userRole === 'admin'
+      ? { id }
+      : { id, createdById: userId };
+    await prisma.exam.delete({ where });
+    res.json({ message: "O'chirildi" });
   } catch (e: any) {
     next(e);
   }
 };
+
+// ─── Admin: Imtihon tahrirlash ───────────────────────────────────────────────
+export const updateExam = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.userId;
+    const userRole = (req as any).user?.role;
+    const { title, step2Name, step3Name, testCount, maxTestScore, maxAiScore, maxProjectScore, step2Type, step2Desc, step3Type, step3Desc } = req.body;
+
+    // Admin har qanday, teacher faqat o'zining imtihonini
+    const where = userRole === 'admin' ? { id } : { id, createdById: userId };
+    const exam = await prisma.exam.findFirst({ where, select: { id: true } });
+    if (!exam) return res.status(404).json({ error: "Topilmadi yoki ruxsatingiz yo'q" });
+
+    const updated = await prisma.exam.update({
+      where: { id },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(step2Name !== undefined && { step2Name }),
+        ...(step3Name !== undefined && { step3Name }),
+        ...(testCount !== undefined && { testCount: Number(testCount) }),
+        ...(maxTestScore !== undefined && { maxTestScore: Number(maxTestScore) }),
+        ...(maxAiScore !== undefined && { maxAiScore: Number(maxAiScore) }),
+        ...(maxProjectScore !== undefined && { maxProjectScore: Number(maxProjectScore) }),
+        ...(step2Type !== undefined && { step2Type }),
+        ...(step2Desc !== undefined && { step2Desc }),
+        ...(step3Type !== undefined && { step3Type }),
+        ...(step3Desc !== undefined && { step3Desc }),
+      },
+    });
+    res.json({ data: updated });
+  } catch (e: any) {
+    next(e);
+  }
+};
+
 
 // ─── O'qituvchi: Savol qo'shish (bitta yoki ko'p) ────────────────────────────────
 export const addQuestions = async (req: Request, res: Response, next: NextFunction) => {

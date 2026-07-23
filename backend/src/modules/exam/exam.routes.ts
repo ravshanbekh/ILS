@@ -39,6 +39,7 @@ router.get('/global', authenticate, roleGuard('admin', 'teacher'), examControlle
 router.post('/global/:id/activate', authenticate, roleGuard('admin', 'teacher'), examController.activateGlobalExam);
 
 router.get('/:id', authenticate, roleGuard('admin', 'teacher'), examController.getExamById);
+router.patch('/:id', authenticate, roleGuard('admin'), examController.updateExam);
 router.patch('/:id/activate', authenticate, roleGuard('admin', 'teacher'), examController.activateExam);
 router.patch('/:id/complete', authenticate, roleGuard('admin', 'teacher'), examController.completeExam);
 router.delete('/:id', authenticate, roleGuard('admin', 'teacher'), examController.deleteExam);

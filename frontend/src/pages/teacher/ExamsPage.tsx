@@ -72,6 +72,11 @@ export default function ExamsPage() {
   // Results
   const [results, setResults] = useState<any>(null);
 
+  // Admin: edit exam
+  const [showEdit, setShowEdit] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Exam> & { step2Type?: string; step3Type?: string; step2Desc?: string; step3Desc?: string }>({});
+  const [editSaving, setEditSaving] = useState(false);
+
   useEffect(() => { fetchExams(); }, [listTab]);
 
   async function fetchExams() {
@@ -125,7 +130,7 @@ export default function ExamsPage() {
   }
 
   async function activateGlobal(exam: Exam) {
-    if (!confirm('Ushbu markaz imtihonini o\'z guruhlaringiz uchun aktivlashtirasizmi?')) return;
+    if (!confirm("Ushbu markaz imtihonini o'z guruhlaringiz uchun aktivlashtirasizmi?")) return;
     try {
       await examApi.activateGlobalExam(exam.id);
       setListTab('my');
@@ -133,6 +138,46 @@ export default function ExamsPage() {
       alert(error.response?.data?.error || 'Aktivlashtirishda xatolik');
     }
   }
+
+  // Admin: imtihon o'chirish
+  async function deleteExamById(exam: Exam) {
+    if (!confirm(`"${exam.title}" imtihonini o'chirasizmi? Bu qaytarib bo'lmaydi!`)) return;
+    try {
+      await examApi.delete(exam.id);
+      if (selected?.id === exam.id) { setSelected(null); setQuestions([]); }
+      fetchExams();
+    } catch (e: any) { alert(e.response?.data?.error || 'Xatolik yuz berdi'); }
+  }
+
+  // Admin: imtihon tahrirlash modali
+  function openEdit(exam: Exam) {
+    setEditForm({
+      title: exam.title,
+      step2Name: exam.step2Name,
+      step3Name: exam.step3Name,
+      testCount: exam.testCount,
+      maxTestScore: exam.maxTestScore,
+      maxAiScore: exam.maxAiScore,
+      maxProjectScore: exam.maxProjectScore,
+    });
+    setSelected(exam);
+    setShowEdit(true);
+  }
+
+  async function saveEditExam() {
+    if (!selected) return;
+    setEditSaving(true);
+    try {
+      await examApi.update(selected.id, editForm);
+      setShowEdit(false);
+      fetchExams();
+      // Refresh selected
+      const res = await examApi.getById(selected.id);
+      setSelected(res.data.data);
+    } catch (e: any) { alert(e.response?.data?.error || 'Saqlashda xatolik'); }
+    finally { setEditSaving(false); }
+  }
+
 
   // Excel import
   function handleExcelImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -143,31 +188,35 @@ export default function ExamsPage() {
       const wb = XLSX.read(ev.target?.result, { type: 'binary' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows: any[] = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      // Format: [savol, A, B, C, D, to'g'ri(0-3)]
+      // Format: [savol, A, B, C, D, to'g'ri(A/B/C/D yoki 1/2/3/4 yoki 0/1/2/3)]
       const parsed: Question[] = rows.slice(1).filter(r => r[0]).map(r => {
         const correctVal = r[5];
         let correctIdx = 0;
         if (typeof correctVal === 'string') {
           const val = correctVal.trim().toUpperCase();
-          if (val === 'A' || val === '1') correctIdx = 0;
-          else if (val === 'B' || val === '2') correctIdx = 1;
-          else if (val === 'C' || val === '3') correctIdx = 2;
-          else if (val === 'D' || val === '4') correctIdx = 3;
-          else {
-            const parsedNum = parseInt(val, 10);
-            if (!isNaN(parsedNum)) {
-              if (parsedNum >= 1 && parsedNum <= 4) correctIdx = parsedNum - 1;
-              else correctIdx = parsedNum;
-            }
-          }
+          // A/B/C/D formatini qabul qilish
+          if (val === 'A') correctIdx = 0;
+          else if (val === 'B') correctIdx = 1;
+          else if (val === 'C') correctIdx = 2;
+          else if (val === 'D') correctIdx = 3;
+          // 1/2/3/4 formatini qabul qilish (1-bazali)
+          else if (val === '1') correctIdx = 0;
+          else if (val === '2') correctIdx = 1;
+          else if (val === '3') correctIdx = 2;
+          else if (val === '4') correctIdx = 3;
+          // 0/1/2/3 formatini qabul qilish (0-bazali)
+          else if (val === '0') correctIdx = 0;
+          else correctIdx = 0;
         } else if (typeof correctVal === 'number') {
-          if (correctVal >= 1 && correctVal <= 4) correctIdx = correctVal - 1;
-          else correctIdx = correctVal;
+          const n = Math.round(correctVal);
+          // Agar 1-4 oralig'ida — 1-bazali (1=A, 2=B, 3=C, 4=D)
+          if (n >= 1 && n <= 4) correctIdx = n - 1;
+          // Agar 0-3 oralig'ida — 0-bazali (0=A, 1=B, 2=C, 3=D)
+          else if (n >= 0 && n <= 3) correctIdx = n;
+          else correctIdx = 0;
         }
 
-        if (isNaN(correctIdx) || correctIdx < 0 || correctIdx > 3) {
-          correctIdx = 0;
-        }
+        if (isNaN(correctIdx) || correctIdx < 0 || correctIdx > 3) correctIdx = 0;
 
         return {
           question: String(r[0]),
@@ -235,6 +284,7 @@ export default function ExamsPage() {
   const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
   return (
+    <>
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -427,7 +477,7 @@ export default function ExamsPage() {
                 )}
               </div>
               {/* Actions */}
-              <div className="flex gap-2 mt-3">
+              <div className="flex gap-2 mt-3 flex-wrap">
                 {listTab === 'my' ? (
                   <>
                     {exam.status === 'draft' && (
@@ -446,6 +496,18 @@ export default function ExamsPage() {
                       onClick={e => { e.stopPropagation(); loadExam(exam); loadResults(); }}
                       className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
                     >Natijalar</button>
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={e => { e.stopPropagation(); openEdit(exam); }}
+                          className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
+                        >✏️ Tahrirlash</button>
+                        <button
+                          onClick={e => { e.stopPropagation(); deleteExamById(exam); }}
+                          className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
+                        >🗑️ O'chirish</button>
+                      </>
+                    )}
                   </>
                 ) : (
                   <>
@@ -454,10 +516,16 @@ export default function ExamsPage() {
                       className="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition flex-1"
                     >✨ Aktivlashtirish</button>
                     {isAdmin && (
-                      <button
-                        onClick={e => { e.stopPropagation(); loadExam(exam); }}
-                        className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
-                      >✏️ Tahrirlash</button>
+                      <>
+                        <button
+                          onClick={e => { e.stopPropagation(); loadExam(exam); }}
+                          className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
+                        >✏️ Tahrirlash</button>
+                        <button
+                          onClick={e => { e.stopPropagation(); deleteExamById(exam); }}
+                          className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
+                        >🗑️ O'chirish</button>
+                      </>
                     )}
                   </>
                 )}
@@ -580,7 +648,7 @@ export default function ExamsPage() {
                             {q.imageUrl && <span className="ml-2 text-xs text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">🖼️ Rasm</span>}
                           </p>
                           <div className="grid grid-cols-2 gap-1">
-                            {(q.options as string[]).map((o, j) => (
+                            {(Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : [])).map((o: string, j: number) => (
                               <span key={j} className={`text-xs px-2 py-1 rounded ${j === q.correct ? 'bg-emerald-500/20 text-emerald-400 font-medium' : 'text-zinc-400'}`}>
                                 {['A','B','C','D'][j]}) {o}
                               </span>
@@ -621,6 +689,95 @@ export default function ExamsPage() {
         )}
       </div>
     </div>
+
+    {/* ─── MODAL: Imtihon tahrirlash (Admin) ─────────────────────────────── */}
+    {showEdit && isAdmin && (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-white">✏️ Imtihon tahrirlash</h2>
+            <button onClick={() => setShowEdit(false)} className="text-zinc-400 hover:text-white text-xl">×</button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-zinc-400 text-xs block mb-1">Nomi</label>
+              <input
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                value={editForm.title || ''}
+                onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-zinc-400 text-xs block mb-1">Test soni</label>
+                <input type="number" min={1} max={200}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                  value={editForm.testCount ?? ''}
+                  onChange={e => setEditForm(f => ({ ...f, testCount: Number(e.target.value) }))}
+                />
+              </div>
+              <div>
+                <label className="text-zinc-400 text-xs block mb-1">Test ball</label>
+                <input type="number" min={0} max={100}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                  value={editForm.maxTestScore ?? ''}
+                  onChange={e => setEditForm(f => ({ ...f, maxTestScore: Number(e.target.value) }))}
+                />
+              </div>
+              <div>
+                <label className="text-zinc-400 text-xs block mb-1">2-bosqich ball</label>
+                <input type="number" min={0} max={100}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                  value={editForm.maxAiScore ?? ''}
+                  onChange={e => setEditForm(f => ({ ...f, maxAiScore: Number(e.target.value) }))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-zinc-400 text-xs block mb-1">2-bosqich nomi</label>
+                <input
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                  value={editForm.step2Name || ''}
+                  onChange={e => setEditForm(f => ({ ...f, step2Name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-zinc-400 text-xs block mb-1">3-bosqich nomi</label>
+                <input
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                  value={editForm.step3Name || ''}
+                  onChange={e => setEditForm(f => ({ ...f, step3Name: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-zinc-400 text-xs block mb-1">3-bosqich ball</label>
+              <input type="number" min={0} max={100}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                value={editForm.maxProjectScore ?? ''}
+                onChange={e => setEditForm(f => ({ ...f, maxProjectScore: Number(e.target.value) }))}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-5">
+            <button onClick={() => setShowEdit(false)} className="flex-1 py-2 rounded-lg bg-zinc-700 text-white hover:bg-zinc-600 transition">
+              Bekor
+            </button>
+            <button
+              onClick={saveEditExam}
+              disabled={editSaving}
+              className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition disabled:opacity-50"
+            >
+              {editSaving ? 'Saqlanmoqda...' : '💾 Saqlash'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

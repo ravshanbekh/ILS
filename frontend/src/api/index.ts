@@ -318,6 +318,7 @@ export const examApi = {
   activate: (id: string) => api.patch(`/exam/${id}/activate`),
   complete: (id: string) => api.patch(`/exam/${id}/complete`),
   delete: (id: string) => api.delete(`/exam/${id}`),
+  update: (id: string, data: any) => api.patch(`/exam/${id}`, data),
   
   // Global
   getGlobalExams: () => api.get('/exam/global'),
