@@ -520,18 +520,23 @@ export const startExam = async (req: Request, res: Response, next: NextFunction)
       return res.status(410).json({ error: 'Imtihon vaqti tugagan' });
     }
 
-    // Allaqachon qatnashganmi?
+    // Allaqachon qatnashganmi? Sessiyani tiklash
     const existing = await prisma.examParticipant.findFirst({
       where: { examId: exam.id, studentId: student.id },
     });
-    if (existing?.status === 'submitted') {
-      return res.status(409).json({ error: 'Siz allaqachon imtihon topshirdingiz' });
-    }
-    if (existing?.status === 'in_progress') {
-      // Sessiyani davom ettirish
-      const randomQs = await getRandomQuestions(exam.id, exam.testCount);
+    if (existing) {
+      const randomQs = (existing.status === 'submitted' || existing.testScore !== null)
+        ? []
+        : await getRandomQuestions(exam.id, exam.testCount);
       const sessionToken = createExamSessionToken(existing, exam.expiresAt, randomQs.map(q => q.id));
-      return res.json({ data: { participant: existing, questions: randomQs, sessionToken, student: { id: student.id, fullName: student.fullName } } });
+      return res.json({
+        data: {
+          participant: existing,
+          questions: randomQs,
+          sessionToken,
+          student: { id: student.id, fullName: student.fullName },
+        },
+      });
     }
 
     // Yangi ishtirokchi

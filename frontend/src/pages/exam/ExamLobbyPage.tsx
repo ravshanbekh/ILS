@@ -105,7 +105,31 @@ export default function ExamLobbyPage() {
       setParticipantId(participant.id);
       setSessionToken(token);
       setStudent(st);
-      setQuestions(qs);
+      setQuestions(qs || []);
+
+      // 1. Agar barcha bosqichlar to'liq topshirilgan bo'lsa
+      if (participant.status === 'submitted') {
+        setStage('done');
+        return;
+      }
+
+      // 2. Agar test bosqichi topshirilgan bo'lsa (lekin video/loyiha hali topshirilmagan bo'lsa)
+      if (participant.testScore !== null && participant.testScore !== undefined) {
+        setTestResult({
+          correct: participant.correctCount || 0,
+          total: examInfo?.testCount || 20,
+          testScore: participant.testScore,
+        });
+        setTestDone(true);
+        setAiVideoUrl(participant.aiVideoUrl || '');
+        setProjectVideoUrl(participant.projectVideoUrl || '');
+        setStep2Content(participant.step2Content || '');
+        setStep3Content(participant.step3Content || '');
+        setStage('video');
+        return;
+      }
+
+      // 3. Aks holda test bosqichiga kiradi
       setStage('test');
     } catch (e: any) {
       setError(e.response?.data?.error || 'Xatolik yuz berdi');
