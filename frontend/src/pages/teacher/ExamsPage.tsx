@@ -188,32 +188,30 @@ export default function ExamsPage() {
       const wb = XLSX.read(ev.target?.result, { type: 'binary' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows: any[] = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      // Format: [savol, A, B, C, D, to'g'ri(A/B/C/D yoki 1/2/3/4 yoki 0/1/2/3)]
+      // Format: [savol, A, B, C, D, to'g'ri(0-3 yoki A/B/C/D)]
       const parsed: Question[] = rows.slice(1).filter(r => r[0]).map(r => {
         const correctVal = r[5];
         let correctIdx = 0;
-        if (typeof correctVal === 'string') {
-          const val = correctVal.trim().toUpperCase();
-          // A/B/C/D formatini qabul qilish
-          if (val === 'A') correctIdx = 0;
-          else if (val === 'B') correctIdx = 1;
-          else if (val === 'C') correctIdx = 2;
-          else if (val === 'D') correctIdx = 3;
-          // 1/2/3/4 formatini qabul qilish (1-bazali)
-          else if (val === '1') correctIdx = 0;
-          else if (val === '2') correctIdx = 1;
-          else if (val === '3') correctIdx = 2;
-          else if (val === '4') correctIdx = 3;
-          // 0/1/2/3 formatini qabul qilish (0-bazali)
-          else if (val === '0') correctIdx = 0;
-          else correctIdx = 0;
-        } else if (typeof correctVal === 'number') {
-          const n = Math.round(correctVal);
-          // Agar 1-4 oralig'ida — 1-bazali (1=A, 2=B, 3=C, 4=D)
-          if (n >= 1 && n <= 4) correctIdx = n - 1;
-          // Agar 0-3 oralig'ida — 0-bazali (0=A, 1=B, 2=C, 3=D)
-          else if (n >= 0 && n <= 3) correctIdx = n;
-          else correctIdx = 0;
+
+        if (correctVal !== undefined && correctVal !== null) {
+          if (typeof correctVal === 'number') {
+            const n = Math.round(correctVal);
+            if (n >= 0 && n <= 3) correctIdx = n;
+            else if (n === 4) correctIdx = 3;
+          } else {
+            const val = String(correctVal).trim().toUpperCase();
+            if (val === 'A' || val === '0') correctIdx = 0;
+            else if (val === 'B' || val === '1') correctIdx = 1;
+            else if (val === 'C' || val === '2') correctIdx = 2;
+            else if (val === 'D' || val === '3' || val === '4') correctIdx = 3;
+            else {
+              const parsedNum = parseInt(val, 10);
+              if (!isNaN(parsedNum)) {
+                if (parsedNum >= 0 && parsedNum <= 3) correctIdx = parsedNum;
+                else if (parsedNum === 4) correctIdx = 3;
+              }
+            }
+          }
         }
 
         if (isNaN(correctIdx) || correctIdx < 0 || correctIdx > 3) correctIdx = 0;

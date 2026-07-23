@@ -342,22 +342,26 @@ export default function LiveQuizPage() {
       const parsed = rows.slice(1).filter(r => r[0]).map(r => {
         const correctVal = r[5];
         let correctIdx = 0;
-        if (typeof correctVal === 'string') {
-          const val = correctVal.trim().toUpperCase();
-          if (val === 'A' || val === '1') correctIdx = 0;
-          else if (val === 'B' || val === '2') correctIdx = 1;
-          else if (val === 'C' || val === '3') correctIdx = 2;
-          else if (val === 'D' || val === '4') correctIdx = 3;
-          else {
-            const parsedNum = parseInt(val, 10);
-            if (!isNaN(parsedNum)) {
-              if (parsedNum >= 1 && parsedNum <= 4) correctIdx = parsedNum - 1;
-              else correctIdx = parsedNum;
+
+        if (correctVal !== undefined && correctVal !== null) {
+          if (typeof correctVal === 'number') {
+            const n = Math.round(correctVal);
+            if (n >= 0 && n <= 3) correctIdx = n;
+            else if (n === 4) correctIdx = 3;
+          } else {
+            const val = String(correctVal).trim().toUpperCase();
+            if (val === 'A' || val === '0') correctIdx = 0;
+            else if (val === 'B' || val === '1') correctIdx = 1;
+            else if (val === 'C' || val === '2') correctIdx = 2;
+            else if (val === 'D' || val === '3' || val === '4') correctIdx = 3;
+            else {
+              const parsedNum = parseInt(val, 10);
+              if (!isNaN(parsedNum)) {
+                if (parsedNum >= 0 && parsedNum <= 3) correctIdx = parsedNum;
+                else if (parsedNum === 4) correctIdx = 3;
+              }
             }
           }
-        } else if (typeof correctVal === 'number') {
-          if (correctVal >= 1 && correctVal <= 4) correctIdx = correctVal - 1;
-          else correctIdx = correctVal;
         }
 
         if (isNaN(correctIdx) || correctIdx < 0 || correctIdx > 3) {

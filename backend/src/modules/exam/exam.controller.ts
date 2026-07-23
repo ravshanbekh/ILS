@@ -57,7 +57,8 @@ function verifyExamSessionToken(token: unknown): ExamSessionPayload | null {
   }
 }
 
-async function isExamOwner(examId: string, userId: string): Promise<boolean> {
+async function isExamOwner(examId: string, userId: string, userRole?: string): Promise<boolean> {
+  if (userRole === 'admin') return true;
   const exam = await prisma.exam.findFirst({
     where: { id: examId, createdById: userId },
     select: { id: true },
@@ -318,7 +319,7 @@ export const addQuestions = async (req: Request, res: Response, next: NextFuncti
     const { id } = req.params;
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
-    if (!(await isExamOwner(id, userId))) {
+    if (!(await isExamOwner(id, userId, req.user?.role))) {
       return res.status(403).json({ error: 'Bu imtihonni tahrirlash uchun ruxsatingiz yo\'q' });
     }
 
@@ -363,7 +364,7 @@ export const updateQuestion = async (req: Request, res: Response, next: NextFunc
     const { id, qId } = req.params;
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
-    if (!(await isExamOwner(id, userId))) {
+    if (!(await isExamOwner(id, userId, req.user?.role))) {
       return res.status(403).json({ error: 'Bu imtihonni tahrirlash uchun ruxsatingiz yo\'q' });
     }
 
@@ -398,7 +399,7 @@ export const bulkAddQuestions = async (req: Request, res: Response, next: NextFu
     const { id } = req.params;
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
-    if (!(await isExamOwner(id, userId))) {
+    if (!(await isExamOwner(id, userId, req.user?.role))) {
       return res.status(403).json({ error: 'Bu imtihonni tahrirlash uchun ruxsatingiz yo\'q' });
     }
 
@@ -429,7 +430,7 @@ export const deleteQuestion = async (req: Request, res: Response, next: NextFunc
     const { id, qId } = req.params;
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
-    if (!(await isExamOwner(id, userId))) {
+    if (!(await isExamOwner(id, userId, req.user?.role))) {
       return res.status(403).json({ error: 'Bu imtihonni tahrirlash uchun ruxsatingiz yo\'q' });
     }
 
