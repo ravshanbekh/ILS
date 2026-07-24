@@ -3,6 +3,7 @@ import { examApi } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/stores/authStore';
+import ConfirmModal from '@/components/shared/ConfirmModal';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Exam {
@@ -78,6 +79,15 @@ export default function ExamsPage() {
   const [editForm, setEditForm] = useState<Partial<Exam> & { step2Type?: string; step3Type?: string; step2Desc?: string; step3Desc?: string }>({});
   const [editSaving, setEditSaving] = useState(false);
 
+  // Delete confirm modal
+  const [confirmDelete, setConfirmDelete] = useState<{
+    type: 'exam' | 'question';
+    id: string;
+    title: string;
+    description: string;
+  } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   useEffect(() => { fetchExams(); }, [listTab]);
 
   async function fetchExams() {
@@ -140,15 +150,48 @@ export default function ExamsPage() {
     }
   }
 
-  // Admin: imtihon o'chirish
-  async function deleteExamById(exam: Exam) {
-    if (!confirm(`"${exam.title}" imtihonini o'chirasizmi? Bu qaytarib bo'lmaydi!`)) return;
-    try {
-      await examApi.delete(exam.id);
-      if (selected?.id === exam.id) { setSelected(null); setQuestions([]); }
-      fetchExams();
-    } catch (e: any) { alert(e.response?.data?.error || 'Xatolik yuz berdi'); }
+  // Admin: imtihon o'chirish request
+  function requestDeleteExam(exam: Exam) {
+    setConfirmDelete({
+      type: 'exam',
+      id: exam.id,
+      title: `"${exam.title}" imtihonini o'chirmoqchimisiz?`,
+      description: "Ushbu imtihon va uning barcha natijalari o'chiriladi. Bu amalni ortga qaytarib bo'lmaydi.",
+    });
   }
+
+  function requestDeleteQuestion(qId: string, questionText: string) {
+    setConfirmDelete({
+      type: 'question',
+      id: qId,
+      title: "Savolni o'chirmoqchimisiz?",
+      description: `"${questionText.slice(0, 60)}..." savoli imtihondan olib tashlanadi.`,
+    });
+  }
+
+  async function handleConfirmDelete() {
+    if (!confirmDelete) return;
+    setDeleteLoading(true);
+    try {
+      if (confirmDelete.type === 'exam') {
+        await examApi.delete(confirmDelete.id);
+        if (selected?.id === confirmDelete.id) { setSelected(null); setQuestions([]); }
+        fetchExams();
+      } else if (confirmDelete.type === 'question') {
+        if (!selected) return;
+        await examApi.deleteQuestion(selected.id, confirmDelete.id);
+        const res = await examApi.getById(selected.id);
+        setQuestions(res.data.data.questions);
+        fetchExams();
+      }
+      setConfirmDelete(null);
+    } catch (e: any) {
+      alert(e.response?.data?.error || "O'chirishda xatolik yuz berdi");
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
 
   // Admin: imtihon tahrirlash modali
   function openEdit(exam: Exam) {
@@ -517,7 +560,7 @@ export default function ExamsPage() {
                           className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
                         >✏️ Tahrirlash</button>
                         <button
-                          onClick={e => { e.stopPropagation(); deleteExamById(exam); }}
+                          onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
                           className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
                         >🗑️ O'chirish</button>
                       </>
@@ -536,7 +579,7 @@ export default function ExamsPage() {
                           className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
                         >✏️ Tahrirlash</button>
                         <button
-                          onClick={e => { e.stopPropagation(); deleteExamById(exam); }}
+                          onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
                           className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
                         >🗑️ O'chirish</button>
                       </>
@@ -681,7 +724,7 @@ export default function ExamsPage() {
                               title="Tahrirlash"
                             >✏️</button>
                             <button
-                              onClick={() => deleteQ(q.id)}
+                              onClick={() => requestDeleteQuestion(q.id, q.question)}
                               className="text-red-400 hover:text-red-300 text-lg"
                               title="O'chirish"
                             >×</button>
@@ -799,6 +842,17 @@ export default function ExamsPage() {
         </div>
       </div>
     )}
+    {/* ─── MODAL: O'chirish tasdiqlash ──────────────────────────────────── */}
+    <ConfirmModal
+      isOpen={Boolean(confirmDelete)}
+      onClose={() => setConfirmDelete(null)}
+      onConfirm={handleConfirmDelete}
+      title={confirmDelete?.title}
+      description={confirmDelete?.description}
+      confirmText="Ha, o'chirish"
+      cancelText="Yo'q, bekor qilish"
+      loading={deleteLoading}
+    />
     </>
   );
 }

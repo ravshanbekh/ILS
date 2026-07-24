@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { lessonsApi } from '@/api';
+import ConfirmModal from '@/components/shared/ConfirmModal';
 import {
   FolderOpen, Plus, Trash2, Edit3, ExternalLink, Users, X,
   BookOpen, Link, FileText, Video, ChevronRight, Check, Save,
@@ -81,6 +82,15 @@ export default function LessonsPage() {
   const [accessList, setAccessList] = useState<string[]>([]);
   const [accessSaving, setAccessSaving] = useState(false);
 
+  // Delete confirm modal
+  const [confirmDelete, setConfirmDelete] = useState<{
+    type: 'folder' | 'item';
+    target: LessonFolder | LessonItem;
+    title: string;
+    description: string;
+  } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   // ─── Data loading ────────────────────────────────────────────────────────
   useEffect(() => { loadFolders(); }, []);
 
@@ -117,16 +127,13 @@ export default function LessonsPage() {
     } catch (e: any) { alert(e.response?.data?.error || 'Xatolik'); }
   }
 
-  async function deleteFolder(folder: LessonFolder) {
-    if (!confirm(`"${folder.name}" papkasini o'chirasizmi? Barcha darsliklar ham o'chadi.`)) return;
-    try {
-      await lessonsApi.deleteFolder(folder.id);
-      if (selectedFolder?.id === folder.id) {
-        setSelectedFolder(null);
-        setItems([]);
-      }
-      await loadFolders();
-    } catch (e: any) { alert(e.response?.data?.error || 'Xatolik'); }
+  function requestDeleteFolder(folder: LessonFolder) {
+    setConfirmDelete({
+      type: 'folder',
+      target: folder,
+      title: `"${folder.name}" papkasini o'chirmoqchimisiz?`,
+      description: "Ushbu papka va uning ichidagi barcha darsliklar butunlay o'chiriladi. Bu amalni ortga qaytarib bo'lmaydi.",
+    });
   }
 
   // ─── Item CRUD ───────────────────────────────────────────────────────────
@@ -146,16 +153,43 @@ export default function LessonsPage() {
     } catch (e: any) { alert(e.response?.data?.error || 'Xatolik'); }
   }
 
-  async function deleteItem(item: LessonItem) {
-    if (!confirm(`"${item.title}" darsligini o'chirasizmi?`)) return;
-    try {
-      await lessonsApi.deleteItem(item.id);
-      if (selectedFolder) {
-        await loadItems(selectedFolder);
-        await loadFolders();
-      }
-    } catch (e: any) { alert(e.response?.data?.error || 'Xatolik'); }
+  function requestDeleteItem(item: LessonItem) {
+    setConfirmDelete({
+      type: 'item',
+      target: item,
+      title: `"${item.title}" darsligini o'chirmoqchimisiz?`,
+      description: "Ushbu darslik havolasi platformadan o'chiriladi. Bu amalni ortga qaytarib bo'lmaydi.",
+    });
   }
+
+  async function handleConfirmDelete() {
+    if (!confirmDelete) return;
+    setDeleteLoading(true);
+    try {
+      if (confirmDelete.type === 'folder') {
+        const folder = confirmDelete.target as LessonFolder;
+        await lessonsApi.deleteFolder(folder.id);
+        if (selectedFolder?.id === folder.id) {
+          setSelectedFolder(null);
+          setItems([]);
+        }
+        await loadFolders();
+      } else {
+        const item = confirmDelete.target as LessonItem;
+        await lessonsApi.deleteItem(item.id);
+        if (selectedFolder) {
+          await loadItems(selectedFolder);
+          await loadFolders();
+        }
+      }
+      setConfirmDelete(null);
+    } catch (e: any) {
+      alert(e.response?.data?.error || "O'chirishda xatolik yuz berdi");
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
 
   // ─── Access Management ───────────────────────────────────────────────────
   async function openAccess(folder: LessonFolder) {
@@ -272,7 +306,7 @@ export default function LessonsPage() {
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => deleteFolder(folder)}
+                      onClick={() => requestDeleteFolder(folder)}
                       className="p-1 rounded-lg bg-zinc-700 hover:bg-red-600 transition text-zinc-400 hover:text-white"
                       title="O'chirish"
                     >
@@ -359,7 +393,7 @@ export default function LessonsPage() {
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => deleteItem(item)}
+                              onClick={() => requestDeleteItem(item)}
                               className="p-1.5 rounded-lg bg-zinc-700 hover:bg-red-600 transition text-zinc-400 hover:text-white"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -564,6 +598,17 @@ export default function LessonsPage() {
           </div>
         </div>
       )}
+      {/* ─── MODAL: O'chirish tasdiqlash ──────────────────────────────────── */}
+      <ConfirmModal
+        isOpen={Boolean(confirmDelete)}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title={confirmDelete?.title}
+        description={confirmDelete?.description}
+        confirmText="Ha, o'chirish"
+        cancelText="Yo'q, bekor qilish"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

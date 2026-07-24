@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { normativesApi, categoriesApi } from '@/api';
 import Header from '@/components/layout/Header';
+import ConfirmModal from '@/components/shared/ConfirmModal';
 import { Plus, Pencil, Trash2, Link as LinkIcon, Search, Check, AlertCircle } from 'lucide-react';
 
 export default function NormativesPage() {
@@ -17,6 +18,8 @@ export default function NormativesPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   
   const [viewingNormative, setViewingNormative] = useState<any>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -123,15 +126,24 @@ export default function NormativesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Rostdan ham o\'chirmoqchimisiz?')) return;
+    setDeleteId(id);
+  };
+
+  const confirmDeleteNormative = async () => {
+    if (!deleteId) return;
+    setDeleteLoading(true);
     try {
-      await normativesApi.delete(id);
+      await normativesApi.delete(deleteId);
+      setDeleteId(null);
       fetchNormatives();
     } catch (error) {
       console.error(error);
-      alert('O\'chirishda xatolik yuz berdi');
+      alert("O'chirishda xatolik yuz berdi");
+    } finally {
+      setDeleteLoading(false);
     }
   };
+
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -548,6 +560,17 @@ export default function NormativesPage() {
           </div>
         </div>
       )}
+      {/* ─── MODAL: O'chirish tasdiqlash ──────────────────────────────────── */}
+      <ConfirmModal
+        isOpen={Boolean(deleteId)}
+        onClose={() => setDeleteId(null)}
+        onConfirm={confirmDeleteNormative}
+        title="Normativni o'chirmoqchimisiz?"
+        description="Ushbu normativ tizimdan o'chiriladi. Bu amalni ortga qaytarib bo'lmaydi."
+        confirmText="Ha, o'chirish"
+        cancelText="Yo'q, bekor qilish"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { usersApi, groupsApi } from '@/api';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import ConfirmModal from '@/components/shared/ConfirmModal';
 import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight, FolderOpen, ExternalLink } from 'lucide-react';
 import { formatDateTime } from '@/utils';
 
@@ -38,6 +39,9 @@ export default function UsersPage() {
   const [allGroups, setAllGroups] = useState<any[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   const [groupSearch, setGroupSearch] = useState('');
+
+  const [deleteUserObj, setDeleteUserObj] = useState<{ id: string; name: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchUsers = useCallback(async (page: number, search: string) => {
     setLoading(true);
@@ -130,16 +134,25 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Rostdan ham o\'chirmoqchimisiz?')) return;
+  const handleDelete = async (id: string, name?: string) => {
+    setDeleteUserObj({ id, name: name || "Foydalanuvchi" });
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!deleteUserObj) return;
+    setDeleteLoading(true);
     try {
-      await usersApi.delete(id);
+      await usersApi.delete(deleteUserObj.id);
+      setDeleteUserObj(null);
       fetchUsers(currentPage, debouncedSearch);
     } catch (error) {
       console.error(error);
-      alert('O\'chirishda xatolik yuz berdi');
+      alert("O'chirishda xatolik yuz berdi");
+    } finally {
+      setDeleteLoading(false);
     }
   };
+
 
   const copyCredentials = (login: string) => {
     navigator.clipboard.writeText(`Login: ${login}`);
@@ -311,7 +324,7 @@ export default function UsersPage() {
                                 <KeyRound className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleDelete(u.id)}
+                                onClick={() => handleDelete(u.id, u.fullName)}
                                 className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -586,6 +599,17 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+      {/* ─── MODAL: O'chirish tasdiqlash ──────────────────────────────────── */}
+      <ConfirmModal
+        isOpen={Boolean(deleteUserObj)}
+        onClose={() => setDeleteUserObj(null)}
+        onConfirm={confirmDeleteUser}
+        title={`"${deleteUserObj?.name}" ni o'chirmoqchimisiz?`}
+        description="Ushbu foydalanuvchi hisobi tizimdan o'chiriladi. Bu amalni ortga qaytarib bo'lmaydi."
+        confirmText="Ha, o'chirish"
+        cancelText="Yo'q, bekor qilish"
+        loading={deleteLoading}
+      />
     </div>
   );
 }
