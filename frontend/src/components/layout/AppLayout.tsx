@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { useState } from 'react';
 import Sidebar from './Sidebar';
+import CategorySubHeader from './CategorySubHeader';
 import { Menu } from 'lucide-react';
 
 export default function AppLayout() {
@@ -20,6 +21,10 @@ export default function AppLayout() {
           </button>
           <span className="text-sm font-bold text-white">ILS</span>
         </div>
+
+        {/* Sub Navigation Bar for Category Switching */}
+        <CategorySubHeader />
+
         <div className="flex-1 w-full max-w-7xl mx-auto">
           <Outlet />
         </div>

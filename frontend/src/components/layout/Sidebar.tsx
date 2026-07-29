@@ -1,49 +1,14 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import {
-  LayoutDashboard, Users, FolderOpen, BookOpen, ClipboardCheck,
-  BarChart3, Trophy, Download, LogOut, GraduationCap, Video, Settings, X, ClipboardList,
-  Snowflake, Star, Phone, TrendingDown, FileText, Zap
+  LayoutDashboard, GraduationCap, LogOut, X, ChevronDown, ChevronRight,
+  Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star
 } from 'lucide-react';
-
-
-const adminLinks = [
-  { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/users', icon: Users, label: 'Foydalanuvchilar' },
-  { to: '/admin/groups', icon: FolderOpen, label: 'Guruhlar' },
-  { to: '/admin/normatives', icon: BookOpen, label: 'Normativlar' },
-  { to: '/admin/submissions', icon: ClipboardCheck, label: 'Topshiriqlar' },
-  { to: '/admin/stats', icon: BarChart3, label: 'Statistika' },
-  { to: '/admin/frozen-students', icon: Snowflake, label: 'Muzlatilganlar' },
-  { to: '/admin/teacher-rating', icon: Star, label: "O'qituvchi reytingi" },
-  { to: '/admin/monitoring', icon: Phone, label: 'Monitoring' },
-  { to: '/admin/checklist-stats', icon: ClipboardCheck, label: 'Cheklist Hisobot' },
-  { to: '/admin/checklist-manage', icon: ClipboardList, label: 'Cheklist Boshqaruv' },
-  { to: '/admin/predictions', icon: TrendingDown, label: 'AI Prognozlar' },
-  { to: '/admin/rankings', icon: Trophy, label: 'Reyting' },
-  { to: '/admin/export', icon: Download, label: 'Eksport' },
-  { to: '/admin/settings', icon: Settings, label: 'Sozlamalar' },
-  { to: '/admin/exams', icon: FileText, label: 'Imtihonlar' },
-  { to: '/admin/live-quiz', icon: Zap, label: 'Live Quiz' },
-  { to: '/admin/lessons', icon: BookOpen, label: 'Darsliklar' },
-];
-
-const teacherLinks = [
-  { to: '/teacher', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/teacher/users', icon: Users, label: "O'quvchilar" },
-  { to: '/teacher/groups', icon: FolderOpen, label: 'Guruhlarim' },
-  { to: '/teacher/normatives', icon: BookOpen, label: 'Normativlar' },
-  { to: '/teacher/pending', icon: ClipboardCheck, label: 'Tekshirish' },
-  { to: '/teacher/rankings', icon: Trophy, label: 'Reyting' },
-  { to: '/teacher/exams', icon: FileText, label: 'Imtihonlar' },
-  { to: '/teacher/live-quiz', icon: Zap, label: 'Live Quiz' },
-  { to: '/teacher/lessons', icon: BookOpen, label: 'Darsliklar' },
-  { to: '/teacher/export', icon: Download, label: 'Eksport' },
-];
-
+import { ADMIN_GROUPS, TEACHER_GROUPS } from './CategorySubHeader';
+import type { NavCategoryGroup } from './CategorySubHeader';
 
 const studentLinks = [
-  { to: '/student', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/student/my-normatives', icon: Video, label: "Qoidalar va Ko'rsatmalar" },
   { to: '/student/normatives', icon: BookOpen, label: 'Normativlar' },
   { to: '/student/history', icon: ClipboardCheck, label: 'Topshiriqlarim' },
@@ -80,17 +45,31 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const isViewer = user?.role && VIEWER_ROLES.includes(user.role as ViewerRole);
 
+  const rawGroups: NavCategoryGroup[] = user?.role === 'admin'
+    ? ADMIN_GROUPS
+    : user?.role === 'teacher'
+    ? TEACHER_GROUPS
+    : [];
+
+  const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
+
+  const groups = rawGroups.map(group => ({
+    ...group,
+    items: isDemo ? group.items.filter(item => !item.to.includes('checklist')) : group.items
+  })).filter(group => group.items.length > 0);
+
   const nazoratchiLinks = user?.role === 'nazoratchi' ? [
-    { to: `/viewer/nazoratchi`, icon: LayoutDashboard, label: 'Dashboard' },
     { to: `/viewer/nazoratchi/checklist-stats`, icon: BarChart3, label: 'Cheklist Hisobot' },
     { to: `/viewer/nazoratchi/checklist-manage`, icon: ClipboardList, label: 'Cheklist Boshqaruv' },
   ] : [];
 
   const viewerLinks = isViewer && user?.role !== 'nazoratchi' ? [
-    { to: `/viewer/${user!.role}`, icon: LayoutDashboard, label: 'Dashboard' },
     ...(['filial_rahbari', 'administrator', 'sotuv_operatori', 'kassir'].includes(user!.role) ? [
       { to: `/viewer/${user!.role}/frozen-students`, icon: Snowflake, label: 'Muzlatilganlar' }
     ] : []),
@@ -102,21 +81,37 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     ] : []),
   ] : [];
 
-  const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
-
-  const rawLinks = user?.role === 'admin'
-    ? adminLinks
-    : user?.role === 'teacher'
-    ? teacherLinks
-    : user?.role === 'student'
+  const flatLinks = user?.role === 'student'
     ? studentLinks
     : user?.role === 'nazoratchi'
     ? nazoratchiLinks
     : viewerLinks;
 
-  const links = isDemo 
-    ? rawLinks.filter(link => !link.to.includes('checklist'))
-    : rawLinks;
+  const dashboardRoute = user?.role === 'admin'
+    ? '/admin'
+    : user?.role === 'teacher'
+    ? '/teacher'
+    : user?.role === 'student'
+    ? '/student'
+    : user?.role === 'nazoratchi'
+    ? '/viewer/nazoratchi'
+    : `/viewer/${user?.role || ''}`;
+
+  // Automatically expand group containing active route
+  useEffect(() => {
+    if (groups.length > 0) {
+      const activeGroup = groups.find(group =>
+        group.items.some(item => location.pathname.startsWith(item.to))
+      );
+      if (activeGroup) {
+        setOpenGroups(prev => ({ ...prev, [activeGroup.id]: true }));
+      }
+    }
+  }, [location.pathname]);
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
 
   const handleLogout = () => {
     logout();
@@ -124,7 +119,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleNavClick = () => {
-    // Close sidebar on mobile when a link is clicked
     if (onClose) onClose();
   };
 
@@ -142,7 +136,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-md shadow-blue-900/30">
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
@@ -160,25 +154,106 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.to === '/admin' || link.to === '/teacher' || link.to === '/student' || link.to === '/viewer/nazoratchi'}
-              onClick={handleNavClick}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-zinc-800 text-white'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-                }`
-              }
-            >
-              <link.icon className="w-4 h-4" />
-              {link.label}
-            </NavLink>
-          ))}
+        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+          {/* Main Dashboard Link */}
+          <NavLink
+            to={dashboardRoute}
+            end
+            onClick={handleNavClick}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive
+                  ? 'bg-blue-600 text-white font-semibold shadow-lg shadow-blue-900/30'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              }`
+            }
+          >
+            <LayoutDashboard className="w-4 h-4 shrink-0" />
+            <span>Dashboard</span>
+          </NavLink>
+
+          {/* Grouped Accordions for Admin / Teacher */}
+          {groups.length > 0 ? (
+            groups.map(group => {
+              const GroupIcon = group.icon;
+              const isGroupActive = group.items.some(item => location.pathname.startsWith(item.to));
+              const isExpanded = openGroups[group.id] ?? isGroupActive;
+
+              return (
+                <div key={group.id} className="space-y-1 pt-1">
+                  {/* Group Header Button */}
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-200 select-none ${
+                      isGroupActive
+                        ? 'text-blue-400 bg-blue-500/10 border border-blue-500/20'
+                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <GroupIcon className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{group.label}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400 font-mono">
+                        {group.items.length}
+                      </span>
+                      {isExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Sub-items */}
+                  {isExpanded && (
+                    <div className="pl-3 space-y-0.5 border-l-2 border-zinc-800/80 ml-3.5 my-1">
+                      {group.items.map(item => {
+                        const ItemIcon = item.icon;
+                        const isSubActive = location.pathname.startsWith(item.to);
+                        return (
+                          <NavLink
+                            key={item.to}
+                            to={item.to}
+                            onClick={handleNavClick}
+                            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                              isSubActive
+                                ? 'bg-zinc-800 text-white font-semibold border-l-2 border-blue-500 -ml-[2px] pl-[10px]'
+                                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40'
+                            }`}
+                          >
+                            <ItemIcon className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{item.label}</span>
+                          </NavLink>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            /* Student / Viewer Flat links */
+            flatLinks.map(link => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-zinc-800 text-white font-semibold'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+                  }`
+                }
+              >
+                <link.icon className="w-4 h-4" />
+                <span>{link.label}</span>
+              </NavLink>
+            ))
+          )}
         </nav>
 
         {/* User profile & Logout */}
