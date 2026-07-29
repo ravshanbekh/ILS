@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
-  Settings, FileText, Zap
+  Settings, FileText, Zap, Video
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -121,11 +121,31 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
   }
 ];
 
+export const STUDENT_GROUPS: NavCategoryGroup[] = [
+  {
+    id: 'normatives_student',
+    label: 'Normativlar',
+    icon: BookOpen,
+    items: [
+      { to: '/student/my-normatives', label: "Qoidalar va Ko'rsatmalar", icon: Video },
+      { to: '/student/normatives', label: 'Normativlar', icon: BookOpen },
+      { to: '/student/history', label: 'Topshiriqlarim', icon: ClipboardCheck },
+      { to: '/student/ranking', label: 'Reyting', icon: Trophy },
+    ]
+  }
+];
+
 export default function CategorySubHeader() {
   const { user } = useAuthStore();
   const location = useLocation();
 
-  const groups = user?.role === 'admin' ? ADMIN_GROUPS : user?.role === 'teacher' ? TEACHER_GROUPS : [];
+  const groups = user?.role === 'admin'
+    ? ADMIN_GROUPS
+    : user?.role === 'teacher'
+    ? TEACHER_GROUPS
+    : user?.role === 'student'
+    ? STUDENT_GROUPS
+    : [];
   if (groups.length === 0) return null;
 
   const activeGroup = groups.find(group =>

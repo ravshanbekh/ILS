@@ -5,7 +5,7 @@ import {
   LayoutDashboard, GraduationCap, LogOut, X, ChevronDown, ChevronRight,
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star
 } from 'lucide-react';
-import { ADMIN_GROUPS, TEACHER_GROUPS } from './CategorySubHeader';
+import { ADMIN_GROUPS, TEACHER_GROUPS, STUDENT_GROUPS } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
 
 const studentLinks = [
@@ -55,6 +55,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     ? ADMIN_GROUPS
     : user?.role === 'teacher'
     ? TEACHER_GROUPS
+    : user?.role === 'student'
+    ? STUDENT_GROUPS
     : [];
 
   const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
