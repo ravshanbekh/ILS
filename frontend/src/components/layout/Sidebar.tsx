@@ -185,7 +185,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-200 select-none ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 select-none ${
                       isGroupActive
                         ? 'text-blue-400 bg-blue-500/10 border border-blue-500/20'
                         : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'

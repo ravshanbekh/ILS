@@ -22,7 +22,7 @@ export interface NavCategoryGroup {
 export const ADMIN_GROUPS: NavCategoryGroup[] = [
   {
     id: 'users_groups',
-    label: 'Jamoa va Foydalanuvchilar',
+    label: 'Jamoa',
     icon: Users,
     items: [
       { to: '/admin/users', label: 'Foydalanuvchilar', icon: Users },
@@ -31,7 +31,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
   },
   {
     id: 'education_exams',
-    label: "Ta'lim va Imtihonlar",
+    label: "Ta'lim",
     icon: BookOpen,
     items: [
       { to: '/admin/lessons', label: 'Darsliklar', icon: BookOpen },
@@ -41,7 +41,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
   },
   {
     id: 'normatives_results',
-    label: 'Normativlar va Natijalar',
+    label: 'Normativlar',
     icon: ClipboardCheck,
     items: [
       { to: '/admin/normatives', label: 'Normativlar', icon: BookOpen },
@@ -52,7 +52,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
   },
   {
     id: 'monitoring_analysis',
-    label: 'Monitoring va Tahlil',
+    label: 'Monitoring',
     icon: Phone,
     items: [
       { to: '/admin/frozen-students', label: 'Muzlatilganlar', icon: Snowflake },
@@ -63,7 +63,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
   },
   {
     id: 'checklist_system',
-    label: 'Cheklist Tizimi',
+    label: 'Cheklistlar',
     icon: ClipboardList,
     items: [
       { to: '/admin/checklist-stats', label: 'Cheklist Hisobot', icon: BarChart3 },
@@ -72,7 +72,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
   },
   {
     id: 'settings_backup',
-    label: 'Tizim va Sozlamalar',
+    label: 'Sozlamalar',
     icon: Settings,
     items: [
       { to: '/admin/export', label: 'Eksport / Zaxira', icon: Download },
@@ -84,7 +84,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
 export const TEACHER_GROUPS: NavCategoryGroup[] = [
   {
     id: 'users_groups',
-    label: 'Jamoa va O\'quvchilar',
+    label: 'Jamoa',
     icon: Users,
     items: [
       { to: '/teacher/users', label: "O'quvchilar", icon: Users },
@@ -93,7 +93,7 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
   },
   {
     id: 'education_exams',
-    label: "Ta'lim va Imtihonlar",
+    label: "Ta'lim",
     icon: BookOpen,
     items: [
       { to: '/teacher/lessons', label: 'Darsliklar', icon: BookOpen },
@@ -103,7 +103,7 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
   },
   {
     id: 'normatives_results',
-    label: 'Normativlar va Natijalar',
+    label: 'Normativlar',
     icon: ClipboardCheck,
     items: [
       { to: '/teacher/normatives', label: 'Normativlar', icon: BookOpen },
@@ -113,7 +113,7 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
   },
   {
     id: 'settings_backup',
-    label: 'Tizim va Eksport',
+    label: 'Sozlamalar',
     icon: Settings,
     items: [
       { to: '/teacher/export', label: 'Eksport', icon: Download },
