@@ -142,14 +142,17 @@ export default function QuizJoinPage() {
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.3);
       } else {
-        // Wrong answer: low buzz
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(200, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
-        gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        // Wrong answer: yumshoq ikki notali pasayuvchi "vom-vom" ohang
+        // (triangle to'lqin — g'ichirlagan past sawtooth o'rniga toza tovush)
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.setValueAtTime(330, ctx.currentTime + 0.18);
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 0.16);
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime + 0.18);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.25);
+        osc.stop(ctx.currentTime + 0.45);
       }
     } catch (e) {
       // Audio API not available — silently fail
