@@ -3,34 +3,79 @@ import prisma from '../../config/database';
 
 // ─── Papkalar ──────────────────────────────────────────────────────────────────
 
-/** GET /api/lessons/folders
- *  admin → barcha papkalar + item count
- *  teacher → faqat ruxsat berilganlar
+/** O'qituvchi uchun papka ko'rinishini hisoblaydi (ichma-ich papkalarni hisobga olib):
+ *  - inherited: ruxsat berilgan papka + uning BUTUN ichki daraxti → to'liq kirish (darsliklar ko'rinadi)
+ *  - passthrough: shu daraxtga borish uchun kerak bo'lgan ajdod papkalar → faqat navigatsiya
+ *    uchun ko'rinadi, ichidagi darsliklar ko'rinmaydi (agar alohida ruxsat berilmagan bo'lsa)
+ */
+async function getTeacherVisibility(teacherId: string) {
+  const [allFolders, accessRows] = await Promise.all([
+    prisma.lessonFolder.findMany({ select: { id: true, parentId: true } }),
+    prisma.lessonFolderAccess.findMany({ where: { teacherId }, select: { folderId: true } }),
+  ]);
+
+  const childrenMap = new Map<string, string[]>();
+  const parentMap = new Map<string, string | null>();
+  for (const f of allFolders) {
+    parentMap.set(f.id, f.parentId);
+    if (f.parentId) {
+      if (!childrenMap.has(f.parentId)) childrenMap.set(f.parentId, []);
+      childrenMap.get(f.parentId)!.push(f.id);
+    }
+  }
+
+  const inherited = new Set<string>();
+  const passthrough = new Set<string>();
+
+  for (const { folderId } of accessRows) {
+    const queue = [folderId];
+    while (queue.length) {
+      const cur = queue.shift()!;
+      if (inherited.has(cur)) continue;
+      inherited.add(cur);
+      for (const child of childrenMap.get(cur) || []) queue.push(child);
+    }
+
+    let p = parentMap.get(folderId) ?? null;
+    while (p) {
+      if (passthrough.has(p) || inherited.has(p)) break;
+      passthrough.add(p);
+      p = parentMap.get(p) ?? null;
+    }
+  }
+
+  return { inherited, visible: new Set<string>([...inherited, ...passthrough]) };
+}
+
+/** GET /api/lessons/folders?parentId=xxx
+ *  admin → shu daraja papkalari + item/bo'lim soni
+ *  teacher → faqat ruxsat berilganlar (yoki ularga borish uchun kerakli ajdodlar)
  */
 export const getFolders = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user!;
     const isAdmin = ['admin', 'administrator', 'filial_rahbari'].includes(user.role);
+    const parentId = (req.query.parentId as string) || null;
 
     let folders;
     if (isAdmin) {
       folders = await prisma.lessonFolder.findMany({
+        where: { parentId },
         orderBy: { order: 'asc' },
         include: {
-          _count: { select: { items: true, access: true } },
+          _count: { select: { items: true, access: true, children: true } },
         },
       });
     } else {
-      // Teacher — faqat ruxsat berilganlar
-      folders = await prisma.lessonFolder.findMany({
-        where: {
-          access: { some: { teacherId: user.userId } },
-        },
+      const { visible } = await getTeacherVisibility(user.userId);
+      const candidates = await prisma.lessonFolder.findMany({
+        where: { parentId },
         orderBy: { order: 'asc' },
         include: {
-          _count: { select: { items: true } },
+          _count: { select: { items: true, children: true } },
         },
       });
+      folders = candidates.filter(f => visible.has(f.id));
     }
 
     res.json({ data: folders });
@@ -40,8 +85,13 @@ export const getFolders = async (req: Request, res: Response, next: NextFunction
 /** POST /api/lessons/folders */
 export const createFolder = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, description, icon, order } = req.body;
+    const { name, description, icon, order, parentId } = req.body;
     if (!name) return res.status(400).json({ error: 'Papka nomi kiritilishi shart' });
+
+    if (parentId) {
+      const parent = await prisma.lessonFolder.findUnique({ where: { id: parentId } });
+      if (!parent) return res.status(404).json({ error: "Ota papka topilmadi" });
+    }
 
     const folder = await prisma.lessonFolder.create({
       data: {
@@ -49,9 +99,10 @@ export const createFolder = async (req: Request, res: Response, next: NextFuncti
         description: description || null,
         icon: icon || '📁',
         order: order ?? 0,
+        parentId: parentId || null,
         createdById: req.user!.userId,
       },
-      include: { _count: { select: { items: true, access: true } } },
+      include: { _count: { select: { items: true, access: true, children: true } } },
     });
 
     res.status(201).json({ data: folder });
@@ -72,7 +123,7 @@ export const updateFolder = async (req: Request, res: Response, next: NextFuncti
         ...(icon !== undefined && { icon }),
         ...(order !== undefined && { order }),
       },
-      include: { _count: { select: { items: true, access: true } } },
+      include: { _count: { select: { items: true, access: true, children: true } } },
     });
 
     res.json({ data: folder });
@@ -83,9 +134,20 @@ export const updateFolder = async (req: Request, res: Response, next: NextFuncti
 export const deleteFolder = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    // Cascade: items va access ham o'chadi
+    // Cascade: ichki papkalar, ularning darsliklari va ruxsatlari ham o'chadi
     await prisma.lessonFolder.delete({ where: { id } });
     res.json({ message: "Papka o'chirildi" });
+  } catch (e) { next(e); }
+};
+
+/** GET /api/lessons/folders/tree — barcha papkalar yassi ro'yxati (admin, ko'chirish uchun) */
+export const getFolderTree = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const folders = await prisma.lessonFolder.findMany({
+      select: { id: true, name: true, icon: true, parentId: true },
+      orderBy: { order: 'asc' },
+    });
+    res.json({ data: folders });
   } catch (e) { next(e); }
 };
 
@@ -99,11 +161,9 @@ export const getItems = async (req: Request, res: Response, next: NextFunction) 
     const isAdmin = ['admin', 'administrator', 'filial_rahbari'].includes(user.role);
 
     if (!isAdmin) {
-      // Teacher ruxsatini tekshirish
-      const access = await prisma.lessonFolderAccess.findUnique({
-        where: { folderId_teacherId: { folderId: id, teacherId: user.userId } },
-      });
-      if (!access) return res.status(403).json({ error: "Bu papkaga ruxsatingiz yo'q" });
+      // Teacher ruxsatini tekshirish (to'g'ridan-to'g'ri yoki ajdod papkadan meros)
+      const { inherited } = await getTeacherVisibility(user.userId);
+      if (!inherited.has(id)) return res.status(403).json({ error: "Bu papkaga ruxsatingiz yo'q" });
     }
 
     const items = await prisma.lessonItem.findMany({
@@ -137,11 +197,18 @@ export const addItem = async (req: Request, res: Response, next: NextFunction) =
   } catch (e) { next(e); }
 };
 
-/** PATCH /api/lessons/items/:itemId */
+/** PATCH /api/lessons/items/:itemId
+ *  folderId yuborilsa — darslikni boshqa papkaga ko'chiradi
+ */
 export const updateItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { itemId } = req.params;
-    const { title, url, type, order } = req.body;
+    const { title, url, type, order, folderId } = req.body;
+
+    if (folderId !== undefined) {
+      const dest = await prisma.lessonFolder.findUnique({ where: { id: folderId } });
+      if (!dest) return res.status(404).json({ error: "Manzil papka topilmadi" });
+    }
 
     const item = await prisma.lessonItem.update({
       where: { id: itemId },
@@ -150,6 +217,7 @@ export const updateItem = async (req: Request, res: Response, next: NextFunction
         ...(url !== undefined && { url }),
         ...(type !== undefined && { type }),
         ...(order !== undefined && { order }),
+        ...(folderId !== undefined && { folderId }),
       },
     });
 

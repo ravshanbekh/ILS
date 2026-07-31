@@ -8,10 +8,13 @@ router.use(authenticate);
 
 // ─── Papkalar ──────────────────────────────────────────────────────────────────
 
-// GET  /api/lessons/folders — ro'yxat (admin: hammasi, teacher: ruxsatlilar)
+// GET  /api/lessons/folders?parentId=xxx — shu daraja ro'yxati (admin: hammasi, teacher: ruxsatlilar)
 router.get('/folders', lessonsController.getFolders);
 
-// POST /api/lessons/folders — papka yaratish (admin)
+// GET  /api/lessons/folders/tree — barcha papkalar yassi ro'yxati (admin, ko'chirish uchun)
+router.get('/folders/tree', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.getFolderTree);
+
+// POST /api/lessons/folders — papka yaratish (admin, parentId bo'lsa — ichki papka)
 router.post('/folders', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.createFolder);
 
 // PATCH /api/lessons/folders/:id — papka tahrirlash (admin)

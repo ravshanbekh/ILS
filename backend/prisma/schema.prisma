@@ -683,17 +683,20 @@ model LiveQuizAnswer {
 //  DARSLIKLAR (Lesson Folders & Items)
 // ============================================================
 
-/// Darslik papkasi (Foundation, Frontend, Backend...)
+/// Darslik papkasi (Foundation, Frontend, Backend...) — ichma-ich (nested) bo'lishi mumkin
 model LessonFolder {
   id          String   @id @default(uuid()) @db.Uuid
   name        String   @db.VarChar(100)
   description String?  @db.VarChar(500)
   icon        String   @default("📁") @db.VarChar(10)
   order       Int      @default(0)
+  parentId    String?  @map("parent_id") @db.Uuid
   createdById String   @map("created_by_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
 
   createdBy User                 @relation("FolderCreator", fields: [createdById], references: [id])
+  parent    LessonFolder?        @relation("FolderChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  LessonFolder[]       @relation("FolderChildren")
   items     LessonItem[]
   access    LessonFolderAccess[]
 

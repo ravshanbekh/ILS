@@ -5,7 +5,7 @@ import ConfirmModal from '@/components/shared/ConfirmModal';
 import {
   FolderOpen, Plus, Trash2, Edit3, ExternalLink, Users, X,
   BookOpen, Link, FileText, Video, ChevronRight, Check, Save,
-  FolderPlus, Lock
+  FolderPlus, Lock, FolderInput, Home
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -15,7 +15,8 @@ interface LessonFolder {
   description: string | null;
   icon: string;
   order: number;
-  _count?: { items: number; access?: number };
+  parentId?: string | null;
+  _count?: { items: number; access?: number; children?: number };
 }
 
 interface LessonItem {
@@ -33,6 +34,14 @@ interface Teacher {
   fullName: string;
   login: string;
   avatarUrl: string | null;
+}
+
+/** Ko'chirish modalidagi daraxt uchun yassi (flat) papka tuguni */
+interface FolderTreeNode {
+  id: string;
+  name: string;
+  icon: string;
+  parentId: string | null;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -54,14 +63,53 @@ function typeColor(type: string) {
   return t?.color || 'text-blue-400';
 }
 
+/** Ko'chirish modali uchun: papkalar daraxtini bosqichma-bosqich (indent bilan) chizadi */
+function renderFolderTreePicker(
+  tree: FolderTreeNode[],
+  parentId: string | null,
+  depth: number,
+  currentFolderId: string,
+  onSelect: (id: string) => void,
+  disabled: boolean
+) {
+  const level = tree.filter(f => (f.parentId ?? null) === parentId);
+  if (level.length === 0) return null;
+  return level.map(f => {
+    const isCurrent = f.id === currentFolderId;
+    return (
+      <div key={f.id}>
+        <button
+          onClick={() => !isCurrent && onSelect(f.id)}
+          disabled={isCurrent || disabled}
+          style={{ paddingLeft: `${depth * 18 + 10}px` }}
+          className={`w-full flex items-center gap-2 py-2 pr-3 rounded-lg text-left text-sm transition ${
+            isCurrent
+              ? 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed'
+              : 'text-zinc-300 hover:bg-emerald-600/20 hover:text-emerald-300'
+          }`}
+        >
+          <span>{f.icon}</span>
+          <span className="truncate flex-1">{f.name}</span>
+          {isCurrent && <span className="text-[10px] text-zinc-600 flex-shrink-0">joriy</span>}
+        </button>
+        {renderFolderTreePicker(tree, f.id, depth + 1, currentFolderId, onSelect, disabled)}
+      </div>
+    );
+  });
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function LessonsPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin' || user?.role === 'administrator' || user?.role === 'filial_rahbari';
 
-  // State
+  // Navigatsiya: `folders` — joriy darajadagi (selectedFolder ichidagi, yoki
+  // selectedFolder null bo'lsa — bosh) papkalar. `selectedFolder` — hozir
+  // "ichida turgan" papka (null = bosh sahifa). `breadcrumb` — bosh sahifadan
+  // shu papkagacha bo'lgan yo'l.
   const [folders, setFolders] = useState<LessonFolder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<LessonFolder | null>(null);
+  const [breadcrumb, setBreadcrumb] = useState<LessonFolder[]>([]);
   const [items, setItems] = useState<LessonItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [itemsLoading, setItemsLoading] = useState(false);
@@ -69,9 +117,14 @@ export default function LessonsPage() {
   // Admin modals
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [editingFolder, setEditingFolder] = useState<LessonFolder | null>(null);
+  // Yangi papka qaysi papka ICHIDA yaratilishi (null = bosh sahifada / tepada)
+  const [createParentId, setCreateParentId] = useState<string | null>(null);
   const [showAddItem, setShowAddItem] = useState(false);
   const [editingItem, setEditingItem] = useState<LessonItem | null>(null);
   const [showAccess, setShowAccess] = useState(false);
+  // Ruxsatlar modali qaysi papkaga tegishli ekanini `selectedFolder`dan (navigatsiya
+  // holatidan) MUSTAQIL saqlaydi — aks holda ruxsat berish joriy ko'rinishni buzadi
+  const [accessFolder, setAccessFolder] = useState<LessonFolder | null>(null);
 
   // Forms
   const [folderForm, setFolderForm] = useState({ name: '', description: '', icon: '📁' });
@@ -81,6 +134,12 @@ export default function LessonsPage() {
   const [allTeachers, setAllTeachers] = useState<Teacher[]>([]);
   const [accessList, setAccessList] = useState<string[]>([]);
   const [accessSaving, setAccessSaving] = useState(false);
+
+  // Darslikni boshqa papkaga ko'chirish
+  const [movingItem, setMovingItem] = useState<LessonItem | null>(null);
+  const [folderTree, setFolderTree] = useState<FolderTreeNode[]>([]);
+  const [moveTreeLoading, setMoveTreeLoading] = useState(false);
+  const [moveSaving, setMoveSaving] = useState(false);
 
   // Delete confirm modal
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -92,38 +151,87 @@ export default function LessonsPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // ─── Data loading ────────────────────────────────────────────────────────
-  useEffect(() => { loadFolders(); }, []);
+  useEffect(() => { loadRootFolders(); }, []);
 
-  async function loadFolders() {
+  async function loadRootFolders() {
     setLoading(true);
+    setBreadcrumb([]);
+    setSelectedFolder(null);
+    setItems([]);
     try {
-      const res = await lessonsApi.getFolders();
+      const res = await lessonsApi.getFolders(null);
       setFolders(res.data.data);
     } finally { setLoading(false); }
   }
 
-  async function loadItems(folder: LessonFolder) {
+  /** Joriy darajadagi (selectedFolder ichidagi) papkalar ro'yxatini qayta yuklaydi */
+  async function reloadCurrentLevelFolders() {
+    setLoading(true);
+    try {
+      const res = await lessonsApi.getFolders(selectedFolder?.id ?? null);
+      setFolders(res.data.data);
+    } finally { setLoading(false); }
+  }
+
+  /** Papkani ochish: ichiga kirib, uning bo'limlari (folders) va darsliklarini (items) yuklaydi */
+  async function openFolder(folder: LessonFolder) {
     setSelectedFolder(folder);
+    setBreadcrumb(prev => [...prev, folder]);
+    setLoading(true);
     setItemsLoading(true);
     try {
-      const res = await lessonsApi.getItems(folder.id);
-      setItems(res.data.data);
-    } finally { setItemsLoading(false); }
+      const [foldersRes, itemsRes] = await Promise.all([
+        lessonsApi.getFolders(folder.id),
+        lessonsApi.getItems(folder.id),
+      ]);
+      setFolders(foldersRes.data.data);
+      setItems(itemsRes.data.data);
+    } finally { setLoading(false); setItemsLoading(false); }
+  }
+
+  /** Breadcrumb orqali orqaga qaytish. index = -1 → bosh sahifa */
+  async function goToBreadcrumb(index: number) {
+    const newCrumb = index < 0 ? [] : breadcrumb.slice(0, index + 1);
+    const target = newCrumb.length ? newCrumb[newCrumb.length - 1] : null;
+    setBreadcrumb(newCrumb);
+    setSelectedFolder(target);
+    setLoading(true);
+    try {
+      const foldersRes = await lessonsApi.getFolders(target?.id ?? null);
+      setFolders(foldersRes.data.data);
+    } finally { setLoading(false); }
+
+    if (target) {
+      setItemsLoading(true);
+      try {
+        const itemsRes = await lessonsApi.getItems(target.id);
+        setItems(itemsRes.data.data);
+      } finally { setItemsLoading(false); }
+    } else {
+      setItems([]);
+    }
   }
 
   // ─── Folder CRUD ─────────────────────────────────────────────────────────
+  function openCreateFolder(parentId: string | null) {
+    setCreateParentId(parentId);
+    setEditingFolder(null);
+    setFolderForm({ name: '', description: '', icon: '📁' });
+    setShowCreateFolder(true);
+  }
+
   async function saveFolder() {
     if (!folderForm.name.trim()) return;
     try {
       if (editingFolder) {
         await lessonsApi.updateFolder(editingFolder.id, folderForm);
       } else {
-        await lessonsApi.createFolder({ ...folderForm, order: folders.length });
+        await lessonsApi.createFolder({ ...folderForm, order: folders.length, parentId: createParentId });
       }
       setShowCreateFolder(false);
       setEditingFolder(null);
       setFolderForm({ name: '', description: '', icon: '📁' });
-      await loadFolders();
+      await reloadCurrentLevelFolders();
     } catch (e: any) { alert(e.response?.data?.error || 'Xatolik'); }
   }
 
@@ -132,7 +240,7 @@ export default function LessonsPage() {
       type: 'folder',
       target: folder,
       title: `"${folder.name}" papkasini o'chirmoqchimisiz?`,
-      description: "Ushbu papka va uning ichidagi barcha darsliklar butunlay o'chiriladi. Bu amalni ortga qaytarib bo'lmaydi.",
+      description: "Ushbu papka, uning ichidagi bo'lim (sub-papka)lar va barcha darsliklar butunlay o'chiriladi. Bu amalni ortga qaytarib bo'lmaydi.",
     });
   }
 
@@ -148,8 +256,8 @@ export default function LessonsPage() {
       setShowAddItem(false);
       setEditingItem(null);
       setItemForm({ title: '', url: '', type: 'canva' });
-      await loadItems(selectedFolder);
-      await loadFolders();
+      const res = await lessonsApi.getItems(selectedFolder.id);
+      setItems(res.data.data);
     } catch (e: any) { alert(e.response?.data?.error || 'Xatolik'); }
   }
 
@@ -169,17 +277,13 @@ export default function LessonsPage() {
       if (confirmDelete.type === 'folder') {
         const folder = confirmDelete.target as LessonFolder;
         await lessonsApi.deleteFolder(folder.id);
-        if (selectedFolder?.id === folder.id) {
-          setSelectedFolder(null);
-          setItems([]);
-        }
-        await loadFolders();
+        await reloadCurrentLevelFolders();
       } else {
         const item = confirmDelete.target as LessonItem;
         await lessonsApi.deleteItem(item.id);
         if (selectedFolder) {
-          await loadItems(selectedFolder);
-          await loadFolders();
+          const res = await lessonsApi.getItems(selectedFolder.id);
+          setItems(res.data.data);
         }
       }
       setConfirmDelete(null);
@@ -190,9 +294,37 @@ export default function LessonsPage() {
     }
   }
 
+  // ─── Darslikni boshqa papkaga ko'chirish ─────────────────────────────────
+  async function openMoveItem(item: LessonItem) {
+    setMovingItem(item);
+    setMoveTreeLoading(true);
+    try {
+      const res = await lessonsApi.getFolderTree();
+      setFolderTree(res.data.data);
+    } catch {
+      alert("Papkalar ro'yxatini yuklab bo'lmadi");
+      setMovingItem(null);
+    } finally { setMoveTreeLoading(false); }
+  }
+
+  async function moveItemTo(destFolderId: string) {
+    if (!movingItem || destFolderId === movingItem.folderId) return;
+    setMoveSaving(true);
+    try {
+      await lessonsApi.updateItem(movingItem.id, { folderId: destFolderId });
+      setMovingItem(null);
+      if (selectedFolder) {
+        const res = await lessonsApi.getItems(selectedFolder.id);
+        setItems(res.data.data);
+      }
+    } catch (e: any) {
+      alert(e.response?.data?.error || "Ko'chirishda xatolik yuz berdi");
+    } finally { setMoveSaving(false); }
+  }
 
   // ─── Access Management ───────────────────────────────────────────────────
   async function openAccess(folder: LessonFolder) {
+    setAccessFolder(folder);
     setShowAccess(true);
     try {
       const [teachersRes, accessRes] = await Promise.all([
@@ -205,12 +337,12 @@ export default function LessonsPage() {
   }
 
   async function saveAccess() {
-    if (!selectedFolder) return;
+    if (!accessFolder) return;
     setAccessSaving(true);
     try {
-      await lessonsApi.syncAccess(selectedFolder.id, accessList);
+      await lessonsApi.syncAccess(accessFolder.id, accessList);
       setShowAccess(false);
-      await loadFolders();
+      await reloadCurrentLevelFolders();
     } catch (e: any) { alert(e.response?.data?.error || 'Xatolik'); }
     finally { setAccessSaving(false); }
   }
@@ -223,7 +355,7 @@ export default function LessonsPage() {
   return (
     <div className="p-4 lg:p-6 min-h-screen bg-[#09090b]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <BookOpen className="w-7 h-7 text-blue-400" />
@@ -235,7 +367,7 @@ export default function LessonsPage() {
         </div>
         {isAdmin && (
           <button
-            onClick={() => { setFolderForm({ name: '', description: '', icon: '📁' }); setEditingFolder(null); setShowCreateFolder(true); }}
+            onClick={() => openCreateFolder(null)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition text-sm"
           >
             <FolderPlus className="w-4 h-4" />
@@ -244,8 +376,34 @@ export default function LessonsPage() {
         )}
       </div>
 
+      {/* Breadcrumb */}
+      {breadcrumb.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-4 text-sm overflow-x-auto pb-1">
+          <button
+            onClick={() => goToBreadcrumb(-1)}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition flex-shrink-0"
+          >
+            <Home className="w-3.5 h-3.5" /> Bosh sahifa
+          </button>
+          {breadcrumb.map((f, i) => (
+            <div key={f.id} className="flex items-center gap-1.5 flex-shrink-0">
+              <ChevronRight className="w-3.5 h-3.5 text-zinc-700" />
+              <button
+                onClick={() => goToBreadcrumb(i)}
+                disabled={i === breadcrumb.length - 1}
+                className={`px-2 py-1 rounded-lg transition truncate max-w-[160px] ${
+                  i === breadcrumb.length - 1 ? 'text-white font-medium cursor-default' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                {f.icon} {f.name}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left — Folder List */}
+        {/* Left — Folder List (joriy darajadagi bo'limlar) */}
         <div className="lg:col-span-1 space-y-2">
           {loading ? (
             <div className="text-zinc-500 text-sm text-center py-8">Yuklanmoqda...</div>
@@ -253,23 +411,21 @@ export default function LessonsPage() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
               <FolderOpen className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
               <p className="text-zinc-500 text-sm">
-                {isAdmin ? "Hali papka yo'q. Yangi papka yarating." : "Sizga hali papka biriktirilmagan."}
+                {selectedFolder
+                  ? "Bu papkada ichki bo'lim yo'q"
+                  : isAdmin ? "Hali papka yo'q. Yangi papka yarating." : "Sizga hali papka biriktirilmagan."}
               </p>
             </div>
           ) : (
             folders.map(folder => (
               <div
                 key={folder.id}
-                onClick={() => loadItems(folder)}
-                className={`group relative flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                  selectedFolder?.id === folder.id
-                    ? 'bg-blue-600/20 border-blue-500/50 shadow-lg shadow-blue-900/20'
-                    : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50'
-                }`}
+                onClick={() => openFolder(folder)}
+                className="group relative flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
               >
                 <span className="text-2xl">{folder.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <p className={`font-semibold text-sm truncate ${selectedFolder?.id === folder.id ? 'text-blue-300' : 'text-white'}`}>
+                  <p className="font-semibold text-sm truncate text-white">
                     {folder.name}
                   </p>
                   {folder.description && (
@@ -277,18 +433,21 @@ export default function LessonsPage() {
                   )}
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-zinc-500 text-xs">{folder._count?.items ?? 0} ta darslik</span>
+                    {!!folder._count?.children && (
+                      <span className="text-zinc-500 text-xs">📂 {folder._count.children} ta bo'lim</span>
+                    )}
                     {isAdmin && folder._count?.access !== undefined && (
                       <span className="text-zinc-600 text-xs">{folder._count.access} o'qituvchi</span>
                     )}
                   </div>
                 </div>
-                <ChevronRight className={`w-4 h-4 flex-shrink-0 ${selectedFolder?.id === folder.id ? 'text-blue-400' : 'text-zinc-600'}`} />
+                <ChevronRight className="w-4 h-4 flex-shrink-0 text-zinc-600" />
 
                 {/* Admin action buttons */}
                 {isAdmin && (
                   <div className="absolute right-2 top-2 hidden group-hover:flex gap-1" onClick={e => e.stopPropagation()}>
                     <button
-                      onClick={() => { setSelectedFolder(folder); openAccess(folder); }}
+                      onClick={() => openAccess(folder)}
                       className="p-1 rounded-lg bg-zinc-700 hover:bg-purple-600 transition text-zinc-400 hover:text-white"
                       title="Ruxsatlar"
                     >
@@ -329,7 +488,7 @@ export default function LessonsPage() {
           ) : (
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
               {/* Panel header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{selectedFolder.icon}</span>
                   <div>
@@ -340,12 +499,20 @@ export default function LessonsPage() {
                   </div>
                 </div>
                 {isAdmin && (
-                  <button
-                    onClick={() => { setItemForm({ title: '', url: '', type: 'canva' }); setEditingItem(null); setShowAddItem(true); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition"
-                  >
-                    <Plus className="w-4 h-4" /> Darslik qo'shish
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openCreateFolder(selectedFolder.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition"
+                    >
+                      <FolderPlus className="w-4 h-4" /> Ichki papka
+                    </button>
+                    <button
+                      onClick={() => { setItemForm({ title: '', url: '', type: 'canva' }); setEditingItem(null); setShowAddItem(true); }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition"
+                    >
+                      <Plus className="w-4 h-4" /> Darslik qo'shish
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -362,7 +529,7 @@ export default function LessonsPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {items.map((item, idx) => (
+                    {items.map((item) => (
                       <div
                         key={item.id}
                         className="group flex items-center gap-3 p-3 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-xl transition"
@@ -386,6 +553,13 @@ export default function LessonsPage() {
                         </a>
                         {isAdmin && (
                           <div className="hidden group-hover:flex gap-1">
+                            <button
+                              onClick={() => openMoveItem(item)}
+                              className="p-1.5 rounded-lg bg-zinc-700 hover:bg-emerald-600 transition text-zinc-400 hover:text-white"
+                              title="Boshqa papkaga ko'chirish"
+                            >
+                              <FolderInput className="w-3.5 h-3.5" />
+                            </button>
                             <button
                               onClick={() => { setEditingItem(item); setItemForm({ title: item.title, url: item.url, type: item.type }); setShowAddItem(true); }}
                               className="p-1.5 rounded-lg bg-zinc-700 hover:bg-blue-600 transition text-zinc-400 hover:text-white"
@@ -415,9 +589,14 @@ export default function LessonsPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-white">
-                {editingFolder ? 'Papkani tahrirlash' : 'Yangi papka'}
-              </h2>
+              <div>
+                <h2 className="text-lg font-bold text-white">
+                  {editingFolder ? 'Papkani tahrirlash' : createParentId ? 'Yangi ichki papka' : 'Yangi papka'}
+                </h2>
+                {!editingFolder && createParentId && selectedFolder && (
+                  <p className="text-zinc-500 text-xs mt-0.5">«{selectedFolder.name}» papkasi ichida yaratiladi</p>
+                )}
+              </div>
               <button onClick={() => { setShowCreateFolder(false); setEditingFolder(null); }} className="text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
@@ -530,6 +709,41 @@ export default function LessonsPage() {
         </div>
       )}
 
+      {/* ─── MODAL: Darslikni boshqa papkaga ko'chirish ──────────────────────── */}
+      {movingItem && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <FolderInput className="w-5 h-5 text-emerald-400" />
+                  Darslikni ko'chirish
+                </h2>
+                <p className="text-zinc-500 text-xs mt-0.5 truncate">"{movingItem.title}"</p>
+              </div>
+              <button onClick={() => setMovingItem(null)} className="text-zinc-400 hover:text-white flex-shrink-0">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-zinc-400 text-xs mb-2">Qaysi papkaga ko'chirilsin?</p>
+            <div className="max-h-80 overflow-y-auto space-y-0.5 mb-4 pr-1 bg-zinc-800/40 rounded-xl p-2">
+              {moveTreeLoading ? (
+                <p className="text-zinc-500 text-sm text-center py-6">Yuklanmoqda...</p>
+              ) : folderTree.length === 0 ? (
+                <p className="text-zinc-500 text-sm text-center py-6">Papka topilmadi</p>
+              ) : (
+                renderFolderTreePicker(folderTree, null, 0, movingItem.folderId, moveItemTo, moveSaving)
+              )}
+            </div>
+
+            <button onClick={() => setMovingItem(null)} className="w-full py-2 rounded-lg bg-zinc-700 text-white hover:bg-zinc-600 transition">
+              Bekor
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ─── MODAL: Ruxsatlar boshqaruvi ─────────────────────────────────────── */}
       {showAccess && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -541,7 +755,7 @@ export default function LessonsPage() {
                   Ruxsatlar
                 </h2>
                 <p className="text-zinc-500 text-xs mt-0.5">
-                  "{selectedFolder?.name}" papkasiga kim kirishi mumkin?
+                  "{accessFolder?.name}" papkasiga kim kirishi mumkin?
                 </p>
               </div>
               <button onClick={() => setShowAccess(false)} className="text-zinc-400 hover:text-white">
@@ -575,6 +789,8 @@ export default function LessonsPage() {
                 );
               })}
             </div>
+
+            <p className="text-zinc-600 text-xs mb-3">Ruxsat berilgan papkaning ichidagi barcha bo'lim va darsliklar ham avtomatik ko'rinadi.</p>
 
             <div className="flex items-center justify-between text-xs text-zinc-500 mb-3">
               <span>{accessList.length} ta o'qituvchi tanlandi</span>

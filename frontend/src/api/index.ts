@@ -390,8 +390,9 @@ export const liveQuizApi = {
 
 export const lessonsApi = {
   // Papkalar
-  getFolders: () => api.get('/lessons/folders'),
-  createFolder: (data: { name: string; description?: string; icon?: string; order?: number }) =>
+  getFolders: (parentId?: string | null) => api.get('/lessons/folders', { params: parentId ? { parentId } : {} }),
+  getFolderTree: () => api.get('/lessons/folders/tree'),
+  createFolder: (data: { name: string; description?: string; icon?: string; order?: number; parentId?: string | null }) =>
     api.post('/lessons/folders', data),
   updateFolder: (id: string, data: { name?: string; description?: string; icon?: string; order?: number }) =>
     api.patch(`/lessons/folders/${id}`, data),
@@ -401,7 +402,7 @@ export const lessonsApi = {
   getItems: (folderId: string) => api.get(`/lessons/folders/${folderId}/items`),
   addItem: (folderId: string, data: { title: string; url: string; type?: string; order?: number }) =>
     api.post(`/lessons/folders/${folderId}/items`, data),
-  updateItem: (itemId: string, data: { title?: string; url?: string; type?: string; order?: number }) =>
+  updateItem: (itemId: string, data: { title?: string; url?: string; type?: string; order?: number; folderId?: string }) =>
     api.patch(`/lessons/items/${itemId}`, data),
   deleteItem: (itemId: string) => api.delete(`/lessons/items/${itemId}`),
 
