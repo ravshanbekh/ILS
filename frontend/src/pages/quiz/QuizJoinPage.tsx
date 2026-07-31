@@ -4,7 +4,9 @@ import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = (import.meta.env.VITE_API_URL?.replace('/api', '') || '') || window.location.origin;
 
-type Stage = 'enter-code' | 'enter-name' | 'lobby' | 'question' | 'answer-result' | 'leaderboard' | 'finished';
+// 'waiting' — javob yuborilgan, lekin natija (ball) hali yashirin: hamma
+// belgilaguncha yoki vaqt tugaguncha kutiladi, so'ng 'answer-result' ochiladi
+type Stage = 'enter-code' | 'enter-name' | 'lobby' | 'question' | 'waiting' | 'answer-result' | 'leaderboard' | 'finished';
 
 interface Player { id: string; fullName: string; score: number; streak: number; }
 interface QuizQ { id: string; question: string; options: string[]; timePerQ: number; index: number; total: number; imageUrl?: string; }
@@ -99,6 +101,13 @@ export default function QuizJoinPage() {
   const qIndexRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  // Javob natijasi reveal'gacha shu yerda yashirin turadi (ball ko'rsatilmaydi)
+  const pendingResultRef = useRef<{ isCorrect: boolean; points: number; streak: number; correct: number } | null>(null);
+  // answer-result → leaderboard avtomatik o'tish taymeri
+  const revealTimeoutRef = useRef<number>(0);
+  // Socket handlerlarda eskirmagan player ma'lumoti kerak (healSession'dan keyin id o'zgarishi mumkin)
+  const playerRef = useRef<Player | null>(null);
+  useEffect(() => { playerRef.current = player; }, [player]);
 
   const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
@@ -185,7 +194,7 @@ export default function QuizJoinPage() {
 
   // O'yin davomida chiqishda tasdiq so'raladi — ballar o'chib ketadi
   function requestLeave() {
-    const inGame = stage === 'question' || stage === 'answer-result' || stage === 'leaderboard';
+    const inGame = stage === 'question' || stage === 'waiting' || stage === 'answer-result' || stage === 'leaderboard';
     if (inGame && !window.confirm("O'yindan chiqasizmi? To'plagan ballaringiz o'chib ketadi.")) return;
     leaveQuiz();
   }
@@ -217,6 +226,8 @@ export default function QuizJoinPage() {
     s.on('quiz:player-joined', (data) => setPlayerCount(data.playerCount));
     s.on('quiz:started', (data) => {
       stopLobbyMusic(); // Stop music when game starts
+      clearTimeout(revealTimeoutRef.current);
+      pendingResultRef.current = null;
       qIndexRef.current = 0;
       setCurrentQ(data.question);
       setSelected(null);
@@ -226,6 +237,8 @@ export default function QuizJoinPage() {
     });
     s.on('quiz:question', (data) => {
       stopLobbyMusic();
+      clearTimeout(revealTimeoutRef.current);
+      pendingResultRef.current = null;
       qIndexRef.current = data.index;
       setCurrentQ(data);
       setSelected(null);
@@ -233,12 +246,42 @@ export default function QuizJoinPage() {
       setQuestionStartTime(Date.now());
       setStage('question');
     });
+    // Reveal: hamma belgilagach yoki vaqt tugagach keladi. Aynan SHU yerda
+    // ball qo'shiladi — avval shaxsiy natija ekrani, so'ng reyting.
     s.on('quiz:leaderboard', (data) => {
+      // Savol taymeri to'xtatiladi — aks holda 0 ga tushganda kechikkan
+      // avto-javob yuborilib, o'quvchi reytingdan chiqib ketishi mumkin
+      clearInterval(timerRef.current);
+      clearTimeout(revealTimeoutRef.current);
       setLeaderboard(data.players);
       setPrevQuestion(data.prevQuestion);
-      setStage('leaderboard');
+
+      // O'z ballimni serverdagi haqiqiy qiymatdan olamiz
+      const me = playerRef.current;
+      const myEntry = (data.players || []).find((p: any) => p.id === me?.id)
+        || (data.players || []).find((p: any) => p.fullName === me?.fullName);
+      if (myEntry) {
+        scoreRef.current = myEntry.score;
+        setMyScore(myEntry.score);
+        setMyStreak(myEntry.streak ?? 0);
+      }
+
+      const pending = pendingResultRef.current;
+      pendingResultRef.current = null;
+      if (pending) {
+        setAnswerResult(pending);
+        playClickSound(pending.isCorrect);
+        setScoreHistory(prev => [...prev, { q: qIndexRef.current + 1, pts: pending.points, total: myEntry?.score ?? scoreRef.current }]);
+        setStage('answer-result');
+        // Bir necha soniya natija ko'rsatib, avtomatik reytingga o'tamiz
+        revealTimeoutRef.current = window.setTimeout(() => setStage('leaderboard'), 3000);
+      } else {
+        setStage('leaderboard');
+      }
     });
     s.on('quiz:finished', (data) => {
+      clearInterval(timerRef.current);
+      clearTimeout(revealTimeoutRef.current);
       setLeaderboard(data.leaderboard);
       setTotalPlayers(data.leaderboard.length);
       const me = data.leaderboard.find((p: any) => p.fullName === currentPlayer.fullName);
@@ -287,7 +330,7 @@ export default function QuizJoinPage() {
         localStorage.removeItem('quizSession');
       }
     }
-    return () => { socket?.disconnect(); clearInterval(timerRef.current); stopLobbyMusic(); };
+    return () => { socket?.disconnect(); clearInterval(timerRef.current); clearTimeout(revealTimeoutRef.current); stopLobbyMusic(); };
   }, []);
 
   // Timer
@@ -378,16 +421,10 @@ export default function QuizJoinPage() {
         res = await liveQuizApi.submitAnswer({ playerId: healed.id, questionId: currentQ.id, selected: optionIdx, timeMs });
       }
       const { isCorrect, points, streak, correct } = res.data.data;
-      const newTotal = myScore + points;
-      scoreRef.current = newTotal;
-      setMyScore(newTotal);
-      setMyStreak(streak);
-      setAnswerResult({ isCorrect, points, streak, correct });
-      playClickSound(isCorrect); // correct/wrong feedback sound
-
-      // Track score history
-      setScoreHistory(prev => [...prev, { q: qIndexRef.current + 1, pts: points, total: newTotal }]);
-      setStage('answer-result');
+      // Natijani DARHOL ko'rsatmaymiz — hamma belgilaguncha (yoki vaqt
+      // tugaguncha) yashirin saqlaymiz. Ball ham reveal paytida qo'shiladi.
+      pendingResultRef.current = { isCorrect, points, streak, correct };
+      setStage('waiting');
 
       socket?.emit('player:answered', { code: code.trim(), playerId: effectivePlayer.id, fullName: effectivePlayer.fullName, isCorrect });
     } catch {}
@@ -564,6 +601,47 @@ export default function QuizJoinPage() {
     </div>
   );
 
+  // ── WAITING STAGE — javob yuborildi, hamma belgilashini kutamiz ─────────────
+  if (stage === 'waiting') {
+    const chosenStyle = selected !== null && selected >= 0 ? OPTION_STYLES[selected] : null;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-[#09090b] flex flex-col items-center justify-center p-6">
+        <button onClick={requestLeave} title="O'yindan chiqish"
+          className="fixed top-3 left-3 z-30 w-8 h-8 flex items-center justify-center rounded-lg bg-black/40 hover:bg-red-600/80 text-zinc-400 hover:text-white transition text-sm">
+          🚪
+        </button>
+
+        {chosenStyle ? (
+          <div className={`w-24 h-24 ${chosenStyle.bg} rounded-3xl flex items-center justify-center text-5xl text-white shadow-2xl mb-6 animate-bounce`}>
+            {chosenStyle.icon}
+          </div>
+        ) : (
+          <div className="w-24 h-24 bg-zinc-800 rounded-3xl flex items-center justify-center text-5xl mb-6">⏰</div>
+        )}
+
+        <h2 className="text-3xl font-black text-white mb-2">
+          {chosenStyle ? 'Javob qabul qilindi!' : 'Vaqt tugadi!'}
+        </h2>
+        <p className="text-zinc-400 text-center mb-8">
+          Hamma belgilagach yoki vaqt tugagach natija ochiladi
+        </p>
+
+        {/* Kutish animatsiyasi */}
+        <div className="flex gap-2 mb-8">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="w-3 h-3 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+          ))}
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-2xl px-8 py-4 text-center">
+          <div className="text-xs text-zinc-400 mb-1">Jami ball</div>
+          <div className="text-3xl font-black text-white">{myScore.toLocaleString()}</div>
+        </div>
+        <p className="text-zinc-500 text-sm mt-6 animate-pulse">Boshqa o'yinchilar belgilamoqda...</p>
+      </div>
+    );
+  }
+
   // ── ANSWER RESULT STAGE ──────────────────────────────────────────────────────
   if (stage === 'answer-result' && answerResult) return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-6 transition-all
@@ -601,7 +679,16 @@ export default function QuizJoinPage() {
             </div>
           )}
         </div>
-      ) : null}
+      ) : (
+        currentQ && answerResult.correct >= 0 && currentQ.options[answerResult.correct] && (
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-6 py-3 mb-4 text-center">
+            <p className="text-zinc-400 text-xs mb-1">To'g'ri javob:</p>
+            <p className="text-emerald-300 font-bold">
+              {OPTION_STYLES[answerResult.correct]?.icon} {currentQ.options[answerResult.correct]}
+            </p>
+          </div>
+        )
+      )}
 
       {/* Total score panel */}
       <div className="bg-white/5 border border-white/10 rounded-2xl px-8 py-4 text-center">
@@ -612,7 +699,7 @@ export default function QuizJoinPage() {
         {myStreak >= 2 && <div className="text-xs text-amber-400 mt-1">🔥 Streak davom etmoqda!</div>}
       </div>
 
-      <p className="text-zinc-500 text-sm mt-8 animate-pulse">Reyting yuklanmoqda...</p>
+      <p className="text-zinc-500 text-sm mt-8 animate-pulse">Reyting ochilmoqda...</p>
 
       <style>{`
         @keyframes scale-in { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }

@@ -18,6 +18,11 @@ function selectRandomQuestionIds(allQuestions: { id: string }[], limit = 20): st
   return shuffled.slice(0, limit).map(q => q.id);
 }
 
+// Reveal qilingan savollar (idempotency himoyasi): bitta savol uchun
+// leaderboard faqat BIR marta yuboriladi. O'qituvchi taymeri tugashi va
+// "hamma javob berdi" triggeri bir vaqtda kelsa ham ikki marta o'tmaydi.
+const revealedQuestions = new Map<string, Set<string>>();
+
 function filterActiveQuestions(quiz: any) {
   if (!quiz) return quiz;
   const activeIds = quiz.activeQuestionIds as string[] | null;
@@ -307,6 +312,9 @@ export const startQuiz = async (req: Request, res: Response, next: NextFunction)
       where: { quizId: id }
     });
 
+    // Qayta o'ynalganda savollar qayta reveal bo'la olishi uchun tozalaymiz
+    revealedQuestions.delete(id);
+
     const { musicId } = req.body;
 
     // Har safar yangi kod generatsiya qilish
@@ -397,6 +405,8 @@ export const launchQuiz = async (req: Request, res: Response, next: NextFunction
   try {
     const { id } = req.params;
 
+    revealedQuestions.delete(id);
+
     let quiz = await prisma.liveQuiz.update({
       where: { id },
       data: { status: 'active', currentQ: 0 },
@@ -429,58 +439,86 @@ export const launchQuiz = async (req: Request, res: Response, next: NextFunction
 
 // ─── Leaderboard ko'rsatish (Natija fazasi) ───────────────────────────────────
 // Faqat leaderboard emit qiladi, keyingi savolni AVTOMATIK yubormaydi.
+// Uch joydan chaqiriladi: o'qituvchi taymeri tugaganda, o'qituvchi qo'lda
+// "skip" bosganda va "hamma o'yinchi javob berdi" triggeridan (submitAnswer).
+// expectedQuestionId — kechikkan trigger boshqa (yangi) savolni ochib
+// yubormasligi uchun tekshiruv.
+async function revealLeaderboard(quizId: string, expectedQuestionId?: string): Promise<
+  { ok: true; nextIndex: number; isLast: boolean; skipped?: boolean } | { ok: false; status: number; error: string }
+> {
+  const quiz = await prisma.liveQuiz.findUnique({
+    where: { id: quizId },
+    include: { questions: { orderBy: { order: 'asc' } } },
+  });
+  if (!quiz) return { ok: false, status: 404, error: 'Topilmadi' };
+  if (quiz.status !== 'active') return { ok: false, status: 400, error: 'Quiz faol emas' };
+
+  filterActiveQuestions(quiz);
+
+  const prevQ = quiz.questions[quiz.currentQ];
+  if (!prevQ) return { ok: false, status: 400, error: 'Savol topilmadi' };
+
+  const nextIndex = quiz.currentQ + 1;
+  const isLast = nextIndex >= quiz.questions.length;
+
+  // Kechikkan trigger — hozirgi savol boshqa bo'lsa hech narsa qilmaymiz
+  if (expectedQuestionId && prevQ.id !== expectedQuestionId) {
+    return { ok: true, nextIndex, isLast, skipped: true };
+  }
+
+  let revealed = revealedQuestions.get(quizId);
+  if (!revealed) { revealed = new Set(); revealedQuestions.set(quizId, revealed); }
+  if (revealed.has(prevQ.id)) return { ok: true, nextIndex, isLast, skipped: true };
+  revealed.add(prevQ.id);
+
+  // currentQ ni yangilaymiz (keyingi showQuestion chaqirig'ida ishlatiladi).
+  // Oxirgi savolda oshirmaymiz — o'qituvchi "Yakunlash"ni bosadi.
+  if (!isLast) {
+    await prisma.liveQuiz.update({ where: { id: quizId }, data: { currentQ: nextIndex } });
+  }
+
+  const players = await prisma.liveQuizPlayer.findMany({
+    where: { quizId },
+    orderBy: { score: 'desc' },
+  });
+
+  const answers = await prisma.liveQuizAnswer.findMany({
+    where: { questionId: prevQ.id },
+  });
+  const optionCounts = [0, 1, 2, 3].map(i => ({
+    option: i,
+    count: answers.filter(a => a.selected === i).length,
+    isCorrect: i === prevQ.correct,
+  }));
+
+  const io = getIO();
+  if (io) {
+    // Faqat leaderboard — keyingi savolni O'QITUVCHI tugmasi bosishi bilan yuboramiz
+    io.to(`quiz-${quiz.code}`).emit('quiz:leaderboard', {
+      players: players.map((p, i) => ({ rank: i + 1, fullName: p.fullName, score: p.score, streak: p.streak, id: p.id })),
+      prevQuestion: {
+        question: prevQ.question,
+        correct: prevQ.correct,
+        imageUrl: prevQ.imageUrl,
+        optionCounts,
+        totalAnswers: answers.length,
+      },
+      nextIndex,
+      totalQuestions: quiz.questions.length,
+      isLast,
+    });
+  }
+
+  return { ok: true, nextIndex, isLast };
+}
+
 export const nextQuestion = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const quiz = await prisma.liveQuiz.findUnique({
-      where: { id },
-      include: { questions: { orderBy: { order: 'asc' } } },
-    });
-    if (!quiz) return res.status(404).json({ error: 'Topilmadi' });
-
-    filterActiveQuestions(quiz);
-
-    const nextIndex = quiz.currentQ + 1;
-    if (nextIndex >= quiz.questions.length) {
-      return res.status(400).json({ error: 'Oxirgi savolga yetildi. Quizni yakunlang.' });
-    }
-
-    // currentQ ni yangilaymiz (keyingi showQuestion chaqirida ishlatiladi)
-    await prisma.liveQuiz.update({ where: { id }, data: { currentQ: nextIndex } });
-
-    const players = await prisma.liveQuizPlayer.findMany({
-      where: { quizId: id },
-      orderBy: { score: 'desc' },
-    });
-
-    const prevQ = quiz.questions[quiz.currentQ];
-    const answers = await prisma.liveQuizAnswer.findMany({
-      where: { questionId: prevQ.id },
-    });
-    const optionCounts = [0, 1, 2, 3].map(i => ({
-      option: i,
-      count: answers.filter(a => a.selected === i).length,
-      isCorrect: i === prevQ.correct,
-    }));
-
-    const io = getIO();
-    if (io) {
-      // Faqat leaderboard — keyingi savolni O'QITUVCHI tugmasi bosishi bilan yuboramiz
-      io.to(`quiz-${quiz.code}`).emit('quiz:leaderboard', {
-        players: players.map((p, i) => ({ rank: i + 1, fullName: p.fullName, score: p.score, streak: p.streak, id: p.id })),
-        prevQuestion: {
-          question: prevQ.question,
-          correct: prevQ.correct,
-          imageUrl: prevQ.imageUrl,
-          optionCounts,
-          totalAnswers: answers.length,
-        },
-        nextIndex,
-        totalQuestions: quiz.questions.length,
-      });
-    }
-
-    res.json({ message: 'Leaderboard yuborildi', nextIndex });
+    const { questionId } = (req.body || {}) as { questionId?: string };
+    const result = await revealLeaderboard(id, questionId);
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
+    res.json({ message: 'Leaderboard yuborildi', nextIndex: result.nextIndex, isLast: result.isLast, skipped: result.skipped ?? false });
   } catch (e: any) {
     next(e);
   }
@@ -525,6 +563,7 @@ export const showQuestion = async (req: Request, res: Response, next: NextFuncti
 export const finishQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    revealedQuestions.delete(id);
     const quiz = await prisma.liveQuiz.update({
       where: { id },
       data: { status: 'finished' },
@@ -867,6 +906,17 @@ export const submitAnswer = async (req: Request, res: Response, next: NextFuncti
     }
 
     res.json({ data: { isCorrect, points, streak: newStreak, correct: question.correct } });
+
+    // HAMMA o'yinchi javob berdi — taymerni kutmasdan leaderboard'ga o'tamiz.
+    // Kichik kechikish: javob bergan o'quvchining HTTP javobi socket eventdan
+    // OLDIN yetib borishi uchun (aks holda natija ekranida balli ko'rinmaydi).
+    if (allPlayers.length > 0 && answeredCount >= allPlayers.length) {
+      setTimeout(() => {
+        revealLeaderboard(player.quizId, questionId).catch(err =>
+          console.error('[LiveQuiz] Auto-reveal xatosi:', err)
+        );
+      }, 400);
+    }
   } catch (e: any) {
     next(e);
   }

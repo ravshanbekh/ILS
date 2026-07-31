@@ -73,6 +73,9 @@ export default function LiveQuizPage() {
   const [editingQId, setEditingQId] = useState<string | null>(null);
   const timerRef = useRef<number>(0);
   const totalPlayersRef = useRef(0);
+  // Taymer tugaganda avtomatik natija ochish (eng so'nggi state bilan ishlashi
+  // uchun ref orqali chaqiriladi — interval closure eskirib qolmasin)
+  const autoRevealRef = useRef<() => void>(() => {});
 
   // Music state
   const [musics, setMusics] = useState<any[]>([]);
@@ -171,7 +174,13 @@ export default function LiveQuizPage() {
       setTimeLeft(data.timePerQ);
       timerRef.current = setInterval(() => {
         setTimeLeft(t => {
-          if (t <= 1) { clearInterval(timerRef.current); return 0; }
+          if (t <= 1) {
+            clearInterval(timerRef.current);
+            // Vaqt tugadi — 1 soniya kutamiz (kechikkan javoblar bazaga
+            // tushishi uchun), so'ng natija (leaderboard) avtomatik ochiladi
+            setTimeout(() => autoRevealRef.current(), 1000);
+            return 0;
+          }
           return t - 1;
         });
       }, 1000);
@@ -288,19 +297,27 @@ export default function LiveQuizPage() {
   }
 
   // ── Natijani ko'rsatish (QUESTION → LEADERBOARD) ─────────────────────────────
+  // Backend idempotent: taymer, "hamma javob berdi" va qo'lda bosish bir vaqtda
+  // kelsa ham leaderboard faqat bir marta yuboriladi.
   async function showResults() {
-    if (!selected) return;
+    if (!selected || !currentQData) return;
     clearInterval(timerRef.current);
     try {
-      await liveQuizApi.nextQuestion(selected.id);
+      await liveQuizApi.nextQuestion(selected.id, currentQData.id);
       // quiz:leaderboard event socket orqali keladi → gamePhase = 'leaderboard'
     } catch (e: any) {
-      // Agar oxirgi savol bo'lsa → yakunlash
-      if (e.response?.status === 400) {
-        await finishQuiz();
-      }
+      alert(e.response?.data?.error || 'Xato');
     }
   }
+
+  // Taymer nolga tushganda avtomatik natija ochish — ref har renderda eng
+  // so'nggi state'ni ko'radigan funksiya bilan yangilanadi
+  useEffect(() => {
+    autoRevealRef.current = () => {
+      if (gamePhase !== 'question' || !selected || !currentQData) return;
+      liveQuizApi.nextQuestion(selected.id, currentQData.id).catch(() => {});
+    };
+  });
 
   // ── Keyingi savolni yuborish (LEADERBOARD → QUESTION) ────────────────────────
   async function sendNextQuestion() {
@@ -312,9 +329,11 @@ export default function LiveQuizPage() {
   }
 
   // ── Quiz yakunlash ────────────────────────────────────────────────────────────
-  async function finishQuiz() {
+  // skipConfirm — oxirgi savoldan keyingi "Yakunlash" tugmasi tabiiy davom
+  // bo'lgani uchun qo'shimcha tasdiq so'ralmaydi
+  async function finishQuiz(skipConfirm = false) {
     if (!selected) return;
-    if (!confirm('Quizni yakunlash?')) return;
+    if (!skipConfirm && !confirm('Quizni yakunlash?')) return;
     try {
       await liveQuizApi.finishQuiz(selected.id);
       // quiz:finished event keladi
@@ -837,82 +856,56 @@ export default function LiveQuizPage() {
                   </div>
                 )}
 
-                {/* ── QUESTION PHASE ──────────────────────────────── */}
+                {/* ── QUESTION PHASE — Kahoot uslubidagi katta doska ── */}
                 {gamePhase === 'question' && currentQData && (
-                  <div>
-                    {/* Timer + progress */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-zinc-400 text-sm">Savol {(currentQData.index ?? 0) + 1} / {currentQData.total}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-zinc-400 text-sm">Javob berdi:</span>
-                          <span className="text-white font-bold">{answeredCount}/{players.length || '?'}</span>
-                        </div>
-                        <span className={`font-black text-2xl ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : timeLeft <= 10 ? 'text-yellow-400' : 'text-white'}`}>
-                          {timeLeft}s
-                        </span>
+                  <div className="flex flex-col min-h-[70vh]">
+                    {/* Top bar: savol raqami • taymer • javob soni */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="px-4 py-2 bg-zinc-800 rounded-xl text-white font-bold text-lg">
+                        {(currentQData.index ?? 0) + 1} / {currentQData.total}
+                      </span>
+                      <div className={`w-20 h-20 rounded-full flex items-center justify-center font-black text-3xl border-4 transition-colors
+                        ${timeLeft <= 5 ? 'border-red-500 text-red-400 animate-pulse' : timeLeft <= 10 ? 'border-yellow-500 text-yellow-400' : 'border-violet-500 text-white'}`}>
+                        {timeLeft}
                       </div>
-                      <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-                        <div className={`h-full transition-all duration-1000 rounded-full ${timerPct > 50 ? 'bg-emerald-500' : timerPct > 25 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                          style={{ width: `${timerPct}%` }} />
+                      <div className="px-4 py-2 bg-zinc-800 rounded-xl text-center">
+                        <span className="text-emerald-400 font-black text-lg">{answeredCount}</span>
+                        <span className="text-zinc-400 font-bold text-lg"> / {players.length || '?'}</span>
+                        <p className="text-zinc-500 text-xs">javob berdi</p>
                       </div>
                     </div>
 
-                    {/* Current question */}
-                    <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-2xl p-4 mb-4">
-                      <p className="text-white font-bold text-base leading-relaxed mb-2">{currentQData.question}</p>
+                    {/* Timer progress bar */}
+                    <div className="h-2.5 bg-zinc-800 rounded-full overflow-hidden mb-4">
+                      <div className={`h-full transition-all duration-1000 rounded-full ${timerPct > 50 ? 'bg-emerald-500' : timerPct > 25 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ width: `${timerPct}%` }} />
+                    </div>
+
+                    {/* Katta savol */}
+                    <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-2xl p-6 mb-4 text-center">
                       {currentQData.imageUrl && (
-                        <img src={`${API_BASE}${currentQData.imageUrl}`} alt="" className="mb-2 max-h-32 rounded-lg object-cover" />
+                        <img src={`${API_BASE}${currentQData.imageUrl}`} alt="" className="mb-4 max-h-52 rounded-xl object-contain" />
                       )}
-                      <div className="grid grid-cols-2 gap-2 mt-3">
-                        {(currentQData.options as string[] || []).map((o: string, i: number) => (
-                          <div key={i} className={`px-3 py-2 rounded-xl text-sm font-medium
-                            ${['bg-red-500/20 text-red-300', 'bg-blue-500/20 text-blue-300', 'bg-yellow-500/20 text-yellow-300', 'bg-emerald-500/20 text-emerald-300'][i]}
-                            ${i === currentQData.correct ? 'ring-2 ring-white/40' : ''}`}>
-                            {['▲', '◆', '●', '■'][i]} {o}
-                            {i === currentQData.correct && <span className="ml-1 text-xs">✓</span>}
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-white font-black text-2xl md:text-4xl leading-snug">{currentQData.question}</p>
                     </div>
 
-                    {/* Live leaderboard (from previous question) */}
-                    {liveScores.length > 0 && (
-                      <div className="bg-zinc-800 rounded-xl p-3 mb-4">
-                        <p className="text-zinc-400 text-xs mb-2">Joriy reyting ({liveScores.length} o'yinchi)</p>
-                        <div className="space-y-1 max-h-[180px] overflow-y-auto">
-                          {liveScores.map((p, i) => (
-                            <div key={p.id || i} className="flex items-center gap-2 text-sm">
-                              <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold
-                                ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-400'}`}>{i + 1}</span>
-                              <span className="text-white flex-1 truncate">{p.fullName}</span>
-                              <span className="text-violet-400 font-bold">
-                                <AnimatedNum value={p.score} />
-                              </span>
-                              {p.streak >= 2 && <span className="text-amber-400 text-xs">🔥{p.streak}</span>}
-                              <button
-                                onClick={async () => {
-                                  if (!window.confirm(`Rostdan ham ${p.fullName} ni chiqarib yubormoqchimisiz?`)) return;
-                                  try { await liveQuizApi.kickPlayer(selected!.id, p.id); }
-                                  catch(e:any) { alert(e.response?.data?.error || "Xatolik"); }
-                                }}
-                                className="text-red-500 transition hover:bg-red-500/20 rounded p-1 ml-auto"
-                                title="O'yinchini chiqarib yuborish"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                              </button>
-                            </div>
-                          ))}
+                    {/* Katta variantlar — to'g'ri javob KO'RSATILMAYDI (doska ekranda) */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      {(currentQData.options as string[] || []).map((o: string, i: number) => (
+                        <div key={i} className={`flex items-center gap-4 px-5 py-5 rounded-2xl text-white font-bold text-lg md:text-2xl shadow-lg min-h-[80px]
+                          ${['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-emerald-500'][i]}`}>
+                          <span className="text-3xl opacity-80 flex-shrink-0">{['▲', '◆', '●', '■'][i]}</span>
+                          <span className="leading-tight">{o}</span>
                         </div>
-                      </div>
-                    )}
+                      ))}
+                    </div>
 
-                    {/* ACTION: Show Results button */}
+                    {/* Skip: natijani darhol ochish */}
                     <button onClick={showResults}
-                      className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition">
-                      📊 Natijani ko'rsatish
+                      className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl transition text-sm">
+                      ⏭ Natijani hozir ochish (o'tkazib yuborish)
                     </button>
-                    <p className="text-xs text-zinc-500 text-center mt-1">Barcha o'yinchilar ekraniga leaderboard chiqadi</p>
+                    <p className="text-xs text-zinc-500 text-center mt-1">Vaqt tugasa yoki hamma javob bersa reyting avtomatik ochiladi</p>
                   </div>
                 )}
 
@@ -975,24 +968,28 @@ export default function LiveQuizPage() {
 
                     {/* NEXT buttons */}
                     <div className="flex gap-3">
-                      {leaderboardData.nextIndex < leaderboardData.totalQuestions ? (
-                        <button onClick={sendNextQuestion}
-                          className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold rounded-xl">
-                          → {leaderboardData.nextIndex + 1}-savol boshlash
-                        </button>
+                      {!leaderboardData.isLast && leaderboardData.nextIndex < leaderboardData.totalQuestions ? (
+                        <>
+                          <button onClick={sendNextQuestion}
+                            className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold rounded-xl">
+                            → {leaderboardData.nextIndex + 1}-savol boshlash
+                          </button>
+                          <button onClick={() => finishQuiz()}
+                            className="px-5 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/20 rounded-xl">
+                            Yakunlash
+                          </button>
+                        </>
                       ) : (
-                        <button onClick={sendNextQuestion}
-                          className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold rounded-xl">
-                          → Oxirgi savol
+                        <button onClick={() => finishQuiz(true)}
+                          className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl">
+                          🏁 Quizni yakunlash
                         </button>
                       )}
-                      <button onClick={finishQuiz}
-                        className="px-5 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/20 rounded-xl">
-                        Yakunlash
-                      </button>
                     </div>
                     <p className="text-xs text-zinc-500 text-center mt-1">
-                      Tugmani bosganda keyingi savol barcha ekraniga chiqadi va taymer boshlanadi
+                      {!leaderboardData.isLast && leaderboardData.nextIndex < leaderboardData.totalQuestions
+                        ? 'Tugmani bosganda keyingi savol barcha ekraniga chiqadi va taymer boshlanadi'
+                        : "Bu oxirgi savol edi — yakunlaganda barcha ekraniga g'oliblar chiqadi"}
                     </p>
                   </div>
                 )}
