@@ -726,21 +726,34 @@ export const submitVideos = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-// ─── Helper: Random savollar ─────────────────────────────────────────────────
+// ─── Helper: Fisher-Yates Random shuffle ──────────────────────────────────
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ─── Helper: Random savollar va variantlar ──────────────────────────────────
 async function getRandomQuestions(examId: string, count: number) {
   const exam = await prisma.exam.findUnique({ where: { id: examId } });
   const actualExamId = exam?.templateId || examId;
   const all = await prisma.examQuestion.findMany({ where: { examId: actualExamId } });
-  const shuffled = all.sort(() => Math.random() - 0.5).slice(0, count);
-  
-  return shuffled.map(q => {
-    const opts = q.options as string[];
-    const newOptions = [...opts].sort(() => Math.random() - 0.5);
-    return { 
-      id: q.id, 
+
+  // 1. Savollar tartibini Fisher-Yates orqali to'liq random qilish va belgilangan testCount-cha olish
+  const shuffledQuestions = shuffleArray(all).slice(0, count);
+
+  // 2. Har bir savolning variantlarini (A, B, C, D) ham to'liq random shuffle qilish
+  return shuffledQuestions.map(q => {
+    const opts = Array.isArray(q.options) ? (q.options as string[]) : [];
+    const shuffledOptions = shuffleArray(opts);
+    return {
+      id: q.id,
       question: q.question,
       imageUrl: q.imageUrl,
-      options: newOptions,
+      options: shuffledOptions,
     };
   });
 }
