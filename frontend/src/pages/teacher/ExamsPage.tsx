@@ -875,6 +875,10 @@ export default function ExamsPage() {
 function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
   const [grading, setGrading] = useState<string | null>(null);
   const [scoreForm, setScoreForm] = useState<any>({});
+  const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'nested' | 'flat'>('nested');
+  const [openTeachers, setOpenTeachers] = useState<Record<string, boolean>>({});
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   if (!results) return (
     <div className="p-6 text-center text-zinc-400 text-sm">Natijalar yuklanmoqda...</div>
@@ -888,116 +892,313 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
     alert('Ball saqlandi');
   }
 
-  return (
-    <div className="p-4 overflow-y-auto max-h-[600px]">
-      <h3 className="font-semibold text-white mb-4">
-        Natijalar — {participants.length} ishtirokchi
-      </h3>
-      {participants.length === 0 ? (
-        <p className="text-zinc-400 text-sm text-center py-4">Hali hech kim qo'shilmagan</p>
-      ) : participants.map(p => (
-        <div key={p.id} className="bg-zinc-800 rounded-xl p-4 mb-3">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="font-semibold text-white">{p.student?.fullName || 'O\'quvchi'}</p>
-              <p className="text-xs text-zinc-400">
-                {p.student?.group?.name ? <span className="text-blue-400 font-medium mr-1.5">Guruh: {p.student.group.name}</span> : null}
-                {p.exam?.createdBy?.fullName ? <span className="text-emerald-400 font-medium mr-1.5">Ustoz: {p.exam.createdBy.fullName}</span> : null}
-                <span>({p.student?.login || ''})</span> • <span className="capitalize">{p.status}</span>
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-bold text-white">{p.totalScore ?? '—'}</div>
-              <div className="text-xs text-zinc-400">/ 100</div>
-            </div>
-          </div>
+  // Filter participants by search term
+  const filtered = participants.filter(p => {
+    const sName = p.student?.fullName || '';
+    const sLogin = p.student?.login || '';
+    const gName = p.student?.group?.name || '';
+    const tName = p.exam?.createdBy?.fullName || '';
+    const q = search.toLowerCase();
+    return sName.toLowerCase().includes(q) || sLogin.toLowerCase().includes(q) || gName.toLowerCase().includes(q) || tName.toLowerCase().includes(q);
+  });
 
-          {/* Scores breakdown */}
-          <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
-            <div className="bg-zinc-700/50 rounded-lg p-2 text-center">
-              <div className="text-blue-400 font-bold">{p.testScore ?? '—'}</div>
-              <div className="text-zinc-500 text-xs">Test (/{exam.maxTestScore})</div>
-            </div>
-            <div className="bg-zinc-700/50 rounded-lg p-2 text-center">
-              <div className="text-purple-400 font-bold">{p.aiScore ?? '—'}</div>
-              <div className="text-zinc-500 text-xs truncate" title={exam.step2Name}>{exam.step2Name} (/{exam.maxAiScore})</div>
-            </div>
-            <div className="bg-zinc-700/50 rounded-lg p-2 text-center">
-              <div className="text-emerald-400 font-bold">{p.projectScore ?? '—'}</div>
-              <div className="text-zinc-500 text-xs truncate" title={exam.step3Name}>{exam.step3Name} (/{exam.maxProjectScore})</div>
-            </div>
-          </div>
+  // Group by Teacher -> Group
+  const teacherMap = new Map<string, Map<string, any[]>>();
+  filtered.forEach(p => {
+    const teacherName = p.exam?.createdBy?.fullName || "Boshqa / Tayinlanmagan ustoz";
+    const groupName = p.student?.group?.name || "Guruhsiz o'quvchilar";
 
-          {/* Videos */}
-          {(p.aiVideoUrl || p.projectVideoUrl) && (
-            <div className="flex flex-wrap gap-2 mb-3 text-xs">
-              {p.aiVideoUrl && (
-                <a href={p.aiVideoUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 px-3 py-1.5 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 rounded-lg transition border border-purple-500/20 max-w-[200px] truncate"
-                  title={exam.step2Name}>
-                  🎬 {exam.step2Name}
-                </a>
-              )}
-              {p.projectVideoUrl && (
-                <a href={p.projectVideoUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition border border-emerald-500/20 max-w-[200px] truncate"
-                  title={exam.step3Name}>
-                  💼 {exam.step3Name}
-                </a>
-              )}
+    if (!teacherMap.has(teacherName)) {
+      teacherMap.set(teacherName, new Map());
+    }
+    const groupMap = teacherMap.get(teacherName)!;
+    if (!groupMap.has(groupName)) {
+      groupMap.set(groupName, []);
+    }
+    groupMap.get(groupName)!.push(p);
+  });
+
+  const toggleTeacher = (tName: string) => {
+    setOpenTeachers(prev => ({ ...prev, [tName]: !prev[tName] }));
+  };
+
+  const toggleGroup = (key: string) => {
+    setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const expandAll = () => {
+    const tState: Record<string, boolean> = {};
+    const gState: Record<string, boolean> = {};
+    teacherMap.forEach((gMap, tName) => {
+      tState[tName] = true;
+      gMap.forEach((_, gName) => {
+        gState[`${tName}_${gName}`] = true;
+      });
+    });
+    setOpenTeachers(tState);
+    setOpenGroups(gState);
+  };
+
+  const collapseAll = () => {
+    setOpenTeachers({});
+    setOpenGroups({});
+  };
+
+  const renderCard = (p: any) => (
+    <div key={p.id} className="bg-zinc-800/90 rounded-xl p-4 border border-zinc-700/60 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <p className="font-semibold text-white text-sm">{p.student?.fullName || 'O\'quvchi'}</p>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            {p.student?.group?.name ? <span className="text-blue-400 font-medium mr-2">Guruh: {p.student.group.name}</span> : null}
+            {p.exam?.createdBy?.fullName ? <span className="text-emerald-400 font-medium mr-2">Ustoz: {p.exam.createdBy.fullName}</span> : null}
+            <span className="text-zinc-500">({p.student?.login || ''})</span> • <span className="capitalize text-amber-400">{p.status}</span>
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="text-xl font-bold text-white">{p.totalScore ?? '—'}</div>
+          <div className="text-[10px] text-zinc-400">/ 100</div>
+        </div>
+      </div>
+
+      {/* Scores breakdown */}
+      <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
+        <div className="bg-zinc-700/40 rounded-lg p-2 text-center border border-zinc-700/50">
+          <div className="text-blue-400 font-bold">{p.testScore ?? '—'}</div>
+          <div className="text-zinc-400 text-[10px]">Test (/{exam.maxTestScore})</div>
+        </div>
+        <div className="bg-zinc-700/40 rounded-lg p-2 text-center border border-zinc-700/50">
+          <div className="text-purple-400 font-bold">{p.aiScore ?? '—'}</div>
+          <div className="text-zinc-400 text-[10px] truncate" title={exam.step2Name}>{exam.step2Name} (/{exam.maxAiScore})</div>
+        </div>
+        <div className="bg-zinc-700/40 rounded-lg p-2 text-center border border-zinc-700/50">
+          <div className="text-emerald-400 font-bold">{p.projectScore ?? '—'}</div>
+          <div className="text-zinc-400 text-[10px] truncate" title={exam.step3Name}>{exam.step3Name} (/{exam.maxProjectScore})</div>
+        </div>
+      </div>
+
+      {/* Videos / Content */}
+      {(p.aiVideoUrl || p.projectVideoUrl || p.step2Content || p.step3Content) && (
+        <div className="flex flex-wrap gap-2 mb-3 text-xs">
+          {p.aiVideoUrl && (
+            <a href={p.aiVideoUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1 px-3 py-1.5 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 rounded-lg transition border border-purple-500/20 max-w-[220px] truncate font-medium"
+              title={exam.step2Name}>
+              🎬 {exam.step2Name}
+            </a>
+          )}
+          {p.projectVideoUrl && (
+            <a href={p.projectVideoUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition border border-emerald-500/20 max-w-[220px] truncate font-medium"
+              title={exam.step3Name}>
+              💼 {exam.step3Name}
+            </a>
+          )}
+          {p.step2Content && !p.aiVideoUrl && (
+            <div className="bg-purple-950/40 text-purple-300 p-2 rounded-lg text-xs w-full border border-purple-500/20">
+              <span className="font-semibold block text-[10px] text-purple-400 uppercase mb-0.5">{exam.step2Name}:</span>
+              {p.step2Content}
             </div>
           )}
-
-          {/* Grading */}
-          {p.status === 'submitted' && (
-            grading === p.id ? (
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-zinc-400 truncate block" title={exam.step2Name}>{exam.step2Name} (/{exam.maxAiScore})</label>
-                    <input type="number" max={exam.maxAiScore} min={0}
-                      className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm mt-1"
-                      value={scoreForm[p.id]?.aiScore ?? ''}
-                      onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], aiScore: Number(e.target.value) } }))}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-zinc-400 truncate block" title={exam.step3Name}>{exam.step3Name} (/{exam.maxProjectScore})</label>
-                    <input type="number" max={exam.maxProjectScore} min={0}
-                      className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm mt-1"
-                      value={scoreForm[p.id]?.projectScore ?? ''}
-                      onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], projectScore: Number(e.target.value) } }))}
-                    />
-                  </div>
-                </div>
-                <textarea
-                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-xs"
-                  placeholder={`${exam.step2Name} kommentariya...`}
-                  rows={2}
-                  value={scoreForm[p.id]?.aiComment ?? ''}
-                  onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], aiComment: e.target.value } }))}
-                />
-                <textarea
-                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-xs"
-                  placeholder={`${exam.step3Name} kommentariya...`}
-                  rows={2}
-                  value={scoreForm[p.id]?.projectComment ?? ''}
-                  onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], projectComment: e.target.value } }))}
-                />
-                <div className="flex gap-2">
-                  <button onClick={() => setGrading(null)} className="flex-1 py-1.5 bg-zinc-600 hover:bg-zinc-500 text-white rounded text-sm">Bekor</button>
-                  <button onClick={() => saveGrade(p.id)} className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-medium">Saqlash</button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => { setGrading(p.id); setScoreForm((s: any) => ({ ...s, [p.id]: { aiScore: p.aiScore, projectScore: p.projectScore, aiComment: p.aiComment, projectComment: p.projectComment } })); }}
-                className="text-xs px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg border border-blue-500/20 transition"
-              >✏️ Ball qo'yish</button>
-            )
+          {p.step3Content && !p.projectVideoUrl && (
+            <div className="bg-emerald-950/40 text-emerald-300 p-2 rounded-lg text-xs w-full border border-emerald-500/20">
+              <span className="font-semibold block text-[10px] text-emerald-400 uppercase mb-0.5">{exam.step3Name}:</span>
+              {p.step3Content}
+            </div>
           )}
         </div>
-      ))}
+      )}
+
+      {/* Grading */}
+      {p.status === 'submitted' && (
+        grading === p.id ? (
+          <div className="space-y-2 mt-3 pt-3 border-t border-zinc-700/60 bg-zinc-900/50 p-3 rounded-lg">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-zinc-400 truncate block" title={exam.step2Name}>{exam.step2Name} (/{exam.maxAiScore})</label>
+                <input type="number" max={exam.maxAiScore} min={0}
+                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm mt-1"
+                  value={scoreForm[p.id]?.aiScore ?? ''}
+                  onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], aiScore: Number(e.target.value) } }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-400 truncate block" title={exam.step3Name}>{exam.step3Name} (/{exam.maxProjectScore})</label>
+                <input type="number" max={exam.maxProjectScore} min={0}
+                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm mt-1"
+                  value={scoreForm[p.id]?.projectScore ?? ''}
+                  onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], projectScore: Number(e.target.value) } }))}
+                />
+              </div>
+            </div>
+            <textarea
+              className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-xs"
+              placeholder={`${exam.step2Name} kommentariya...`}
+              rows={2}
+              value={scoreForm[p.id]?.aiComment ?? ''}
+              onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], aiComment: e.target.value } }))}
+            />
+            <textarea
+              className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-xs"
+              placeholder={`${exam.step3Name} kommentariya...`}
+              rows={2}
+              value={scoreForm[p.id]?.projectComment ?? ''}
+              onChange={e => setScoreForm((s: any) => ({ ...s, [p.id]: { ...s[p.id], projectComment: e.target.value } }))}
+            />
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setGrading(null)} className="flex-1 py-1.5 bg-zinc-600 hover:bg-zinc-500 text-white rounded text-xs font-medium">Bekor</button>
+              <button onClick={() => saveGrade(p.id)} className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium">Saqlash</button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setGrading(p.id); setScoreForm((s: any) => ({ ...s, [p.id]: { aiScore: p.aiScore, projectScore: p.projectScore, aiComment: p.aiComment, projectComment: p.projectComment } })); }}
+            className="text-xs px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg border border-blue-500/20 transition font-medium"
+          >✏️ Ball qo'yish</button>
+        )
+      )}
+    </div>
+  );
+
+  return (
+    <div className="p-4 overflow-y-auto max-h-[720px] space-y-4">
+      {/* Header controls & stats */}
+      <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-white text-base">
+              Natijalar — {participants.length} ta ishtirokchi
+            </h3>
+            <p className="text-zinc-400 text-xs mt-0.5">
+              Ustozlar va guruhlar bo'yicha papkalashtirilgan ko'rinish
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode('nested')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${viewMode === 'nested' ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+            >
+              📁 Papkalar bo'yicha
+            </button>
+            <button
+              onClick={() => setViewMode('flat')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${viewMode === 'flat' ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+            >
+              📜 Oddiy ro'yxat
+            </button>
+          </div>
+        </div>
+
+        {/* Search & Collapse/Expand buttons */}
+        <div className="flex flex-wrap gap-2 pt-1">
+          <input
+            type="text"
+            placeholder="O'quvchi, ustoz yoki guruh bo'yicha qidiruv..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-blue-500"
+          />
+          {viewMode === 'nested' && (
+            <>
+              <button
+                onClick={expandAll}
+                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-medium transition"
+              >
+                📂 Barchasini ochish
+              </button>
+              <button
+                onClick={collapseAll}
+                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-medium transition"
+              >
+                📁 Barchasini yopish
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Render Nested View */}
+      {viewMode === 'nested' ? (
+        teacherMap.size === 0 ? (
+          <div className="p-8 text-center text-zinc-500 text-sm bg-zinc-900 border border-zinc-800 rounded-xl">
+            Hech qanday natija topilmadi
+          </div>
+        ) : (
+          Array.from(teacherMap.entries()).map(([tName, groupMap]) => {
+            const isTeacherOpen = openTeachers[tName] ?? true;
+            const totalTeacherStudents = Array.from(groupMap.values()).reduce((acc, list) => acc + list.length, 0);
+
+            return (
+              <div key={tName} className="bg-zinc-900/90 border border-zinc-800 rounded-xl overflow-hidden shadow-lg">
+                {/* Level 1: Teacher Header */}
+                <button
+                  onClick={() => toggleTeacher(tName)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-zinc-800/80 hover:bg-zinc-800 transition text-left border-b border-zinc-800 select-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold text-xs">
+                      👨‍🏫
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-sm">{tName}</h4>
+                      <p className="text-[11px] text-zinc-400">
+                        {groupMap.size} ta guruh • {totalTeacherStudents} ta o'quvchi
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-zinc-400 text-sm font-bold">{isTeacherOpen ? '▼' : '▶'}</span>
+                </button>
+
+                {/* Level 2: Groups inside Teacher */}
+                {isTeacherOpen && (
+                  <div className="p-3 space-y-3 bg-zinc-950/40">
+                    {Array.from(groupMap.entries()).map(([gName, pList]) => {
+                      const groupKey = `${tName}_${gName}`;
+                      const isGroupOpen = openGroups[groupKey] ?? true;
+
+                      return (
+                        <div key={groupKey} className="border border-zinc-800/80 rounded-xl overflow-hidden bg-zinc-900/60">
+                          {/* Group Header */}
+                          <button
+                            onClick={() => toggleGroup(groupKey)}
+                            className="w-full flex items-center justify-between px-3.5 py-2.5 bg-zinc-800/40 hover:bg-zinc-800/60 transition text-left border-b border-zinc-800/60 select-none"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-blue-400 text-sm">📂</span>
+                              <span className="font-semibold text-zinc-200 text-xs">{gName}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[10px] font-mono">
+                                {pList.length} ta o'quvchi
+                              </span>
+                            </div>
+                            <span className="text-zinc-500 text-xs">{isGroupOpen ? '▼' : '▶'}</span>
+                          </button>
+
+                          {/* Level 3: Participants list inside Group */}
+                          {isGroupOpen && (
+                            <div className="p-3 space-y-3">
+                              {pList.map(p => renderCard(p))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )
+      ) : (
+        /* Flat View */
+        filtered.length === 0 ? (
+          <div className="p-8 text-center text-zinc-500 text-sm bg-zinc-900 border border-zinc-800 rounded-xl">
+            Hech qanday natija topilmadi
+          </div>
+        ) : (
+          filtered.map(p => renderCard(p))
+        )
+      )}
     </div>
   );
 }
