@@ -20,6 +20,7 @@ interface Exam {
   maxProjectScore: number;
   step2Name: string;
   step3Name: string;
+  isGlobal?: boolean;
   category?: { name: string };
   templateId?: string;
   _count?: { questions: number; participants: number };
@@ -204,6 +205,7 @@ export default function ExamsPage() {
       maxTestScore: exam.maxTestScore,
       maxAiScore: exam.maxAiScore,
       maxProjectScore: exam.maxProjectScore,
+      isGlobal: Boolean(exam.isGlobal),
     });
     setSelected(exam);
     setShowEdit(true);
@@ -575,8 +577,8 @@ export default function ExamsPage() {
                     {isAdmin && (
                       <>
                         <button
-                          onClick={e => { e.stopPropagation(); loadExam(exam); }}
-                          className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
+                          onClick={e => { e.stopPropagation(); openEdit(exam); }}
+                          className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
                         >✏️ Tahrirlash</button>
                         <button
                           onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
@@ -825,6 +827,18 @@ export default function ExamsPage() {
                 onChange={e => setEditForm(f => ({ ...f, maxProjectScore: Number(e.target.value) }))}
               />
             </div>
+            {isAdmin && (
+              <div className="flex items-center gap-2 pt-2 text-white">
+                <input
+                  type="checkbox"
+                  id="editIsGlobal"
+                  className="w-4 h-4 cursor-pointer"
+                  checked={Boolean(editForm.isGlobal)}
+                  onChange={e => setEditForm(f => ({ ...f, isGlobal: e.target.checked }))}
+                />
+                <label htmlFor="editIsGlobal" className="text-sm cursor-pointer select-none">Markaz (Global) imtihoni</label>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 mt-5">
@@ -885,8 +899,12 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
         <div key={p.id} className="bg-zinc-800 rounded-xl p-4 mb-3">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="font-semibold text-white">{p.student.fullName}</p>
-              <p className="text-xs text-zinc-400">{p.student.login} • {p.status}</p>
+              <p className="font-semibold text-white">{p.student?.fullName || 'O\'quvchi'}</p>
+              <p className="text-xs text-zinc-400">
+                {p.student?.group?.name ? <span className="text-blue-400 font-medium mr-1.5">Guruh: {p.student.group.name}</span> : null}
+                {p.exam?.createdBy?.fullName ? <span className="text-emerald-400 font-medium mr-1.5">Ustoz: {p.exam.createdBy.fullName}</span> : null}
+                <span>({p.student?.login || ''})</span> • <span className="capitalize">{p.status}</span>
+              </p>
             </div>
             <div className="text-right">
               <div className="text-xl font-bold text-white">{p.totalScore ?? '—'}</div>

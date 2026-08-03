@@ -197,8 +197,13 @@ export const getExamById = async (req: Request, res: Response, next: NextFunctio
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
+    const userRole = (req as any).user?.role;
+    const where = userRole === 'admin'
+      ? { id }
+      : { OR: [{ id, createdById: userId }, { id, isGlobal: true }] };
+
     const exam = await prisma.exam.findFirst({
-      where: { id, createdById: userId },
+      where,
       include: {
         category: true,
         questions: { orderBy: { order: 'asc' } },
@@ -288,7 +293,7 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
     const { id } = req.params;
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
-    const { title, step2Name, step3Name, testCount, durationHours, maxTestScore, maxAiScore, maxProjectScore, step2Type, step2Desc, step3Type, step3Desc } = req.body;
+    const { title, step2Name, step3Name, testCount, durationHours, maxTestScore, maxAiScore, maxProjectScore, isGlobal, step2Type, step2Desc, step3Type, step3Desc } = req.body;
 
     // Admin har qanday, teacher faqat o'zining imtihonini
     const where = userRole === 'admin' ? { id } : { id, createdById: userId };
@@ -309,6 +314,7 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
         ...(maxTestScore !== undefined && { maxTestScore: Number(maxTestScore) }),
         ...(maxAiScore !== undefined && { maxAiScore: Number(maxAiScore) }),
         ...(maxProjectScore !== undefined && { maxProjectScore: Number(maxProjectScore) }),
+        ...(isGlobal !== undefined && userRole === 'admin' && { isGlobal: Boolean(isGlobal) }),
         ...(step2Type !== undefined && { step2Type }),
         ...(step2Desc !== undefined && { step2Desc }),
         ...(step3Type !== undefined && { step3Type }),
@@ -458,16 +464,39 @@ export const getExamResults = async (req: Request, res: Response, next: NextFunc
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
-    const exam = await prisma.exam.findFirst({ where: { id, createdById: userId } });
+    const userRole = (req as any).user?.role;
+    const exam = await prisma.exam.findFirst({
+      where: userRole === 'admin'
+        ? { id }
+        : { OR: [{ id, createdById: userId }, { id, isGlobal: true }] },
+    });
     if (!exam) return res.status(404).json({ error: 'Topilmadi' });
 
+    const isGlobalOrTemplate = exam.isGlobal || !exam.templateId;
+
     const participants = await prisma.examParticipant.findMany({
-      where: { examId: id },
+      where: isGlobalOrTemplate
+        ? { OR: [{ examId: id }, { exam: { templateId: id } }] }
+        : { examId: id },
       include: {
-        student: { select: { id: true, fullName: true, login: true } },
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            login: true,
+            group: { select: { id: true, name: true } },
+          },
+        },
+        exam: {
+          select: {
+            id: true,
+            title: true,
+            createdBy: { select: { id: true, fullName: true } },
+          },
+        },
         answers: { include: { question: { select: { id: true, question: true, correct: true } } } },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     res.json({ data: { exam, participants } });
