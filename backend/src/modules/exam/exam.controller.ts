@@ -293,7 +293,7 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
     const { id } = req.params;
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
-    const { title, step2Name, step3Name, testCount, durationHours, maxTestScore, maxAiScore, maxProjectScore, isGlobal, step2Type, step2Desc, step3Type, step3Desc } = req.body;
+    const { title, categoryId, step2Name, step3Name, testCount, durationHours, maxTestScore, maxAiScore, maxProjectScore, isGlobal, step2Type, step2Desc, step3Type, step3Desc } = req.body;
 
     // Admin har qanday, teacher faqat o'zining imtihonini
     const where = userRole === 'admin' ? { id } : { id, createdById: userId };
@@ -307,6 +307,7 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
       where: { id },
       data: {
         ...(title !== undefined && { title }),
+        ...(categoryId !== undefined ? (categoryId ? { categoryId } : { categoryId: null }) : {}),
         ...(step2Name !== undefined && { step2Name }),
         ...(step3Name !== undefined && { step3Name }),
         ...(testCount !== undefined && { testCount: Number(testCount) }),
@@ -319,6 +320,9 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
         ...(step2Desc !== undefined && { step2Desc }),
         ...(step3Type !== undefined && { step3Type }),
         ...(step3Desc !== undefined && { step3Desc }),
+      },
+      include: {
+        category: true,
       },
     });
     res.json({ data: updated });

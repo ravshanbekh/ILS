@@ -868,50 +868,73 @@ export default function LiveQuizPage() {
           </div>
 
           {/* Folder View vs Flat List Mode Toggle Bar */}
-          <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 space-y-2">
+          <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-zinc-400">Ko'rinish:</span>
-              <div className="flex gap-1">
+              <span className="text-sm font-bold text-zinc-300">Ko'rinish:</span>
+              <div className="flex gap-1.5">
                 <button
                   onClick={() => setFolderViewMode('folders')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${folderViewMode === 'folders' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${folderViewMode === 'folders' ? 'bg-violet-600 text-white shadow-md shadow-violet-900/40' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
                 >📁 Papkalar</button>
                 <button
                   onClick={() => { setFolderViewMode('flat'); setSelectedCategoryId(null); }}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${folderViewMode === 'flat' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${folderViewMode === 'flat' ? 'bg-violet-600 text-white shadow-md shadow-violet-900/40' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
                 >📜 Barchasi</button>
               </div>
             </div>
 
-            {/* Breadcrumb Navigation when inside a Folder */}
+            {/* Active Folder Header Banner when inside a Folder */}
             {selectedCategoryId && (
-              <div className="flex items-center justify-between bg-violet-950/40 border border-violet-500/30 rounded-lg px-3 py-1.5 text-xs text-violet-300">
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="cursor-pointer hover:underline" onClick={() => setSelectedCategoryId(null)}>🏠 Barcha papkalar</span>
-                  <span>/</span>
-                  <span className="font-bold truncate">📁 {categories.find(c => c.id === selectedCategoryId)?.name || "Kategoriyasiz"}</span>
+              <div className="bg-gradient-to-r from-violet-950/80 via-zinc-900 to-purple-950/60 border border-violet-500/40 rounded-xl p-3.5 space-y-2 shadow-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-violet-300">
+                    <button onClick={() => setSelectedCategoryId(null)} className="hover:underline flex items-center gap-1">
+                      <span>🏠 Barcha papkalar</span>
+                    </button>
+                    <span className="text-zinc-500">/</span>
+                    <span className="text-white font-bold bg-violet-500/20 px-2 py-0.5 rounded-md border border-violet-500/30">
+                      📁 {categories.find(c => c.id === selectedCategoryId)?.name || "Kategoriyasiz (Boshqa)"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedCategoryId(null)}
+                    className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg text-xs font-medium transition"
+                  >
+                    ← Orqaga
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSelectedCategoryId(null)}
-                  className="text-zinc-400 hover:text-white ml-2 text-xs"
-                  title="Papkalarga qaytish"
-                >✕</button>
+                <div className="flex items-center justify-between pt-1">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>📁 {categories.find(c => c.id === selectedCategoryId)?.name || "Kategoriyasiz papka"}</span>
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setForm(f => ({ ...f, categoryId: selectedCategoryId === 'none' ? '' : (selectedCategoryId || '') }));
+                      setShowCreate(true);
+                    }}
+                    className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                  >
+                    + Papkaga quiz qo'shish
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
           {/* Render Categories / Folders Grid when in Folders mode and no specific folder is opened */}
           {folderViewMode === 'folders' && !selectedCategoryId && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Fan papkalari</span>
                 <button
                   onClick={() => setShowCreateCategory(true)}
-                  className="text-xs text-violet-400 hover:text-violet-300 font-medium"
+                  className="text-xs bg-violet-600/10 hover:bg-violet-600/20 border border-violet-500/30 text-violet-400 px-2.5 py-1 rounded-lg font-bold transition"
                 >+ Yangi papka</button>
               </div>
 
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-2.5">
                 {categories.map(cat => {
                   const catQuizzes = displayedList.filter(q => q.categoryId === cat.id);
                   const totalQuestions = catQuizzes.reduce((acc, q) => acc + (q._count?.questions || 0), 0);
@@ -920,20 +943,28 @@ export default function LiveQuizPage() {
                     <div
                       key={cat.id}
                       onClick={() => setSelectedCategoryId(cat.id)}
-                      className="group bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-3 cursor-pointer transition-all flex items-center justify-between"
+                      className="group bg-zinc-900/90 hover:bg-zinc-800/90 border border-zinc-800 hover:border-violet-500/60 rounded-2xl p-4 cursor-pointer transition-all duration-200 flex items-center justify-between shadow-md hover:shadow-violet-500/10"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-violet-600/10 border border-violet-500/20 text-violet-400 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-violet-600 to-purple-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-violet-500/20 group-hover:scale-105 transition-transform">
                           ⚡
                         </div>
                         <div>
-                          <h4 className="font-semibold text-white text-sm group-hover:text-violet-300 transition-colors">{cat.name}</h4>
-                          <p className="text-[11px] text-zinc-400">
-                            {catQuizzes.length} ta quiz • {totalQuestions} ta savol
-                          </p>
+                          <h4 className="font-bold text-white text-base group-hover:text-violet-300 transition-colors">{cat.name}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs bg-violet-500/10 text-violet-300 border border-violet-500/20 px-2 py-0.5 rounded-md font-medium">
+                              ⚡ {catQuizzes.length} ta quiz
+                            </span>
+                            <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md font-medium">
+                              📝 {totalQuestions} savol
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <span className="text-zinc-500 text-xs font-bold group-hover:text-violet-400 transition-colors">Ochish ➔</span>
+                      <div className="flex items-center gap-1 text-xs font-bold text-violet-400 bg-violet-500/10 group-hover:bg-violet-600 group-hover:text-white px-3 py-1.5 rounded-lg transition-all">
+                        <span>Kirish</span>
+                        <span className="group-hover:translate-x-1 transition-transform">➔</span>
+                      </div>
                     </div>
                   );
                 })}
@@ -945,20 +976,22 @@ export default function LiveQuizPage() {
                   return (
                     <div
                       onClick={() => setSelectedCategoryId('none')}
-                      className="group bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-amber-500/50 rounded-xl p-3 cursor-pointer transition-all flex items-center justify-between"
+                      className="group bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-amber-500/50 rounded-2xl p-4 cursor-pointer transition-all flex items-center justify-between shadow-md"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-600/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-amber-600/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xl">
                           📁
                         </div>
                         <div>
-                          <h4 className="font-semibold text-zinc-300 text-sm">Kategoriyasiz (Boshqa)</h4>
-                          <p className="text-[11px] text-zinc-500">
-                            {unassignedQuizzes.length} ta quiz
+                          <h4 className="font-bold text-zinc-300 text-base">Kategoriyasiz (Boshqa)</h4>
+                          <p className="text-xs text-zinc-500 mt-0.5">
+                            ⚡ {unassignedQuizzes.length} ta quiz
                           </p>
                         </div>
                       </div>
-                      <span className="text-zinc-500 text-xs font-bold">Ochish ➔</span>
+                      <div className="flex items-center gap-1 text-xs font-bold text-zinc-400 bg-zinc-800 px-3 py-1.5 rounded-lg">
+                        <span>Kirish ➔</span>
+                      </div>
                     </div>
                   );
                 })()}

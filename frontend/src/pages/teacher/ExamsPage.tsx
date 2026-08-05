@@ -242,10 +242,11 @@ export default function ExamsPage() {
   }
 
 
-  // Admin: imtihon tahrirlash modali
+  // Imtihon tahrirlash modali
   function openEdit(exam: Exam) {
     setEditForm({
       title: exam.title,
+      categoryId: exam.categoryId || '',
       step2Name: exam.step2Name,
       step3Name: exam.step3Name,
       testCount: exam.testCount,
@@ -605,50 +606,73 @@ export default function ExamsPage() {
           </div>
 
           {/* Folder View vs Flat List Mode Toggle Bar */}
-          <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 space-y-2">
+          <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-zinc-400">Ko'rinish:</span>
-              <div className="flex gap-1">
+              <span className="text-sm font-bold text-zinc-300">Ko'rinish:</span>
+              <div className="flex gap-1.5">
                 <button
                   onClick={() => setFolderViewMode('folders')}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${folderViewMode === 'folders' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${folderViewMode === 'folders' ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
                 >📁 Papkalar</button>
                 <button
                   onClick={() => { setFolderViewMode('flat'); setSelectedCategoryId(null); }}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${folderViewMode === 'flat' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${folderViewMode === 'flat' ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
                 >📜 Barchasi</button>
               </div>
             </div>
 
-            {/* Breadcrumb Navigation when inside a Folder */}
+            {/* Active Folder Header Banner when inside a Folder */}
             {selectedCategoryId && (
-              <div className="flex items-center justify-between bg-blue-950/40 border border-blue-500/30 rounded-lg px-3 py-1.5 text-xs text-blue-300">
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="cursor-pointer hover:underline" onClick={() => setSelectedCategoryId(null)}>🏠 Barcha papkalar</span>
-                  <span>/</span>
-                  <span className="font-bold truncate">📁 {categories.find(c => c.id === selectedCategoryId)?.name || "Kategoriyasiz"}</span>
+              <div className="bg-gradient-to-r from-blue-950/80 via-zinc-900 to-indigo-950/60 border border-blue-500/40 rounded-xl p-3.5 space-y-2 shadow-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-blue-300">
+                    <button onClick={() => setSelectedCategoryId(null)} className="hover:underline flex items-center gap-1">
+                      <span>🏠 Barcha papkalar</span>
+                    </button>
+                    <span className="text-zinc-500">/</span>
+                    <span className="text-white font-bold bg-blue-500/20 px-2 py-0.5 rounded-md border border-blue-500/30">
+                      📁 {categories.find(c => c.id === selectedCategoryId)?.name || "Kategoriyasiz (Boshqa)"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedCategoryId(null)}
+                    className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg text-xs font-medium transition"
+                  >
+                    ← Orqaga
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSelectedCategoryId(null)}
-                  className="text-zinc-400 hover:text-white ml-2 text-xs"
-                  title="Papkalarga qaytish"
-                >✕</button>
+                <div className="flex items-center justify-between pt-1">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>📁 {categories.find(c => c.id === selectedCategoryId)?.name || "Kategoriyasiz papka"}</span>
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setForm(f => ({ ...f, categoryId: selectedCategoryId === 'none' ? '' : (selectedCategoryId || '') }));
+                      setShowCreate(true);
+                    }}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                  >
+                    + Papkaga imtihon qo'shish
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
           {/* Render Categories / Folders Grid when in Folders mode and no specific folder is opened */}
           {folderViewMode === 'folders' && !selectedCategoryId && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Fan papkalari</span>
                 <button
                   onClick={() => setShowCreateCategory(true)}
-                  className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+                  className="text-xs bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 px-2.5 py-1 rounded-lg font-bold transition"
                 >+ Yangi papka</button>
               </div>
 
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-2.5">
                 {categories.map(cat => {
                   const currentExamsList = listTab === 'my' ? exams : globalExams;
                   const catExams = currentExamsList.filter(e => e.categoryId === cat.id);
@@ -658,20 +682,28 @@ export default function ExamsPage() {
                     <div
                       key={cat.id}
                       onClick={() => setSelectedCategoryId(cat.id)}
-                      className="group bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 hover:border-blue-500/50 rounded-xl p-3 cursor-pointer transition-all flex items-center justify-between"
+                      className="group bg-zinc-900/90 hover:bg-zinc-800/90 border border-zinc-800 hover:border-blue-500/60 rounded-2xl p-4 cursor-pointer transition-all duration-200 flex items-center justify-between shadow-md hover:shadow-blue-500/10"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
                           📁
                         </div>
                         <div>
-                          <h4 className="font-semibold text-white text-sm group-hover:text-blue-300 transition-colors">{cat.name}</h4>
-                          <p className="text-[11px] text-zinc-400">
-                            {catExams.length} ta imtihon • {totalQuestions} ta savol
-                          </p>
+                          <h4 className="font-bold text-white text-base group-hover:text-blue-300 transition-colors">{cat.name}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2 py-0.5 rounded-md font-medium">
+                              📋 {catExams.length} ta imtihon
+                            </span>
+                            <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md font-medium">
+                              📝 {totalQuestions} savol
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <span className="text-zinc-500 text-xs font-bold group-hover:text-blue-400 transition-colors">Ochish ➔</span>
+                      <div className="flex items-center gap-1 text-xs font-bold text-blue-400 bg-blue-500/10 group-hover:bg-blue-600 group-hover:text-white px-3 py-1.5 rounded-lg transition-all">
+                        <span>Kirish</span>
+                        <span className="group-hover:translate-x-1 transition-transform">➔</span>
+                      </div>
                     </div>
                   );
                 })}
@@ -684,20 +716,22 @@ export default function ExamsPage() {
                   return (
                     <div
                       onClick={() => setSelectedCategoryId('none')}
-                      className="group bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-amber-500/50 rounded-xl p-3 cursor-pointer transition-all flex items-center justify-between"
+                      className="group bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-amber-500/50 rounded-2xl p-4 cursor-pointer transition-all flex items-center justify-between shadow-md"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-600/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-amber-600/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xl">
                           📁
                         </div>
                         <div>
-                          <h4 className="font-semibold text-zinc-300 text-sm">Kategoriyasiz (Boshqa)</h4>
-                          <p className="text-[11px] text-zinc-500">
-                            {unassignedExams.length} ta imtihon
+                          <h4 className="font-bold text-zinc-300 text-base">Kategoriyasiz (Boshqa)</h4>
+                          <p className="text-xs text-zinc-500 mt-0.5">
+                            📋 {unassignedExams.length} ta imtihon
                           </p>
                         </div>
                       </div>
-                      <span className="text-zinc-500 text-xs font-bold">Ochish ➔</span>
+                      <div className="flex items-center gap-1 text-xs font-bold text-zinc-400 bg-zinc-800 px-3 py-1.5 rounded-lg">
+                        <span>Kirish ➔</span>
+                      </div>
                     </div>
                   );
                 })()}
@@ -779,18 +813,14 @@ export default function ExamsPage() {
                           onClick={e => { e.stopPropagation(); loadExam(exam); loadResults(); }}
                           className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
                         >Natijalar</button>
-                        {isAdmin && (
-                          <>
-                            <button
-                              onClick={e => { e.stopPropagation(); openEdit(exam); }}
-                              className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
-                            >✏️ Tahrirlash</button>
-                            <button
-                              onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
-                              className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
-                            >🗑️ O'chirish</button>
-                          </>
-                        )}
+                        <button
+                          onClick={e => { e.stopPropagation(); openEdit(exam); }}
+                          className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
+                        >✏️ Tahrirlash</button>
+                        <button
+                          onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
+                          className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
+                        >🗑️ O'chirish</button>
                       </>
                     ) : (
                       <>
@@ -975,8 +1005,8 @@ export default function ExamsPage() {
       </div>
     </div>
 
-    {/* ─── MODAL: Imtihon tahrirlash (Admin) ─────────────────────────────── */}
-    {showEdit && isAdmin && (
+    {/* ─── MODAL: Imtihon tahrirlash ─────────────────────────────── */}
+    {showEdit && (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
           <div className="flex items-center justify-between mb-4">
@@ -995,16 +1025,25 @@ export default function ExamsPage() {
             </div>
             <div>
               <label className="text-zinc-400 text-xs block mb-1">📁 Kategoriya / Papka</label>
-              <select
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
-                value={editForm.categoryId || ''}
-                onChange={e => setEditForm(f => ({ ...f, categoryId: e.target.value }))}
-              >
-                <option value="">📁 Kategoriyasiz / Boshqa</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>📁 {c.name}</option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <select
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                  value={editForm.categoryId || ''}
+                  onChange={e => setEditForm(f => ({ ...f, categoryId: e.target.value }))}
+                >
+                  <option value="">📁 Kategoriyasiz / Boshqa</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>📁 {c.name}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateCategory(true)}
+                  className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-blue-400 border border-zinc-700 rounded-lg text-xs font-semibold transition"
+                >
+                  + Papka
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
               <div>
