@@ -75,6 +75,8 @@ model User {
   examParticipations ExamParticipant[]     @relation("ExamParticipants")
   gradedExams        ExamParticipant[]     @relation("ExamGrader")
   createdQuizzes     LiveQuiz[]            @relation("QuizCreator")
+  activeQuizzes      LiveQuiz[]            @relation("ActiveQuizTeacher")
+  quizResults        LiveQuizResult[]      @relation("TeacherQuizResults")
   // Lessons relations
   createdFolders     LessonFolder[]        @relation("FolderCreator")
   lessonAccess       LessonFolderAccess[]  @relation("TeacherAccess")
@@ -98,6 +100,7 @@ model Group {
   rankingCache    RankingCache[]
   monitoringCalls MonitoringCall[]
   feedbacks       StudentFeedback[]
+  liveQuizzes     LiveQuiz[]
 
   @@map("groups")
 }
@@ -610,27 +613,50 @@ model QuizMusic {
 
 /// Real-time interaktiv quiz
 model LiveQuiz {
-  id          String     @id @default(uuid()) @db.Uuid
-  title       String     @db.VarChar(200)
-  description String?    @db.VarChar(500)
-  code        String     @unique @db.VarChar(10)
-  createdById String     @map("created_by_id") @db.Uuid
-  status      QuizStatus @default(waiting)
-  currentQ    Int        @default(-1) @map("current_q") // -1 = hali boshlanmagan
-  timePerQ    Int        @default(20) @map("time_per_q") // soniyada
+  id                String     @id @default(uuid()) @db.Uuid
+  title             String     @db.VarChar(200)
+  description       String?    @db.VarChar(500)
+  code              String     @unique @db.VarChar(10)
+  createdById       String     @map("created_by_id") @db.Uuid
+  status            QuizStatus @default(waiting)
+  currentQ          Int        @default(-1) @map("current_q") // -1 = hali boshlanmagan
+  timePerQ          Int        @default(20) @map("time_per_q") // soniyada
   isGlobal          Boolean    @default(false) @map("is_global") // Admin tomonidan yaratilgan markaz quizlari
   activeQuestionIds Json?      @map("active_question_ids") // Random tanlangan 20 ta savol IDlari
   musicId           String?    @map("music_id") @db.Uuid
   categoryId        String?    @map("category_id") @db.Uuid
+  activeTeacherId   String?    @map("active_teacher_id") @db.Uuid
+  groupId           String?    @map("group_id") @db.Uuid
   createdAt         DateTime   @default(now()) @map("created_at")
 
-  createdBy User               @relation("QuizCreator", fields: [createdById], references: [id])
-  category  Category?          @relation(fields: [categoryId], references: [id])
-  music     QuizMusic?         @relation(fields: [musicId], references: [id])
-  questions LiveQuizQuestion[]
-  players   LiveQuizPlayer[]
+  createdBy     User               @relation("QuizCreator", fields: [createdById], references: [id])
+  activeTeacher User?              @relation("ActiveQuizTeacher", fields: [activeTeacherId], references: [id])
+  group         Group?             @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  category      Category?          @relation(fields: [categoryId], references: [id])
+  music         QuizMusic?         @relation(fields: [musicId], references: [id])
+  questions     LiveQuizQuestion[]
+  players       LiveQuizPlayer[]
+  results       LiveQuizResult[]
 
   @@map("live_quizzes")
+}
+
+/// O'tkazilgan live quiz natijasi (oqituvchi va guruh bo'yicha eng oxirgi natija)
+model LiveQuizResult {
+  id           String   @id @default(uuid()) @db.Uuid
+  quizId       String   @map("quiz_id") @db.Uuid
+  groupId      String   @default("") @map("group_id")
+  teacherId    String   @map("teacher_id") @db.Uuid
+  quizTitle    String   @map("quiz_title")
+  leaderboard  Json     // [{ fullName, score, rank, streak }]
+  totalPlayers Int      @default(0) @map("total_players")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  teacher User     @relation("TeacherQuizResults", fields: [teacherId], references: [id], onDelete: Cascade)
+  quiz    LiveQuiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, groupId, teacherId])
+  @@map("live_quiz_results")
 }
 
 /// Live quiz savoli

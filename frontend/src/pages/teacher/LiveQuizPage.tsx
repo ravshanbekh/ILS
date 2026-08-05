@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { liveQuizApi, categoriesApi } from '../../api';
+import { liveQuizApi, categoriesApi, groupsApi } from '../../api';
 import * as XLSX from 'xlsx';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/stores/authStore';
@@ -105,10 +105,75 @@ export default function LiveQuizPage() {
   const [musicUploading, setMusicUploading] = useState(false);
   const musicFileRef = useRef<HTMLInputElement>(null);
 
+  // Group selection & Start game modal state
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [modalQuiz, setModalQuiz] = useState<any>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+  const [teacherGroups, setTeacherGroups] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+
+  // Group-based Results state
+  const [savedResults, setSavedResults] = useState<any[]>([]);
+  const [resultGroups, setResultGroups] = useState<any[]>([]);
+  const [selectedResultGroup, setSelectedResultGroup] = useState<string | null>(null);
+
+  async function fetchTeacherGroups() {
+    try {
+      setLoadingGroups(true);
+      const res = await groupsApi.getAll(1, 100);
+      const groupList = res.data?.data?.groups || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      setTeacherGroups(groupList);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingGroups(false);
+    }
+  }
+
+  async function openStartModal(quiz: any) {
+    setModalQuiz(quiz);
+    setSelectedGroupId('');
+    setShowStartModal(true);
+    await fetchTeacherGroups();
+  }
+
+  async function handleConfirmStartGame() {
+    if (!modalQuiz) return;
+    try {
+      const res = await liveQuizApi.startQuiz(modalQuiz.id, {
+        groupId: selectedGroupId || undefined,
+        musicId: selectedMusicId || undefined,
+      });
+      const launchedQuiz = res.data.data;
+      setSelected(launchedQuiz);
+      setPlayers([]);
+      setLiveScores([]);
+      setAnsweredCount(0);
+      setGamePhase('lobby');
+      setTab('game');
+      setShowStartModal(false);
+      await fetchAll();
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'O\'yinni boshlashda xatolik');
+    }
+  }
+
+  async function loadAllResults() {
+    try {
+      const res = await liveQuizApi.getResults();
+      const { results, groups } = res.data?.data || {};
+      setSavedResults(results || []);
+      setResultGroups(groups || []);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   useEffect(() => {
     fetchAll();
     fetchMusics();
     fetchCategories();
+    loadAllResults();
   }, []);
 
   async function fetchCategories() {
@@ -331,7 +396,7 @@ export default function LiveQuizPage() {
   async function prepareQuiz() {
     if (!selected?.questions?.length) return alert('Savol yo\'q!');
     try {
-      const res = await liveQuizApi.startQuiz(selected.id, selectedMusicId || undefined);
+      const res = await liveQuizApi.startQuiz(selected.id, { musicId: selectedMusicId || undefined });
       setSelected((s: any) => ({ ...s, ...res.data.data, code: res.data.data.code }));
       setPlayers([]);
       setLiveScores([]);
@@ -855,6 +920,82 @@ export default function LiveQuizPage() {
         </div>
       )}
 
+      {/* Start Game & Group Selection Modal */}
+      {showStartModal && modalQuiz && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span>⚡ Live Quizni Boshlash</span>
+                </h2>
+                <p className="text-xs text-violet-400 font-semibold mt-0.5">{modalQuiz.title}</p>
+              </div>
+              <button onClick={() => setShowStartModal(false)} className="text-zinc-400 hover:text-white text-xl">✕</button>
+            </div>
+
+            {/* Select Group */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-zinc-300">
+                👥 Sinf / Guruhni tanlang (Natija shu guruhga saqlanadi):
+              </label>
+              {loadingGroups ? (
+                <div className="p-3 bg-zinc-800 rounded-xl text-xs text-zinc-400">Guruhlar yuklanmoqda...</div>
+              ) : (
+                <select
+                  value={selectedGroupId}
+                  onChange={e => setSelectedGroupId(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-violet-500 outline-none font-medium"
+                >
+                  <option value="">-- Guruhsiz / Umumiy test --</option>
+                  {teacherGroups.map(g => (
+                    <option key={g.id} value={g.id}>
+                      👥 {g.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                📌 Izoh: Test tugagach natija tanlangan guruh papkasiga saqlanadi. Agar bu guruhda avval ham ushbu test o'tkazilgan bo'lsa, eng oxirgi natijasi yangilanadi.
+              </p>
+            </div>
+
+            {/* Select Music */}
+            <div className="space-y-1.5 pt-1">
+              <label className="block text-xs font-bold text-zinc-300">🎵 Lobby Musiqasi (Ixtiyoriy):</label>
+              <select
+                value={selectedMusicId || ''}
+                onChange={e => setSelectedMusicId(e.target.value || null)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-violet-500 outline-none font-medium"
+              >
+                <option value="">🔇 Musiqa yo'q</option>
+                {musics.map(m => (
+                  <option key={m.id} value={m.id}>
+                    🎵 {m.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-3 border-t border-zinc-800">
+              <button
+                onClick={() => setShowStartModal(false)}
+                className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={handleConfirmStartGame}
+                className="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-violet-900/40 transition flex items-center justify-center gap-1.5"
+              >
+                <span>🚀 Kod Yaratish & Boshlash</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* === QUIZ LIST SIDE === */}
         <div className="space-y-3">
@@ -1040,40 +1181,33 @@ export default function LiveQuizPage() {
                       <span>📝 {q._count?.questions ?? 0}</span>
                       <span>👥 {q._count?.players ?? 0}</span>
                     </div>
-                    <div className="mt-1 font-mono text-xl font-black text-violet-400 tracking-widest">{q.code}</div>
-
-                    {listTab === 'my' && (
-                      <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
-                        {!q.isGlobal && (
-                          <>
-                            <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', categoryId: q.categoryId || '', timePerQ: q.timePerQ, isGlobal: false }); setSelected(q); setShowEdit(true); }}
-                              className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded">✏️</button>
-                            <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded">🗑️</button>
-                          </>
-                        )}
-                        {isAdmin && q.isGlobal && (
-                          <>
-                            <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', categoryId: q.categoryId || '', timePerQ: q.timePerQ, isGlobal: true }); setSelected(q); setShowEdit(true); }}
-                              className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded">✏️</button>
-                            <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded">🗑️</button>
-                          </>
-                        )}
-                      </div>
+                    {(q.status === 'active' || q.status === 'waiting') && (
+                      <div className="mt-1 font-mono text-xl font-black text-violet-400 tracking-widest">{q.code}</div>
                     )}
 
-                    {listTab === 'global' && !isAdmin && (
-                      <button onClick={e => { e.stopPropagation(); useGlobal(q); }}
-                        className="mt-2 w-full px-3 py-1.5 text-xs bg-violet-600 hover:bg-violet-500 text-white rounded-lg font-medium">
+                    <div className="mt-2.5 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => openStartModal(q)}
+                        className="flex-1 px-3 py-1.5 text-xs bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-lg font-bold shadow-sm transition"
+                      >
                         ▶ Ishlatish
                       </button>
-                    )}
-                    {listTab === 'global' && isAdmin && (
-                      <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', categoryId: q.categoryId || '', timePerQ: q.timePerQ, isGlobal: true }); loadQuiz(q); setShowEdit(true); }}
-                          className="px-2 py-1 text-xs bg-zinc-800 text-zinc-300 rounded">✏️</button>
-                        <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded">🗑️</button>
-                      </div>
-                    )}
+
+                      {!q.isGlobal && (
+                        <>
+                          <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', categoryId: q.categoryId || '', timePerQ: q.timePerQ, isGlobal: false }); setSelected(q); setShowEdit(true); }}
+                            className="px-2 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg">✏️</button>
+                          <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1.5 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg">🗑️</button>
+                        </>
+                      )}
+                      {isAdmin && q.isGlobal && (
+                        <>
+                          <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', categoryId: q.categoryId || '', timePerQ: q.timePerQ, isGlobal: true }); setSelected(q); setShowEdit(true); }}
+                            className="px-2 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg">✏️</button>
+                          <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1.5 text-xs bg-red-500/10 text-red-400 rounded-lg">🗑️</button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ));
               })()}
@@ -1351,123 +1485,176 @@ export default function LiveQuizPage() {
               </div>
             )}
 
-            {/* ═══════════ STATS TAB ═══════════ */}
+            {/* ═══════════ STATS TAB (Guruhlar bo'yicha Natijalar) ═══════════ */}
             {tab === 'stats' && (
-              <div className="p-4 overflow-y-auto flex-1">
-                {!statsData ? (
-                  <div className="text-center py-8 text-zinc-500">
-                    <p>Ma'lumot yuklanmoqda...</p>
-                    <button onClick={loadStats} className="mt-3 px-4 py-2 bg-zinc-800 text-white rounded-lg text-sm">Yuklash</button>
-                  </div>
-                ) : (
+              <div className="p-4 overflow-y-auto flex-1 space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                   <div>
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      <div className="bg-zinc-800 rounded-xl p-3 text-center">
-                        <p className="text-2xl font-bold text-violet-400">{statsData.quiz.totalPlayers}</p>
-                        <p className="text-xs text-zinc-500">O'yinchi</p>
-                      </div>
-                      <div className="bg-zinc-800 rounded-xl p-3 text-center">
-                        <p className="text-2xl font-bold text-emerald-400">{statsData.quiz.totalQuestions}</p>
-                        <p className="text-xs text-zinc-500">Savol</p>
-                      </div>
-                      <div className="bg-zinc-800 rounded-xl p-3 text-center">
-                        <p className="text-2xl font-bold text-amber-400">
-                          {statsData.questionAnalysis.length > 0 ? Math.round(statsData.questionAnalysis.reduce((s: number, q: any) => s + q.correctPercentage, 0) / statsData.questionAnalysis.length) : 0}%
-                        </p>
-                        <p className="text-xs text-zinc-500">O'rtacha</p>
-                      </div>
-                    </div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>📊 Guruhlar bo'yicha Natijalar</span>
+                    </h3>
+                    <p className="text-xs text-zinc-400">Har bir guruhda o'tkazilgan eng oxirgi test natijasi saqlangan</p>
+                  </div>
+                  <button
+                    onClick={loadAllResults}
+                    className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-semibold transition"
+                  >
+                    🔄 Yangilash
+                  </button>
+                </div>
 
-                    <div className="flex border-b border-zinc-700 mb-4">
-                      {(['leaderboard', 'questions', 'player'] as const).map(st => (
-                        <button key={st} onClick={() => setStatsTab(st)}
-                          className={`px-3 py-2 text-xs font-medium transition ${statsTab === st ? 'text-violet-400 border-b-2 border-violet-400' : 'text-zinc-400'}`}>
-                          {st === 'leaderboard' ? '🏆 Reyting' : st === 'questions' ? '📊 Savollar' : '👤 O\'yinchi'}
-                        </button>
-                      ))}
-                    </div>
+                {/* If NO group folder is selected: Render Group Folders Grid */}
+                {!selectedResultGroup ? (
+                  <div className="space-y-3">
+                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">O'qituvchi Guruhlari</span>
 
-                    {statsTab === 'leaderboard' && (
-                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                        {statsData.leaderboard.map((p: any, i: number) => (
-                          <div key={p.id} onClick={() => { setStatsPlayerSelected(statsData.playerDetails.find((pd: any) => pd.id === p.id)); setStatsTab('player'); }}
-                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:ring-1 hover:ring-violet-500/50
-                              ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' : i === 1 ? 'bg-zinc-400/10' : i === 2 ? 'bg-amber-700/10' : 'bg-zinc-800'}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
-                              ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-300'}`}>{i + 1}</div>
-                            <span className="flex-1 text-white font-medium">{p.fullName}</span>
-                            <div className="text-right">
-                              <p className="text-violet-400 font-bold text-lg">{p.score}</p>
-                              <p className="text-xs text-zinc-500">{statsData.playerDetails.find((pd: any) => pd.id === p.id)?.accuracy ?? 0}%</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {statsTab === 'questions' && (
-                      <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                        {statsData.questionAnalysis.map((q: any, i: number) => (
-                          <div key={q.id} className="bg-zinc-800 rounded-xl p-4">
-                            <div className="flex items-start gap-2 mb-3">
-                              <span className="text-zinc-500 text-sm">{i + 1}.</span>
-                              <p className="text-white text-sm font-medium flex-1">{q.question}</p>
-                              <span className={`text-sm font-bold ${q.correctPercentage >= 70 ? 'text-emerald-400' : q.correctPercentage >= 40 ? 'text-amber-400' : 'text-red-400'}`}>{q.correctPercentage}%</span>
-                            </div>
-                            <div className="flex gap-2 h-14 items-end">
-                              {q.optionDistribution.map((od: any, idx: number) => (
-                                <div key={idx} className="flex-1 flex flex-col items-center gap-1">
-                                  <span className="text-xs text-white">{od.count}</span>
-                                  <div className={`w-full rounded-t-sm ${od.isCorrect ? 'bg-emerald-500' : 'bg-rose-500/60'}`} style={{ height: `${Math.max(od.percentage, 4)}%` }} />
-                                  <span className="text-xs text-zinc-500">{['A', 'B', 'C', 'D'][idx]}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {statsTab === 'player' && (
-                      <div>
-                        {statsPlayerSelected ? (
-                          <div>
-                            <button onClick={() => setStatsPlayerSelected(null)} className="text-xs text-zinc-400 hover:text-white mb-4">← Orqaga</button>
-                            <div className="bg-zinc-800 rounded-xl p-4 mb-4">
-                              <h3 className="text-white font-bold text-lg">{statsPlayerSelected.fullName}</h3>
-                              <div className="grid grid-cols-3 gap-3 mt-3">
-                                <div className="text-center"><p className="text-violet-400 font-bold text-xl">{statsPlayerSelected.score}</p><p className="text-xs text-zinc-500">Ball</p></div>
-                                <div className="text-center"><p className="text-emerald-400 font-bold text-xl">#{statsPlayerSelected.rank}</p><p className="text-xs text-zinc-500">O'rin</p></div>
-                                <div className="text-center"><p className="text-amber-400 font-bold text-xl">{statsPlayerSelected.accuracy}%</p><p className="text-xs text-zinc-500">To'g'ri</p></div>
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {/* Teacher's assigned groups */}
+                      {resultGroups.map(g => {
+                        const groupQuizResults = savedResults.filter(r => r.groupId === g.id);
+                        return (
+                          <div
+                            key={g.id}
+                            onClick={() => setSelectedResultGroup(g.id)}
+                            className="group bg-zinc-900/90 hover:bg-zinc-800/90 border border-zinc-800 hover:border-violet-500/60 rounded-2xl p-4 cursor-pointer transition-all duration-200 flex items-center justify-between shadow-md"
+                          >
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-violet-500/20 group-hover:scale-105 transition-transform">
+                                👥
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-white text-base group-hover:text-violet-300 transition-colors">{g.name}</h4>
+                                <p className="text-xs text-zinc-400 mt-0.5">
+                                  ⚡ {groupQuizResults.length} ta o'tkazilgan test natijasi
+                                </p>
                               </div>
                             </div>
-                            <div className="space-y-2 max-h-[280px] overflow-y-auto">
-                              {statsPlayerSelected.answers.map((a: any, i: number) => (
-                                <div key={a.questionId} className={`flex items-start gap-3 p-3 rounded-lg ${a.isCorrect ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
-                                  <span className={`text-sm font-bold ${a.isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>{a.isCorrect ? '✓' : '✗'}</span>
-                                  <div className="flex-1">
-                                    <p className="text-white text-sm">{i + 1}. {a.question}</p>
-                                    <p className="text-xs text-zinc-500 mt-0.5">{a.selected !== null ? `${['A', 'B', 'C', 'D'][a.selected]} • ` : 'Javob bermadi • '}{a.points} ball • {(a.timeMs / 1000).toFixed(1)}s</p>
+                            <div className="flex items-center gap-1 text-xs font-bold text-violet-400 bg-violet-500/10 group-hover:bg-violet-600 group-hover:text-white px-3 py-1.5 rounded-lg transition-all">
+                              <span>Natijalarni ko'rish</span>
+                              <span className="group-hover:translate-x-1 transition-transform">➔</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Unassigned / Guruhsiz Folder */}
+                      {(() => {
+                        const unassignedResults = savedResults.filter(r => !r.groupId || r.groupId === '');
+                        return (
+                          <div
+                            onClick={() => setSelectedResultGroup('none')}
+                            className="group bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 hover:border-amber-500/50 rounded-2xl p-4 cursor-pointer transition-all flex items-center justify-between shadow-md"
+                          >
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-12 h-12 rounded-xl bg-amber-600/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xl">
+                                📁
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-zinc-300 text-base">Guruhsiz (Umumiy testlar)</h4>
+                                <p className="text-xs text-zinc-500 mt-0.5">
+                                  ⚡ {unassignedResults.length} ta test natijasi
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs font-bold text-zinc-400 bg-zinc-800 px-3 py-1.5 rounded-lg">
+                              <span>Ko'rish ➔</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                ) : (
+                  /* Inside a selected Group Folder: Display quiz results for that group */
+                  <div className="space-y-4">
+                    {/* Header Breadcrumb */}
+                    <div className="flex items-center justify-between bg-zinc-800/80 border border-zinc-700 rounded-xl p-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-violet-300">
+                        <button onClick={() => setSelectedResultGroup(null)} className="hover:underline">
+                          🏠 Barcha guruhlar
+                        </button>
+                        <span className="text-zinc-500">/</span>
+                        <span className="text-white font-bold bg-violet-500/20 px-2 py-0.5 rounded-md border border-violet-500/30">
+                          👥 {selectedResultGroup === 'none' ? 'Guruhsiz' : resultGroups.find(g => g.id === selectedResultGroup)?.name || 'Guruh'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setSelectedResultGroup(null)}
+                        className="px-2.5 py-1 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg text-xs font-medium transition"
+                      >
+                        ← Orqaga
+                      </button>
+                    </div>
+
+                    {/* Results Cards List */}
+                    {(() => {
+                      const groupResults = savedResults.filter(r =>
+                        selectedResultGroup === 'none' ? (!r.groupId || r.groupId === '') : r.groupId === selectedResultGroup
+                      );
+
+                      if (groupResults.length === 0) {
+                        return (
+                          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center text-zinc-500 text-sm">
+                            Ushbu guruhda hali test o'tkazilmagan.
+                          </div>
+                        );
+                      }
+
+                      return groupResults.map(resItem => {
+                        const leaderboard = Array.isArray(resItem.leaderboard) ? resItem.leaderboard : [];
+                        return (
+                          <div key={resItem.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3 shadow-md">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="text-base font-bold text-white flex items-center gap-2">
+                                  <span>⚡ {resItem.quizTitle}</span>
+                                </h4>
+                                <div className="flex items-center gap-3 text-xs text-zinc-400 mt-1">
+                                  <span>📅 {new Date(resItem.updatedAt).toLocaleString('uz-UZ')}</span>
+                                  <span>👥 {resItem.totalPlayers} ta o'quvchi</span>
+                                </div>
+                              </div>
+                              <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-bold">
+                                Oxirgi o'tkazilgan natija
+                              </span>
+                            </div>
+
+                            {/* Leaderboard Table */}
+                            <div className="space-y-1.5 pt-2 max-h-[280px] overflow-y-auto">
+                              {leaderboard.map((p: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs ${
+                                    idx === 0
+                                      ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 font-bold'
+                                      : idx === 1
+                                      ? 'bg-zinc-400/10 border border-zinc-400/20 text-zinc-300 font-semibold'
+                                      : idx === 2
+                                      ? 'bg-amber-700/10 border border-amber-700/20 text-amber-300 font-semibold'
+                                      : 'bg-zinc-800/80 text-zinc-300'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <span
+                                      className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                                        idx === 0 ? 'bg-yellow-400 text-black' : idx === 1 ? 'bg-zinc-300 text-black' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-400'
+                                      }`}
+                                    >
+                                      {idx + 1}
+                                    </span>
+                                    <span className="font-medium text-sm">{p.fullName}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    {p.streak > 1 && <span className="text-amber-400 font-bold">🔥 {p.streak}x</span>}
+                                    <span className="font-mono text-violet-400 font-bold text-sm">{p.score?.toLocaleString()} ball</span>
                                   </div>
                                 </div>
                               ))}
                             </div>
                           </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {statsData.playerDetails.map((p: any, i: number) => (
-                              <button key={p.id} onClick={() => setStatsPlayerSelected(p)}
-                                className="w-full flex items-center gap-3 p-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-left">
-                                <span className="text-zinc-500 text-sm w-5">{i + 1}</span>
-                                <span className="text-white flex-1">{p.fullName}</span>
-                                <p className="text-violet-400 font-bold">{p.score}</p>
-                                <p className="text-xs text-zinc-500">{p.accuracy}%</p>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                        );
+                      });
+                    })()}
                   </div>
                 )}
               </div>

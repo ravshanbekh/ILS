@@ -300,34 +300,24 @@ export const startQuiz = async (req: Request, res: Response, next: NextFunction)
   try {
     const { id } = req.params;
     const userId = (req as any).user?.userId;
-    const userRole = (req as any).user?.role;
+    const { musicId, groupId } = req.body || {};
 
-    // Global quiz ni o'qituvchi ham boshlashi mumkin, lekin faqat o'zi boshqaradi
     const existingQuiz = await prisma.liveQuiz.findUnique({
       where: { id },
       include: { questions: { orderBy: { order: 'asc' } } },
     });
     if (!existingQuiz) return res.status(404).json({ error: 'Topilmadi' });
 
-    // Ruxsat tekshirish
-    if (userRole !== 'admin' && existingQuiz.createdById !== userId) {
-      // Global quizni o'qituvchi boshqarish uchun nusxalash kerak
-      return res.status(403).json({ error: 'Siz ushbu quizni boshqara olmaysiz. "Ishlatish" tugmasini bosing.' });
-    }
-
     if (existingQuiz.questions.length === 0) {
       return res.status(400).json({ error: 'Savol yo\'q. Avval savol qo\'shing.' });
     }
 
-    // Eski o'yinchilarni va ularning natijalarini tozalash (cascade delete orqali javoblar ham o'chadi)
+    // Eski o'yinchilarni va ularning natijalarini tozalash
     await prisma.liveQuizPlayer.deleteMany({
       where: { quizId: id }
     });
 
-    // Qayta o'ynalganda savollar qayta reveal bo'la olishi uchun tozalaymiz
     revealedQuestions.delete(id);
-
-    const { musicId } = req.body;
 
     // Har safar yangi kod generatsiya qilish
     const newCode = await genUniqueCode();
@@ -336,8 +326,16 @@ export const startQuiz = async (req: Request, res: Response, next: NextFunction)
 
     let quiz = await prisma.liveQuiz.update({
       where: { id },
-      data: { status: 'waiting', currentQ: -1, code: newCode, activeQuestionIds, musicId: musicId || null },
-      include: { questions: { orderBy: { order: 'asc' } }, music: true },
+      data: {
+        status: 'waiting',
+        currentQ: -1,
+        code: newCode,
+        activeQuestionIds,
+        musicId: musicId || null,
+        activeTeacherId: userId,
+        groupId: groupId || null,
+      },
+      include: { questions: { orderBy: { order: 'asc' } }, music: true, group: true },
     });
 
     filterActiveQuestions(quiz);
@@ -590,6 +588,37 @@ export const finishQuiz = async (req: Request, res: Response, next: NextFunction
       await prisma.liveQuizPlayer.update({ where: { id: players[i].id }, data: { rank: i + 1 } });
     }
 
+    // Save or overwrite latest results for this Teacher + Group + Quiz
+    const teacherId = quiz.activeTeacherId || quiz.createdById;
+    const groupId = quiz.groupId || '';
+    const leaderboardData = players.map((p, i) => ({ rank: i + 1, fullName: p.fullName, score: p.score, streak: p.streak }));
+
+    if (teacherId) {
+      await prisma.liveQuizResult.upsert({
+        where: {
+          quizId_groupId_teacherId: {
+            quizId: id,
+            groupId,
+            teacherId,
+          },
+        },
+        create: {
+          quizId: id,
+          groupId,
+          teacherId,
+          quizTitle: quiz.title,
+          leaderboard: leaderboardData,
+          totalPlayers: players.length,
+        },
+        update: {
+          quizTitle: quiz.title,
+          leaderboard: leaderboardData,
+          totalPlayers: players.length,
+          updatedAt: new Date(),
+        },
+      });
+    }
+
     const io = getIO();
     if (io) {
       io.to(`quiz-${quiz.code}`).emit('quiz:finished', {
@@ -598,6 +627,28 @@ export const finishQuiz = async (req: Request, res: Response, next: NextFunction
     }
 
     res.json({ data: { quiz, playerCount: players.length } });
+  } catch (e: any) {
+    next(e);
+  }
+};
+
+// ─── O'qituvchi o'tkazgan quizlar natijalari (Guruhlar bo'yicha) ───────────────
+export const getQuizResults = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const userRole = (req as any).user?.role;
+
+    const where = userRole === 'admin' ? {} : { teacherId: userId };
+    const results = await prisma.liveQuizResult.findMany({
+      where,
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const teacherGroups = userRole === 'admin'
+      ? await prisma.group.findMany({ where: { isActive: true }, select: { id: true, name: true } })
+      : await prisma.group.findMany({ where: { teacherId: userId, isActive: true }, select: { id: true, name: true } });
+
+    res.json({ data: { results, groups: teacherGroups } });
   } catch (e: any) {
     next(e);
   }

@@ -52,6 +52,7 @@ router.post('/', authenticate, quizController.createQuiz);
 router.get('/', authenticate, quizController.getMyQuizzes);
 router.get('/global', authenticate, quizController.getGlobalQuizzes);
 router.get('/music', authenticate, quizController.getQuizMusics);
+router.get('/results/all', authenticate, quizController.getQuizResults);
 router.post('/music', authenticate, uploadMusic.single('music'), quizController.uploadQuizMusic);
 router.delete('/music/:musicId', authenticate, quizController.deleteQuizMusic);
 
