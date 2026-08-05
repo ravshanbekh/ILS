@@ -175,17 +175,26 @@ const startServer = async () => {
       }, 6 * 60 * 60 * 1000);
     });
 
-    // Telegram bot (agar token sozlangan bo'lsa)
-    if (env.TELEGRAM_BOT_TOKEN) {
+    // Telegram bot (env yoki settings.json orqali ishga tushirish)
+    try {
       startBot();
-    } else {
-      logger.warn('⚠️  TELEGRAM_BOT_TOKEN yo\'q — Telegram bot o\'chirildi');
+    } catch (botErr) {
+      logger.error('⚠️ Telegram bot ishga tushirish xatosi:', botErr);
     }
   } catch (error) {
     logger.error('❌ Server ishga tushmadi:', error);
     process.exit(1);
   }
 };
+
+// Kutilmagan asinxron xatoliklar tufayli server to'xtab qolmasligi uchun
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('⚠️ Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('⚠️ Uncaught Exception:', error);
+});
 
 startServer();
 

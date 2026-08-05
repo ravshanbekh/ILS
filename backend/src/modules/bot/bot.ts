@@ -77,6 +77,8 @@ export function startBot(customToken?: string): BotInstance | null {
     // Bot info olish
     bot.getMe().then((me) => {
       logger.info(`🤖 Telegram bot ishga tushdi: @${me.username} (ID: ${me.id})`);
+    }).catch((err) => {
+      logger.error(`⚠️ Telegram bot ulanish xatosi (token yaroqsiz bo'lishi mumkin yoki tarmoq muammosi): ${err.message}`);
     });
 
     // Graceful shutdown
