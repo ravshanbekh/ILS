@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { liveQuizApi } from '../../api';
+import { liveQuizApi, categoriesApi } from '../../api';
 import * as XLSX from 'xlsx';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/stores/authStore';
@@ -28,10 +28,18 @@ function AnimatedNum({ value, duration = 800 }: { value: number; duration?: numb
   return <>{display.toLocaleString()}</>;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
 interface Quiz {
   id: string; title: string; description?: string; code: string;
   status: 'waiting' | 'active' | 'finished'; timePerQ: number; currentQ: number;
   isGlobal?: boolean; createdBy?: { id: string; fullName: string };
+  categoryId?: string | null;
+  category?: { id?: string; name: string };
   _count?: { questions: number; players: number };
 }
 
@@ -47,8 +55,17 @@ export default function LiveQuizPage() {
   const [selected, setSelected] = useState<any>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', timePerQ: 20, isGlobal: false });
-  const [editForm, setEditForm] = useState({ title: '', description: '', timePerQ: 20, isGlobal: false });
+
+  // Categories & Folders System State
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [folderViewMode, setFolderViewMode] = useState<'folders' | 'flat'>('folders');
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [creatingCat, setCreatingCat] = useState(false);
+
+  const [form, setForm] = useState({ title: '', description: '', categoryId: '', timePerQ: 20, isGlobal: false });
+  const [editForm, setEditForm] = useState({ title: '', description: '', categoryId: '', timePerQ: 20, isGlobal: false });
   const [creating, setCreating] = useState(false);
   const [tab, setTab] = useState<'questions' | 'game' | 'stats'>('questions');
   const [listTab, setListTab] = useState<'my' | 'global'>('my');
@@ -88,7 +105,38 @@ export default function LiveQuizPage() {
   const [musicUploading, setMusicUploading] = useState(false);
   const musicFileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { fetchAll(); fetchMusics(); }, []);
+  useEffect(() => {
+    fetchAll();
+    fetchMusics();
+    fetchCategories();
+  }, []);
+
+  async function fetchCategories() {
+    try {
+      const res = await categoriesApi.getAll();
+      setCategories(res.data.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function handleCreateCategory() {
+    if (!newCatName.trim()) return;
+    setCreatingCat(true);
+    try {
+      const res = await categoriesApi.create({ name: newCatName.trim() });
+      setNewCatName('');
+      setShowCreateCategory(false);
+      await fetchCategories();
+      if (res.data?.data?.id) {
+        setSelectedCategoryId(res.data.data.id);
+      }
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Kategoriya yaratishda xatolik');
+    } finally {
+      setCreatingCat(false);
+    }
+  }
 
   async function fetchMusics() {
     try {
@@ -215,9 +263,13 @@ export default function LiveQuizPage() {
   async function createQuiz() {
     setCreating(true);
     try {
-      const res = await liveQuizApi.create({ ...form, isGlobal: isAdmin ? form.isGlobal : false });
+      const res = await liveQuizApi.create({
+        ...form,
+        isGlobal: isAdmin ? form.isGlobal : false,
+        categoryId: form.categoryId || selectedCategoryId || undefined,
+      });
       setShowCreate(false);
-      setForm({ title: '', description: '', timePerQ: 20, isGlobal: false });
+      setForm({ title: '', description: '', categoryId: '', timePerQ: 20, isGlobal: false });
       await fetchAll();
       loadQuiz(res.data.data);
     } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
@@ -633,6 +685,31 @@ export default function LiveQuizPage() {
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-sm">
             <h2 className="text-lg font-bold text-white mb-4">Yangi quiz</h2>
             <input className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-3 focus:border-violet-500 outline-none" placeholder="Quiz nomi *" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+
+            {/* Category / Folder selector */}
+            <div className="mb-3">
+              <label className="text-zinc-400 text-xs block mb-1">📁 Kategoriya (Fan papkasi):</label>
+              <div className="flex gap-2">
+                <select
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-violet-500"
+                  value={form.categoryId || selectedCategoryId || ''}
+                  onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
+                >
+                  <option value="">📁 Kategoriyasiz / Boshqa</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>📁 {c.name}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateCategory(true)}
+                  className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-violet-400 border border-zinc-700 rounded-lg text-xs font-semibold transition"
+                >
+                  + Papka
+                </button>
+              </div>
+            </div>
+
             <textarea className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-3 text-sm resize-none focus:border-violet-500 outline-none" rows={2} placeholder="Tavsif (ixtiyoriy)" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
             <div className="flex items-center gap-3 mb-4">
               <label className="text-zinc-400 text-sm whitespace-nowrap">Har savol vaqti (sek):</label>
@@ -660,6 +737,22 @@ export default function LiveQuizPage() {
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-sm">
             <h2 className="text-lg font-bold text-white mb-4">✏️ Tahrirlash</h2>
             <input className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-3 focus:border-violet-500 outline-none" value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} />
+
+            {/* Category / Folder selector */}
+            <div className="mb-3">
+              <label className="text-zinc-400 text-xs block mb-1">📁 Kategoriya (Fan papkasi):</label>
+              <select
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-violet-500"
+                value={editForm.categoryId || ''}
+                onChange={e => setEditForm(f => ({ ...f, categoryId: e.target.value }))}
+              >
+                <option value="">📁 Kategoriyasiz / Boshqa</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>📁 {c.name}</option>
+                ))}
+              </select>
+            </div>
+
             <textarea className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-3 text-sm resize-none outline-none" rows={2} value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} />
             <div className="flex items-center gap-3 mb-4">
               <label className="text-zinc-400 text-sm">Vaqt:</label>
@@ -674,6 +767,35 @@ export default function LiveQuizPage() {
             <div className="flex gap-2">
               <button onClick={() => setShowEdit(false)} className="flex-1 py-2 bg-zinc-700 text-white rounded-lg">Bekor</button>
               <button onClick={saveEdit} className="flex-1 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg">Saqlash</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Category Modal */}
+      {showCreateCategory && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">📁 Yangi fan papkasi yaratish</h3>
+            <p className="text-xs text-zinc-400 mb-4">Quizlarni fani bo'yicha papkalarga ajratish uchun papka nomi (masalan: Foundation, Frontend, Python)</p>
+            <input
+              type="text"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-4 outline-none focus:border-violet-500 text-sm"
+              placeholder="Papka nomi (masalan: Foundation)"
+              value={newCatName}
+              onChange={e => setNewCatName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleCreateCategory(); }}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCreateCategory(false)}
+                className="flex-1 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-semibold"
+              >Bekor qilish</button>
+              <button
+                onClick={handleCreateCategory}
+                disabled={creatingCat || !newCatName.trim()}
+                className="flex-1 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-semibold disabled:opacity-50"
+              >{creatingCat ? 'Yaratilmoqda...' : 'Saqlash'}</button>
             </div>
           </div>
         </div>
@@ -734,9 +856,9 @@ export default function LiveQuizPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* === QUIZ LIST === */}
-        <div>
-          <div className="flex border-b border-zinc-800 mb-3">
+        {/* === QUIZ LIST SIDE === */}
+        <div className="space-y-3">
+          <div className="flex border-b border-zinc-800 mb-2">
             <button onClick={() => setListTab('my')} className={`px-4 py-2 text-sm font-medium transition ${listTab === 'my' ? 'text-violet-400 border-b-2 border-violet-400' : 'text-zinc-400'}`}>
               📂 Mening ({myQuizzes.length})
             </button>
@@ -745,63 +867,185 @@ export default function LiveQuizPage() {
             </button>
           </div>
 
-          <div className="space-y-3 max-h-[75vh] overflow-y-auto pr-1">
-            {displayedList.map(q => (
-              <div key={q.id}
-                className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-violet-500/50 ${selected?.id === q.id ? 'border-violet-500' : 'border-zinc-800'}`}
-                onClick={() => loadQuiz(q)}>
-                <div className="flex items-start justify-between mb-1 gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-white text-sm truncate">{q.title}</h3>
-                    {q.isGlobal && <span className="text-xs text-amber-400">🏫 Markaz</span>}
-                    {q.createdBy && listTab === 'global' && <p className="text-xs text-zinc-500 truncate">{q.createdBy.fullName}</p>}
-                  </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${q.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : q.status === 'finished' ? 'bg-zinc-700 text-zinc-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                    {q.status === 'waiting' ? 'Kutmoqda' : q.status === 'active' ? '🟢 Faol' : 'Tugagan'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-zinc-500 mt-1">
-                  <span>📝 {q._count?.questions ?? 0}</span>
-                  <span>👥 {q._count?.players ?? 0}</span>
-                </div>
-                <div className="mt-1 font-mono text-xl font-black text-violet-400 tracking-widest">{q.code}</div>
-
-                {listTab === 'my' && (
-                  <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
-                    {!q.isGlobal && (
-                      <>
-                        <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', timePerQ: q.timePerQ, isGlobal: false }); setSelected(q); setShowEdit(true); }}
-                          className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded">✏️</button>
-                        <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded">🗑️</button>
-                      </>
-                    )}
-                    {isAdmin && q.isGlobal && (
-                      <>
-                        <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', timePerQ: q.timePerQ, isGlobal: true }); setSelected(q); setShowEdit(true); }}
-                          className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded">✏️</button>
-                        <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded">🗑️</button>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {listTab === 'global' && !isAdmin && (
-                  <button onClick={e => { e.stopPropagation(); useGlobal(q); }}
-                    className="mt-2 w-full px-3 py-1.5 text-xs bg-violet-600 hover:bg-violet-500 text-white rounded-lg font-medium">
-                    ▶ Ishlatish
-                  </button>
-                )}
-                {listTab === 'global' && isAdmin && (
-                  <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', timePerQ: q.timePerQ, isGlobal: true }); loadQuiz(q); setShowEdit(true); }}
-                      className="px-2 py-1 text-xs bg-zinc-800 text-zinc-300 rounded">✏️</button>
-                    <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded">🗑️</button>
-                  </div>
-                )}
+          {/* Folder View vs Flat List Mode Toggle Bar */}
+          <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-zinc-400">Ko'rinish:</span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setFolderViewMode('folders')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${folderViewMode === 'folders' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                >📁 Papkalar</button>
+                <button
+                  onClick={() => { setFolderViewMode('flat'); setSelectedCategoryId(null); }}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${folderViewMode === 'flat' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                >📜 Barchasi</button>
               </div>
-            ))}
-            {displayedList.length === 0 && <div className="text-zinc-500 text-sm text-center py-8">Quiz yo'q</div>}
+            </div>
+
+            {/* Breadcrumb Navigation when inside a Folder */}
+            {selectedCategoryId && (
+              <div className="flex items-center justify-between bg-violet-950/40 border border-violet-500/30 rounded-lg px-3 py-1.5 text-xs text-violet-300">
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="cursor-pointer hover:underline" onClick={() => setSelectedCategoryId(null)}>🏠 Barcha papkalar</span>
+                  <span>/</span>
+                  <span className="font-bold truncate">📁 {categories.find(c => c.id === selectedCategoryId)?.name || "Kategoriyasiz"}</span>
+                </div>
+                <button
+                  onClick={() => setSelectedCategoryId(null)}
+                  className="text-zinc-400 hover:text-white ml-2 text-xs"
+                  title="Papkalarga qaytish"
+                >✕</button>
+              </div>
+            )}
           </div>
+
+          {/* Render Categories / Folders Grid when in Folders mode and no specific folder is opened */}
+          {folderViewMode === 'folders' && !selectedCategoryId && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Fan papkalari</span>
+                <button
+                  onClick={() => setShowCreateCategory(true)}
+                  className="text-xs text-violet-400 hover:text-violet-300 font-medium"
+                >+ Yangi papka</button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                {categories.map(cat => {
+                  const catQuizzes = displayedList.filter(q => q.categoryId === cat.id);
+                  const totalQuestions = catQuizzes.reduce((acc, q) => acc + (q._count?.questions || 0), 0);
+
+                  return (
+                    <div
+                      key={cat.id}
+                      onClick={() => setSelectedCategoryId(cat.id)}
+                      className="group bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 hover:border-violet-500/50 rounded-xl p-3 cursor-pointer transition-all flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-violet-600/10 border border-violet-500/20 text-violet-400 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform">
+                          ⚡
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-white text-sm group-hover:text-violet-300 transition-colors">{cat.name}</h4>
+                          <p className="text-[11px] text-zinc-400">
+                            {catQuizzes.length} ta quiz • {totalQuestions} ta savol
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-zinc-500 text-xs font-bold group-hover:text-violet-400 transition-colors">Ochish ➔</span>
+                    </div>
+                  );
+                })}
+
+                {/* Unassigned / Kategoriyasiz Folder Card */}
+                {(() => {
+                  const unassignedQuizzes = displayedList.filter(q => !q.categoryId);
+                  if (unassignedQuizzes.length === 0) return null;
+                  return (
+                    <div
+                      onClick={() => setSelectedCategoryId('none')}
+                      className="group bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-amber-500/50 rounded-xl p-3 cursor-pointer transition-all flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-600/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg">
+                          📁
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-zinc-300 text-sm">Kategoriyasiz (Boshqa)</h4>
+                          <p className="text-[11px] text-zinc-500">
+                            {unassignedQuizzes.length} ta quiz
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-zinc-500 text-xs font-bold">Ochish ➔</span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Render Quizzes List (Filtered by category or Flat list) */}
+          {(folderViewMode === 'flat' || selectedCategoryId) && (
+            <div className="space-y-3 max-h-[75vh] overflow-y-auto pr-1">
+              {(() => {
+                const filteredQuizzes = displayedList.filter(q => {
+                  if (!selectedCategoryId) return true;
+                  if (selectedCategoryId === 'none') return !q.categoryId;
+                  return q.categoryId === selectedCategoryId;
+                });
+
+                if (filteredQuizzes.length === 0) {
+                  return (
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center text-zinc-400 text-sm">
+                      {selectedCategoryId ? "Ushbu papkada hali quiz yo'q" : "Hali quiz yo'q"}
+                    </div>
+                  );
+                }
+
+                return filteredQuizzes.map(q => (
+                  <div key={q.id}
+                    className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-violet-500/50 ${selected?.id === q.id ? 'border-violet-500' : 'border-zinc-800'}`}
+                    onClick={() => loadQuiz(q)}>
+                    <div className="flex items-start justify-between mb-1 gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-white text-sm truncate">{q.title}</h3>
+                        {q.category?.name && (
+                          <span className="inline-block mt-0.5 text-[10px] px-2 py-0.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20 font-medium">
+                            📁 {q.category.name}
+                          </span>
+                        )}
+                        {q.isGlobal && <span className="text-xs text-amber-400 block">🏫 Markaz</span>}
+                        {q.createdBy && listTab === 'global' && <p className="text-xs text-zinc-500 truncate">{q.createdBy.fullName}</p>}
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${q.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : q.status === 'finished' ? 'bg-zinc-700 text-zinc-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                        {q.status === 'waiting' ? 'Kutmoqda' : q.status === 'active' ? '🟢 Faol' : 'Tugagan'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-zinc-500 mt-1">
+                      <span>📝 {q._count?.questions ?? 0}</span>
+                      <span>👥 {q._count?.players ?? 0}</span>
+                    </div>
+                    <div className="mt-1 font-mono text-xl font-black text-violet-400 tracking-widest">{q.code}</div>
+
+                    {listTab === 'my' && (
+                      <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
+                        {!q.isGlobal && (
+                          <>
+                            <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', categoryId: q.categoryId || '', timePerQ: q.timePerQ, isGlobal: false }); setSelected(q); setShowEdit(true); }}
+                              className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded">✏️</button>
+                            <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded">🗑️</button>
+                          </>
+                        )}
+                        {isAdmin && q.isGlobal && (
+                          <>
+                            <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', categoryId: q.categoryId || '', timePerQ: q.timePerQ, isGlobal: true }); setSelected(q); setShowEdit(true); }}
+                              className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded">✏️</button>
+                            <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded">🗑️</button>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {listTab === 'global' && !isAdmin && (
+                      <button onClick={e => { e.stopPropagation(); useGlobal(q); }}
+                        className="mt-2 w-full px-3 py-1.5 text-xs bg-violet-600 hover:bg-violet-500 text-white rounded-lg font-medium">
+                        ▶ Ishlatish
+                      </button>
+                    )}
+                    {listTab === 'global' && isAdmin && (
+                      <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => { setEditForm({ title: q.title, description: q.description || '', categoryId: q.categoryId || '', timePerQ: q.timePerQ, isGlobal: true }); loadQuiz(q); setShowEdit(true); }}
+                          className="px-2 py-1 text-xs bg-zinc-800 text-zinc-300 rounded">✏️</button>
+                        <button onClick={() => handleDeleteQuiz(q)} className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded">🗑️</button>
+                      </div>
+                    )}
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
         </div>
 
         {/* === DETAIL PANEL === */}

@@ -345,11 +345,11 @@ export const examApi = {
 // ============ LIVE QUIZ API ============
 export const liveQuizApi = {
   // Teacher / Admin — o'z quizlari
-  create: (data: { title: string; description?: string; timePerQ?: number; isGlobal?: boolean }) => api.post('/live-quiz', data),
+  create: (data: { title: string; description?: string; categoryId?: string; timePerQ?: number; isGlobal?: boolean }) => api.post('/live-quiz', data),
   getMyQuizzes: () => api.get('/live-quiz'),
   getGlobalQuizzes: () => api.get('/live-quiz/global'),
   getById: (id: string) => api.get(`/live-quiz/${id}`),
-  update: (id: string, data: { title?: string; description?: string; timePerQ?: number; isGlobal?: boolean }) => api.patch(`/live-quiz/${id}`, data),
+  update: (id: string, data: { title?: string; description?: string; categoryId?: string; timePerQ?: number; isGlobal?: boolean }) => api.patch(`/live-quiz/${id}`, data),
   deleteQuiz: (id: string) => api.delete(`/live-quiz/${id}`),
   addQuestions: (id: string, questions: any[]) => api.post(`/live-quiz/${id}/questions`, { questions }),
   bulkAddQuestions: (id: string, questions: any[]) => api.post(`/live-quiz/${id}/questions/bulk`, { questions }),

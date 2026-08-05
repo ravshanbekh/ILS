@@ -38,7 +38,7 @@ function filterActiveQuestions(quiz: any) {
 // ─── O'qituvchi/Admin: Quiz yaratish ─────────────────────────────────────────
 export const createQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { title, description, timePerQ = 20, isGlobal = false } = req.body;
+    const { title, description, timePerQ = 20, isGlobal = false, categoryId } = req.body;
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
 
@@ -55,6 +55,11 @@ export const createQuiz = async (req: Request, res: Response, next: NextFunction
         createdBy: { connect: { id: userId } },
         timePerQ,
         isGlobal: canBeGlobal,
+        ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
+      },
+      include: {
+        category: true,
+        createdBy: { select: { id: true, fullName: true } },
       },
     });
     res.status(201).json({ data: quiz });
@@ -70,6 +75,7 @@ export const getMyQuizzes = async (req: Request, res: Response, next: NextFuncti
     const quizzes = await prisma.liveQuiz.findMany({
       where: { createdById: userId },
       include: {
+        category: true,
         _count: { select: { questions: true, players: true } },
         createdBy: { select: { id: true, fullName: true } },
       },
@@ -87,6 +93,7 @@ export const getGlobalQuizzes = async (req: Request, res: Response, next: NextFu
     const quizzes = await prisma.liveQuiz.findMany({
       where: { isGlobal: true },
       include: {
+        category: true,
         _count: { select: { questions: true, players: true } },
         createdBy: { select: { id: true, fullName: true } },
       },
@@ -143,7 +150,7 @@ export const getQuizById = async (req: Request, res: Response, next: NextFunctio
 export const updateQuiz = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { title, description, timePerQ, isGlobal } = req.body;
+    const { title, description, timePerQ, isGlobal, categoryId } = req.body;
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
 
@@ -164,7 +171,12 @@ export const updateQuiz = async (req: Request, res: Response, next: NextFunction
         title: title ?? quiz.title,
         description: description !== undefined ? description : quiz.description,
         timePerQ: timePerQ ?? quiz.timePerQ,
+        ...(categoryId !== undefined ? (categoryId ? { categoryId } : { categoryId: null }) : {}),
         ...(userRole === 'admin' && isGlobal !== undefined ? { isGlobal } : {}),
+      },
+      include: {
+        category: true,
+        createdBy: { select: { id: true, fullName: true } },
       },
     });
     res.json({ data: updated });

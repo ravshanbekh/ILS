@@ -113,6 +113,7 @@ model Category {
   // Relations
   normatives Normative[]
   exams      Exam[]
+  quizzes    LiveQuiz[]
 
   @@map("categories")
 }
@@ -620,9 +621,11 @@ model LiveQuiz {
   isGlobal          Boolean    @default(false) @map("is_global") // Admin tomonidan yaratilgan markaz quizlari
   activeQuestionIds Json?      @map("active_question_ids") // Random tanlangan 20 ta savol IDlari
   musicId           String?    @map("music_id") @db.Uuid
+  categoryId        String?    @map("category_id") @db.Uuid
   createdAt         DateTime   @default(now()) @map("created_at")
 
   createdBy User               @relation("QuizCreator", fields: [createdById], references: [id])
+  category  Category?          @relation(fields: [categoryId], references: [id])
   music     QuizMusic?         @relation(fields: [musicId], references: [id])
   questions LiveQuizQuestion[]
   players   LiveQuizPlayer[]

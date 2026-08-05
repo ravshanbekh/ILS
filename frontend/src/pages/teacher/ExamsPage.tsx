@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { examApi } from '../../api';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { examApi, categoriesApi } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/stores/authStore';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+interface Category {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
 interface Exam {
   id: string;
   title: string;
@@ -21,7 +27,8 @@ interface Exam {
   step2Name: string;
   step3Name: string;
   isGlobal?: boolean;
-  category?: { name: string };
+  categoryId?: string | null;
+  category?: { id?: string; name: string };
   templateId?: string;
   _count?: { questions: number; participants: number };
 }
@@ -61,8 +68,16 @@ export default function ExamsPage() {
   const [selected, setSelected] = useState<Exam | null>(null);
   const [tab, setTab] = useState<'questions' | 'results'>('questions');
 
+  // Categories & Folders System State
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [folderViewMode, setFolderViewMode] = useState<'folders' | 'flat'>('folders');
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [creatingCat, setCreatingCat] = useState(false);
+
   // Create form
-  const [form, setForm] = useState({ title: '', testCount: 20, durationHours: 2, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
+  const [form, setForm] = useState({ title: '', categoryId: '', testCount: 20, durationHours: 2, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
   const [creating, setCreating] = useState(false);
 
   // Questions panel
@@ -89,7 +104,37 @@ export default function ExamsPage() {
   } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  useEffect(() => { fetchExams(); }, [listTab]);
+  useEffect(() => {
+    fetchExams();
+    fetchCategories();
+  }, [listTab]);
+
+  async function fetchCategories() {
+    try {
+      const res = await categoriesApi.getAll();
+      setCategories(res.data.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function handleCreateCategory() {
+    if (!newCatName.trim()) return;
+    setCreatingCat(true);
+    try {
+      const res = await categoriesApi.create({ name: newCatName.trim() });
+      setNewCatName('');
+      setShowCreateCategory(false);
+      await fetchCategories();
+      if (res.data?.data?.id) {
+        setSelectedCategoryId(res.data.data.id);
+      }
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Kategoriya yaratishda xatolik');
+    } finally {
+      setCreatingCat(false);
+    }
+  }
 
   async function fetchExams() {
     setLoading(true);
@@ -108,9 +153,12 @@ export default function ExamsPage() {
     if (!form.title) return;
     setCreating(true);
     try {
-      await examApi.create(form);
+      await examApi.create({
+        ...form,
+        categoryId: form.categoryId || selectedCategoryId || undefined,
+      });
       setShowCreate(false);
-      setForm({ title: '', testCount: 20, durationHours: 2, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
+      setForm({ title: '', categoryId: '', testCount: 20, durationHours: 2, isGlobal: false, step2Name: 'AI video taqdimot', step3Name: 'Loyiha (Youtube link)', step2Type: 'link', step2Desc: '', step3Type: 'link', step3Desc: '' });
       fetchExams();
     } finally { setCreating(false); }
   }
@@ -356,6 +404,31 @@ export default function ExamsPage() {
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
             />
+
+            {/* Category / Folder selector */}
+            <div className="mb-3">
+              <label className="text-zinc-400 text-xs block mb-1">📁 Kategoriya (Fan papkasi):</label>
+              <div className="flex gap-2">
+                <select
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                  value={form.categoryId || selectedCategoryId || ''}
+                  onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
+                >
+                  <option value="">📁 Kategoriyasiz / Boshqa</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>📁 {c.name}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateCategory(true)}
+                  className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-blue-400 border border-zinc-700 rounded-lg text-xs font-semibold transition"
+                >
+                  + Papka
+                </button>
+              </div>
+            </div>
+
             <div className="flex gap-3 mb-4">
               <div className="flex-1">
                 <label className="text-zinc-400 text-xs block mb-1">Test soni:</label>
@@ -487,10 +560,39 @@ export default function ExamsPage() {
         </div>
       )}
 
+      {/* Create Category Modal */}
+      {showCreateCategory && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">📁 Yangi fan papkasi yaratish</h3>
+            <p className="text-xs text-zinc-400 mb-4">Imtihon va quizlarni fani bo'yicha papkalarga ajratish uchun papka nomi (masalan: Foundation, Frontend, Python)</p>
+            <input
+              type="text"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white mb-4 outline-none focus:border-blue-500 text-sm"
+              placeholder="Papka nomi (masalan: Foundation)"
+              value={newCatName}
+              onChange={e => setNewCatName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleCreateCategory(); }}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCreateCategory(false)}
+                className="flex-1 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-semibold"
+              >Bekor qilish</button>
+              <button
+                onClick={handleCreateCategory}
+                disabled={creatingCat || !newCatName.trim()}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold disabled:opacity-50"
+              >{creatingCat ? 'Yaratilmoqda...' : 'Saqlash'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Exam List */}
+        {/* Exam List Side */}
         <div className="lg:col-span-1 space-y-3">
+          {/* Main List Tabs: My vs Global */}
           <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-lg">
             <button
               onClick={() => setListTab('my')}
@@ -502,104 +604,228 @@ export default function ExamsPage() {
             >Markaz imtihonlari</button>
           </div>
 
-          {loading ? (
-            <div className="text-zinc-400 text-sm text-center py-8">Yuklanmoqda...</div>
-          ) : (listTab === 'my' ? exams : globalExams).length === 0 ? (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center text-zinc-400 text-sm">
-              Hali imtihon yo'q
-            </div>
-          ) : (listTab === 'my' ? exams : globalExams).map(exam => (
-            <div
-              key={exam.id}
-              onClick={() => loadExam(exam)}
-              className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500/50 ${selected?.id === exam.id ? 'border-blue-500 ring-1 ring-blue-500/30' : 'border-zinc-800'}`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-white text-sm leading-tight">{exam.title}</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_COLOR[exam.status]}`}>
-                  {STATUS_LABEL[exam.status]}
-                </span>
+          {/* Folder View vs Flat List Mode Toggle Bar */}
+          <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-zinc-400">Ko'rinish:</span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setFolderViewMode('folders')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${folderViewMode === 'folders' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                >📁 Papkalar</button>
+                <button
+                  onClick={() => { setFolderViewMode('flat'); setSelectedCategoryId(null); }}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${folderViewMode === 'flat' ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                >📜 Barchasi</button>
               </div>
-              <div className="text-xs text-zinc-500 space-y-1">
-                <div className="flex items-center gap-3">
-                  <span>📝 {exam._count?.questions ?? 0} savol ({exam.testCount} ta tushadi)</span>
-                  <span>⏱️ {exam.durationHours || 2} soat</span>
-                  <span>👥 {exam._count?.participants ?? 0} ishtirok</span>
+            </div>
+
+            {/* Breadcrumb Navigation when inside a Folder */}
+            {selectedCategoryId && (
+              <div className="flex items-center justify-between bg-blue-950/40 border border-blue-500/30 rounded-lg px-3 py-1.5 text-xs text-blue-300">
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="cursor-pointer hover:underline" onClick={() => setSelectedCategoryId(null)}>🏠 Barcha papkalar</span>
+                  <span>/</span>
+                  <span className="font-bold truncate">📁 {categories.find(c => c.id === selectedCategoryId)?.name || "Kategoriyasiz"}</span>
                 </div>
-                <div className="font-mono bg-zinc-800 px-2 py-1 rounded text-zinc-300 select-all">
-                  🔗 {exam.accessCode}
-                </div>
-                {exam.status === 'active' && (
-                  <div className="text-emerald-400">
-                    ⏰ {new Date(exam.expiresAt).toLocaleTimeString('uz')} gacha
+                <button
+                  onClick={() => setSelectedCategoryId(null)}
+                  className="text-zinc-400 hover:text-white ml-2 text-xs"
+                  title="Papkalarga qaytish"
+                >✕</button>
+              </div>
+            )}
+          </div>
+
+          {/* Render Categories / Folders Grid when in Folders mode and no specific folder is opened */}
+          {folderViewMode === 'folders' && !selectedCategoryId && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Fan papkalari</span>
+                <button
+                  onClick={() => setShowCreateCategory(true)}
+                  className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+                >+ Yangi papka</button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                {categories.map(cat => {
+                  const currentExamsList = listTab === 'my' ? exams : globalExams;
+                  const catExams = currentExamsList.filter(e => e.categoryId === cat.id);
+                  const totalQuestions = catExams.reduce((acc, e) => acc + (e._count?.questions || 0), 0);
+
+                  return (
+                    <div
+                      key={cat.id}
+                      onClick={() => setSelectedCategoryId(cat.id)}
+                      className="group bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 hover:border-blue-500/50 rounded-xl p-3 cursor-pointer transition-all flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform">
+                          📁
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-white text-sm group-hover:text-blue-300 transition-colors">{cat.name}</h4>
+                          <p className="text-[11px] text-zinc-400">
+                            {catExams.length} ta imtihon • {totalQuestions} ta savol
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-zinc-500 text-xs font-bold group-hover:text-blue-400 transition-colors">Ochish ➔</span>
+                    </div>
+                  );
+                })}
+
+                {/* Unassigned / Kategoriyasiz Folder Card */}
+                {(() => {
+                  const currentExamsList = listTab === 'my' ? exams : globalExams;
+                  const unassignedExams = currentExamsList.filter(e => !e.categoryId);
+                  if (unassignedExams.length === 0) return null;
+                  return (
+                    <div
+                      onClick={() => setSelectedCategoryId('none')}
+                      className="group bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-amber-500/50 rounded-xl p-3 cursor-pointer transition-all flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-600/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg">
+                          📁
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-zinc-300 text-sm">Kategoriyasiz (Boshqa)</h4>
+                          <p className="text-[11px] text-zinc-500">
+                            {unassignedExams.length} ta imtihon
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-zinc-500 text-xs font-bold">Ochish ➔</span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Render Exams List (Filtered by category or Flat list) */}
+          {(folderViewMode === 'flat' || selectedCategoryId) && (
+            loading ? (
+              <div className="text-zinc-400 text-sm text-center py-8">Yuklanmoqda...</div>
+            ) : (() => {
+              const currentExamsList = listTab === 'my' ? exams : globalExams;
+              const displayExams = currentExamsList.filter(exam => {
+                if (!selectedCategoryId) return true;
+                if (selectedCategoryId === 'none') return !exam.categoryId;
+                return exam.categoryId === selectedCategoryId;
+              });
+
+              if (displayExams.length === 0) {
+                return (
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center text-zinc-400 text-sm">
+                    {selectedCategoryId ? "Ushbu papkada hali imtihon yo'q" : "Hali imtihon yo'q"}
                   </div>
-                )}
-              </div>
-              {/* Actions */}
-              <div className="flex gap-2 mt-3 flex-wrap">
-                {listTab === 'my' ? (
-                  <>
-                    {exam.status === 'draft' && (
-                      <button
-                        onClick={e => { e.stopPropagation(); activate(exam); }}
-                        className="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition"
-                      >✓ Faollashtirish</button>
-                    )}
-                    {exam.status === 'active' && (
-                      <button
-                        onClick={e => { e.stopPropagation(); completeExam(exam); }}
-                        className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition"
-                      >Yakunlash</button>
-                    )}
-                    <button
-                      onClick={e => { e.stopPropagation(); loadExam(exam); loadResults(); }}
-                      className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
-                    >Natijalar</button>
-                    {isAdmin && (
-                      <>
-                        <button
-                          onClick={e => { e.stopPropagation(); openEdit(exam); }}
-                          className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
-                        >✏️ Tahrirlash</button>
-                        <button
-                          onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
-                          className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
-                        >🗑️ O'chirish</button>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={e => { e.stopPropagation(); activateGlobal(exam); }}
-                      className="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition flex-1"
-                    >✨ Aktivlashtirish</button>
-                    {isAdmin && (
-                      <>
-                        <button
-                          onClick={e => { e.stopPropagation(); openEdit(exam); }}
-                          className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
-                        >✏️ Tahrirlash</button>
-                        <button
-                          onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
-                          className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
-                        >🗑️ O'chirish</button>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-              {/* Share link */}
-              {listTab === 'my' && (exam.status === 'active' || exam.status === 'draft') && (
+                );
+              }
+
+              return displayExams.map(exam => (
                 <div
-                  onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/exam/${exam.accessCode}`); alert('Link nusxalandi!'); }}
-                  className="mt-2 text-xs text-blue-400 hover:text-blue-300 cursor-pointer flex items-center gap-1"
+                  key={exam.id}
+                  onClick={() => loadExam(exam)}
+                  className={`bg-zinc-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500/50 ${selected?.id === exam.id ? 'border-blue-500 ring-1 ring-blue-500/30' : 'border-zinc-800'}`}
                 >
-                  📋 Linkni nusxalash
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-semibold text-white text-sm leading-tight">{exam.title}</h3>
+                      {exam.category?.name && (
+                        <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">
+                          📁 {exam.category.name}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_COLOR[exam.status]}`}>
+                      {STATUS_LABEL[exam.status]}
+                    </span>
+                  </div>
+                  <div className="text-xs text-zinc-500 space-y-1">
+                    <div className="flex items-center gap-3">
+                      <span>📝 {exam._count?.questions ?? 0} savol ({exam.testCount} ta tushadi)</span>
+                      <span>⏱️ {exam.durationHours || 2} soat</span>
+                      <span>👥 {exam._count?.participants ?? 0} ishtirok</span>
+                    </div>
+                    <div className="font-mono bg-zinc-800 px-2 py-1 rounded text-zinc-300 select-all">
+                      🔗 {exam.accessCode}
+                    </div>
+                    {exam.status === 'active' && (
+                      <div className="text-emerald-400">
+                        ⏰ {new Date(exam.expiresAt).toLocaleTimeString('uz')} gacha
+                      </div>
+                    )}
+                  </div>
+                  {/* Actions */}
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {listTab === 'my' ? (
+                      <>
+                        {exam.status === 'draft' && (
+                          <button
+                            onClick={e => { e.stopPropagation(); activate(exam); }}
+                            className="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition"
+                          >✓ Faollashtirish</button>
+                        )}
+                        {exam.status === 'active' && (
+                          <button
+                            onClick={e => { e.stopPropagation(); completeExam(exam); }}
+                            className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition"
+                          >Yakunlash</button>
+                        )}
+                        <button
+                          onClick={e => { e.stopPropagation(); loadExam(exam); loadResults(); }}
+                          className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
+                        >Natijalar</button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={e => { e.stopPropagation(); openEdit(exam); }}
+                              className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
+                            >✏️ Tahrirlash</button>
+                            <button
+                              onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
+                              className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
+                            >🗑️ O'chirish</button>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={e => { e.stopPropagation(); activateGlobal(exam); }}
+                          className="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition flex-1"
+                        >✨ Aktivlashtirish</button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={e => { e.stopPropagation(); openEdit(exam); }}
+                              className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
+                            >✏️ Tahrirlash</button>
+                            <button
+                              onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
+                              className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
+                            >🗑️ O'chirish</button>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  {/* Share link */}
+                  {listTab === 'my' && (exam.status === 'active' || exam.status === 'draft') && (
+                    <div
+                      onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/exam/${exam.accessCode}`); alert('Link nusxalandi!'); }}
+                      className="mt-2 text-xs text-blue-400 hover:text-blue-300 cursor-pointer flex items-center gap-1"
+                    >
+                      📋 Linkni nusxalash
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              ));
+            })()
+          )}
         </div>
 
         {/* Detail panel */}
@@ -766,6 +992,19 @@ export default function ExamsPage() {
                 value={editForm.title || ''}
                 onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
               />
+            </div>
+            <div>
+              <label className="text-zinc-400 text-xs block mb-1">📁 Kategoriya / Papka</label>
+              <select
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:border-blue-500 outline-none text-sm"
+                value={editForm.categoryId || ''}
+                onChange={e => setEditForm(f => ({ ...f, categoryId: e.target.value }))}
+              >
+                <option value="">📁 Kategoriyasiz / Boshqa</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>📁 {c.name}</option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-4 gap-2">
               <div>
