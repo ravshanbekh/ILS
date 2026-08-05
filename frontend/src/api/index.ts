@@ -329,6 +329,7 @@ export const examApi = {
   updateQuestionWithImage: (id: string, qId: string, form: FormData) => api.put(`/exam/${id}/questions/${qId}`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
   deleteQuestion: (examId: string, qId: string) => api.delete(`/exam/${examId}/questions/${qId}`),
   getResults: (id: string) => api.get(`/exam/${id}/results`),
+  getAllResults: () => api.get('/exam/results/all'),
   gradeParticipant: (examId: string, participantId: string, data: any) =>
     api.patch(`/exam/${examId}/grade/${participantId}`, data),
 

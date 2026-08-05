@@ -101,6 +101,7 @@ model Group {
   monitoringCalls MonitoringCall[]
   feedbacks       StudentFeedback[]
   liveQuizzes     LiveQuiz[]
+  examParticipants ExamParticipant[]
 
   @@map("groups")
 }
@@ -531,14 +532,17 @@ model ExamQuestion {
   @@map("exam_questions")
 }
 
-/// Imtihon ishtirokchisi
+/// Imtihon ishtirokchisi (urinishlar tarixi bilan)
 model ExamParticipant {
-  id          String                @id @default(uuid()) @db.Uuid
-  examId      String                @map("exam_id") @db.Uuid
-  studentId   String                @map("student_id") @db.Uuid
-  status      ExamParticipantStatus @default(joined)
-  startedAt   DateTime?             @map("started_at")
-  submittedAt DateTime?             @map("submitted_at")
+  id            String                @id @default(uuid()) @db.Uuid
+  examId        String                @map("exam_id") @db.Uuid
+  studentId     String                @map("student_id") @db.Uuid
+  groupId       String?               @map("group_id") @db.Uuid
+  teacherId     String?               @map("teacher_id") @db.Uuid
+  attemptNumber Int                   @default(1) @map("attempt_number")
+  status        ExamParticipantStatus @default(joined)
+  startedAt     DateTime?             @map("started_at")
+  submittedAt   DateTime?             @map("submitted_at")
 
   // Test natijalari
   testScore    Int? @map("test_score")
@@ -566,9 +570,10 @@ model ExamParticipant {
   exam     Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
   student  User         @relation("ExamParticipants", fields: [studentId], references: [id])
   gradedBy User?        @relation("ExamGrader", fields: [gradedById], references: [id])
+  group    Group?       @relation(fields: [groupId], references: [id], onDelete: SetNull)
   answers  ExamAnswer[]
 
-  @@unique([examId, studentId])
+  @@unique([examId, studentId, attemptNumber])
   @@map("exam_participants")
 }
 

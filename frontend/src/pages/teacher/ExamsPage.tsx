@@ -375,6 +375,28 @@ export default function ExamsPage() {
     setResults(res.data.data);
   }
 
+  async function loadAllResults() {
+    try {
+      setSelected(null);
+      setTab('results');
+      const res = await examApi.getAllResults();
+      setResults({
+        exam: {
+          id: 'all',
+          title: "Barcha Imtihonlar Natijalari",
+          maxTestScore: 40,
+          maxAiScore: 20,
+          maxProjectScore: 40,
+          step2Name: "2-bosqich (AI Video / Taqdimot)",
+          step3Name: "3-bosqich (Loyiha / Kod)",
+        },
+        participants: res.data?.data?.participants || [],
+      });
+    } catch (e: any) {
+      alert(e.response?.data?.error || "Natijalarni yuklashda xatolik");
+    }
+  }
+
   const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
   return (
@@ -386,12 +408,20 @@ export default function ExamsPage() {
           <h1 className="text-2xl font-bold text-white">📋 Imtihonlar</h1>
           <p className="text-zinc-400 text-sm mt-1">3 bosqichli rasmiy imtihon tizimi</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-all"
-        >
-          <span className="text-lg">+</span> Yangi imtihon
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadAllResults}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-all shadow-md shadow-emerald-950/40"
+          >
+            📊 Barcha Natijalar (Ustoz/Guruh)
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-all"
+          >
+            <span className="text-lg">+</span> Yangi imtihon
+          </button>
+        </div>
       </div>
 
       {/* Create Modal */}
@@ -1226,11 +1256,19 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
     <div key={p.id} className="bg-zinc-800/90 rounded-xl p-4 border border-zinc-700/60 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="font-semibold text-white text-sm">{p.student?.fullName || 'O\'quvchi'}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-white text-sm">{p.student?.fullName || 'O\'quvchi'}</p>
+            <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold">
+              #{p.attemptNumber || 1}-topshirish
+            </span>
+          </div>
           <p className="text-xs text-zinc-400 mt-0.5">
             {p.student?.group?.name ? <span className="text-blue-400 font-medium mr-2">Guruh: {p.student.group.name}</span> : null}
             {p.exam?.createdBy?.fullName ? <span className="text-emerald-400 font-medium mr-2">Ustoz: {p.exam.createdBy.fullName}</span> : null}
             <span className="text-zinc-500">({p.student?.login || ''})</span> • <span className="capitalize text-amber-400">{p.status}</span>
+          </p>
+          <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
+            📅 {new Date(p.submittedAt || p.createdAt).toLocaleString('uz-UZ')}
           </p>
         </div>
         <div className="text-right">
@@ -1452,10 +1490,44 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
                             <span className="text-zinc-500 text-xs">{isGroupOpen ? '▼' : '▶'}</span>
                           </button>
 
-                          {/* Level 3: Participants list inside Group */}
+                          {/* Level 3: Student attempts list inside Group */}
                           {isGroupOpen && (
                             <div className="p-3 space-y-3">
-                              {pList.map(p => renderCard(p))}
+                              {(() => {
+                                const studentMap = new Map<string, { student: any; attempts: any[] }>();
+                                pList.forEach(p => {
+                                  const sId = p.studentId || p.student?.id || p.id;
+                                  if (!studentMap.has(sId)) {
+                                    studentMap.set(sId, { student: p.student, attempts: [] });
+                                  }
+                                  studentMap.get(sId)!.attempts.push(p);
+                                });
+
+                                return Array.from(studentMap.entries()).map(([sId, { student, attempts }]) => (
+                                  <div key={sId} className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-3 space-y-2">
+                                    <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-300 font-bold text-xs flex items-center justify-center">
+                                          👤
+                                        </span>
+                                        <div>
+                                          <h5 className="font-bold text-white text-xs">{student?.fullName || "O'quvchi"}</h5>
+                                          <p className="text-[11px] text-zinc-400">
+                                            Login: <span className="text-zinc-300">{student?.login || ''}</span> • {attempts.length} ta topshirish tarixi saqlangan
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 text-[10px] font-bold">
+                                        {attempts.length} topshirish
+                                      </span>
+                                    </div>
+
+                                    <div className="space-y-2.5">
+                                      {attempts.map(p => renderCard(p))}
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
                             </div>
                           )}
                         </div>

@@ -532,6 +532,71 @@ export const getExamByCode = async (req: Request, res: Response, next: NextFunct
   }
 };
 
+// ─── Barcha Imtihonlar Natijalarini O'qituvchilar va Guruhlar kesimida olish ────
+export const getAllExamResults = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const userRole = (req as any).user?.role;
+
+    const whereClause = userRole === 'admin'
+      ? {}
+      : { OR: [{ teacherId: userId }, { exam: { createdById: userId } }] };
+
+    const participants = await prisma.examParticipant.findMany({
+      where: whereClause,
+      include: {
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            login: true,
+            group: {
+              select: {
+                id: true,
+                name: true,
+                teacherId: true,
+                teacher: { select: { id: true, fullName: true } }
+              }
+            },
+          },
+        },
+        group: {
+          select: {
+            id: true,
+            name: true,
+            teacherId: true,
+            teacher: { select: { id: true, fullName: true } }
+          }
+        },
+        exam: {
+          select: {
+            id: true,
+            title: true,
+            isGlobal: true,
+            createdBy: { select: { id: true, fullName: true } },
+          },
+        },
+        answers: { include: { question: { select: { id: true, question: true, correct: true } } } },
+      },
+      orderBy: [{ createdAt: 'desc' }, { attemptNumber: 'desc' }],
+    });
+
+    const teachers = await prisma.user.findMany({
+      where: { role: 'teacher', isActive: true },
+      select: { id: true, fullName: true },
+    });
+
+    const groups = await prisma.group.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, teacherId: true, teacher: { select: { id: true, fullName: true } } },
+    });
+
+    res.json({ data: { participants, teachers, groups } });
+  } catch (e: any) {
+    next(e);
+  }
+};
+
 // ─── O'quvchi: Imtihonni boshlash (login kerak) ──────────────────────────────
 export const startExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -553,18 +618,18 @@ export const startExam = async (req: Request, res: Response, next: NextFunction)
       return res.status(410).json({ error: 'Imtihon vaqti tugagan' });
     }
 
-    // Allaqachon qatnashganmi? Sessiyani tiklash
-    const existing = await prisma.examParticipant.findFirst({
-      where: { examId: exam.id, studentId: student.id },
+    // Davom etayotgan aktiv sessiyani tiklash
+    const existingActive = await prisma.examParticipant.findFirst({
+      where: { examId: exam.id, studentId: student.id, status: 'in_progress' },
+      orderBy: { attemptNumber: 'desc' },
     });
-    if (existing) {
-      const randomQs = (existing.status === 'submitted' || existing.testScore !== null)
-        ? []
-        : await getRandomQuestions(exam.id, exam.testCount);
-      const sessionToken = createExamSessionToken(existing, exam.expiresAt, randomQs.map(q => q.id));
+
+    if (existingActive) {
+      const randomQs = await getRandomQuestions(exam.id, exam.testCount);
+      const sessionToken = createExamSessionToken(existingActive, exam.expiresAt, randomQs.map(q => q.id));
       return res.json({
         data: {
-          participant: existing,
+          participant: existingActive,
           questions: randomQs,
           sessionToken,
           student: { id: student.id, fullName: student.fullName },
@@ -572,9 +637,28 @@ export const startExam = async (req: Request, res: Response, next: NextFunction)
       });
     }
 
-    // Yangi ishtirokchi
+    // Yangi topshirish (attempt) yaratish — eskisini o'chirmasdan saqlab qolish
+    const lastAttempt = await prisma.examParticipant.findFirst({
+      where: { examId: exam.id, studentId: student.id },
+      orderBy: { attemptNumber: 'desc' },
+    });
+    const nextAttemptNumber = lastAttempt ? lastAttempt.attemptNumber + 1 : 1;
+
+    const studentWithGroup = await prisma.user.findUnique({
+      where: { id: student.id },
+      select: { groupId: true },
+    });
+
     const participant = await prisma.examParticipant.create({
-      data: { examId: exam.id, studentId: student.id, status: 'in_progress', startedAt: new Date() },
+      data: {
+        examId: exam.id,
+        studentId: student.id,
+        groupId: studentWithGroup?.groupId || null,
+        teacherId: exam.createdById,
+        attemptNumber: nextAttemptNumber,
+        status: 'in_progress',
+        startedAt: new Date(),
+      },
     });
 
     const questions = await getRandomQuestions(exam.id, exam.testCount);
