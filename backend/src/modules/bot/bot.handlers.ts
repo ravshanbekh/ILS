@@ -1,6 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 type BotInstance = InstanceType<typeof TelegramBot>;
 import botService from './bot.service';
+import { sendDailyAIReport } from './bot.ai-report';
 import freezesService from '../freezes/freezes.service';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 import {
@@ -108,6 +109,17 @@ export function registerHandlers(bot: BotInstance) {
       parse_mode: 'Markdown',
       reply_markup: cancelKeyboard(),
     });
+  });
+
+  // ─── /report yoki /hisobot ─── (AI ta'lim hisoboti yuborish)
+  bot.onText(/\/report|\/hisobot/, async (msg) => {
+    const chatId = msg.chat.id;
+    await bot.sendMessage(chatId, "⚡ Ta'lim ma'lumotlari to'planmoqda va AI tahliliy hisobot tayyorlanmoqda, iltimos kuting...");
+    try {
+      await sendDailyAIReport("Qo'lda so'ralgan AI Hisobot");
+    } catch (err: any) {
+      await bot.sendMessage(chatId, `❌ Hisobot yaratishda xatolik yuz berdi: ${err.message}`);
+    }
   });
 
   // ─── /unlink ───

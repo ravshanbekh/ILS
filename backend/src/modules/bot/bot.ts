@@ -4,6 +4,7 @@ import { env } from '../../config/env';
 import logger from '../../shared/utils/logger';
 import { registerHandlers } from './bot.handlers';
 import { setBotInstance } from './bot.notifications';
+import { setReportBotInstance } from './bot.ai-report';
 import { startScheduler } from './bot.scheduler';
 
 let bot: BotInstance | null = null;
@@ -36,6 +37,7 @@ export function startBot(): BotInstance | null {
 
     // Notification tizimiga bot instansini berish
     setBotInstance(bot);
+    setReportBotInstance(bot);
 
     // Scheduler ishga tushirish
     startScheduler();

@@ -343,6 +343,10 @@ export const examApi = {
     api.post(`/exam/join/${code}/submit-videos`, data),
 };
 
+export const botApi = {
+  sendDailyReport: (action?: 'send' | 'preview') => api.post('/bot/send-daily-report', { action }),
+};
+
 // ============ LIVE QUIZ API ============
 export const liveQuizApi = {
   // Teacher / Admin — o'z quizlari

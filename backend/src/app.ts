@@ -30,6 +30,7 @@ import chatbotRoutes from './modules/chatbot/chatbot.routes';
 import predictionsRoutes from './modules/predictions/predictions.routes';
 import feedbackRoutes from './modules/feedback/feedback.routes';
 import { startBot } from './modules/bot/bot';
+import botRoutes from './modules/bot/bot.routes';
 import examRoutes from './modules/exam/exam.routes';
 import liveQuizRoutes from './modules/live-quiz/live-quiz.routes';
 import lessonsRoutes from './modules/lessons/lessons.routes';
@@ -110,6 +111,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/exam', examRoutes);
 app.use('/api/live-quiz', liveQuizRoutes);
 app.use('/api/lessons', lessonsRoutes);
+app.use('/api/bot', botRoutes);
 
 // 404 handler
 app.use((_req, res) => {

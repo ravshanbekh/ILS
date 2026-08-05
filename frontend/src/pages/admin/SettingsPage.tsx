@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import Header from '@/components/layout/Header';
-import { settingsApi, authApi } from '@/api';
+import { settingsApi, authApi, botApi } from '@/api';
 import {
   Settings, PlayCircle, Save, Loader2, CheckCircle2, AlertCircle,
-  Video, Lock, User, Eye, EyeOff, Brain, ChevronDown
+  Video, Lock, User, Eye, EyeOff, Brain, ChevronDown, Bot
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -108,6 +108,29 @@ export default function SettingsPage() {
   const [aiTesting, setAiTesting] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [centerContext, setCenterContext] = useState('');
+
+  // Bot AI Report State
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportText, setReportText] = useState<string | null>(null);
+  const [reportSentStatus, setReportSentStatus] = useState<string | null>(null);
+
+  async function handleTriggerReport(action: 'send' | 'preview') {
+    setReportLoading(true);
+    setReportSentStatus(null);
+    try {
+      const res = await botApi.sendDailyReport(action);
+      if (action === 'preview') {
+        setReportText(res.data?.data?.report || 'Hisobot topilmadi');
+      } else {
+        setReportSentStatus('✅ AI Hisobot Telegram bot orqali muvaffaqiyatli yuborildi!');
+        setReportText(res.data?.data?.report || null);
+      }
+    } catch (e: any) {
+      alert(e.response?.data?.error || "Hisobot yuklashda xatolik yuz berdi");
+    } finally {
+      setReportLoading(false);
+    }
+  }
 
   // Accordion — faqat bitta ochiq
   const [openSection, setOpenSection] = useState<string | null>(null);
@@ -394,6 +417,70 @@ export default function SettingsPage() {
               {profileSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {profileSaving ? 'Saqlanmoqda...' : 'Saqlash'}
             </button>
+          </div>
+        </AccordionSection>
+
+        {/* ── 4. Telegram Bot & AI Ta'lim Hisoboti ── */}
+        <AccordionSection
+          id="bot-report"
+          icon={<Bot className="w-5 h-5 text-white" />}
+          iconBg="bg-gradient-to-br from-emerald-500 to-teal-600"
+          title="Telegram Bot & Kunlik AI Ta'lim Hisoboti"
+          subtitle="Har kuni 13:00 va 17:00 da Telegram orqali avtomatik AI hisobot yuborish"
+          openId={openSection}
+          onToggle={toggleSection}
+        >
+          <div className="p-5 space-y-4">
+            <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-4 space-y-2">
+              <h4 className="text-white font-bold text-sm flex items-center gap-2">
+                <span>🤖 Avtomatik Rejalashtirilgan Taymer</span>
+              </h4>
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                Tizim har kuni 2 marta — <b>13:00 da (Kunlik Oraqliq)</b> va <b>17:00 da (Kunlik Yakuniy)</b> avtomatik ravishda barcha faol va sust guruhlar, o'qituvchilar ko'rsatkichi, imtihondan yiqilgan va o'tgan o'quvchilar ro'yxatini to'plab, Gemini AI orqali chuqur ta'limiy hisobot tayyorlaydi va Telegram Botingizga yuboradi.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1 text-xs font-semibold">
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">⏰ 13:00 — Kunlik Oraqliq Hisobot</span>
+                <span className="px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/30">⏰ 17:00 — Kunlik Yakuniy Hisobot</span>
+                <span className="px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30">💬 Command: /report yoki /hisobot</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button
+                onClick={() => handleTriggerReport('send')}
+                disabled={reportLoading}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40"
+              >
+                {reportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : '⚡'}
+                Hozir Telegramga AI Hisobot yuborish
+              </button>
+              <button
+                onClick={() => handleTriggerReport('preview')}
+                disabled={reportLoading}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {reportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : '👁️'}
+                Ekranda Ko'rish (Preview)
+              </button>
+            </div>
+
+            {reportSentStatus && (
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-semibold">
+                {reportSentStatus}
+              </div>
+            )}
+
+            {reportText && (
+              <div className="mt-4 bg-[#09090b] border border-zinc-700 rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                  <span className="text-white font-bold text-xs">📋 Yaratilgan AI Ta'lim Hisoboti:</span>
+                  <button onClick={() => setReportText(null)} className="text-zinc-400 hover:text-white text-xs">Yopish ✕</button>
+                </div>
+                <div className="text-xs text-zinc-300 font-mono whitespace-pre-wrap leading-relaxed max-h-[350px] overflow-y-auto">
+                  {reportText}
+                </div>
+              </div>
+            )}
           </div>
         </AccordionSection>
 
