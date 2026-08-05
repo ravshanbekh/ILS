@@ -1200,12 +1200,18 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
     alert('Ball saqlandi');
   }
 
+  // Helper to extract student's group safely
+  const getStudentGroup = (p: any) => {
+    return p.group || p.student?.groupStudents?.[0]?.group || p.student?.group || null;
+  };
+
   // Filter participants by search term
   const filtered = participants.filter(p => {
     const sName = p.student?.fullName || '';
     const sLogin = p.student?.login || '';
-    const gName = p.student?.group?.name || '';
-    const tName = p.exam?.createdBy?.fullName || '';
+    const groupObj = getStudentGroup(p);
+    const gName = groupObj?.name || '';
+    const tName = p.exam?.createdBy?.fullName || groupObj?.teacher?.fullName || '';
     const q = search.toLowerCase();
     return sName.toLowerCase().includes(q) || sLogin.toLowerCase().includes(q) || gName.toLowerCase().includes(q) || tName.toLowerCase().includes(q);
   });
@@ -1213,8 +1219,9 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
   // Group by Teacher -> Group
   const teacherMap = new Map<string, Map<string, any[]>>();
   filtered.forEach(p => {
-    const teacherName = p.exam?.createdBy?.fullName || "Boshqa / Tayinlanmagan ustoz";
-    const groupName = p.student?.group?.name || "Guruhsiz o'quvchilar";
+    const groupObj = getStudentGroup(p);
+    const teacherName = p.exam?.createdBy?.fullName || groupObj?.teacher?.fullName || "Boshqa / Tayinlanmagan ustoz";
+    const groupName = groupObj?.name || "Guruhsiz o'quvchilar";
 
     if (!teacherMap.has(teacherName)) {
       teacherMap.set(teacherName, new Map());
@@ -1263,7 +1270,7 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
             </span>
           </div>
           <p className="text-xs text-zinc-400 mt-0.5">
-            {p.student?.group?.name ? <span className="text-blue-400 font-medium mr-2">Guruh: {p.student.group.name}</span> : null}
+            {getStudentGroup(p)?.name ? <span className="text-blue-400 font-medium mr-2">Guruh: {getStudentGroup(p).name}</span> : null}
             {p.exam?.createdBy?.fullName ? <span className="text-emerald-400 font-medium mr-2">Ustoz: {p.exam.createdBy.fullName}</span> : null}
             <span className="text-zinc-500">({p.student?.login || ''})</span> • <span className="capitalize text-amber-400">{p.status}</span>
           </p>

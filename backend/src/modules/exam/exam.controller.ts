@@ -488,8 +488,20 @@ export const getExamResults = async (req: Request, res: Response, next: NextFunc
             id: true,
             fullName: true,
             login: true,
-            group: { select: { id: true, name: true } },
+            groupStudents: {
+              select: {
+                group: { select: { id: true, name: true, teacherId: true, teacher: { select: { id: true, fullName: true } } } }
+              }
+            },
           },
+        },
+        group: {
+          select: {
+            id: true,
+            name: true,
+            teacherId: true,
+            teacher: { select: { id: true, fullName: true } }
+          }
         },
         exam: {
           select: {
@@ -550,12 +562,16 @@ export const getAllExamResults = async (req: Request, res: Response, next: NextF
             id: true,
             fullName: true,
             login: true,
-            group: {
+            groupStudents: {
               select: {
-                id: true,
-                name: true,
-                teacherId: true,
-                teacher: { select: { id: true, fullName: true } }
+                group: {
+                  select: {
+                    id: true,
+                    name: true,
+                    teacherId: true,
+                    teacher: { select: { id: true, fullName: true } }
+                  }
+                }
               }
             },
           },
