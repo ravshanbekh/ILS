@@ -660,8 +660,8 @@ export const startExam = async (req: Request, res: Response, next: NextFunction)
     });
     const nextAttemptNumber = lastAttempt ? lastAttempt.attemptNumber + 1 : 1;
 
-    const studentWithGroup = await prisma.user.findUnique({
-      where: { id: student.id },
+    const studentWithGroup = await prisma.groupStudent.findFirst({
+      where: { studentId: student.id },
       select: { groupId: true },
     });
 

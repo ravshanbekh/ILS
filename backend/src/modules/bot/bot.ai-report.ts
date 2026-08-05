@@ -41,11 +41,8 @@ export async function fetchEducationalMetrics() {
 
   // 3. Jami va faolsiz muzlatilganlar
   const activeFreezes = await prisma.studentFreeze.findMany({
-    where: { status: 'frozen' },
-    include: {
-      student: { select: { fullName: true } },
-      group: { select: { name: true } }
-    }
+    take: 10,
+    orderBy: { createdAt: 'desc' }
   });
 
   // 4. Imtihonlar (Bugungi yoki so'nggi topshirishlar)
@@ -154,7 +151,7 @@ export async function fetchEducationalMetrics() {
     laggingGroupsList: laggingGroups.slice(0, 10).map(g => ({ name: g.name, teacher: g.teacher?.fullName, students: g.groupStudents.length })),
     teacherStats: Array.from(teacherStatsMap.values()),
     activeFreezesCount: activeFreezes.length,
-    frozenStudentsSample: activeFreezes.slice(0, 5).map(f => ({ student: f.student.fullName, group: f.group.name })),
+    frozenStudentsSample: activeFreezes.slice(0, 5).map(f => ({ student: f.studentName, group: f.groupName })),
     recentExamCount: recentExamParticipants.length,
     examPassedCount: passedStudents.length,
     examFailedCount: failedStudents.length,
@@ -237,7 +234,7 @@ ${metrics.teacherStats.map(t => `• ${t.teacherName}: ${t.groupCount} ta guruh,
 - Imtihon topshirganlar: ${metrics.recentExamCount} ta
 - O'tganlar (>=50 ball): ${metrics.examPassedCount} ta
 - Yiqilganlar (<50 ball): ${metrics.examFailedCount} ta
-${metrics.failedStudents.length > 0 ? `❌ Yiqilganlar: ${metrics.failedStudents.map(f => `${f.studentName} (${f.groupName})`).join(', ')}` : '✅ Yiqilgan o'quvchilar yo'q'}
+${metrics.failedStudents.length > 0 ? `❌ Yiqilganlar: ${metrics.failedStudents.map(f => `${f.studentName} (${f.groupName})`).join(', ')}` : "✅ Yiqilgan o'quvchilar yo'q"}
 
 ⚠️ 4. SUST GURUHLAR:
 ${metrics.laggingGroupsList.slice(0, 5).map(g => `• ${g.name} (${g.teacher})`).join('\n')}
