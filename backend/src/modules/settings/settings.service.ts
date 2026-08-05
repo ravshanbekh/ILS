@@ -33,6 +33,7 @@ const defaultSettings: any = {
   groqApiKey: '',
   groqModel: 'llama-3.3-70b-versatile',
   aiProvider: 'gemini',
+  telegramBotToken: '',
 };
 
 class SettingsService {
@@ -113,8 +114,7 @@ class SettingsService {
   }
 
   /**
-   * Gemini va Groq konfiguratsiyasini olish
-   * API key ni bermaydi (faqat isConfigured va isGroqConfigured qaytaradi)
+   * Gemini va Groq hamda Bot konfiguratsiyasini olish
    */
   async getGeminiStatus() {
     const settings = this.readSettings();
@@ -125,11 +125,13 @@ class SettingsService {
       isGroqConfigured: !!(settings as any).groqApiKey,
       groqModel: (settings as any).groqModel || 'llama-3.3-70b-versatile',
       aiProvider: (settings as any).aiProvider || 'gemini',
+      telegramBotToken: (settings as any).telegramBotToken || '',
+      isBotConfigured: !!((settings as any).telegramBotToken || process.env.TELEGRAM_BOT_TOKEN),
     };
   }
 
   /**
-   * AI konfiguratsiyasini yangilash (admin only)
+   * AI va Bot konfiguratsiyasini yangilash (admin only)
    */
   async updateGeminiConfig(data: {
     apiKey?: string;
@@ -138,15 +140,32 @@ class SettingsService {
     groqApiKey?: string;
     groqModel?: string;
     aiProvider?: string;
+    telegramBotToken?: string;
   }) {
     const settings = this.readSettings();
+    let botTokenChanged = false;
+
     if (data.apiKey !== undefined) (settings as any).geminiApiKey = data.apiKey;
     if (data.model !== undefined) (settings as any).geminiModel = data.model;
     if (data.centerContext !== undefined) (settings as any).centerContext = data.centerContext;
     if (data.groqApiKey !== undefined) (settings as any).groqApiKey = data.groqApiKey;
     if (data.groqModel !== undefined) (settings as any).groqModel = data.groqModel;
     if (data.aiProvider !== undefined) (settings as any).aiProvider = data.aiProvider;
+    if (data.telegramBotToken !== undefined) {
+      (settings as any).telegramBotToken = data.telegramBotToken;
+      botTokenChanged = true;
+    }
     this.writeSettings(settings);
+
+    if (botTokenChanged) {
+      try {
+        const { restartBot } = await import('../bot/bot');
+        restartBot(data.telegramBotToken);
+      } catch (err: any) {
+        console.error('restartBot xatosi:', err.message);
+      }
+    }
+
     return {
       isConfigured: !!(settings as any).geminiApiKey,
       model: (settings as any).geminiModel,
@@ -154,6 +173,8 @@ class SettingsService {
       isGroqConfigured: !!(settings as any).groqApiKey,
       groqModel: (settings as any).groqModel,
       aiProvider: (settings as any).aiProvider,
+      telegramBotToken: (settings as any).telegramBotToken || '',
+      isBotConfigured: !!((settings as any).telegramBotToken || process.env.TELEGRAM_BOT_TOKEN),
     };
   }
 

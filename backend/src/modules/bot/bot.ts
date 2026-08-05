@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import TelegramBot from 'node-telegram-bot-api';
 type BotInstance = InstanceType<typeof TelegramBot>;
 import { env } from '../../config/env';
@@ -10,21 +12,42 @@ import { startScheduler } from './bot.scheduler';
 let bot: BotInstance | null = null;
 
 /**
+ * Settings.json yoki .env dan bot tokenni olish
+ */
+export function getBotToken(): string {
+  try {
+    const settingsPath = path.join(__dirname, '../../../data/settings.json');
+    if (fs.existsSync(settingsPath)) {
+      const raw = fs.readFileSync(settingsPath, 'utf-8');
+      const s = JSON.parse(raw);
+      if (s.telegramBotToken && typeof s.telegramBotToken === 'string' && s.telegramBotToken.trim() !== '') {
+        return s.telegramBotToken.trim();
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return env.TELEGRAM_BOT_TOKEN || '';
+}
+
+/**
  * Telegram botni ishga tushirish
  */
-export function startBot(): BotInstance | null {
-  if (!env.TELEGRAM_BOT_TOKEN) {
-    logger.warn('⚠️  TELEGRAM_BOT_TOKEN sozlanmagan — bot ishga tushmaydi');
+export function startBot(customToken?: string): BotInstance | null {
+  const token = (customToken && customToken.trim() !== '') ? customToken.trim() : getBotToken();
+
+  if (!token) {
+    logger.warn('⚠️ TELEGRAM_BOT_TOKEN (env va settings.json da) sozlanmagan — bot ishga tushmaydi');
     return null;
   }
 
   if (bot) {
-    logger.warn('⚠️  Bot allaqachon ishlamoqda');
+    logger.warn('⚠️ Bot allaqachon ishlamoqda');
     return bot;
   }
 
   try {
-    bot = new TelegramBot(env.TELEGRAM_BOT_TOKEN, {
+    bot = new TelegramBot(token, {
       polling: {
         interval: 300,
         autoStart: true,
@@ -72,6 +95,22 @@ export function startBot(): BotInstance | null {
     logger.error('❌ Telegram bot ishga tushmadi:', err);
     return null;
   }
+}
+
+/**
+ * Telegram botni qayta ishga tushirish (yangi token kiritilganda)
+ */
+export function restartBot(customToken?: string): BotInstance | null {
+  if (bot) {
+    try {
+      bot.stopPolling();
+      logger.info('🤖 Eskisiz bot polling to\'xtatildi');
+    } catch (e: any) {
+      logger.error('Bot stopPolling xatosi:', e.message);
+    }
+    bot = null;
+  }
+  return startBot(customToken);
 }
 
 /** Bot instansini olish (boshqa joylardan ishlatish uchun) */

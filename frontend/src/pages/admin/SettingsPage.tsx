@@ -108,6 +108,7 @@ export default function SettingsPage() {
   const [aiTesting, setAiTesting] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [centerContext, setCenterContext] = useState('');
+  const [botToken, setBotToken] = useState('');
 
   // Bot AI Report State
   const [reportLoading, setReportLoading] = useState(false);
@@ -156,6 +157,7 @@ export default function SettingsPage() {
         setGroqModel(data?.groqModel || 'llama-3.3-70b-versatile');
         setAiProvider(data?.aiProvider || 'gemini');
         setCenterContext(data?.centerContext || '');
+        if (data?.telegramBotToken) setBotToken(data.telegramBotToken);
       })
       .catch(console.error);
   }, []);
@@ -192,7 +194,7 @@ export default function SettingsPage() {
   const handleAiSave = async () => {
     setAiSaving(true); setAiSaveStatus('idle');
     try {
-      const res = await settingsApi.updateGemini({ apiKey: geminiApiKey || undefined, model: geminiModel || undefined, groqApiKey: groqApiKey || undefined, groqModel: groqModel || undefined, aiProvider, centerContext } as any);
+      const res = await settingsApi.updateGemini({ apiKey: geminiApiKey || undefined, model: geminiModel || undefined, groqApiKey: groqApiKey || undefined, groqModel: groqModel || undefined, aiProvider, centerContext, telegramBotToken: botToken || undefined } as any);
       setGeminiStatus(res.data.data); setAiSaveStatus('success');
       setGeminiApiKey(''); setGroqApiKey('');
       setTimeout(() => setAiSaveStatus('idle'), 3000);
@@ -431,6 +433,29 @@ export default function SettingsPage() {
           onToggle={toggleSection}
         >
           <div className="p-5 space-y-4">
+            <div className="bg-[#09090b] border border-zinc-800 rounded-xl p-4 space-y-3">
+              <Field label="Telegram Bot Token (BotFather tokini)">
+                <input
+                  type="password"
+                  value={botToken}
+                  onChange={e => setBotToken(e.target.value)}
+                  placeholder="1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ..."
+                  className={inputCls('emerald')}
+                />
+                <p className="text-xs text-zinc-500 mt-1">Bot Tokenini shu yerga yozib saqlasangiz server avtomatik botni yangi token bilan ishga tushiradi (serverga kirib .env faylini o'zgartirish shart emas).</p>
+              </Field>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleAiSave}
+                  disabled={aiSaving}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {aiSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Bot Tokenini Saqlash
+                </button>
+              </div>
+            </div>
+
             <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-4 space-y-2">
               <h4 className="text-white font-bold text-sm flex items-center gap-2">
                 <span>🤖 Avtomatik Rejalashtirilgan Taymer</span>
