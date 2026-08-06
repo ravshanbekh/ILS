@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { liveQuizApi, categoriesApi, groupsApi } from '../../api';
 import * as XLSX from 'xlsx';
+import { parseExcelQuestions } from '@/utils';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -479,41 +480,7 @@ export default function LiveQuizPage() {
       const wb = XLSX.read(ev.target?.result, { type: 'binary' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows: any[] = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      const parsed = rows.slice(1).filter(r => r[0]).map(r => {
-        const correctVal = r[5];
-        let correctIdx = 0;
-
-        if (correctVal !== undefined && correctVal !== null) {
-          if (typeof correctVal === 'number') {
-            const n = Math.round(correctVal);
-            if (n >= 0 && n <= 3) correctIdx = n;
-            else if (n === 4) correctIdx = 3;
-          } else {
-            const val = String(correctVal).trim().toUpperCase();
-            if (val === 'A' || val === '0') correctIdx = 0;
-            else if (val === 'B' || val === '1') correctIdx = 1;
-            else if (val === 'C' || val === '2') correctIdx = 2;
-            else if (val === 'D' || val === '3' || val === '4') correctIdx = 3;
-            else {
-              const parsedNum = parseInt(val, 10);
-              if (!isNaN(parsedNum)) {
-                if (parsedNum >= 0 && parsedNum <= 3) correctIdx = parsedNum;
-                else if (parsedNum === 4) correctIdx = 3;
-              }
-            }
-          }
-        }
-
-        if (isNaN(correctIdx) || correctIdx < 0 || correctIdx > 3) {
-          correctIdx = 0;
-        }
-
-        return {
-          question: String(r[0]),
-          options: [String(r[1] || ''), String(r[2] || ''), String(r[3] || ''), String(r[4] || '')],
-          correct: correctIdx,
-        };
-      });
+      const parsed = parseExcelQuestions(rows);
       if (!parsed.length) return alert('Hech qanday savol topilmadi');
       setQLoading(true);
       try {
