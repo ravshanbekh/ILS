@@ -463,6 +463,55 @@ export const deleteQuestion = async (req: Request, res: Response, next: NextFunc
   }
 };
 
+// ─── O'qituvchi: Variantlarni bazada doimiy aralashtirish ────────────────────
+// O'quvchiga savollar allaqachon har safar random tushadi (getRandomQuestions),
+// lekin Excel importda hamma to'g'ri javob A bo'lib qolsa, o'qituvchi panelida
+// bu xavotirli ko'rinadi. Bu tugma variantlarni bazaning o'zida aralashtirib,
+// har bir savolning `correct` indeksini yangi joyiga moslab yozadi.
+export const shuffleQuestionOptions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
+    if (!(await isExamOwner(id, userId, req.user?.role))) {
+      return res.status(403).json({ error: 'Bu imtihonni tahrirlash uchun ruxsatingiz yo\'q' });
+    }
+
+    const questions = await prisma.examQuestion.findMany({ where: { examId: id } });
+    if (!questions.length) return res.status(400).json({ error: 'Bu imtihonda savol yo\'q' });
+
+    const updates = [];
+    for (const q of questions) {
+      const opts = Array.isArray(q.options) ? (q.options as string[]) : [];
+      if (opts.length < 2) continue;
+
+      const correctText = opts[q.correct as number];
+      // To'g'ri javob indeksi buzuq bo'lsa (masalan importda) — tegmaymiz
+      if (correctText === undefined) continue;
+
+      const shuffled = shuffleArray(opts);
+      const newCorrect = shuffled.indexOf(correctText);
+      if (newCorrect === -1) continue;
+
+      updates.push(
+        prisma.examQuestion.update({
+          where: { id: q.id },
+          data: { options: shuffled, correct: newCorrect },
+        })
+      );
+    }
+
+    if (updates.length) await prisma.$transaction(updates);
+
+    res.json({
+      message: `${updates.length} ta savolning variantlari aralashtirildi`,
+      shuffled: updates.length,
+    });
+  } catch (e: any) {
+    next(e);
+  }
+};
+
 // ─── O'qituvchi: Natijalar ───────────────────────────────────────────────────
 export const getExamResults = async (req: Request, res: Response, next: NextFunction) => {
   try {

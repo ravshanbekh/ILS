@@ -328,6 +328,7 @@ export const examApi = {
   bulkAddQuestions: (id: string, questions: any[]) => api.post(`/exam/${id}/questions/bulk`, { questions }),
   updateQuestionWithImage: (id: string, qId: string, form: FormData) => api.put(`/exam/${id}/questions/${qId}`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
   deleteQuestion: (examId: string, qId: string) => api.delete(`/exam/${examId}/questions/${qId}`),
+  shuffleOptions: (id: string) => api.post(`/exam/${id}/shuffle-options`),
   getResults: (id: string) => api.get(`/exam/${id}/results`),
   getAllResults: () => api.get('/exam/results/all'),
   gradeParticipant: (examId: string, participantId: string, data: any) =>

@@ -50,6 +50,7 @@ router.post('/:id/questions', authenticate, roleGuard('admin', 'teacher'), uploa
 router.post('/:id/questions/bulk', authenticate, roleGuard('admin', 'teacher'), json({ limit: '5mb' }), examController.bulkAddQuestions);
 router.put('/:id/questions/:qId', authenticate, roleGuard('admin', 'teacher'), upload.single('image'), examController.updateQuestion);
 router.delete('/:id/questions/:qId', authenticate, roleGuard('admin', 'teacher'), examController.deleteQuestion);
+router.post('/:id/shuffle-options', authenticate, roleGuard('admin', 'teacher'), examController.shuffleQuestionOptions);
 
 // Natijalar — o'qituvchi uchun
 router.get('/:id/results', authenticate, roleGuard('admin', 'teacher'), examController.getExamResults);

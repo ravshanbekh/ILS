@@ -302,6 +302,22 @@ export default function ExamsPage() {
     e.target.value = '';
   }
 
+  // Variantlarni bazada doimiy aralashtirish (Excel importdan keyin hamma
+  // to'g'ri javob A bo'lib qolgan holat uchun)
+  async function shuffleOptions() {
+    if (!selected) return;
+    if (!confirm("Barcha savollarning A/B/C/D variantlari aralashtiriladi.\nTo'g'ri javoblar o'z joyiga moslab yangilanadi. Davom etamizmi?")) return;
+    setQLoading(true);
+    try {
+      const res = await examApi.shuffleOptions(selected.id);
+      const fresh = await examApi.getById(selected.id);
+      setQuestions(fresh.data.data.questions);
+      alert(res.data.message || 'Variantlar aralashtirildi');
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Aralashtirishda xatolik');
+    } finally { setQLoading(false); }
+  }
+
   async function addManualQ() {
     if (!selected || !manualQ.question.trim()) return;
     setQLoading(true);
@@ -886,9 +902,25 @@ export default function ExamsPage() {
                         download
                         className="text-xs text-zinc-400 hover:text-white transition underline"
                       >Shablon yuklash</a>
+                      <button
+                        onClick={shuffleOptions}
+                        disabled={qLoading || !questions.length}
+                        title="Barcha savollarning A/B/C/D variantlarini bazada aralashtiradi"
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition"
+                      >🎲 Variantlarni aralashtirish</button>
                       <span className="text-xs text-zinc-500 ml-auto">
                         Format: Savol | A | B | C | D | To'g'ri(0-3)
                       </span>
+                    </div>
+
+                    <div className="flex items-start gap-2 mb-4 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <span className="text-blue-400 text-sm leading-none mt-0.5">ℹ️</span>
+                      <p className="text-xs text-blue-200/80 leading-relaxed">
+                        O'quvchiga savollar <b>har safar random tartibda</b> tushadi va variantlar ham
+                        aralashtiriladi — quyidagi ro'yxat faqat sizning ko'rinishingiz.
+                        Excel importda hamma to'g'ri javob A bo'lib qolgan bo'lsa,
+                        <b> 🎲 Variantlarni aralashtirish</b> tugmasi bilan bazadagi tartibni ham o'zgartirishingiz mumkin.
+                      </p>
                     </div>
 
                     <div className="bg-zinc-800/50 rounded-xl p-4 mb-4">
