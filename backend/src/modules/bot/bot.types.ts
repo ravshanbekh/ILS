@@ -1,9 +1,10 @@
 // ============ TELEGRAM BOT TYPES ============
 
 export interface BotUserState {
-  step?: string;           // 'await_login' | 'await_password' | 'await_feedback' | 'operator_await_login' | 'operator_await_password'
+  step?: string;           // 'await_login' | 'await_password' | 'await_feedback' | 'operator_await_login' | 'operator_await_password' | 'admin_await_login' | 'admin_await_password'
   pendingLogin?: string;   // Vaqtincha saqlanadigan login
   pendingOperatorLogin?: string;
+  pendingAdminLogin?: string;
 }
 
 export interface LinkedStudent {

@@ -140,6 +140,53 @@ class BotService {
   }
 
   /**
+   * Admin/Rahbar sifatida kirish — kunlik hisobot olish uchun
+   */
+  async linkAdmin(data: {
+    telegramId: number;
+    chatId: number;
+    login: string;
+    password: string;
+    fullName?: string;
+    username?: string;
+  }): Promise<{ success: boolean; message: string; name?: string }> {
+    const user = await prisma.user.findUnique({ where: { login: data.login } });
+
+    if (!user) return { success: false, message: 'not_found' };
+    if (!user.isActive) return { success: false, message: 'not_active' };
+
+    const allowedRoles = ['admin', 'filial_rahbari', 'administrator', 'nazoratchi'];
+    if (!allowedRoles.includes(user.role)) {
+      return { success: false, message: 'unauthorized' };
+    }
+
+    const valid = await bcrypt.compare(data.password, user.passwordHash);
+    if (!valid) return { success: false, message: 'wrong_password' };
+
+    await prisma.telegramLink.upsert({
+      where: { telegramId: BigInt(data.telegramId) },
+      create: {
+        telegramId: BigInt(data.telegramId),
+        chatId: BigInt(data.chatId),
+        studentId: user.id,
+        role: 'admin',
+        fullName: data.fullName || user.fullName,
+        username: data.username,
+      },
+      update: {
+        chatId: BigInt(data.chatId),
+        studentId: user.id,
+        role: 'admin',
+        fullName: data.fullName || user.fullName,
+        username: data.username,
+        isActive: true,
+      },
+    });
+
+    return { success: true, message: 'ok', name: user.fullName };
+  }
+
+  /**
    * Telegram bog'lanishni uzish
    */
   async unlink(telegramId: number): Promise<void> {

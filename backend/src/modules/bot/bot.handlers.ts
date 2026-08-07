@@ -25,6 +25,10 @@ import {
   operatorAskPasswordMessage,
   operatorUnauthorizedMessage,
   operatorLinkedMessage,
+  adminAskLoginMessage,
+  adminAskPasswordMessage,
+  adminUnauthorizedMessage,
+  adminLinkedMessage,
 } from './bot.messages';
 import {
   mainMenuKeyboard,
@@ -111,12 +115,27 @@ export function registerHandlers(bot: BotInstance) {
     });
   });
 
+  // ─── /admin ─── (admin/rahbar hisobot olish uchun bog'lanish)
+  bot.onText(/\/admin/, async (msg) => {
+    const chatId = msg.chat.id;
+    const link = await botService.getLinkByTelegramId(msg.from!.id);
+    if (link && link.isActive && link.role === 'admin') {
+      await bot.sendMessage(chatId, `✅ Siz allaqachon admin sifatida bog'langansiz: *${esc(link.fullName)}*\n\nHisobot: /report\nUzish: /unlink`, { parse_mode: 'Markdown' });
+      return;
+    }
+    setState(chatId, { step: 'admin_await_login' });
+    await bot.sendMessage(chatId, adminAskLoginMessage(), {
+      parse_mode: 'Markdown',
+      reply_markup: cancelKeyboard(),
+    });
+  });
+
   // ─── /report yoki /hisobot ─── (AI ta'lim hisoboti yuborish)
   bot.onText(/\/report|\/hisobot/, async (msg) => {
     const chatId = msg.chat.id;
     await bot.sendMessage(chatId, "⚡ Ta'lim ma'lumotlari to'planmoqda va AI tahliliy hisobot tayyorlanmoqda, iltimos kuting...");
     try {
-      await sendDailyAIReport("Qo'lda so'ralgan AI Hisobot");
+      await sendDailyAIReport("Qo'lda so'ralgan AI Hisobot", chatId);
     } catch (err: any) {
       await bot.sendMessage(chatId, `❌ Hisobot yaratishda xatolik yuz berdi: ${err.message}`);
     }
@@ -138,8 +157,10 @@ export function registerHandlers(bot: BotInstance) {
       msg.chat.id,
       `📖 *YORDAM*\n\n` +
         `/start — Boshlamoq\n` +
-        `/login — O'quvchi hisobi bilan bog'lanish\n` +
+        `/login — O'quvchi hisobi bilan bog'lanish (ota-ona)\n` +
         `/operator — Operator sifatida kirish\n` +
+        `/admin — Admin/Rahbar sifatida kirish (kunlik hisobot olish)\n` +
+        `/report — AI ta'lim hisobotini olish\n` +
         `/unlink — Bog'lanishni uzish\n` +
         `/help — Yordam`,
       { parse_mode: 'Markdown' }
@@ -235,6 +256,40 @@ export function registerHandlers(bot: BotInstance) {
         });
       } else if (result.message === 'unauthorized') {
         await bot.sendMessage(chatId, operatorUnauthorizedMessage(), { parse_mode: 'Markdown' });
+      } else {
+        await bot.sendMessage(chatId, wrongCredentialsMessage(), { parse_mode: 'Markdown' });
+      }
+      return;
+    }
+
+    // ── Admin login oqimi ──
+    if (state.step === 'admin_await_login') {
+      setState(chatId, { step: 'admin_await_password', pendingAdminLogin: text });
+      await bot.sendMessage(chatId, adminAskPasswordMessage(text), {
+        parse_mode: 'Markdown',
+        reply_markup: cancelKeyboard(),
+      });
+      return;
+    }
+
+    if (state.step === 'admin_await_password' && state.pendingAdminLogin) {
+      await bot.sendMessage(chatId, '⏳ Tekshirilmoqda...');
+      const result = await botService.linkAdmin({
+        telegramId,
+        chatId,
+        login: state.pendingAdminLogin,
+        password: text,
+        fullName: msg.from!.first_name + (msg.from!.last_name ? ' ' + msg.from!.last_name : ''),
+        username: msg.from!.username,
+      });
+      clearState(chatId);
+
+      if (result.success) {
+        await bot.sendMessage(chatId, adminLinkedMessage(result.name!), {
+          parse_mode: 'Markdown',
+        });
+      } else if (result.message === 'unauthorized') {
+        await bot.sendMessage(chatId, adminUnauthorizedMessage(), { parse_mode: 'Markdown' });
       } else {
         await bot.sendMessage(chatId, wrongCredentialsMessage(), { parse_mode: 'Markdown' });
       }

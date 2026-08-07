@@ -307,3 +307,30 @@ export function operatorLinkedMessage(name: string): string {
     `Quyidagi tugmalardan foydalaning:`
   );
 }
+
+/** Admin sifatida kirish so'rash */
+export function adminAskLoginMessage(): string {
+  return `🔐 *Admin / Rahbar rejimi*\n\nKunlik AI ta'lim hisobotlarini Telegram orqali olish uchun tizim *loginingizni* kiriting:`;
+}
+
+/** Admin sifatida kirish — parol so'rash */
+export function adminAskPasswordMessage(login: string): string {
+  return `🔒 Login: *${esc(login)}*\n\nAdmin *parolini* kiriting:`;
+}
+
+/** Admin — ruxsat yo'q */
+export function adminUnauthorizedMessage(): string {
+  return `⛔ *Ruxsat yo'q!*\n\nFaqat Admin, Filial rahbari yoki Nazoratchi roli bilan kirish mumkin.`;
+}
+
+/** Admin — muvaffaqiyatli kirish */
+export function adminLinkedMessage(name: string): string {
+  return (
+    `✅ *Admin sifatida bog'landingiz!*\n\n` +
+    `👤 *${esc(name)}*\n\n` +
+    `Endi har kuni 13:00 va 17:00 da batafsil AI ta'lim hisobotlarini olasiz.\n\n` +
+    `Qo'lda hisobot olish: /report\n` +
+    `Uzish: /unlink`
+  );
+}
+
