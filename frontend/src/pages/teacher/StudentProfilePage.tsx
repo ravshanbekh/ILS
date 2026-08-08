@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
@@ -9,6 +10,8 @@ import { Loader2, ArrowLeft, Star, Target, Clock, Trophy, ExternalLink, Trending
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 export default function StudentProfilePage() {
+  const { user } = useAuthStore();
+  const isEditAllowed = user?.role === 'admin' || user?.role === 'teacher';
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
@@ -361,34 +364,38 @@ export default function StudentProfilePage() {
                                   <p className="text-[10px] text-zinc-500 uppercase tracking-wider mt-1">Ball</p>
                                 </div>
                                 <ScoreBadge result={sub.result} showLabel />
-                                <button
-                                  onClick={() => setRegrading(sub.id)}
-                                  className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium text-xs transition-colors whitespace-nowrap"
-                                  title="Natijani o'zgartirish"
-                                >
-                                  O'zgartiris
-                                </button>
-                                {sub.result !== 'green' && !sub.canResubmit && (
-                                  <button
-                                    onClick={async () => {
-                                      try {
-                                        await submissionsApi.allowResubmit(sub.id);
-                                        setStats((prev: any) => ({
-                                          ...prev,
-                                          submissions: prev.submissions.map((s: any) =>
-                                            s.id === sub.id ? { ...s, canResubmit: true } : s
-                                          )
-                                        }));
-                                      } catch (err) {
-                                        console.error('Failed to allow resubmit', err);
-                                        alert('Xatolik yuz berdi');
-                                      }
-                                    }}
-                                    className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs transition-colors whitespace-nowrap"
-                                    title="Qayta topshirishga ruxsat berish"
-                                  >
-                                    Ochib berish
-                                  </button>
+                                {isEditAllowed && (
+                                  <>
+                                    <button
+                                      onClick={() => setRegrading(sub.id)}
+                                      className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium text-xs transition-colors whitespace-nowrap"
+                                      title="Natijani o'zgartirish"
+                                    >
+                                      O'zgartirish
+                                    </button>
+                                    {sub.result !== 'green' && !sub.canResubmit && (
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            await submissionsApi.allowResubmit(sub.id);
+                                            setStats((prev: any) => ({
+                                              ...prev,
+                                              submissions: prev.submissions.map((s: any) =>
+                                                s.id === sub.id ? { ...s, canResubmit: true } : s
+                                              )
+                                            }));
+                                          } catch (err) {
+                                            console.error('Failed to allow resubmit', err);
+                                            alert('Xatolik yuz berdi');
+                                          }
+                                        }}
+                                        className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs transition-colors whitespace-nowrap"
+                                        title="Qayta topshirishga ruxsat berish"
+                                      >
+                                        Ochib berish
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                                 {sub.canResubmit && (
                                   <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20 whitespace-nowrap">
@@ -399,7 +406,7 @@ export default function StudentProfilePage() {
                             )}
                           </>
                         ) : (
-                          // PENDING — teacher bu yerdan ham baholay oladi
+                          // PENDING
                           regrading === sub.id ? (
                             <div className="flex flex-col gap-2 animate-fade-in min-w-[200px]">
                               <div className="flex items-center gap-1.5">
@@ -415,13 +422,15 @@ export default function StudentProfilePage() {
                                 <Clock className="w-3.5 h-3.5" />
                                 Kutilmoqda
                               </span>
-                              <button
-                                onClick={() => { setRegrading(sub.id); setRegradeComment(''); }}
-                                className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors whitespace-nowrap"
-                                title="Baholash"
-                              >
-                                Baholash
-                              </button>
+                              {isEditAllowed && (
+                                <button
+                                  onClick={() => { setRegrading(sub.id); setRegradeComment(''); }}
+                                  className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-colors whitespace-nowrap"
+                                  title="Baholash"
+                                >
+                                  Baholash
+                                </button>
+                              )}
                             </>
                           )
                         )}

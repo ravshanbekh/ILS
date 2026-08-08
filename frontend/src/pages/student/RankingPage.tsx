@@ -40,13 +40,20 @@ export default function StudentRankingPage() {
           setGroups(teacherGroups);
         })
         .catch(console.error);
-    } else {
+    } else if (user?.role === 'student') {
       // Student: o'z guruhlarini /auth/me orqali oladi
       api.get('/auth/me')
         .then((res) => {
           const userData = res.data.data;
           const studentGroups = userData?.groupStudents?.map((gs: any) => gs.group) || [];
           setGroups(studentGroups);
+        })
+        .catch(console.error);
+    } else {
+      // Admin va Viewer (kassir, filial_rahbari va b.): barcha guruhlarni oladi
+      groupsApi.getAll(1, 200)
+        .then((res) => {
+          setGroups(res.data.data || []);
         })
         .catch(console.error);
     }

@@ -7,17 +7,19 @@ const router = Router();
 // Barcha routelar authenticate talab qiladi
 router.use(authenticate);
 
+const VIEWER_ROLES = ['admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher', 'filial_rahbari', 'moliya_rahbari', 'assistant', 'nazoratchi', 'hr_rahbari', 'call_operatori'];
+
 // GET /api/users/ungrouped — Guruhsiz o'quvchilar
-router.get('/ungrouped', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher'), usersController.getUngrouped);
+router.get('/ungrouped', roleGuard(...VIEWER_ROLES), usersController.getUngrouped);
 
 // GET /api/users/my-students — Teacher o'z o'quvchilarini tezkor oladi (bitta query)
 router.get('/my-students', roleGuard('teacher'), usersController.getMyStudents);
 
 // GET /api/users — Barcha foydalanuvchilar
-router.get('/', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher'), usersController.getAll);
+router.get('/', roleGuard(...VIEWER_ROLES), usersController.getAll);
 
 // GET /api/users/:id — Bitta foydalanuvchi
-router.get('/:id', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher'), usersController.getById);
+router.get('/:id', roleGuard(...VIEWER_ROLES), usersController.getById);
 
 // POST /api/users/bulk — Ko'p foydalanuvchi yaratish (bulk import, Excel'dan yuzlab qator kelishi mumkin)
 router.post('/bulk', roleGuard('admin', 'teacher'), json({ limit: '5mb' }), usersController.bulkCreate);

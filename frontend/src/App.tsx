@@ -216,6 +216,9 @@ export default function App() {
               }
             >
               <Route path="/viewer/:role" element={<ViewerDashboardPage />} />
+              <Route path="/viewer/:role/users" element={<UsersPage />} />
+              <Route path="/viewer/:role/student/:id" element={<StudentProfilePage />} />
+              <Route path="/viewer/:role/rankings" element={<StudentRankingPage />} />
               <Route path="/viewer/:role/frozen-students" element={<FrozenStudentsPage />} />
               <Route path="/viewer/:role/monitoring" element={<MonitoringPage />} />
               <Route path="/viewer/:role/teacher-rating" element={<TeacherRatingPage />} />

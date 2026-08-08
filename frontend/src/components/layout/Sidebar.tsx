@@ -88,6 +88,10 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   ] : [];
 
   const viewerLinks = isViewer && user?.role !== 'nazoratchi' ? [
+    ...(['filial_rahbari', 'administrator', 'sotuv_operatori', 'kassir', 'moliya_rahbari', 'assistant', 'call_operatori'].includes(user!.role) ? [
+      { to: `/viewer/${user!.role}/users`, icon: GraduationCap, label: "O'quvchilar" },
+      { to: `/viewer/${user!.role}/rankings`, icon: Trophy, label: "O'quvchilar reytingi" },
+    ] : []),
     ...(['filial_rahbari', 'administrator', 'sotuv_operatori', 'kassir'].includes(user!.role) ? [
       { to: `/viewer/${user!.role}/frozen-students`, icon: Snowflake, label: 'Muzlatilganlar' }
     ] : []),

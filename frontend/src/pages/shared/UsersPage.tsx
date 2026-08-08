@@ -10,7 +10,9 @@ import { formatDateTime } from '@/utils';
 export default function UsersPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'admin';
   const isTeacher = user?.role === 'teacher';
+  const isReadOnly = !isAdmin && !isTeacher;
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -163,8 +165,8 @@ export default function UsersPage() {
   return (
     <div>
       <Header
-        title={isTeacher ? "O'quvchilarim" : 'Foydalanuvchilar'}
-        subtitle={isTeacher ? 'Guruhlaringizdagi o\'quvchilar' : 'O\'quvchilar va boshqa foydalanuvchilarni boshqarish'}
+        title={isTeacher ? "O'quvchilarim" : (isReadOnly ? "O'quvchilar Ro'yxati" : 'Foydalanuvchilar')}
+        subtitle={isTeacher ? 'Guruhlaringizdagi o\'quvchilar' : (isReadOnly ? "O'quvchilarni qidirish va natijalarini ko'rish" : 'O\'quvchilar va boshqa foydalanuvchilarni boshqarish')}
       />
 
       <div className="p-8 max-w-7xl mx-auto">
@@ -180,24 +182,26 @@ export default function UsersPage() {
               className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#18181b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
             />
           </div>
-          <div className="flex gap-3">
-            {!isTeacher && (
+          {!isReadOnly && (
+            <div className="flex gap-3">
+              {!isTeacher && (
+                <button
+                  onClick={() => setShowBulkModal(true)}
+                  className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Exceldan yuklash
+                </button>
+              )}
               <button
-                onClick={() => setShowBulkModal(true)}
-                className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                onClick={() => handleOpenModal()}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4" />
-                Exceldan yuklash
+                {isTeacher ? "Yangi o'quvchi" : "Yangi qo'shish"}
               </button>
-            )}
-            <button
-              onClick={() => handleOpenModal()}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              {isTeacher ? "Yangi o'quvchi" : "Yangi qo'shish"}
-            </button>
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
@@ -225,17 +229,9 @@ export default function UsersPage() {
                   users.map((u) => (
                     <tr key={u.id} className="hover:bg-zinc-800/30 transition-colors group">
                       <td className="px-6 py-4 font-medium">
-                        {isTeacher ? (
+                        {u.role === 'student' ? (
                           <button
-                            onClick={() => navigate(`/teacher/student/${u.id}`)}
-                            className="text-white hover:text-blue-400 transition-colors flex items-center gap-2 font-medium text-left"
-                          >
-                            {u.fullName}
-                            <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
-                          </button>
-                        ) : u.role === 'student' ? (
-                          <button
-                            onClick={() => navigate(`/admin/student/${u.id}`)}
+                            onClick={() => navigate(isTeacher ? `/teacher/student/${u.id}` : (isAdmin ? `/admin/student/${u.id}` : `/viewer/${user?.role}/student/${u.id}`))}
                             className="text-white hover:text-blue-400 transition-colors flex items-center gap-2 font-medium text-left"
                           >
                             {u.fullName}
@@ -297,7 +293,18 @@ export default function UsersPage() {
                       <td className="px-6 py-4 text-zinc-500">{formatDateTime(u.createdAt)}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
-                          {isTeacher ? (
+                          {isReadOnly ? (
+                            u.role === 'student' && (
+                              <button
+                                onClick={() => navigate(`/viewer/${user?.role}/student/${u.id}`)}
+                                className="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                                title="O'quvchi profilini va natijalarini ko'rish"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                Profilni ko'rish
+                              </button>
+                            )
+                          ) : isTeacher ? (
                             <>
                               <button
                                 onClick={() => handleOpenModal(u)}

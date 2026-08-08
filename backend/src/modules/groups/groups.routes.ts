@@ -8,11 +8,13 @@ const router = Router();
 // Barcha routelar authenticate talab qiladi
 router.use(authenticate);
 
-// GET /api/groups — Barcha guruhlar (admin va teacher)
-router.get('/', roleGuard('admin', 'teacher'), groupsController.getAll);
+const VIEWER_ROLES = ['admin', 'teacher', 'student', 'kassir', 'administrator', 'sotuv_operatori', 'filial_rahbari', 'moliya_rahbari', 'assistant', 'nazoratchi', 'hr_rahbari', 'call_operatori'];
 
-// GET /api/groups/:id — Bitta guruh (o'quvchilar ham o'z guruhini ko'rishi uchun)
-router.get('/:id', roleGuard('admin', 'teacher', 'student'), groupsController.getById);
+// GET /api/groups — Barcha guruhlar
+router.get('/', roleGuard('admin', 'teacher', 'kassir', 'administrator', 'sotuv_operatori', 'filial_rahbari', 'moliya_rahbari', 'assistant', 'nazoratchi', 'hr_rahbari', 'call_operatori'), groupsController.getAll);
+
+// GET /api/groups/:id — Bitta guruh
+router.get('/:id', roleGuard('admin', 'teacher', 'student', 'kassir', 'administrator', 'sotuv_operatori', 'filial_rahbari', 'moliya_rahbari', 'assistant', 'nazoratchi', 'hr_rahbari', 'call_operatori'), groupsController.getById);
 
 // POST /api/groups — Guruh yaratish
 router.post('/', roleGuard('admin', 'teacher'), groupsController.create);

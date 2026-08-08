@@ -5,7 +5,7 @@ import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware
 const router = Router();
 router.use(authenticate);
 
-const ALLOWED_ROLES = ['admin', 'administrator', 'sotuv_operatori', 'call_operatori', 'filial_rahbari'] as const;
+const ALLOWED_ROLES = ['admin', 'administrator', 'sotuv_operatori', 'call_operatori', 'filial_rahbari', 'kassir'] as const;
 
 // ─── GURUHLAR RO'YXATI ──────────────────────────────────────
 // GET /api/monitoring/groups
