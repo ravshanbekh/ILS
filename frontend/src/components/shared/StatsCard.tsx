@@ -9,27 +9,27 @@ interface StatsCardProps {
 }
 
 const colorStyles = {
-  blue: 'bg-[#EFF6FF] text-[#2563EB]',
-  purple: 'bg-[#F3E8FF] text-[#7C3AED]',
-  green: 'bg-[#ECFDF5] text-[#059669]',
-  orange: 'bg-[#FFF7E0] text-[#D97706]',
-  red: 'bg-[#FFF1F2] text-[#E5484D]',
+  blue: 'bg-blue-500/10 text-blue-500',
+  purple: 'bg-purple-500/10 text-purple-500',
+  green: 'bg-emerald-500/10 text-emerald-500',
+  orange: 'bg-amber-500/10 text-amber-500',
+  red: 'bg-red-500/10 text-red-500',
 };
 
 export default function StatsCard({ title, value, icon, trend, color = 'blue' }: StatsCardProps) {
   return (
-    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm transition-all hover:shadow-md">
+    <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5 shadow-sm transition-all hover:border-zinc-700">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-semibold text-[#64748B] mb-2">{title}</p>
-          <p className="text-3xl font-extrabold text-[#0F172A] tracking-tight">{value}</p>
+          <p className="text-sm font-medium text-zinc-400 mb-1">{title}</p>
+          <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
           {trend && (
-            <p className="text-xs text-[#059669] mt-2 font-medium">
+            <p className="text-xs text-emerald-500 mt-2 font-medium">
               {trend}
             </p>
           )}
         </div>
-        <div className={`p-3.5 rounded-2xl flex items-center justify-center ${colorStyles[color]}`}>
+        <div className={`p-2.5 rounded-lg ${colorStyles[color]}`}>
           {icon}
         </div>
       </div>
