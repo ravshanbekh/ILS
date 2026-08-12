@@ -185,13 +185,23 @@ export default function UsersPage() {
           {!isReadOnly && (
             <div className="flex gap-3">
               {!isTeacher && (
-                <button
-                  onClick={() => setShowBulkModal(true)}
-                  className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Exceldan yuklash
-                </button>
+                <>
+                  <button
+                    onClick={() => navigate(user?.role === 'admin' ? '/admin/trash' : `/viewer/${user?.role}/trash`)}
+                    className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    title="O'chirilgan foydalanuvchilarni ko'rish va qaytarish"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                    Korzinka
+                  </button>
+                  <button
+                    onClick={() => setShowBulkModal(true)}
+                    className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Exceldan yuklash
+                  </button>
+                </>
               )}
               <button
                 onClick={() => handleOpenModal()}

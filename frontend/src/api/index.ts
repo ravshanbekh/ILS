@@ -216,6 +216,24 @@ export const backupApi = {
   restoreBackup: (data: any) => api.post('/backup/restore', data),
 };
 
+export const trashApi = {
+  getGroups: (page: number = 1, search?: string) =>
+    api.get('/trash/groups', { params: { page, search } }),
+
+  getUsers: (page: number = 1, search?: string, role?: string) =>
+    api.get('/trash/users', { params: { page, search, role } }),
+
+  restoreGroup: (id: string) => api.post(`/trash/groups/${id}/restore`),
+
+  restoreUser: (id: string) => api.post(`/trash/users/${id}/restore`),
+
+  permanentlyDeleteGroup: (id: string) => api.delete(`/trash/groups/${id}/permanent`),
+
+  permanentlyDeleteUser: (id: string) => api.delete(`/trash/users/${id}/permanent`),
+
+  emptyTrash: () => api.delete('/trash/empty'),
+};
+
 export const categoriesApi = {
   getAll: () => api.get('/categories'),
   create: (data: any) => api.post('/categories', data),

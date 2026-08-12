@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
-  Settings, FileText, Zap, Video
+  Settings, FileText, Zap, Video, Trash2
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -27,6 +27,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
     items: [
       { to: '/admin/users', label: 'Foydalanuvchilar', icon: Users },
       { to: '/admin/groups', label: 'Guruhlar', icon: FolderOpen },
+      { to: '/admin/trash', label: 'Korzinka (Savat)', icon: Trash2 },
     ]
   },
   {

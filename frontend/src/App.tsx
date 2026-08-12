@@ -42,6 +42,7 @@ import LiveQuizPage from '@/pages/teacher/LiveQuizPage';
 import ExamLobbyPage from '@/pages/exam/ExamLobbyPage';
 import QuizJoinPage from '@/pages/quiz/QuizJoinPage';
 import LessonsPage from '@/pages/shared/LessonsPage';
+import TrashPage from '@/pages/admin/TrashPage';
 
 
 const queryClient = new QueryClient({
@@ -160,6 +161,7 @@ export default function App() {
               <Route path="/admin/exams" element={<ExamsPage />} />
               <Route path="/admin/live-quiz" element={<LiveQuizPage />} />
               <Route path="/admin/lessons" element={<LessonsPage />} />
+              <Route path="/admin/trash" element={<TrashPage />} />
             </Route>
 
             {/* Teacher routes */}
@@ -222,6 +224,7 @@ export default function App() {
               <Route path="/viewer/:role/frozen-students" element={<FrozenStudentsPage />} />
               <Route path="/viewer/:role/monitoring" element={<MonitoringPage />} />
               <Route path="/viewer/:role/teacher-rating" element={<TeacherRatingPage />} />
+              <Route path="/viewer/:role/trash" element={<TrashPage />} />
               <Route path="/viewer/nazoratchi/checklist-stats" element={<ChecklistStatsPage />} />
               <Route path="/viewer/nazoratchi/checklist-manage" element={<ChecklistManagePage />} />
             </Route>

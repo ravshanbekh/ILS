@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { groupsApi, usersApi } from '@/api';
 import Header from '@/components/layout/Header';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FolderPlus, Pencil, Trash2, Users, Search, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react';
 
 export default function GroupsPage() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [groups, setGroups] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,6 +158,16 @@ export default function GroupsPage() {
               </div>
             )}
 
+            {['admin', 'administrator', 'filial_rahbari'].includes(user?.role || '') && (
+              <button
+                onClick={() => navigate(user?.role === 'admin' ? '/admin/trash' : `/viewer/${user?.role}/trash`)}
+                className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap justify-center"
+                title="O'chirilgan guruhlarni ko'rish va qaytarish"
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+                Korzinka
+              </button>
+            )}
             <button 
               onClick={() => handleOpenModal()}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap justify-center"

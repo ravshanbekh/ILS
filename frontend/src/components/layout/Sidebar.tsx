@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   LayoutDashboard, GraduationCap, LogOut, X, ChevronDown, ChevronRight,
   PanelLeftClose, PanelLeftOpen,
-  Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star
+  Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2
 } from 'lucide-react';
 import { ADMIN_GROUPS, TEACHER_GROUPS, STUDENT_GROUPS } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
@@ -100,6 +100,9 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     ] : []),
     ...(['filial_rahbari', 'hr_rahbari'].includes(user!.role) ? [
       { to: `/viewer/${user!.role}/teacher-rating`, icon: Star, label: "O'qituvchi reytingi" }
+    ] : []),
+    ...(['filial_rahbari', 'administrator'].includes(user!.role) ? [
+      { to: `/viewer/${user!.role}/trash`, icon: Trash2, label: 'Korzinka (Savat)' }
     ] : []),
   ] : [];
 
