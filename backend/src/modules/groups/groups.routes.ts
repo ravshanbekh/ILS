@@ -34,6 +34,9 @@ router.post('/:id/students/bulk', roleGuard('admin', 'teacher'), json({ limit: '
 // DELETE /api/groups/:id/students/:studentId — O'quvchini chiqarish
 router.delete('/:id/students/:studentId', roleGuard('admin', 'teacher'), groupsController.removeStudent);
 
+// POST /api/groups/transfer-student — O'quvchini bir guruhdan boshqa guruhga o'tkazish
+router.post('/transfer-student', roleGuard('admin', 'teacher', 'administrator', 'sotuv_operatori'), groupsController.transferStudent);
+
 // POST /api/groups/:id/normatives — Guruhga normativ biriktirish
 router.post('/:id/normatives', roleGuard('admin', 'teacher'), normativesController.assignToGroup);
 

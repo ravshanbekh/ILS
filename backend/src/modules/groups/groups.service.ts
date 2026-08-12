@@ -92,13 +92,54 @@ class GroupsService {
       throw ApiError.notFound('Guruh topilmadi');
     }
 
+    let groupNormatives = group.groupNormatives;
+    if (groupNormatives.length === 0) {
+      const studentIds = group.groupStudents.map((gs) => gs.studentId);
+      let autoNormativeIds: string[] = [];
+
+      if (studentIds.length > 0) {
+        const studentSubs = await prisma.submission.findMany({
+          where: { studentId: { in: studentIds } },
+          select: { normativeId: true },
+          distinct: ['normativeId'],
+        });
+        autoNormativeIds = studentSubs.map((s) => s.normativeId);
+      }
+
+      if (autoNormativeIds.length === 0) {
+        const activeNorms = await prisma.normative.findMany({
+          where: { isActive: true },
+          select: { id: true },
+          orderBy: { taskNumber: 'asc' },
+        });
+        autoNormativeIds = activeNorms.map((n) => n.id);
+      }
+
+      if (autoNormativeIds.length > 0) {
+        await prisma.groupNormative.createMany({
+          data: autoNormativeIds.map((nid) => ({ groupId: group.id, normativeId: nid })),
+          skipDuplicates: true,
+        }).catch(() => {});
+
+        groupNormatives = await prisma.groupNormative.findMany({
+          where: { groupId: group.id },
+          include: {
+            normative: {
+              select: { id: true, taskNumber: true, title: true, maxScore: true },
+            },
+          },
+          orderBy: { assignedAt: 'asc' },
+        });
+      }
+    }
+
     return {
       ...group,
       students: group.groupStudents.map((gs) => ({
         ...gs.student,
         joinedAt: gs.joinedAt,
       })),
-      normatives: group.groupNormatives.map((gn) => ({
+      normatives: groupNormatives.map((gn) => ({
         ...gn.normative,
         assignedAt: gn.assignedAt,
       })),
@@ -281,6 +322,63 @@ class GroupsService {
 
     logger.info(`Student ${studentId} removed from group ${groupId}`);
     return { message: 'O\'quvchi guruhdan chiqarildi' };
+  }
+
+  /**
+   * O'quvchini bir guruhdan boshqa guruhga o'tkazish (transfer)
+   */
+  async transferStudent(fromGroupId: string, toGroupId: string, studentId: string, transferredByUserId?: string) {
+    if (fromGroupId === toGroupId) {
+      throw ApiError.badRequest('Bir xil guruhga o\'tkaza olmaysiz');
+    }
+
+    const targetGroup = await prisma.group.findUnique({ where: { id: toGroupId } });
+    if (!targetGroup) throw ApiError.notFound('Maqsadli guruh topilmadi');
+
+    // 1. Eski guruhdan chiqarish
+    await prisma.groupStudent.deleteMany({
+      where: { groupId: fromGroupId, studentId },
+    });
+
+    // 2. Yangi guruhga qo'shish
+    await prisma.groupStudent.upsert({
+      where: { groupId_studentId: { groupId: toGroupId, studentId } },
+      create: { groupId: toGroupId, studentId },
+      update: {},
+    });
+
+    // 3. O'quvchi topshirgan normativlarni yangi guruhga biriktirish (GroupNormative)
+    const studentSubmissions = await prisma.submission.findMany({
+      where: { studentId },
+      select: { normativeId: true },
+      distinct: ['normativeId'],
+    });
+
+    if (studentSubmissions.length > 0) {
+      await prisma.groupNormative.createMany({
+        data: studentSubmissions.map((s) => ({
+          groupId: toGroupId,
+          normativeId: s.normativeId,
+        })),
+        skipDuplicates: true,
+      }).catch(() => {});
+    }
+
+    // 4. Audit log
+    if (transferredByUserId) {
+      await prisma.auditLog.create({
+        data: {
+          userId: transferredByUserId,
+          action: 'TRANSFER_STUDENT',
+          targetType: 'group',
+          targetId: toGroupId,
+          details: { fromGroupId, toGroupId, studentId },
+        },
+      });
+    }
+
+    logger.info(`Student ${studentId} transferred from group ${fromGroupId} to ${toGroupId}`);
+    return { message: 'O\'quvchi muvaffaqiyatli o\'tkazildi', targetGroupName: targetGroup.name };
   }
 
   /**

@@ -59,6 +59,9 @@ export const groupsApi = {
   removeStudent: (groupId: string, studentId: string) =>
     api.delete(`/groups/${groupId}/students/${studentId}`),
 
+  transferStudent: (fromGroupId: string, toGroupId: string, studentId: string) =>
+    api.post('/groups/transfer-student', { fromGroupId, toGroupId, studentId }),
+
   assignNormatives: (groupId: string, normativeIds: string[]) =>
     api.post(`/groups/${groupId}/normatives`, { normativeIds }),
 };

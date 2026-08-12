@@ -146,6 +146,28 @@ class GroupsController {
   }
 
   /**
+   * POST /api/groups/transfer-student — O'quvchini bir guruhdan boshqa guruhga o'tkazish
+   */
+  async transferStudent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { fromGroupId, toGroupId, studentId } = req.body;
+      if (!fromGroupId || !toGroupId || !studentId) {
+        throw ApiError.badRequest('fromGroupId, toGroupId va studentId talab qilinadi');
+      }
+
+      const result = await groupsService.transferStudent(
+        fromGroupId,
+        toGroupId,
+        studentId,
+        req.user?.userId
+      );
+      res.json({ success: true, ...result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * DELETE /api/groups/:id
    */
   async delete(req: Request, res: Response, next: NextFunction) {

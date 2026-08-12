@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
-import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi, monitoringApi } from '@/api';
-import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain } from 'lucide-react';
+import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi, monitoringApi, freezesApi } from '@/api';
+import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain, RefreshCw, Snowflake, LogOut, X, Sparkles } from 'lucide-react';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import { downloadBlob } from '@/utils';
 
@@ -23,6 +23,18 @@ export default function GroupDetailPage() {
   const [savingStudents, setSavingStudents] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
   const [ungroupedStudents, setUngroupedStudents] = useState<any[]>([]);
+
+  // Student Action Modal state (Transfer / Freeze / Remove)
+  const [actionStudent, setActionStudent] = useState<any>(null);
+  const [actionTab, setActionTab] = useState<'transfer' | 'freeze' | 'remove'>('transfer');
+  const [targetGroupId, setTargetGroupId] = useState<string>('');
+  const [availableGroups, setAvailableGroups] = useState<any[]>([]);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Freeze form fields
+  const [freezeReason, setFreezeReason] = useState<string>('Kasal');
+  const [freezePhone, setFreezePhone] = useState<string>('');
+  const [freezeNote, setFreezeNote] = useState<string>('');
 
   // Normative management states
   const [showNormativeModal, setShowNormativeModal] = useState(false);
@@ -180,15 +192,74 @@ export default function GroupDetailPage() {
     }
   };
 
-  const handleRemoveStudent = async (studentId: string) => {
-    if (!id) return;
-    if (!confirm("O'quvchini guruhdan chiqarishni xohlaysizmi?")) return;
+  const handleOpenActionModal = async (student: any) => {
+    setActionStudent(student);
+    setActionTab('transfer');
+    setTargetGroupId('');
+    setFreezeReason('Kasal');
+    setFreezePhone('');
+    setFreezeNote('');
+
     try {
-      await groupsApi.removeStudent(id, studentId);
-      fetchGroupData();
+      const res = await groupsApi.getAll(1, 100);
+      const otherGroups = (res.data.data || []).filter((g: any) => g.id !== id);
+      setAvailableGroups(otherGroups);
+      if (otherGroups.length > 0) {
+        setTargetGroupId(otherGroups[0].id);
+      }
     } catch (err) {
       console.error(err);
-      alert("O'chirishda xatolik yuz berdi");
+    }
+  };
+
+  const handleTransferStudent = async () => {
+    if (!id || !actionStudent || !targetGroupId) return;
+    setActionLoading(true);
+    try {
+      await groupsApi.transferStudent(id, targetGroupId, actionStudent.id);
+      setActionStudent(null);
+      fetchGroupData();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || "O'tkazishda xatolik yuz berdi");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleFreezeStudent = async () => {
+    if (!id || !actionStudent) return;
+    setActionLoading(true);
+    try {
+      await freezesApi.freeze({
+        studentId: actionStudent.id,
+        reason: freezeReason,
+        detailedNote: freezeNote || undefined,
+        phone: freezePhone || undefined,
+      });
+      await groupsApi.removeStudent(id, actionStudent.id);
+      setActionStudent(null);
+      fetchGroupData();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || "Muzlatishda xatolik yuz berdi");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleJustRemoveStudent = async () => {
+    if (!id || !actionStudent) return;
+    setActionLoading(true);
+    try {
+      await groupsApi.removeStudent(id, actionStudent.id);
+      setActionStudent(null);
+      fetchGroupData();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || "Chiqarishda xatolik yuz berdi");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -406,11 +477,12 @@ export default function GroupDetailPage() {
                       <td className="px-6 py-4">
                         <div className="flex justify-end">
                           <button 
-                            onClick={() => handleRemoveStudent(student.id)}
-                            className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                            title="Guruhdan chiqarish"
+                            onClick={() => handleOpenActionModal(student)}
+                            className="p-2 rounded-lg bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-zinc-700 transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs font-medium"
+                            title="O'quvchini boshqa guruhga o'tkazish, muzlatish yoki chiqarish"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Amallar
                           </button>
                         </div>
                       </td>
@@ -698,6 +770,197 @@ export default function GroupDetailPage() {
               >
                 {savingNormatives ? <Loader2 className="w-4 h-4 animate-spin" /> : `Saqlash`}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Student Action Modal (Transfer / Freeze / Remove) */}
+      {actionStudent && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#18181b] border border-zinc-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-[#09090b]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center font-bold text-blue-400">
+                  {actionStudent.fullName?.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-base">{actionStudent.fullName}</h3>
+                  <p className="text-zinc-500 text-xs font-mono">{actionStudent.login} • Guruh: {group?.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActionStudent(null)}
+                className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="grid grid-cols-3 gap-1 p-2 bg-[#09090b] border-b border-zinc-800 text-xs font-medium">
+              <button
+                onClick={() => setActionTab('transfer')}
+                className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                  actionTab === 'transfer'
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Guruhga o'tkazish
+              </button>
+              <button
+                onClick={() => setActionTab('freeze')}
+                className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                  actionTab === 'freeze'
+                    ? 'bg-cyan-600 text-white font-semibold'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                <Snowflake className="w-3.5 h-3.5" />
+                Muzlatish
+              </button>
+              <button
+                onClick={() => setActionTab('remove')}
+                className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                  actionTab === 'remove'
+                    ? 'bg-red-600 text-white font-semibold'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                }`}
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Chiqarish
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-6 space-y-4">
+              {actionTab === 'transfer' && (
+                <div className="space-y-4">
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3.5 text-xs text-blue-300 flex items-start gap-2.5">
+                    <Sparkles className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-blue-200 mb-0.5">Natijalar saqlanadi!</p>
+                      <p className="text-blue-300/80 leading-relaxed">
+                        O'quvchi boshqa guruhga o'tkazilganda uning barcha topshirgan normativlari va to'plagan ballari yangi guruhga to'liqlicha o'tadi.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                      Maqsadli guruhni tanlang:
+                    </label>
+                    {availableGroups.length === 0 ? (
+                      <p className="text-xs text-zinc-500 italic p-3 bg-[#09090b] rounded-xl border border-zinc-800">
+                        Boshqa aktiv guruhlar topilmadi.
+                      </p>
+                    ) : (
+                      <select
+                        value={targetGroupId}
+                        onChange={(e) => setTargetGroupId(e.target.value)}
+                        className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:outline-none"
+                      >
+                        {availableGroups.map((g: any) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name} {g.teacher ? `(${g.teacher.fullName})` : ''} • {g.studentsCount || 0} o'quvchi
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleTransferStudent}
+                    disabled={actionLoading || !targetGroupId}
+                    className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/30 disabled:opacity-50"
+                  >
+                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    {actionLoading ? "O'tkazilmoqda..." : "Guruhga o'tkazish"}
+                  </button>
+                </div>
+              )}
+
+              {actionTab === 'freeze' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Muzlatish sababi:
+                    </label>
+                    <select
+                      value={freezeReason}
+                      onChange={(e) => setFreezeReason(e.target.value)}
+                      className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
+                    >
+                      <option value="Kasal">Kasal (Sog'liq sababli)</option>
+                      <option value="Safar">Safar / Tatil</option>
+                      <option value="Tolv">To'lov muammosi</option>
+                      <option value="Shaxsiy">Shaxsiy sabablar</option>
+                      <option value="Boshqa">Boshqa</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Telefon raqami (ixtiyoriy):
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="+998 90 123 45 67"
+                      value={freezePhone}
+                      onChange={(e) => setFreezePhone(e.target.value)}
+                      className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Batafsil izoh:
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Muzlatish sababi haqida izoh..."
+                      value={freezeNote}
+                      onChange={(e) => setFreezeNote(e.target.value)}
+                      className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none resize-none"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleFreezeStudent}
+                    disabled={actionLoading}
+                    className="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-900/30 disabled:opacity-50"
+                  >
+                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Snowflake className="w-4 h-4" />}
+                    {actionLoading ? "Muzlatilmoqda..." : "O'quvchini muzlatish va chiqarish"}
+                  </button>
+                </div>
+              )}
+
+              {actionTab === 'remove' && (
+                <div className="space-y-4 text-center py-2">
+                  <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto">
+                    <LogOut className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-base mb-1">Guruhdan chiqarishni tasdiqlaysizmi?</p>
+                    <p className="text-zinc-400 text-xs max-w-xs mx-auto">
+                      O'quvchi <strong>"{group?.name}"</strong> guruhidan chiqariladi (guruhsiz holatga o'tadi).
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleJustRemoveStudent}
+                    disabled={actionLoading}
+                    className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/30 disabled:opacity-50"
+                  >
+                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    {actionLoading ? "Chiqarilmoqda..." : "Shunchaki guruhdan chiqarish"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

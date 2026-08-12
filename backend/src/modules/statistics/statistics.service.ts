@@ -221,7 +221,51 @@ class StatisticsService {
 
     if (!group) throw ApiError.notFound('Guruh topilmadi');
 
-    const normativeIds = group.groupNormatives.map(gn => gn.normative.id);
+    let groupNormatives = group.groupNormatives;
+    let normativeIds = groupNormatives.map(gn => gn.normative.id);
+
+    // AUTO-REPAIR: Agar guruhda normativlar biriktirilmagan bo'lsa (yangi/birlashtirilgan guruh)
+    // O'quvchilar topshirgan barcha normativlarni yoki tizimdagi faol normativlarni guruhga biriktiramiz
+    if (normativeIds.length === 0) {
+      const studentIds = group.groupStudents.map(gs => gs.studentId);
+      let autoNormativeIds: string[] = [];
+
+      if (studentIds.length > 0) {
+        const studentSubs = await prisma.submission.findMany({
+          where: { studentId: { in: studentIds } },
+          select: { normativeId: true },
+          distinct: ['normativeId'],
+        });
+        autoNormativeIds = studentSubs.map(s => s.normativeId);
+      }
+
+      if (autoNormativeIds.length === 0) {
+        const activeNorms = await prisma.normative.findMany({
+          where: { isActive: true },
+          select: { id: true },
+          orderBy: { taskNumber: 'asc' },
+        });
+        autoNormativeIds = activeNorms.map(n => n.id);
+      }
+
+      if (autoNormativeIds.length > 0) {
+        await prisma.groupNormative.createMany({
+          data: autoNormativeIds.map(nid => ({ groupId: group.id, normativeId: nid })),
+          skipDuplicates: true,
+        }).catch(() => {});
+
+        const reloadedGN = await prisma.groupNormative.findMany({
+          where: { groupId: group.id },
+          include: {
+            normative: { select: { id: true, taskNumber: true, title: true, maxScore: true } },
+          },
+          orderBy: { normative: { taskNumber: 'asc' } },
+        });
+
+        groupNormatives = reloadedGN;
+        normativeIds = reloadedGN.map(gn => gn.normative.id);
+      }
+    }
 
     // Har bir o'quvchining natijalari
     const studentStats = await Promise.all(
@@ -245,7 +289,7 @@ class StatisticsService {
           totalScore,
           completed,
           pending,
-          totalNormatives: group.groupNormatives.length,
+          totalNormatives: groupNormatives.length,
           submissions: submissions.map((s) => ({
             normativeTaskNumber: s.normative.taskNumber,
             status: s.status,
@@ -269,7 +313,7 @@ class StatisticsService {
     });
 
     // Umumiy ko'rsatkichlar
-    const maxPossibleScore = group.groupNormatives.reduce(
+    const maxPossibleScore = groupNormatives.reduce(
       (sum, gn) => sum + gn.normative.maxScore,
       0
     );
@@ -282,7 +326,7 @@ class StatisticsService {
 
     return {
       groupName: group.name,
-      normatives: group.groupNormatives.map((gn) => gn.normative),
+      normatives: groupNormatives.map((gn) => gn.normative),
       maxPossibleScore,
       avgScore,
       topStudent: studentStats[0] || null,
