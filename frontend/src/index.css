@@ -529,6 +529,7 @@
 }
 
 /* Top Action Buttons in Light Mode */
+.light button.bg-emerald-600,
 .light button.border-emerald-500\/20,
 .light button.bg-emerald-600\/10 {
   background-color: #FFFFFF !important;
@@ -536,10 +537,13 @@
   color: #059669 !important;
   box-shadow: 0 1px 2px rgba(5, 150, 105, 0.05) !important;
 }
+.light button.bg-emerald-600:hover,
 .light button.border-emerald-500\/20:hover,
 .light button.bg-emerald-600\/10:hover {
   background-color: #ECFDF5 !important;
+  color: #059669 !important;
 }
+.light button.bg-emerald-600 svg,
 .light button.border-emerald-500\/20 svg,
 .light button.bg-emerald-600\/10 svg {
   color: #059669 !important;
@@ -557,6 +561,36 @@
 }
 .light button.bg-blue-600 * {
   color: #FFFFFF !important;
+}
+
+/* EXAMS & FOLDERS SPECIFIC LIGHT STYLING */
+.light .w-12.h-12.bg-gradient-to-tr {
+  background: #FFF7E0 !important;
+  border: 1px solid #FDE68A !important;
+  color: #D97706 !important;
+  box-shadow: none !important;
+}
+
+.light .group .text-blue-400.bg-blue-500\/10,
+.light .group .bg-blue-500\/10 {
+  background-color: #FFFFFF !important;
+  border: 1px solid #BFDBFE !important;
+  color: #2563EB !important;
+}
+.light .group:hover .text-blue-400.bg-blue-500\/10,
+.light .group:hover .bg-blue-500\/10 {
+  background-color: #EFF6FF !important;
+  color: #2563EB !important;
+}
+
+.light .border-dashed {
+  background-color: #FFFFFF !important;
+  border: 1px dashed #DCE3EE !important;
+}
+.light .w-16.h-16.bg-zinc-800\/80 {
+  background-color: #F8FAFC !important;
+  border: 1px solid #DCE3EE !important;
+  color: #94A3B8 !important;
 }
 
 /* ──────────────────────────────────────────────────────────
