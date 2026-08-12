@@ -101,7 +101,7 @@
   --muted-foreground:    #64748B;
   --accent:              #EFF6FF;
   --accent-foreground:   #2563EB;
-  --border:              #E2E8F0;
+  --border:              #DCE3EE;
   --input:               #FFFFFF;
   --ring:                #2563EB;
   --radius:              16px;
@@ -232,11 +232,30 @@
 /* ──────────────────────────────────────────────────────────
    CATEGORY SUBHEADER (Subtabs)
 ────────────────────────────────────────────────────────── */
+.light .bg-\[\#121215\],
 .light .bg-\[\#18181b\].border-b,
 .light .bg-\[\#18181b\]\/90,
 .light .border-b.border-zinc-800 {
+  background-color: #F5F7FB !important;
+  border-bottom: 1px solid #DCE3EE !important;
+}
+.light .bg-zinc-800\/60,
+.light .bg-zinc-800 {
   background-color: #FFFFFF !important;
-  border-bottom-color: #E2E8F0 !important;
+  border: 1px solid #DCE3EE !important;
+  color: #64748B !important;
+}
+.light .bg-zinc-800\/60:hover {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+.light .bg-blue-600\/20 {
+  background-color: #EFF6FF !important;
+  border: 1px solid #BFDBFE !important;
+  color: #2563EB !important;
+}
+.light .bg-blue-600\/20 * {
+  color: #2563EB !important;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -321,12 +340,12 @@
   color: #0F172A !important;
 }
 .light thead {
-  background-color: #F8FAFC !important;
+  background-color: #FFFFFF !important;
 }
 .light th {
-  color: #64748B !important;
-  background-color: #F8FAFC !important;
-  border-bottom: 1px solid #E2E8F0 !important;
+  color: #0F172A !important;
+  background-color: #FFFFFF !important;
+  border-bottom: 1px solid #DCE3EE !important;
   font-weight: 700 !important;
   font-size: 0.75rem !important;
   text-transform: uppercase !important;
@@ -334,7 +353,7 @@
 }
 .light td {
   color: #0F172A !important;
-  border-bottom: 1px solid #E2E8F0 !important;
+  border-bottom: 1px solid #DCE3EE !important;
   font-weight: 500 !important;
 }
 .light tbody {
@@ -342,6 +361,34 @@
 }
 .light tr:hover td {
   background-color: #F8FAFC !important;
+}
+
+/* Table Action Buttons in Light Mode */
+.light table button.bg-zinc-800 {
+  background-color: #FFFFFF !important;
+  border: 1px solid #DCE3EE !important;
+  color: #64748B !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+.light table button.bg-zinc-800:hover {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+.light table button.bg-red-500\/10 {
+  background-color: #FFFFFF !important;
+  border: 1px solid #DCE3EE !important;
+  color: #E5484D !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+.light table button.bg-red-500\/10:hover {
+  background-color: #FFF1F2 !important;
+  border-color: #FECDD3 !important;
+  color: #E5484D !important;
+}
+.light table button.bg-red-500\/10 svg {
+  color: #E5484D !important;
+  stroke: #E5484D !important;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -473,12 +520,43 @@
 ────────────────────────────────────────────────────────── */
 .light button.bg-zinc-800,
 .light button.bg-zinc-700 {
-  background-color: #F8FAFC !important;
+  background-color: #FFFFFF !important;
   color: #0F172A !important;
-  border: 1px solid #E2E8F0 !important;
+  border: 1px solid #DCE3EE !important;
 }
 .light button.bg-zinc-800:hover {
-  background-color: #E2E8F0 !important;
+  background-color: #F8FAFC !important;
+}
+
+/* Top Action Buttons in Light Mode */
+.light button.border-emerald-500\/20,
+.light button.bg-emerald-600\/10 {
+  background-color: #FFFFFF !important;
+  border: 1px solid #059669 !important;
+  color: #059669 !important;
+  box-shadow: 0 1px 2px rgba(5, 150, 105, 0.05) !important;
+}
+.light button.border-emerald-500\/20:hover,
+.light button.bg-emerald-600\/10:hover {
+  background-color: #ECFDF5 !important;
+}
+.light button.border-emerald-500\/20 svg,
+.light button.bg-emerald-600\/10 svg {
+  color: #059669 !important;
+  stroke: #059669 !important;
+}
+
+.light button.bg-blue-600 {
+  background-color: #2563EB !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+}
+.light button.bg-blue-600:hover {
+  background-color: #1D4ED8 !important;
+}
+.light button.bg-blue-600 * {
+  color: #FFFFFF !important;
 }
 
 /* ──────────────────────────────────────────────────────────
