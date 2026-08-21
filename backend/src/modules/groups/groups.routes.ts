@@ -40,4 +40,7 @@ router.post('/transfer-student', roleGuard('admin', 'teacher', 'administrator', 
 // POST /api/groups/:id/normatives — Guruhga normativ biriktirish
 router.post('/:id/normatives', roleGuard('admin', 'teacher'), normativesController.assignToGroup);
 
+// POST /api/groups/:id/chat-code — Telegram guruh chatini ulash uchun kod yaratish
+router.post('/:id/chat-code', roleGuard('admin', 'teacher'), groupsController.generateChatCode);
+
 export default router;

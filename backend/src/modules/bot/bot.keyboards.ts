@@ -2,7 +2,6 @@ import type {
   ReplyKeyboardMarkup,
   ReplyKeyboardRemove,
   InlineKeyboardMarkup,
-  InlineKeyboardButton,
 } from 'node-telegram-bot-api';
 
 // ============ REPLY KEYBOARDS ============
@@ -14,16 +13,6 @@ export const mainMenuKeyboard = (): ReplyKeyboardMarkup => ({
     [{ text: '📋 Ma\'lumot' }, { text: '🏆 Leaderboard' }],
     [{ text: '💬 Fikr bildirish' }, { text: '🤖 AI Konsultant' }],
     [{ text: '⚙️ Sozlamalar' }, { text: '🔗 Bog\'lanishni uzish' }],
-  ],
-  resize_keyboard: true,
-  is_persistent: true,
-});
-
-/** Operator menu */
-export const operatorMenuKeyboard = (): ReplyKeyboardMarkup => ({
-  keyboard: [
-    [{ text: '❄️ Muzlatilganlar ro\'yxati' }, { text: '🔍 Qidirish' }],
-    [{ text: '📊 Oylik hisobot' }, { text: '🔗 Chiqish' }],
   ],
   resize_keyboard: true,
   is_persistent: true,
@@ -86,27 +75,3 @@ export const settingsInlineKeyboard = (settings: {
   ],
 });
 
-/** Muzlatilgan o'quvchi uchun script inline button */
-export const freezeScriptInlineKeyboard = (freezeId: string): InlineKeyboardMarkup => ({
-  inline_keyboard: [
-    [
-      {
-        text: '📝 AI Script yaratish',
-        callback_data: `gen_script:${freezeId}`,
-      },
-    ],
-  ],
-});
-
-/** Pagination inline keyboard */
-export const paginationKeyboard = (
-  page: number,
-  total: number,
-  prefix: string
-): InlineKeyboardMarkup => {
-  const buttons: InlineKeyboardButton[] = [];
-  if (page > 0) buttons.push({ text: '⬅️ Oldingi', callback_data: `${prefix}:${page - 1}` });
-  buttons.push({ text: `${page + 1}`, callback_data: 'noop' });
-  if ((page + 1) * 5 < total) buttons.push({ text: 'Keyingi ➡️', callback_data: `${prefix}:${page + 1}` });
-  return { inline_keyboard: [buttons] };
-};

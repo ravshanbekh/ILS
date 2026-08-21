@@ -43,6 +43,7 @@ import ExamLobbyPage from '@/pages/exam/ExamLobbyPage';
 import QuizJoinPage from '@/pages/quiz/QuizJoinPage';
 import LessonsPage from '@/pages/shared/LessonsPage';
 import TrashPage from '@/pages/admin/TrashPage';
+import LessonControlPage from '@/pages/admin/LessonControlPage';
 
 
 const queryClient = new QueryClient({
@@ -162,6 +163,7 @@ export default function App() {
               <Route path="/admin/live-quiz" element={<LiveQuizPage />} />
               <Route path="/admin/lessons" element={<LessonsPage />} />
               <Route path="/admin/trash" element={<TrashPage />} />
+              <Route path="/admin/lesson-control" element={<LessonControlPage />} />
             </Route>
 
             {/* Teacher routes */}

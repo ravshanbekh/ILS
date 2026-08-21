@@ -1,7 +1,6 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
-import { TelegramLinkRecord, FreezeItem } from './bot.types';
-import { FREEZE_REASON_LABELS } from '../freezes/freezes.service';
+import { TelegramLinkRecord } from './bot.types';
 
 class BotService {
   // ============ ALOQA BO'LGAN O'QUVCHI ============
@@ -86,57 +85,6 @@ class BotService {
       studentName: user.fullName,
       groupName: groupStudent?.group.name,
     };
-  }
-
-  /**
-   * Operator sifatida kirish (call_operatori va admin rollari)
-   */
-  async linkOperator(data: {
-    telegramId: number;
-    chatId: number;
-    login: string;
-    password: string;
-    fullName?: string;
-    username?: string;
-  }): Promise<{ success: boolean; message: string; name?: string }> {
-    const user = await prisma.user.findUnique({ where: { login: data.login } });
-
-    if (!user) return { success: false, message: 'not_found' };
-    if (!user.isActive) return { success: false, message: 'not_active' };
-
-    const allowedRoles = ['call_operatori', 'admin', 'administrator', 'sotuv_operatori', 'filial_rahbari'];
-    if (!allowedRoles.includes(user.role)) {
-      return { success: false, message: 'unauthorized' };
-    }
-
-    const valid = await bcrypt.compare(data.password, user.passwordHash);
-    if (!valid) return { success: false, message: 'wrong_password' };
-
-    // Birinchi student bor bo'lsa, uni ishlatamiz; aks holda admin o'zini bog'laydi
-    // Operator uchun studentId sifatida o'zini ishlatamiz (workaround)
-    // Lekin schema TelegramLink.studentId NOT NULL — shuning uchun operatorni admin student sifatida saqlaymiz
-    // Haqiqiy tekshiruv role orqali bo'ladi
-    await prisma.telegramLink.upsert({
-      where: { telegramId: BigInt(data.telegramId) },
-      create: {
-        telegramId: BigInt(data.telegramId),
-        chatId: BigInt(data.chatId),
-        studentId: user.id,  // operator o'zi
-        role: 'operator',
-        fullName: data.fullName || user.fullName,
-        username: data.username,
-      },
-      update: {
-        chatId: BigInt(data.chatId),
-        studentId: user.id,
-        role: 'operator',
-        fullName: data.fullName || user.fullName,
-        username: data.username,
-        isActive: true,
-      },
-    });
-
-    return { success: true, message: 'ok', name: user.fullName };
   }
 
   /**
@@ -386,62 +334,38 @@ class BotService {
     });
   }
 
-  // ============ OPERATOR FUNKSIYALARI ============
+  // ============ GURUH TELEGRAM CHATI ============
 
   /**
-   * Muzlatilganlar ro'yxatini olish (operator uchun)
+   * /ulash <kod> — guruh Telegram chatini saytda yaratilgan kod bilan bog'lash.
+   * O'qituvchi botni guruh chatiga qo'shadi (admin qilish shart emas) va shu buyruqni yozadi.
    */
-  async getFrozenList(month?: number, year?: number): Promise<FreezeItem[]> {
-    const now = new Date();
-    const m = month || now.getMonth() + 1;
-    const y = year || now.getFullYear();
-
-    const freezes = await prisma.studentFreeze.findMany({
-      where: { month: m, year: y },
-      orderBy: { frozenAt: 'desc' },
-    });
-
-    return freezes.map((f) => ({
-      id: f.id,
-      studentName: f.studentName,
-      teacherName: f.teacherName,
-      groupName: f.groupName,
-      filial: f.filial,
-      phone: f.phone,
-      reason: FREEZE_REASON_LABELS[f.reason] || f.reason,
-      detailedNote: f.detailedNote,
-      frozenAt: f.frozenAt,
-      startDate: f.startDate,
-    }));
-  }
-
-  /**
-   * Qidiruv (nom bo'yicha)
-   */
-  async searchFrozen(query: string): Promise<FreezeItem[]> {
-    const now = new Date();
-    const freezes = await prisma.studentFreeze.findMany({
+  async linkGroupChatByCode(
+    code: string,
+    chatId: number,
+    chatTitle?: string
+  ): Promise<{ success: boolean; groupName?: string }> {
+    const normalized = code.trim();
+    const group = await prisma.group.findFirst({
       where: {
-        month: now.getMonth() + 1,
-        year: now.getFullYear(),
-        studentName: { contains: query, mode: 'insensitive' },
+        chatLinkCode: normalized,
+        chatLinkCodeExpiresAt: { gt: new Date() },
       },
-      orderBy: { frozenAt: 'desc' },
-      take: 10,
     });
 
-    return freezes.map((f) => ({
-      id: f.id,
-      studentName: f.studentName,
-      teacherName: f.teacherName,
-      groupName: f.groupName,
-      filial: f.filial,
-      phone: f.phone,
-      reason: FREEZE_REASON_LABELS[f.reason] || f.reason,
-      detailedNote: f.detailedNote,
-      frozenAt: f.frozenAt,
-      startDate: f.startDate,
-    }));
+    if (!group) return { success: false };
+
+    await prisma.group.update({
+      where: { id: group.id },
+      data: {
+        telegramChatId: BigInt(chatId),
+        telegramChatTitle: chatTitle,
+        chatLinkCode: null,
+        chatLinkCodeExpiresAt: null,
+      },
+    });
+
+    return { success: true, groupName: group.name };
   }
 
   // ============ PROAKTIV XABARLAR UCHUN ============
@@ -461,11 +385,11 @@ class BotService {
   }
 
   /**
-   * Barcha aktiv operator chatId larini olish
+   * /admin orqali bog'langan barcha rahbar chat ID lari (kuniga 20:00 sustlik hisoboti uchun)
    */
-  async getOperatorChatIds(): Promise<bigint[]> {
+  async getAdminChatIds(): Promise<bigint[]> {
     const links = await prisma.telegramLink.findMany({
-      where: { role: 'operator', isActive: true },
+      where: { role: 'admin', isActive: true },
       select: { chatId: true },
     });
     return links.map((l) => l.chatId);

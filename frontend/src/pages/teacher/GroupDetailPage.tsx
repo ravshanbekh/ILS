@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
 import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi, monitoringApi, freezesApi } from '@/api';
-import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain, RefreshCw, Snowflake, LogOut, X, Sparkles } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain, RefreshCw, Snowflake, LogOut, X, Sparkles, ClipboardCheck } from 'lucide-react';
 import ScoreBadge from '@/components/shared/ScoreBadge';
+import LessonGradingPanel from '@/components/shared/LessonGradingPanel';
 import { downloadBlob } from '@/utils';
 
 export default function GroupDetailPage() {
@@ -15,6 +16,10 @@ export default function GroupDetailPage() {
   const [rankData, setRankData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [showGradingPanel, setShowGradingPanel] = useState(false);
+  const [dayTypeSaving, setDayTypeSaving] = useState(false);
+  const [chatCode, setChatCode] = useState<string | null>(null);
+  const [chatCodeLoading, setChatCodeLoading] = useState(false);
   
   // Student management states
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -48,6 +53,29 @@ export default function GroupDetailPage() {
   const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
+
+  const handleSetDayType = async (lessonDayType: 'juft' | 'toq' | 'har_kuni') => {
+    if (!id) return;
+    setDayTypeSaving(true);
+    try {
+      await groupsApi.update(id, { lessonDayType });
+      await fetchGroupData();
+    } finally {
+      setDayTypeSaving(false);
+    }
+  };
+
+  const handleGenerateChatCode = async () => {
+    if (!id) return;
+    setChatCodeLoading(true);
+    setChatCode(null);
+    try {
+      const res = await groupsApi.generateChatCode(id);
+      setChatCode(res.data.data.code);
+    } finally {
+      setChatCodeLoading(false);
+    }
+  };
 
   const handleAiAnalyze = async () => {
     if (!id) return;
@@ -301,7 +329,7 @@ export default function GroupDetailPage() {
       />
 
       {/* Teacher badge */}
-      <div className="px-8 pt-4 max-w-7xl mx-auto">
+      <div className="px-8 pt-4 max-w-7xl mx-auto flex flex-wrap items-center gap-3">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181b] border border-zinc-800 text-sm">
           <GraduationCap className="w-4 h-4 text-blue-400" />
           <span className="text-zinc-400">O'qituvchi:</span>
@@ -309,6 +337,42 @@ export default function GroupDetailPage() {
             <span className="text-white font-medium">{group.teacher.fullName}</span>
           ) : (
             <span className="text-zinc-500 italic">Biriktirilmagan</span>
+          )}
+        </div>
+
+        {/* Dars kuni */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#18181b] border border-zinc-800 text-sm">
+          <span className="text-zinc-400">Dars kuni:</span>
+          {(['juft', 'toq', 'har_kuni'] as const).map((t) => (
+            <button
+              key={t}
+              disabled={dayTypeSaving}
+              onClick={() => handleSetDayType(t)}
+              className={`px-2 py-0.5 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 ${
+                group?.lessonDayType === t ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              {t === 'juft' ? 'Juft' : t === 'toq' ? 'Toq' : 'Har kuni'}
+            </button>
+          ))}
+        </div>
+
+        {/* Telegram guruh chati */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181b] border border-zinc-800 text-sm">
+          {group?.telegramChatId ? (
+            <span className="text-emerald-400 font-medium">✅ Chat ulangan{group.telegramChatTitle ? `: ${group.telegramChatTitle}` : ''}</span>
+          ) : chatCode ? (
+            <span className="text-zinc-300">
+              Chatga yozing: <code className="text-blue-400 font-mono">/ulash {chatCode}</code>
+            </span>
+          ) : (
+            <button
+              onClick={handleGenerateChatCode}
+              disabled={chatCodeLoading}
+              className="text-blue-400 hover:text-blue-300 font-medium disabled:opacity-50"
+            >
+              {chatCodeLoading ? 'Kod olinmoqda...' : '🔗 Telegram chatni ulash'}
+            </button>
           )}
         </div>
       </div>
@@ -325,7 +389,14 @@ export default function GroupDetailPage() {
           </button>
           
           <div className="flex items-center gap-3">
-            <button 
+            <button
+              onClick={() => setShowGradingPanel(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <ClipboardCheck className="w-4 h-4" />
+              Baholashni boshlash
+            </button>
+            <button
               onClick={handleOpenNormativeModal}
               className="bg-[#18181b] hover:bg-zinc-800 text-blue-500 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-blue-500/20"
             >
@@ -964,6 +1035,10 @@ export default function GroupDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showGradingPanel && id && (
+        <LessonGradingPanel groupId={id} groupName={group?.name || ''} onClose={() => setShowGradingPanel(false)} />
       )}
     </div>
   );

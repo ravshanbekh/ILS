@@ -54,32 +54,36 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
-  teacherGroups      Group[]               @relation("TeacherGroups")
-  groupStudents      GroupStudent[]
-  submissions        Submission[]          @relation("StudentSubmissions")
-  checkedBy          Submission[]          @relation("CheckedByTeacher")
-  notifications      Notification[]
-  auditLogs          AuditLog[]
-  checklistEntries   DailyChecklistEntry[]
-  frozenEntries      StudentFreeze[]       @relation("FrozenStudents")
-  frozenByEntries    StudentFreeze[]       @relation("FrozenBy")
-  monitoringCalls    MonitoringCall[]      @relation("MonitoringCalledBy")
-  monitoringNotes    MonitoringNote[]      @relation("MonitoringNotes")
-  feedbacksWritten   StudentFeedback[]     @relation("FeedbackByStudent")
-  feedbacksReceived  StudentFeedback[]     @relation("FeedbackForTeacher")
-  telegramLinks      TelegramLink[]        @relation("TelegramStudentLinks")
-  feedbackStudent    TelegramFeedback[]    @relation("FeedbackStudent")
-  feedbackTeacher    TelegramFeedback[]    @relation("FeedbackTeacher")
+  teacherGroups          Group[]               @relation("TeacherGroups")
+  groupStudents          GroupStudent[]
+  submissions            Submission[]          @relation("StudentSubmissions")
+  checkedBy              Submission[]          @relation("CheckedByTeacher")
+  notifications          Notification[]
+  auditLogs              AuditLog[]
+  checklistEntries       DailyChecklistEntry[]
+  frozenEntries          StudentFreeze[]       @relation("FrozenStudents")
+  frozenByEntries        StudentFreeze[]       @relation("FrozenBy")
+  monitoringCalls        MonitoringCall[]      @relation("MonitoringCalledBy")
+  monitoringNotes        MonitoringNote[]      @relation("MonitoringNotes")
+  feedbacksWritten       StudentFeedback[]     @relation("FeedbackByStudent")
+  feedbacksReceived      StudentFeedback[]     @relation("FeedbackForTeacher")
+  telegramLinks          TelegramLink[]        @relation("TelegramStudentLinks")
+  feedbackStudent        TelegramFeedback[]    @relation("FeedbackStudent")
+  feedbackTeacher        TelegramFeedback[]    @relation("FeedbackTeacher")
   // Exam relations
-  createdExams       Exam[]                @relation("ExamCreator")
-  examParticipations ExamParticipant[]     @relation("ExamParticipants")
-  gradedExams        ExamParticipant[]     @relation("ExamGrader")
-  createdQuizzes     LiveQuiz[]            @relation("QuizCreator")
-  activeQuizzes      LiveQuiz[]            @relation("ActiveQuizTeacher")
-  quizResults        LiveQuizResult[]      @relation("TeacherQuizResults")
+  createdExams           Exam[]                @relation("ExamCreator")
+  examParticipations     ExamParticipant[]     @relation("ExamParticipants")
+  gradedExams            ExamParticipant[]     @relation("ExamGrader")
+  createdQuizzes         LiveQuiz[]            @relation("QuizCreator")
+  activeQuizzes          LiveQuiz[]            @relation("ActiveQuizTeacher")
+  quizResults            LiveQuizResult[]      @relation("TeacherQuizResults")
   // Lessons relations
-  createdFolders     LessonFolder[]        @relation("FolderCreator")
-  lessonAccess       LessonFolderAccess[]  @relation("TeacherAccess")
+  createdFolders         LessonFolder[]        @relation("FolderCreator")
+  lessonAccess           LessonFolderAccess[]  @relation("TeacherAccess")
+  // Dars baholash relations
+  taughtLessonSessions   LessonSession[]       @relation("LessonSessionTeacher")
+  unlockedLessonSessions LessonSession[]       @relation("LessonSessionUnlockedBy")
+  lessonGrades           LessonGrade[]         @relation("LessonGradeStudent")
 
   @@map("users")
 }
@@ -92,16 +96,26 @@ model Group {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
+  // Dars kuni (jadval o'rniga — soatsiz, faqat juft/toq/har kuni)
+  lessonDayType LessonDayType? @map("lesson_day_type")
+
+  // Telegram guruh chati (ota-onalar uchun 20:00 yig'ma xabar)
+  telegramChatId        BigInt?   @map("telegram_chat_id")
+  telegramChatTitle     String?   @map("telegram_chat_title") @db.VarChar(200)
+  chatLinkCode          String?   @map("chat_link_code") @db.VarChar(10)
+  chatLinkCodeExpiresAt DateTime? @map("chat_link_code_expires_at")
+
   // Relations
-  teacher         User?             @relation("TeacherGroups", fields: [teacherId], references: [id])
-  groupStudents   GroupStudent[]
-  groupNormatives GroupNormative[]
-  submissions     Submission[]
-  rankingCache    RankingCache[]
-  monitoringCalls MonitoringCall[]
-  feedbacks       StudentFeedback[]
-  liveQuizzes     LiveQuiz[]
+  teacher          User?             @relation("TeacherGroups", fields: [teacherId], references: [id])
+  groupStudents    GroupStudent[]
+  groupNormatives  GroupNormative[]
+  submissions      Submission[]
+  rankingCache     RankingCache[]
+  monitoringCalls  MonitoringCall[]
+  feedbacks        StudentFeedback[]
+  liveQuizzes      LiveQuiz[]
   examParticipants ExamParticipant[]
+  lessonSessions   LessonSession[]
 
   @@map("groups")
 }
@@ -472,19 +486,19 @@ enum ExamParticipantStatus {
 
 /// Rasmiy imtihon
 model Exam {
-  id          String     @id @default(uuid()) @db.Uuid
-  title       String     @db.VarChar(200)
-  description String?    @db.VarChar(500)
-  categoryId  String?    @map("category_id") @db.Uuid
-  createdById String     @map("created_by_id") @db.Uuid
-  accessCode  String     @unique @map("access_code") @db.VarChar(20)
-  startsAt    DateTime   @map("starts_at")
-  expiresAt   DateTime   @map("expires_at")
-  status      ExamStatus @default(draft)
-  testCount   Int        @default(20) @map("test_count")
-  durationHours Int      @default(2) @map("duration_hours")
-  isGlobal    Boolean    @default(false) @map("is_global")
-  templateId  String?    @map("template_id") @db.Uuid
+  id            String     @id @default(uuid()) @db.Uuid
+  title         String     @db.VarChar(200)
+  description   String?    @db.VarChar(500)
+  categoryId    String?    @map("category_id") @db.Uuid
+  createdById   String     @map("created_by_id") @db.Uuid
+  accessCode    String     @unique @map("access_code") @db.VarChar(20)
+  startsAt      DateTime   @map("starts_at")
+  expiresAt     DateTime   @map("expires_at")
+  status        ExamStatus @default(draft)
+  testCount     Int        @default(20) @map("test_count")
+  durationHours Int        @default(2) @map("duration_hours")
+  isGlobal      Boolean    @default(false) @map("is_global")
+  templateId    String?    @map("template_id") @db.Uuid
 
   // Maksimal ballar
   maxTestScore    Int @default(40) @map("max_test_score")
@@ -607,7 +621,7 @@ enum QuizStatus {
 model QuizMusic {
   id        String   @id @default(uuid()) @db.Uuid
   title     String   @db.VarChar(150)
-  url       String   // music file path / url
+  url       String // music file path / url
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -653,7 +667,7 @@ model LiveQuizResult {
   groupId      String   @default("") @map("group_id")
   teacherId    String   @map("teacher_id") @db.Uuid
   quizTitle    String   @map("quiz_title")
-  leaderboard  Json     // [{ fullName, score, rank, streak }]
+  leaderboard  Json // [{ fullName, score, rank, streak }]
   totalPlayers Int      @default(0) @map("total_players")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -764,4 +778,84 @@ model LessonFolderAccess {
 
   @@unique([folderId, teacherId])
   @@map("lesson_folder_access")
+}
+
+// ============================================================
+//  DARS BAHOLASH TIZIMI (Lesson Session / Grade)
+// ============================================================
+
+/// Guruhning dars kunlari — jadval o'rniga soatsiz belgi
+enum LessonDayType {
+  juft // Oyning juft kunlari
+  toq // Oyning toq kunlari
+  har_kuni // Har kuni dars bo'ladi
+}
+
+enum LessonSessionStatus {
+  ochiq // O'qituvchi boshladi, baholash davom etmoqda
+  yakunlandi // O'qituvchi "Yakunlash" bosdi
+  avto_yopildi // 1 soat 40 daqiqa o'tib, yakunlanmagani uchun tizim yopdi
+}
+
+enum HomeworkGrade {
+  toliq // 5 ball
+  qisman // 3 ball
+  bajarmagan // 0 ball
+  kelmadi // Darsga kelmadi — o'rtachaga kirmaydi
+}
+
+/// Bitta guruhning bitta kundagi dars sessiyasi (baholash oynasi)
+model LessonSession {
+  id        String              @id @default(uuid()) @db.Uuid
+  groupId   String              @map("group_id") @db.Uuid
+  teacherId String              @map("teacher_id") @db.Uuid
+  date      DateTime            @db.Date
+  status    LessonSessionStatus @default(ochiq)
+  topic     String?             @db.VarChar(300)
+
+  startedAt        DateTime  @default(now()) @map("started_at")
+  deadlineAt       DateTime  @map("deadline_at") // startedAt + 100 daqiqa
+  homeworkGradedAt DateTime? @map("homework_graded_at") // barcha o'quvchi uy vazifasi bo'yicha baholangan payt
+  finalizedAt      DateTime? @map("finalized_at") // "Yakunlash" bosilgan payt
+  parentNotifyAt   DateTime? @map("parent_notify_at") // finalizedAt + 1 soat
+  parentNotifiedAt DateTime? @map("parent_notified_at")
+
+  // Admin (Ravshan) tomonidan qayta ochilgan bo'lsa
+  unlockedById String?   @map("unlocked_by_id") @db.Uuid
+  unlockedAt   DateTime? @map("unlocked_at")
+  unlockNote   String?   @map("unlock_note") @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  group      Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  teacher    User          @relation("LessonSessionTeacher", fields: [teacherId], references: [id])
+  unlockedBy User?         @relation("LessonSessionUnlockedBy", fields: [unlockedById], references: [id])
+  grades     LessonGrade[]
+
+  @@unique([groupId, date])
+  @@map("lesson_sessions")
+}
+
+/// O'quvchining bitta darsdagi bahosi (uy vazifasi 5/3/0 + faollik 1-5)
+model LessonGrade {
+  id        String @id @default(uuid()) @db.Uuid
+  sessionId String @map("session_id") @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+
+  homework      HomeworkGrade?
+  homeworkScore Int?           @map("homework_score") // 5 | 3 | 0 | null (kelmadi)
+  activityScore Int?           @map("activity_score") // 1..5
+  autoZero      Boolean        @default(false) @map("auto_zero") // vaqt tugab, o'qituvchi ulgurmagani uchun avtomatik 0
+
+  comment          String?   @db.VarChar(500)
+  gradedAt         DateTime? @map("graded_at") // uy vazifasi baholangan payt
+  activityGradedAt DateTime? @map("activity_graded_at")
+
+  // Relations
+  session LessonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User          @relation("LessonGradeStudent", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@map("lesson_grades")
 }

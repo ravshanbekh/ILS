@@ -64,6 +64,9 @@ export const groupsApi = {
 
   assignNormatives: (groupId: string, normativeIds: string[]) =>
     api.post(`/groups/${groupId}/normatives`, { normativeIds }),
+
+  generateChatCode: (groupId: string) =>
+    api.post(`/groups/${groupId}/chat-code`),
 };
 
 export const normativesApi = {
@@ -441,4 +444,28 @@ export const lessonsApi = {
 
   // O'qituvchilar ro'yxati
   getTeachers: () => api.get('/lessons/teachers'),
+};
+
+export const lessonSessionsApi = {
+  start: (groupId: string, topic?: string) =>
+    api.post('/lesson-sessions/start', { groupId, topic }),
+
+  getToday: (groupId: string) =>
+    api.get('/lesson-sessions/today', { params: { groupId } }),
+
+  getById: (id: string) => api.get(`/lesson-sessions/${id}`),
+
+  gradeHomework: (sessionId: string, studentId: string, homework: 'toliq' | 'qisman' | 'bajarmagan' | 'kelmadi', comment?: string) =>
+    api.patch(`/lesson-sessions/${sessionId}/homework`, { studentId, homework, comment }),
+
+  gradeActivity: (sessionId: string, studentId: string, activityScore: number) =>
+    api.patch(`/lesson-sessions/${sessionId}/activity`, { studentId, activityScore }),
+
+  finalize: (sessionId: string) => api.post(`/lesson-sessions/${sessionId}/finalize`),
+
+  // Faqat admin
+  adminUnlock: (groupId: string, note: string, date?: string) =>
+    api.post('/lesson-sessions/admin/unlock', { groupId, note, date }),
+
+  adminUngraded: () => api.get('/lesson-sessions/admin/ungraded'),
 };

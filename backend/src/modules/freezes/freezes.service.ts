@@ -1,5 +1,4 @@
 import prisma from '../../config/database';
-import { notifyOperatorsOnFreeze } from '../bot/bot.notifications';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 
 // Human-readable sabab nomlari
@@ -78,16 +77,6 @@ class FreezesService {
         frozenBy: { select: { id: true, fullName: true } },
       },
     });
-
-    // Telegram orqali operatorlarga xabar yuborish
-    notifyOperatorsOnFreeze({
-      id: freeze.id,
-      studentName: freeze.studentName,
-      teacherName: freeze.teacherName,
-      groupName: freeze.groupName,
-      reason: FREEZE_REASON_LABELS[freeze.reason] || freeze.reason,
-      phone: freeze.phone,
-    }).catch(() => {});
 
     return freeze;
   }

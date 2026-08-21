@@ -1,9 +1,8 @@
 // ============ TELEGRAM BOT TYPES ============
 
 export interface BotUserState {
-  step?: string;           // 'await_login' | 'await_password' | 'await_feedback' | 'operator_await_login' | 'operator_await_password' | 'admin_await_login' | 'admin_await_password'
+  step?: string;           // 'await_login' | 'await_password' | 'await_feedback' | 'await_ai_query' | 'admin_await_login' | 'admin_await_password'
   pendingLogin?: string;   // Vaqtincha saqlanadigan login
-  pendingOperatorLogin?: string;
   pendingAdminLogin?: string;
 }
 
@@ -50,19 +49,6 @@ export interface StudentStats {
   }>;
 }
 
-export interface FreezeItem {
-  id: string;
-  studentName: string;
-  teacherName: string | null;
-  groupName: string | null;
-  filial: string | null;
-  phone: string | null;
-  reason: string;
-  detailedNote: string | null;
-  frozenAt: Date;
-  startDate: Date | null;
-}
-
 export interface TelegramLinkRecord {
   id: string;
   telegramId: bigint;
@@ -97,13 +83,4 @@ export interface NotifyRankPayload {
   newGroupRank?: number;
   oldOverallRank?: number;
   newOverallRank?: number;
-}
-
-export interface NotifyFreezePayload {
-  id: string;
-  studentName: string;
-  teacherName: string | null;
-  groupName: string | null;
-  reason: string;
-  phone: string | null;
 }

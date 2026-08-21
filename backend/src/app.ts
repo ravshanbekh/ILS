@@ -35,7 +35,9 @@ import examRoutes from './modules/exam/exam.routes';
 import liveQuizRoutes from './modules/live-quiz/live-quiz.routes';
 import lessonsRoutes from './modules/lessons/lessons.routes';
 import trashRoutes from './modules/trash/trash.routes';
+import lessonSessionsRoutes from './modules/lesson-sessions/lesson-sessions.routes';
 import { initSocketIO } from './modules/live-quiz/live-quiz.gateway';
+import { startLessonSessionsScheduler } from './modules/lesson-sessions/lesson-sessions.scheduler';
 
 const app = express();
 app.set('trust proxy', 1); // nginx orqasida turgani uchun — rate limit va req.ip to'g'ri ishlashi uchun
@@ -114,6 +116,7 @@ app.use('/api/live-quiz', liveQuizRoutes);
 app.use('/api/lessons', lessonsRoutes);
 app.use('/api/trash', trashRoutes);
 app.use('/api/bot', botRoutes);
+app.use('/api/lesson-sessions', lessonSessionsRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -183,6 +186,9 @@ const startServer = async () => {
     } catch (botErr) {
       logger.error('⚠️ Telegram bot ishga tushirish xatosi:', botErr);
     }
+
+    // Dars baholash tizimi: avto-yopish, ota-onaga xabar, kunlik nazorat
+    startLessonSessionsScheduler();
   } catch (error) {
     logger.error('❌ Server ishga tushmadi:', error);
     process.exit(1);

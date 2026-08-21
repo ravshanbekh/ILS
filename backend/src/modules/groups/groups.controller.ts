@@ -178,6 +178,22 @@ class GroupsController {
       next(error);
     }
   }
+
+  /**
+   * POST /api/groups/:id/chat-code — Telegram guruh chatini ulash uchun kod
+   */
+  async generateChatCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await groupsService.generateChatLinkCode(
+        req.params.id,
+        req.user?.userId,
+        req.user?.role
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new GroupsController();

@@ -1,4 +1,4 @@
-import { StudentStats, FreezeItem, NotifyCheckPayload } from './bot.types';
+import { StudentStats, NotifyCheckPayload } from './bot.types';
 
 // Helper to escape Markdown special characters
 export function esc(text: string | null | undefined): string {
@@ -14,9 +14,7 @@ export function welcomeMessage(): string {
     `🎓 *IT Live Normativ Tizimi*\n\n` +
     `Assalomu alaykum! Bu bot orqali farzandingizning o'qish natijalari, reytingi va normativlar holati haqida ma'lumot olishingiz mumkin.\n\n` +
     `*Botni ishlatish uchun:*\n` +
-    `🔑 /login — O'quvchi logini va paroli orqali bog'lanish\n\n` +
-    `*Operator uchun:*\n` +
-    `👨‍💼 /operator — Operator sifatida kirish`
+    `🔑 /login — O'quvchi logini va paroli orqali bog'lanish`
   );
 }
 
@@ -238,76 +236,6 @@ export function weeklyReportMessage(
   );
 }
 
-/** Yangi muzlatilgan — operator uchun */
-export function newFreezeNotificationMessage(freeze: {
-  studentName: string;
-  groupName: string | null;
-  reason: string;
-  phone: string | null;
-}): string {
-  return (
-    `❄️ *Yangi muzlatilgan o'quvchi!*\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `👤 *${esc(freeze.studentName)}*\n` +
-    (freeze.groupName ? `📚 Guruh: ${esc(freeze.groupName)}\n` : '') +
-    `📌 Sabab: ${esc(freeze.reason)}\n` +
-    (freeze.phone ? `📞 Telefon: ${esc(freeze.phone)}\n` : '') +
-    `\n_Script olish uchun "❄️ Muzlatilganlar ro'yxati" ni oching_`
-  );
-}
-
-/** Muzlatilganlar ro'yxati — operator uchun */
-export function freezeListMessage(freezes: FreezeItem[], page: number, total: number): string {
-  if (freezes.length === 0) {
-    return `❄️ *Bu oy muzlatilgan o'quvchilar yo'q.*`;
-  }
-
-  const pageSize = 5;
-  const start = page * pageSize;
-  const items = freezes.slice(start, start + pageSize);
-
-  const lines = items.map((f, i) => {
-    const date = new Date(f.frozenAt).toLocaleDateString('uz-UZ');
-    return (
-      `${start + i + 1}. *${esc(f.studentName)}*\n` +
-      `   📚 ${esc(f.groupName || '—')} | 📌 ${esc(f.reason)}\n` +
-      `   📞 ${esc(f.phone || 'Telefon yo\'q')} | 🗓 ${date}\n` +
-      `   ID: \`${f.id.substring(0, 8)}...\``
-    );
-  });
-
-  return (
-    `❄️ *MUZLATILGANLAR RO'YXATI*\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `Jami: *${total}* ta\n\n` +
-    lines.join('\n\n')
-  );
-}
-
-/** Operator sifatida kirish so'rash */
-export function operatorAskLoginMessage(): string {
-  return `👨‍💼 *Operator rejimi*\n\nSizning tizim *loginingizni* kiriting:`;
-}
-
-/** Operator sifatida kirish — parol so'rash */
-export function operatorAskPasswordMessage(login: string): string {
-  return `🔒 Login: *${esc(login)}*\n\nOperator *parolini* kiriting:`;
-}
-
-/** Operator — ruxsat yo'q */
-export function operatorUnauthorizedMessage(): string {
-  return `⛔ *Ruxsat yo'q!*\n\nFaqat Call Operator yoki Admin roli bilan kirish mumkin.`;
-}
-
-/** Operator — muvaffaqiyatli kirish */
-export function operatorLinkedMessage(name: string): string {
-  return (
-    `✅ *Operator sifatida kirdingiz!*\n\n` +
-    `👤 *${esc(name)}*\n\n` +
-    `Quyidagi tugmalardan foydalaning:`
-  );
-}
-
 /** Admin sifatida kirish so'rash */
 export function adminAskLoginMessage(): string {
   return `🔐 *Admin / Rahbar rejimi*\n\nKunlik AI ta'lim hisobotlarini Telegram orqali olish uchun tizim *loginingizni* kiriting:`;
@@ -332,5 +260,102 @@ export function adminLinkedMessage(name: string): string {
     `Qo'lda hisobot olish: /report\n` +
     `Uzish: /unlink`
   );
+}
+
+// ============ GURUH CHATI ULASH ============
+
+/** /ulash muvaffaqiyatli — guruh chatiga */
+export function chatLinkedMessage(groupName: string): string {
+  return (
+    `✅ *Ulanish muvaffaqiyatli!*\n\n` +
+    `Bu chat *"${esc(groupName)}"* guruhiga bog'landi.\n\n` +
+    `Endi har dars kuni soat 20:00 da shu yerga guruhning umumiy natijasi (ismlarsiz) yuboriladi.`
+  );
+}
+
+/** /ulash — kod noto'g'ri yoki muddati o'tgan */
+export function chatLinkInvalidMessage(): string {
+  return (
+    `❌ *Kod noto'g'ri yoki muddati o'tgan.*\n\n` +
+    `Saytda guruh sahifasida yangi kod so'rang va qayta urinib ko'ring:\n` +
+    `\`/ulash 123456\``
+  );
+}
+
+// ============ DARS BAHOLASH XABARLARI ============
+
+/** Ota-onaga — bugungi dars natijasi (yakunlanishdan 1 soat keyin) */
+export function lessonGradeParentMessage(data: {
+  studentName: string;
+  groupName: string;
+  date: string;
+  homework: 'toliq' | 'qisman' | 'bajarmagan' | 'kelmadi' | null;
+  homeworkScore: number | null;
+  activityScore: number | null;
+  weeklyAvgHomework?: number | null;
+  teacherComment?: string | null;
+}): string {
+  const hwLabel =
+    data.homework === 'toliq' ? '✅ To\'liq bajardi'
+    : data.homework === 'qisman' ? '🟡 Qisman bajardi'
+    : data.homework === 'bajarmagan' ? '❌ Bajarmadi'
+    : data.homework === 'kelmadi' ? '🚫 Darsga kelmadi'
+    : '—';
+
+  return (
+    `📚 *DARS NATIJASI*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `👤 *${esc(data.studentName)}*\n` +
+    `📆 ${data.date} | 📖 ${esc(data.groupName)}\n\n` +
+    `📝 Uy vazifasi: ${hwLabel}` + (data.homeworkScore !== null ? ` — *${data.homeworkScore} ball*` : '') + `\n` +
+    (data.activityScore !== null ? `⭐ Faollik: *${data.activityScore}/5*\n` : '') +
+    (data.weeklyAvgHomework != null ? `\n📊 Haftalik o'rtacha: *${data.weeklyAvgHomework.toFixed(1)} ball*\n` : '') +
+    (data.teacherComment ? `\n💬 O'qituvchi izohi: ${esc(data.teacherComment)}` : '')
+  );
+}
+
+/** Guruh chatiga — ismsiz yig'ma xabar (20:00) */
+export function groupDailySummaryMessage(data: {
+  total: number;
+  full: number;
+  partial: number;
+  none: number;
+  avgActivity: number | null;
+  botLink?: string;
+}): string {
+  return (
+    `📚 *Bugungi dars natijasi*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `${data.total} o'quvchidan: ✅ ${data.full} ta to'liq bajardi · 🟡 ${data.partial} ta qisman · ❌ ${data.none} ta bajarmadi\n` +
+    (data.avgActivity !== null ? `Faollik o'rtachasi: *${data.avgActivity.toFixed(1)} / 5*\n\n` : '\n') +
+    `👉 Farzandingiz natijasi qiziqmi? Botga /start bosing — barcha natijalar, hisobotlar va o'qituvchi izohlari shu yerda` +
+    (data.botLink ? `: ${data.botLink}` : '.')
+  );
+}
+
+/** Ravshanga — kuniga 20:00 nazorat hisoboti (kim baholamadi) */
+export function adminUngradedReportMessage(report: {
+  notOpened: Array<{ groupName: string; teacherName: string }>;
+  notFinalized: Array<{ groupName: string; teacherName: string }>;
+  notConfigured: Array<{ groupName: string }>;
+}): string {
+  const lines: string[] = [`⚠️ *KUNLIK NAZORAT HISOBOTI*`, `━━━━━━━━━━━━━━━━━━━━`];
+
+  if (report.notOpened.length > 0) {
+    lines.push(`\n🔴 *Ochilmagan guruhlar (${report.notOpened.length}):*`);
+    for (const g of report.notOpened) lines.push(`• ${esc(g.groupName)} — ${esc(g.teacherName)}`);
+  }
+
+  if (report.notFinalized.length > 0) {
+    lines.push(`\n🟠 *Yakunlanmagan (vaqt tugab avto-yopilgan) (${report.notFinalized.length}):*`);
+    for (const g of report.notFinalized) lines.push(`• ${esc(g.groupName)} — ${esc(g.teacherName)}`);
+  }
+
+  if (report.notConfigured.length > 0) {
+    lines.push(`\n⚪ *Dars kuni belgilanmagan guruhlar (${report.notConfigured.length}):*`);
+    for (const g of report.notConfigured) lines.push(`• ${esc(g.groupName)}`);
+  }
+
+  return lines.join('\n');
 }
 

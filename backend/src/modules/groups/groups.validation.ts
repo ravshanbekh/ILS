@@ -12,6 +12,7 @@ export const updateGroupSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   teacherId: z.string().uuid().optional().nullable(),
   isActive: z.boolean().optional(),
+  lessonDayType: z.enum(['juft', 'toq', 'har_kuni']).optional().nullable(),
 });
 
 export const addStudentSchema = z.object({

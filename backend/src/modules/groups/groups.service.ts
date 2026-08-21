@@ -135,6 +135,8 @@ class GroupsService {
 
     return {
       ...group,
+      // BigInt JSON.stringify da xato beradi — stringga o'giramiz
+      telegramChatId: group.telegramChatId ? group.telegramChatId.toString() : null,
       students: group.groupStudents.map((gs) => ({
         ...gs.student,
         joinedAt: gs.joinedAt,
@@ -407,6 +409,29 @@ class GroupsService {
 
     logger.info(`Group deactivated: ${existing.name}`);
     return { message: 'Guruh o\'chirildi' };
+  }
+
+  /**
+   * Telegram guruh chatini ulash uchun 6 xonali kod yaratish (30 daqiqa amal qiladi).
+   * O'qituvchi botni guruh chatiga qo'shib, chatga /ulash <kod> deb yozadi.
+   */
+  async generateChatLinkCode(id: string, requesterId?: string, requesterRole?: string) {
+    const group = await prisma.group.findUnique({ where: { id } });
+    if (!group) throw ApiError.notFound('Guruh topilmadi');
+
+    if (requesterRole === 'teacher' && group.teacherId !== requesterId) {
+      throw ApiError.forbidden('Bu guruh sizga tegishli emas');
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    await prisma.group.update({
+      where: { id },
+      data: { chatLinkCode: code, chatLinkCodeExpiresAt: expiresAt },
+    });
+
+    return { code, expiresAt };
   }
 }
 

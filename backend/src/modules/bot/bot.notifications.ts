@@ -1,10 +1,17 @@
 import TelegramBot from 'node-telegram-bot-api';
 type BotInstance = InstanceType<typeof TelegramBot>;
 import botService from './bot.service';
-import { checkNotificationMessage, inactivityMessage, newFreezeNotificationMessage } from './bot.messages';
-import { NotifyCheckPayload, NotifyFreezePayload } from './bot.types';
+import {
+  checkNotificationMessage,
+  inactivityMessage,
+  lessonGradeParentMessage,
+  groupDailySummaryMessage,
+  adminUngradedReportMessage,
+} from './bot.messages';
+import { NotifyCheckPayload } from './bot.types';
 import logger from '../../shared/utils/logger';
 import { generateText, getAISettings } from '../../shared/utils/ai';
+import lessonSessionsService from '../lesson-sessions/lesson-sessions.service';
 
 let botInstance: BotInstance | null = null;
 
@@ -66,30 +73,6 @@ export async function notifyParentsOnCheck(studentId: string, submission: {
   }
 
   logger.info(`Bot: ${chatIds.length} ta ota-onaga natija xabari yuborildi (student: ${studentId})`);
-}
-
-/**
- * Yangi muzlatilgan yaratilganda operatorlarga xabar yuborish.
- * freezes.service.ts -> freezeStudent() metodidan chaqiriladi.
- */
-export async function notifyOperatorsOnFreeze(freeze: NotifyFreezePayload) {
-  if (!botInstance) return;
-
-  const chatIds = await botService.getOperatorChatIds();
-  if (chatIds.length === 0) return;
-
-  const message = newFreezeNotificationMessage({
-    studentName: freeze.studentName,
-    groupName: freeze.groupName,
-    reason: freeze.reason,
-    phone: freeze.phone,
-  });
-
-  for (const chatId of chatIds) {
-    await safeSend(chatId, message, { parse_mode: 'Markdown' });
-  }
-
-  logger.info(`Bot: ${chatIds.length} ta operatorga yangi freeze xabari yuborildi`);
 }
 
 /**
@@ -202,4 +185,89 @@ Ota-ona uchun 2-3 jumlada qisqa, rag'batlantiruvchi va konstruktiv tahlil yozing
   } catch {
     return '_AI tahlil yuklab bo\'lmadi._';
   }
+}
+
+// ============ DARS BAHOLASH BILDIRISHNOMALARI ============
+
+/**
+ * Yakunlangan sessiyadan 1 soat o'tgach — ota-onalarga dars natijasi.
+ * lesson-sessions.scheduler.ts dan chaqiriladi.
+ */
+export async function notifyParentsLessonGrade(sessionId: string) {
+  if (!botInstance) return;
+
+  const session = await lessonSessionsService.getById(sessionId);
+  let count = 0;
+
+  for (const grade of session.grades) {
+    if (!grade.homework) continue;
+
+    const chatIds = await botService.getParentChatIds(grade.studentId, 'notifyOnCheck');
+    if (chatIds.length === 0) continue;
+
+    const weeklyAvg = await lessonSessionsService.getStudentWeeklyHomeworkAvg(grade.studentId);
+    const message = lessonGradeParentMessage({
+      studentName: grade.student.fullName,
+      groupName: session.group.name,
+      date: new Date(session.date).toLocaleDateString('uz-UZ'),
+      homework: grade.homework,
+      homeworkScore: grade.homeworkScore,
+      activityScore: grade.activityScore,
+      weeklyAvgHomework: weeklyAvg,
+      teacherComment: grade.comment,
+    });
+
+    for (const chatId of chatIds) {
+      await safeSend(chatId, message, { parse_mode: 'Markdown' });
+      count++;
+    }
+  }
+
+  await lessonSessionsService.markParentNotified(sessionId);
+  if (count > 0) {
+    logger.info(`Bot: ${count} ta ota-onaga dars natijasi yuborildi (session: ${sessionId})`);
+  }
+}
+
+/**
+ * Kuniga 20:00 — yakunlangan va chati ulangan guruhlarga ismsiz xulosa.
+ */
+export async function sendGroupDailySummaries() {
+  if (!botInstance) return;
+
+  const sessions = await lessonSessionsService.getFinalizedSessionsTodayWithChat();
+  let count = 0;
+
+  for (const session of sessions) {
+    const summary = await lessonSessionsService.getGroupDailySummary(session.id);
+    if (!summary || summary.total === 0) continue;
+
+    const message = groupDailySummaryMessage(summary);
+    await safeSend(session.group.telegramChatId!, message, { parse_mode: 'Markdown' });
+    count++;
+  }
+
+  if (count > 0) {
+    logger.info(`Bot: ${count} ta guruh chatiga kunlik xulosa yuborildi`);
+  }
+}
+
+/**
+ * Kuniga 20:00 — Ravshanga qaysi guruhlar ochilmagan/yakunlanmagan.
+ */
+export async function notifyAdminUngradedGroups() {
+  if (!botInstance) return;
+
+  const report = await lessonSessionsService.getUngradedGroupsToday();
+  if (report.notOpened.length === 0 && report.notFinalized.length === 0) return;
+
+  const chatIds = await botService.getAdminChatIds();
+  if (chatIds.length === 0) return;
+
+  const message = adminUngradedReportMessage(report);
+  for (const chatId of chatIds) {
+    await safeSend(chatId, message, { parse_mode: 'Markdown' });
+  }
+
+  logger.info(`Bot: ${chatIds.length} ta rahbarga kunlik nazorat hisoboti yuborildi`);
 }

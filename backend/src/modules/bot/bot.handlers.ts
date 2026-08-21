@@ -2,7 +2,6 @@ import TelegramBot from 'node-telegram-bot-api';
 type BotInstance = InstanceType<typeof TelegramBot>;
 import botService from './bot.service';
 import { sendDailyAIReport } from './bot.ai-report';
-import freezesService from '../freezes/freezes.service';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 import {
   esc,
@@ -20,24 +19,18 @@ import {
   feedbackSentMessage,
   settingsMessage,
   unlinkedMessage,
-  freezeListMessage,
-  operatorAskLoginMessage,
-  operatorAskPasswordMessage,
-  operatorUnauthorizedMessage,
-  operatorLinkedMessage,
   adminAskLoginMessage,
   adminAskPasswordMessage,
   adminUnauthorizedMessage,
   adminLinkedMessage,
+  chatLinkedMessage,
+  chatLinkInvalidMessage,
 } from './bot.messages';
 import {
   mainMenuKeyboard,
-  operatorMenuKeyboard,
   cancelKeyboard,
   removeKeyboard,
   settingsInlineKeyboard,
-  freezeScriptInlineKeyboard,
-  paginationKeyboard,
 } from './bot.keyboards';
 import { BotUserState } from './bot.types';
 import logger from '../../shared/utils/logger';
@@ -68,13 +61,12 @@ export function registerHandlers(bot: BotInstance) {
     const link = await botService.getLinkByTelegramId(msg.from!.id);
     if (link && link.isActive) {
       // Allaqachon bog'langan
-      const isOperator = link.role === 'operator';
       await bot.sendMessage(
         chatId,
         `👋 Salom, *${esc(link.fullName || link.student?.fullName || 'Foydalanuvchi')}*!\n\nQaytib keldingiz.`,
         {
           parse_mode: 'Markdown',
-          reply_markup: isOperator ? operatorMenuKeyboard() : mainMenuKeyboard(),
+          reply_markup: mainMenuKeyboard(),
         }
       );
     } else {
@@ -97,22 +89,20 @@ export function registerHandlers(bot: BotInstance) {
     });
   });
 
-  // ─── /operator ─── (operator uchun)
-  bot.onText(/\/operator/, async (msg) => {
+  // ─── /ulash <kod> ─── (o'qituvchi guruh chatini ulaydi — guruh chatida ishlaydi)
+  bot.onText(/\/ulash(?:@\w+)?(?:\s+(\d{6}))?/, async (msg, match) => {
     const chatId = msg.chat.id;
-    const link = await botService.getLinkByTelegramId(msg.from!.id);
-    if (link && link.isActive && link.role === 'operator') {
-      await bot.sendMessage(chatId, `✅ Operator sifatida kirgansiz: *${esc(link.fullName)}*`, {
-        parse_mode: 'Markdown',
-        reply_markup: operatorMenuKeyboard(),
-      });
+    const code = match?.[1];
+    if (!code) {
+      await bot.sendMessage(chatId, "🔗 Guruh chatini ulash uchun saytdagi kodni yozing:\n`/ulash 123456`", { parse_mode: 'Markdown' });
       return;
     }
-    setState(chatId, { step: 'operator_await_login' });
-    await bot.sendMessage(chatId, operatorAskLoginMessage(), {
-      parse_mode: 'Markdown',
-      reply_markup: cancelKeyboard(),
-    });
+    const result = await botService.linkGroupChatByCode(code, chatId, (msg.chat as any).title);
+    if (result.success) {
+      await bot.sendMessage(chatId, chatLinkedMessage(result.groupName!), { parse_mode: 'Markdown' });
+    } else {
+      await bot.sendMessage(chatId, chatLinkInvalidMessage(), { parse_mode: 'Markdown' });
+    }
   });
 
   // ─── /admin ─── (admin/rahbar hisobot olish uchun bog'lanish)
@@ -158,9 +148,9 @@ export function registerHandlers(bot: BotInstance) {
       `📖 *YORDAM*\n\n` +
         `/start — Boshlamoq\n` +
         `/login — O'quvchi hisobi bilan bog'lanish (ota-ona)\n` +
-        `/operator — Operator sifatida kirish\n` +
         `/admin — Admin/Rahbar sifatida kirish (kunlik hisobot olish)\n` +
         `/report — AI ta'lim hisobotini olish\n` +
+        `/ulash <kod> — Guruh chatini saytdagi kod bilan ulash (o'qituvchi uchun)\n` +
         `/unlink — Bog'lanishni uzish\n` +
         `/help — Yordam`,
       { parse_mode: 'Markdown' }
@@ -180,10 +170,8 @@ export function registerHandlers(bot: BotInstance) {
     if (text === '❌ Bekor qilish') {
       clearState(chatId);
       const link = await botService.getLinkByTelegramId(telegramId);
-      if (link && link.isActive) {
-        await bot.sendMessage(chatId, '↩️ Bekor qilindi.', {
-          reply_markup: link.role === 'operator' ? operatorMenuKeyboard() : mainMenuKeyboard(),
-        });
+      if (link && link.isActive && link.role === 'parent') {
+        await bot.sendMessage(chatId, '↩️ Bekor qilindi.', { reply_markup: mainMenuKeyboard() });
       } else {
         await bot.sendMessage(chatId, '↩️ Bekor qilindi.', { reply_markup: removeKeyboard() });
       }
@@ -221,41 +209,6 @@ export function registerHandlers(bot: BotInstance) {
         );
       } else if (result.message === 'not_student') {
         await bot.sendMessage(chatId, notStudentMessage(), { parse_mode: 'Markdown' });
-      } else {
-        await bot.sendMessage(chatId, wrongCredentialsMessage(), { parse_mode: 'Markdown' });
-      }
-      return;
-    }
-
-    // ── Operator login oqimi ──
-    if (state.step === 'operator_await_login') {
-      setState(chatId, { step: 'operator_await_password', pendingOperatorLogin: text });
-      await bot.sendMessage(chatId, operatorAskPasswordMessage(text), {
-        parse_mode: 'Markdown',
-        reply_markup: cancelKeyboard(),
-      });
-      return;
-    }
-
-    if (state.step === 'operator_await_password' && state.pendingOperatorLogin) {
-      await bot.sendMessage(chatId, '⏳ Tekshirilmoqda...');
-      const result = await botService.linkOperator({
-        telegramId,
-        chatId,
-        login: state.pendingOperatorLogin,
-        password: text,
-        fullName: msg.from!.first_name + (msg.from!.last_name ? ' ' + msg.from!.last_name : ''),
-        username: msg.from!.username,
-      });
-      clearState(chatId);
-
-      if (result.success) {
-        await bot.sendMessage(chatId, operatorLinkedMessage(result.name!), {
-          parse_mode: 'Markdown',
-          reply_markup: operatorMenuKeyboard(),
-        });
-      } else if (result.message === 'unauthorized') {
-        await bot.sendMessage(chatId, operatorUnauthorizedMessage(), { parse_mode: 'Markdown' });
       } else {
         await bot.sendMessage(chatId, wrongCredentialsMessage(), { parse_mode: 'Markdown' });
       }
@@ -382,37 +335,12 @@ Qoidalarga rioya qiling:
       return;
     }
 
-    // ── Qidiruv kutilmoqda (operator) ──
-    if (state.step === 'operator_await_search') {
-      clearState(chatId);
-      const freezes = await botService.searchFrozen(text);
-      if (freezes.length === 0) {
-        await bot.sendMessage(chatId, `🔍 *"${esc(text)}"* bo'yicha natija topilmadi.`, {
-          parse_mode: 'Markdown',
-          reply_markup: operatorMenuKeyboard(),
-        });
-        return;
-      }
-      await bot.sendMessage(chatId, freezeListMessage(freezes, 0, freezes.length), {
-        parse_mode: 'Markdown',
-        reply_markup: operatorMenuKeyboard(),
-      });
-      // Har birini alohida inline tugma bilan
-      for (const f of freezes.slice(0, 5)) {
-        await bot.sendMessage(chatId, `📋 *${esc(f.studentName)}*\n${esc(f.reason)}`, {
-          parse_mode: 'Markdown',
-          reply_markup: freezeScriptInlineKeyboard(f.id),
-        });
-      }
-      return;
-    }
-
     // ── Asosiy menu tugmalari ──
     const link = await botService.getLinkByTelegramId(telegramId);
     if (!link || !link.isActive) {
       await bot.sendMessage(
         chatId,
-        '⚠️ Siz hali bog\'lanmadingiz.\n/login — O\'quvchi hisobi bilan bog\'lanish\n/operator — Operator sifatida kirish'
+        '⚠️ Siz hali bog\'lanmadingiz.\n/login — O\'quvchi hisobi bilan bog\'lanish'
       );
       return;
     }
@@ -420,11 +348,6 @@ Qoidalarga rioya qiling:
     // ── OTA-ONA TUGMALARI ──
     if (link.role === 'parent') {
       await handleParentButtons(bot, chatId, telegramId, text, link);
-    }
-
-    // ── OPERATOR TUGMALARI ──
-    if (link.role === 'operator') {
-      await handleOperatorButtons(bot, chatId, telegramId, text, link);
     }
   });
 
@@ -467,43 +390,6 @@ Qoidalarga rioya qiling:
     }
 
     if (data === 'noop') return;
-
-    // Muzlatilganlar pagination
-    if (data.startsWith('freezes:')) {
-      const page = parseInt(data.split(':')[1]);
-      const freezes = await botService.getFrozenList();
-      await bot.editMessageText(freezeListMessage(freezes, page, freezes.length), {
-        chat_id: chatId,
-        message_id: query.message!.message_id,
-        parse_mode: 'Markdown',
-        reply_markup: freezes.length > 5 ? paginationKeyboard(page, freezes.length, 'freezes') : undefined,
-      });
-      return;
-    }
-
-    // Script yaratish
-    if (data.startsWith('gen_script:')) {
-      const freezeId = data.replace('gen_script:', '');
-      await bot.sendMessage(chatId, '⏳ AI script yaratilmoqda... (10-30 soniya)');
-      try {
-        const script = await freezesService.generateOperatorScript(freezeId);
-        // Telegram 4096 belgi limiti bor — bo'laklarga bo'lamiz
-        const chunks = splitMessage(script, 4000);
-        for (const chunk of chunks) {
-          await bot.sendMessage(chatId, `📝 *OPERATOR SKRIPTI*\n\n${chunk}`, {
-            parse_mode: 'Markdown',
-          });
-        }
-      } catch (err: any) {
-        if (err.message === 'API_KEY_NOT_SET') {
-          await bot.sendMessage(chatId, '❌ Gemini API key sozlanmagan. Admin bilan bog\'laning.');
-        } else {
-          await bot.sendMessage(chatId, '❌ Script yaratishda xato yuz berdi. Qayta urinib ko\'ring.');
-        }
-        logger.error('Bot gen_script error:', err);
-      }
-      return;
-    }
   });
 }
 
@@ -593,81 +479,4 @@ async function handleParentButtons(
       break;
     }
   }
-}
-
-// ============ OPERATOR TUGMALARI ============
-
-async function handleOperatorButtons(
-  bot: BotInstance,
-  chatId: number,
-  telegramId: number,
-  text: string,
-  link: any
-) {
-  switch (text) {
-    case '❄️ Muzlatilganlar ro\'yxati': {
-      const freezes = await botService.getFrozenList();
-      await bot.sendMessage(chatId, freezeListMessage(freezes, 0, freezes.length), {
-        parse_mode: 'Markdown',
-        reply_markup: freezes.length > 5 ? paginationKeyboard(0, freezes.length, 'freezes') : operatorMenuKeyboard(),
-      });
-      // Inline script tugmalar
-      for (const f of freezes.slice(0, 5)) {
-        await bot.sendMessage(chatId, `📋 *${esc(f.studentName)}* — ${esc(f.reason)}\n📞 ${esc(f.phone || '—')}`, {
-          parse_mode: 'Markdown',
-          reply_markup: freezeScriptInlineKeyboard(f.id),
-        });
-      }
-      break;
-    }
-
-    case '🔍 Qidirish': {
-      userStates.set(chatId, { step: 'operator_await_search' });
-      await bot.sendMessage(chatId, '🔍 *Qidiruv*\n\nO\'quvchi ismini kiriting:', {
-        parse_mode: 'Markdown',
-        reply_markup: cancelKeyboard(),
-      });
-      break;
-    }
-
-    case '📊 Oylik hisobot': {
-      await bot.sendMessage(chatId, '⏳ Hisobot tayyorlanmoqda...');
-      try {
-        const now = new Date();
-        const analysis = await freezesService.analyzeWithAI(now.getMonth() + 1, now.getFullYear());
-        const chunks = splitMessage(analysis, 4000);
-        for (const chunk of chunks) {
-          await bot.sendMessage(chatId, chunk, { parse_mode: 'Markdown', reply_markup: operatorMenuKeyboard() });
-        }
-      } catch (err: any) {
-        await bot.sendMessage(chatId, err.message === 'API_KEY_NOT_SET'
-          ? '❌ Gemini API key sozlanmagan.'
-          : err.message === 'NO_DATA'
-          ? '📭 Bu oy uchun ma\'lumot yo\'q.'
-          : '❌ Xato yuz berdi.', { reply_markup: operatorMenuKeyboard() });
-      }
-      break;
-    }
-
-    case '🔗 Chiqish': {
-      await botService.unlink(telegramId);
-      clearState(chatId);
-      await bot.sendMessage(chatId, '👋 Operator rejimidan chiqdingiz.', { reply_markup: { remove_keyboard: true } });
-      break;
-    }
-  }
-}
-
-// ============ HELPER ============
-
-/** Uzun matnni Telegram limitiga bo'lish */
-function splitMessage(text: string, limit = 4000): string[] {
-  if (text.length <= limit) return [text];
-  const chunks: string[] = [];
-  let i = 0;
-  while (i < text.length) {
-    chunks.push(text.slice(i, i + limit));
-    i += limit;
-  }
-  return chunks;
 }
