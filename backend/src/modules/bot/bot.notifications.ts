@@ -7,11 +7,15 @@ import {
   lessonGradeParentMessage,
   groupDailySummaryMessage,
   adminUngradedReportMessage,
+  eventInvitationMessage,
+  eventReminderMessage,
 } from './bot.messages';
+import { rsvpInlineKeyboard } from './bot.keyboards';
 import { NotifyCheckPayload } from './bot.types';
 import logger from '../../shared/utils/logger';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 import lessonSessionsService from '../lesson-sessions/lesson-sessions.service';
+import groupEventsService from '../group-events/group-events.service';
 
 let botInstance: BotInstance | null = null;
 
@@ -30,6 +34,11 @@ async function safeSend(chatId: bigint | number, text: string, options?: SendOpt
   } catch (err: any) {
     logger.warn(`Bot xabar yuborishda xato (chatId=${chatId}): ${err.message}`);
   }
+}
+
+/** Boshqa modullar (masalan murojaat javobi) uchun ochiq wrapper */
+export async function safeSendToParent(chatId: bigint | number, text: string) {
+  await safeSend(chatId, text, { parse_mode: 'Markdown' });
 }
 
 // ============ EVENT-BASED BILDIRISHNOMALAR ============
@@ -305,4 +314,77 @@ export async function broadcastToParents(
 
   logger.info(`Bot: ommaviy xabar — ${sent}/${recipients.length} ta ota-onaga yetkazildi (${failed} xato)`);
   return { total: recipients.length, sent, failed };
+}
+
+// ============ DEMO DAY ============
+
+/** Yangi tadbir yaratilganda — guruh ota-onalariga taklifnoma */
+export async function sendEventInvitations(eventId: string) {
+  if (!botInstance) return;
+
+  const event = await groupEventsService.getById(eventId);
+  const recipients = await botService.getBroadcastRecipients({ groupId: event.group.id });
+
+  const message = eventInvitationMessage({
+    groupName: event.group.name,
+    title: event.title,
+    eventAt: event.eventAt,
+    place: event.place,
+    description: event.description,
+  });
+
+  for (const r of recipients) {
+    await safeSend(r.chatId, message, { parse_mode: 'Markdown', reply_markup: rsvpInlineKeyboard(eventId) });
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  }
+
+  await groupEventsService.markInvited(eventId);
+  logger.info(`Bot: ${recipients.length} ta ota-onaga "${event.title}" taklifnomasi yuborildi`);
+}
+
+/** 7 kun / 1 kun / 2 soat oldin eslatma */
+export async function sendEventReminders(stage: '7d' | '1d' | '2h') {
+  if (!botInstance) return;
+
+  const events = await groupEventsService.getEventsNeedingReminder(stage);
+  for (const event of events) {
+    const recipients = await botService.getBroadcastRecipients({ groupId: event.groupId });
+    const message = eventReminderMessage(
+      { groupName: event.group.name, title: event.title, eventAt: event.eventAt, place: event.place },
+      stage
+    );
+
+    for (const r of recipients) {
+      await safeSend(r.chatId, message, { parse_mode: 'Markdown', reply_markup: rsvpInlineKeyboard(event.id) });
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    }
+
+    await groupEventsService.markReminderSent(event.id, stage);
+    logger.info(`Bot: "${event.title}" uchun ${stage} eslatmasi ${recipients.length} ta ota-onaga yuborildi`);
+  }
+}
+
+// ============ MUROJAATLAR ============
+
+/** Shoshilinch murojaat (urgency >= 4) — Ravshanga darhol xabar */
+export async function notifyAdminUrgentAppeal(data: {
+  code: string;
+  type: string;
+  studentName: string;
+  groupName: string | null;
+  teacherName: string | null;
+  message: string;
+  urgency: number;
+}) {
+  if (!botInstance) return;
+
+  const chatIds = await botService.getAdminChatIds();
+  if (chatIds.length === 0) return;
+
+  const { urgentAppealAdminMessage } = await import('./bot.messages');
+  const message = urgentAppealAdminMessage(data);
+  for (const chatId of chatIds) {
+    await safeSend(chatId, message, { parse_mode: 'Markdown' });
+  }
+  logger.info(`Bot: shoshilinch murojaat #${data.code} haqida rahbarga xabar yuborildi`);
 }

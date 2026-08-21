@@ -443,3 +443,95 @@ export function examResultsMessage(
   return `🏅 *IMTIHON NATIJALARI*\n━━━━━━━━━━━━━━━━━━━━\n${lines.join('\n')}`;
 }
 
+// ============ DEMO DAY ============
+
+/** Yangi tadbir taklifnomasi */
+export function eventInvitationMessage(event: {
+  groupName: string;
+  title: string;
+  eventAt: Date;
+  place: string | null;
+  description: string | null;
+}): string {
+  const date = new Date(event.eventAt).toLocaleString('uz-UZ', { dateStyle: 'long', timeStyle: 'short' });
+  return (
+    `🎉 *TAKLIFNOMA — ${esc(event.title)}*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `📖 Guruh: ${esc(event.groupName)}\n` +
+    `🗓 Sana: *${date}*\n` +
+    (event.place ? `📍 Manzil: ${esc(event.place)}\n` : '') +
+    (event.description ? `\n${esc(event.description)}\n` : '') +
+    `\nFarzandingizning yutuqlarini birga nishonlaymiz! Ishtirok etasizmi?`
+  );
+}
+
+/** Eslatma (7 kun / 1 kun / 2 soat oldin) */
+export function eventReminderMessage(
+  event: { groupName: string; title: string; eventAt: Date; place: string | null },
+  stage: '7d' | '1d' | '2h'
+): string {
+  const date = new Date(event.eventAt).toLocaleString('uz-UZ', { dateStyle: 'long', timeStyle: 'short' });
+  const when = stage === '7d' ? "1 hafta qoldi" : stage === '1d' ? "ertaga" : "2 soatdan keyin";
+  return (
+    `⏰ *ESLATMA — ${esc(event.title)}*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `${esc(event.groupName)} guruhi tadbirigacha *${when}* qoldi!\n` +
+    `🗓 ${date}` +
+    (event.place ? `\n📍 ${esc(event.place)}` : '')
+  );
+}
+
+/** RSVP javobidan keyingi tasdiq */
+export function rsvpConfirmedMessage(answer: 'boraman' | 'yoq' | 'aniq_emas'): string {
+  if (answer === 'boraman') return '✅ Rahmat! Kelishingizni kutamiz.';
+  if (answer === 'yoq') return '📝 Tushunarli, xabar bergani uchun rahmat.';
+  return "👌 Yaxshi, keyinroq aniqlashtirasiz.";
+}
+
+// ============ MUROJAATLAR ============
+
+const APPEAL_TYPE_LABELS: Record<string, string> = {
+  shikoyat: '⚠️ Shikoyat',
+  taklif: '💡 Taklif',
+  etiroz: "❗ E'tiroz",
+  minnatdorchilik: '🙏 Minnatdorchilik',
+};
+
+/** Murojaat turi tanlangandan keyin matn so'rash */
+export function askAppealMessage(type: string): string {
+  return (
+    `${APPEAL_TYPE_LABELS[type] || type}\n\n` +
+    `Murojaatingiz matnini yozing. Iloji boricha aniq va batafsil yozsangiz, tezroq ko'rib chiqamiz:`
+  );
+}
+
+/** Murojaat qabul qilingandan keyin — AI javobi bilan */
+export function appealReceivedMessage(code: string, aiReply: string | null): string {
+  return (
+    `✅ *Murojaatingiz qabul qilindi!*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `Murojaat raqami: *#${code}*\n\n` +
+    (aiReply ? `${esc(aiReply)}\n\n` : '') +
+    `_Tez orada rahbariyat tomonidan ko'rib chiqiladi._`
+  );
+}
+
+/** Rahbarga — shoshilinch murojaat haqida darhol xabar */
+export function urgentAppealAdminMessage(data: {
+  code: string;
+  type: string;
+  studentName: string;
+  groupName: string | null;
+  teacherName: string | null;
+  message: string;
+  urgency: number;
+}): string {
+  return (
+    `🚨 *SHOSHILINCH MUROJAAT (${data.urgency}/5)*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `#${data.code} | ${APPEAL_TYPE_LABELS[data.type] || data.type}\n` +
+    `👤 ${esc(data.studentName)} | 📖 ${esc(data.groupName || '—')} | 👨‍🏫 ${esc(data.teacherName || '—')}\n\n` +
+    `💬 ${esc(data.message)}`
+  );
+}
+

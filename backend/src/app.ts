@@ -38,6 +38,9 @@ import trashRoutes from './modules/trash/trash.routes';
 import lessonSessionsRoutes from './modules/lesson-sessions/lesson-sessions.routes';
 import { initSocketIO } from './modules/live-quiz/live-quiz.gateway';
 import { startLessonSessionsScheduler } from './modules/lesson-sessions/lesson-sessions.scheduler';
+import groupEventsRoutes from './modules/group-events/group-events.routes';
+import appealsRoutes from './modules/appeals/appeals.routes';
+import { startGroupEventsScheduler } from './modules/group-events/group-events.scheduler';
 
 const app = express();
 app.set('trust proxy', 1); // nginx orqasida turgani uchun — rate limit va req.ip to'g'ri ishlashi uchun
@@ -117,6 +120,8 @@ app.use('/api/lessons', lessonsRoutes);
 app.use('/api/trash', trashRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/lesson-sessions', lessonSessionsRoutes);
+app.use('/api/group-events', groupEventsRoutes);
+app.use('/api/appeals', appealsRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -189,6 +194,9 @@ const startServer = async () => {
 
     // Dars baholash tizimi: avto-yopish, ota-onaga xabar, kunlik nazorat
     startLessonSessionsScheduler();
+
+    // Demo Day: taklifnoma va eslatmalar
+    startGroupEventsScheduler();
   } catch (error) {
     logger.error('❌ Server ishga tushmadi:', error);
     process.exit(1);

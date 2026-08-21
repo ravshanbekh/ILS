@@ -13,8 +13,9 @@ export const mainMenuKeyboard = (): ReplyKeyboardMarkup => ({
     [{ text: '📆 Oy' }, { text: '🏅 Imtihonlar' }],
     [{ text: '📊 Natijalar' }, { text: '📈 Reyting' }],
     [{ text: '📋 Ma\'lumot' }, { text: '🏆 Leaderboard' }],
-    [{ text: '💬 Fikr bildirish' }, { text: '🤖 AI Konsultant' }],
-    [{ text: '⚙️ Sozlamalar' }, { text: '🔗 Bog\'lanishni uzish' }],
+    [{ text: '💬 Fikr bildirish' }, { text: '📮 Murojaat' }],
+    [{ text: '🤖 AI Konsultant' }, { text: '⚙️ Sozlamalar' }],
+    [{ text: '🔗 Bog\'lanishni uzish' }],
   ],
   resize_keyboard: true,
   is_persistent: true,
@@ -74,6 +75,27 @@ export const settingsInlineKeyboard = (settings: {
       },
     ],
     [{ text: '✅ Saqlash', callback_data: 'settings_done' }],
+  ],
+});
+
+/** Demo Day RSVP tugmalari */
+export const rsvpInlineKeyboard = (eventId: string): InlineKeyboardMarkup => ({
+  inline_keyboard: [
+    [
+      { text: '✅ Boraman', callback_data: `rsvp:${eventId}:boraman` },
+      { text: '❌ Bora olmayman', callback_data: `rsvp:${eventId}:yoq` },
+    ],
+    [{ text: '🤔 Hali aniq emas', callback_data: `rsvp:${eventId}:aniq_emas` }],
+  ],
+});
+
+/** Murojaat turini tanlash */
+export const appealTypeKeyboard = (): InlineKeyboardMarkup => ({
+  inline_keyboard: [
+    [{ text: '⚠️ Shikoyat', callback_data: 'appeal_type:shikoyat' }],
+    [{ text: '💡 Taklif', callback_data: 'appeal_type:taklif' }],
+    [{ text: "❗ E'tiroz", callback_data: 'appeal_type:etiroz' }],
+    [{ text: '🙏 Minnatdorchilik', callback_data: 'appeal_type:minnatdorchilik' }],
   ],
 });
 

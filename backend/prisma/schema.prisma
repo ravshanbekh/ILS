@@ -84,6 +84,11 @@ model User {
   taughtLessonSessions   LessonSession[]       @relation("LessonSessionTeacher")
   unlockedLessonSessions LessonSession[]       @relation("LessonSessionUnlockedBy")
   lessonGrades           LessonGrade[]         @relation("LessonGradeStudent")
+  // Demo Day va Murojaatlar
+  createdGroupEvents     GroupEvent[]          @relation("GroupEventCreator")
+  appealsAsStudent       ParentAppeal[]        @relation("AppealStudent")
+  appealsAsTeacher       ParentAppeal[]        @relation("AppealTeacher")
+  appealsReplied         ParentAppeal[]        @relation("AppealRepliedBy")
 
   @@map("users")
 }
@@ -116,6 +121,8 @@ model Group {
   liveQuizzes      LiveQuiz[]
   examParticipants ExamParticipant[]
   lessonSessions   LessonSession[]
+  events           GroupEvent[]
+  appeals          ParentAppeal[]
 
   @@map("groups")
 }
@@ -399,7 +406,7 @@ model TelegramLink {
   telegramId       BigInt   @unique @map("telegram_id") // Telegram user ID
   chatId           BigInt   @map("chat_id") // Telegram chat ID
   studentId        String   @map("student_id") @db.Uuid // Bog'langan o'quvchi
-  role             String   @default("parent") @db.VarChar(20) // "parent" | "operator"
+  role             String   @default("parent") @db.VarChar(20) // "parent" | "admin"
   fullName         String?  @map("full_name") @db.VarChar(200)
   username         String?  @db.VarChar(100) // @username
   isActive         Boolean  @default(true) @map("is_active")
@@ -411,7 +418,9 @@ model TelegramLink {
   createdAt        DateTime @default(now()) @map("created_at")
 
   // Relations
-  student User @relation("TelegramStudentLinks", fields: [studentId], references: [id])
+  student    User           @relation("TelegramStudentLinks", fields: [studentId], references: [id])
+  eventRsvps EventRsvp[]
+  appeals    ParentAppeal[]
 
   @@map("telegram_links")
 }
@@ -858,4 +867,98 @@ model LessonGrade {
 
   @@unique([sessionId, studentId])
   @@map("lesson_grades")
+}
+
+// ============================================================
+//  DEMO DAY (tadbir + RSVP)
+// ============================================================
+
+model GroupEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  groupId     String   @map("group_id") @db.Uuid
+  title       String   @db.VarChar(200)
+  eventAt     DateTime @map("event_at")
+  place       String?  @db.VarChar(300)
+  description String?  @db.VarChar(1000)
+  createdById String   @map("created_by_id") @db.Uuid
+
+  invitedAt    DateTime? @map("invited_at")
+  reminder7dAt DateTime? @map("reminder_7d_at")
+  reminder1dAt DateTime? @map("reminder_1d_at")
+  reminder2hAt DateTime? @map("reminder_2h_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  group     Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User        @relation("GroupEventCreator", fields: [createdById], references: [id])
+  rsvps     EventRsvp[]
+
+  @@map("group_events")
+}
+
+enum RsvpAnswer {
+  boraman
+  yoq
+  aniq_emas
+}
+
+model EventRsvp {
+  id             String     @id @default(uuid()) @db.Uuid
+  eventId        String     @map("event_id") @db.Uuid
+  telegramLinkId String     @map("telegram_link_id") @db.Uuid
+  answer         RsvpAnswer
+  respondedAt    DateTime   @default(now()) @map("responded_at")
+
+  event        GroupEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  telegramLink TelegramLink @relation(fields: [telegramLinkId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, telegramLinkId])
+  @@map("event_rsvps")
+}
+
+// ============================================================
+//  MUROJAATLAR (Ota-ona shikoyat/taklif/e'tiroz/minnatdorchilik)
+// ============================================================
+
+enum AppealType {
+  shikoyat
+  taklif
+  etiroz
+  minnatdorchilik
+}
+
+enum AppealStatus {
+  yangi
+  korib_chiqilmoqda
+  hal_qilindi
+}
+
+model ParentAppeal {
+  id             String  @id @default(uuid()) @db.Uuid
+  telegramLinkId String  @map("telegram_link_id") @db.Uuid
+  studentId      String  @map("student_id") @db.Uuid
+  groupId        String? @map("group_id") @db.Uuid
+  teacherId      String? @map("teacher_id") @db.Uuid
+
+  type    AppealType
+  message String     @db.VarChar(2000)
+
+  aiReply    String? @map("ai_reply") @db.Text
+  aiCategory String? @map("ai_category") @db.VarChar(50)
+  aiUrgency  Int?    @map("ai_urgency") // 1-5
+
+  status      AppealStatus @default(yangi)
+  adminReply  String?      @map("admin_reply") @db.VarChar(2000)
+  repliedAt   DateTime?    @map("replied_at")
+  repliedById String?      @map("replied_by_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  telegramLink TelegramLink @relation(fields: [telegramLinkId], references: [id], onDelete: Cascade)
+  student      User         @relation("AppealStudent", fields: [studentId], references: [id])
+  teacher      User?        @relation("AppealTeacher", fields: [teacherId], references: [id])
+  group        Group?       @relation(fields: [groupId], references: [id])
+  repliedBy    User?        @relation("AppealRepliedBy", fields: [repliedById], references: [id])
+
+  @@map("parent_appeals")
 }

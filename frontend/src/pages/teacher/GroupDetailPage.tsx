@@ -6,6 +6,7 @@ import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsA
 import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain, RefreshCw, Snowflake, LogOut, X, Sparkles, ClipboardCheck } from 'lucide-react';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import LessonGradingPanel from '@/components/shared/LessonGradingPanel';
+import GroupEventsCard from '@/components/shared/GroupEventsCard';
 import { downloadBlob } from '@/utils';
 
 export default function GroupDetailPage() {
@@ -501,6 +502,8 @@ export default function GroupDetailPage() {
             </div>
           )}
         </div>
+
+        {id && <GroupEventsCard groupId={id} />}
 
         {/* Students Table */}
         <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm mb-8">

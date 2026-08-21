@@ -3,6 +3,9 @@ type BotInstance = InstanceType<typeof TelegramBot>;
 import botService from './bot.service';
 import { sendDailyAIReport } from './bot.ai-report';
 import lessonSessionsService from '../lesson-sessions/lesson-sessions.service';
+import groupEventsService from '../group-events/group-events.service';
+import appealsService from '../appeals/appeals.service';
+import { notifyAdminUrgentAppeal } from './bot.notifications';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 import {
   esc,
@@ -29,12 +32,16 @@ import {
   todayLessonMessage,
   lessonPeriodSummaryMessage,
   examResultsMessage,
+  askAppealMessage,
+  appealReceivedMessage,
+  rsvpConfirmedMessage,
 } from './bot.messages';
 import {
   mainMenuKeyboard,
   cancelKeyboard,
   removeKeyboard,
   settingsInlineKeyboard,
+  appealTypeKeyboard,
 } from './bot.keyboards';
 import { BotUserState } from './bot.types';
 import logger from '../../shared/utils/logger';
@@ -273,6 +280,43 @@ export function registerHandlers(bot: BotInstance) {
       return;
     }
 
+    // ── Murojaat matni kutilmoqda ──
+    if (state.step === 'await_appeal_message' && state.pendingAppealType) {
+      const link = await botService.getLinkByTelegramId(telegramId);
+      if (!link) return;
+
+      await bot.sendMessage(chatId, '⏳ Murojaatingiz qabul qilinmoqda...');
+
+      const appeal = await appealsService.create({
+        telegramLinkId: link.id,
+        studentId: link.studentId,
+        type: state.pendingAppealType,
+        message: text,
+      });
+      clearState(chatId);
+
+      const code = appeal.id.slice(0, 8).toUpperCase();
+      await bot.sendMessage(chatId, appealReceivedMessage(code, appeal.aiReply), {
+        parse_mode: 'Markdown',
+        reply_markup: mainMenuKeyboard(),
+      });
+
+      if (appeal.aiUrgency && appeal.aiUrgency >= 4) {
+        const student = link.student;
+        const teacher = await botService.getTeacherByStudentId(link.studentId);
+        notifyAdminUrgentAppeal({
+          code,
+          type: appeal.type,
+          studentName: student.fullName,
+          groupName: student.groupStudents?.[0]?.group?.name || null,
+          teacherName: teacher?.fullName || null,
+          message: text,
+          urgency: appeal.aiUrgency,
+        }).catch(() => {});
+      }
+      return;
+    }
+
     // ── AI savoli kutilmoqda ──
     if (state.step === 'await_ai_query') {
       const link = await botService.getLinkByTelegramId(telegramId);
@@ -393,6 +437,28 @@ Qoidalarga rioya qiling:
       return;
     }
 
+    // Murojaat turi tanlandi
+    if (data.startsWith('appeal_type:')) {
+      const type = data.replace('appeal_type:', '') as 'shikoyat' | 'taklif' | 'etiroz' | 'minnatdorchilik';
+      setState(chatId, { step: 'await_appeal_message', pendingAppealType: type });
+      await bot.sendMessage(chatId, askAppealMessage(type), {
+        parse_mode: 'Markdown',
+        reply_markup: cancelKeyboard(),
+      });
+      return;
+    }
+
+    // Demo Day RSVP
+    if (data.startsWith('rsvp:')) {
+      const [, eventId, answer] = data.split(':');
+      const link = await botService.getLinkByTelegramId(telegramId);
+      if (!link || link.role !== 'parent') return;
+
+      await groupEventsService.recordRsvp(eventId, link.id, answer as any);
+      await bot.sendMessage(chatId, rsvpConfirmedMessage(answer as any));
+      return;
+    }
+
     if (data === 'noop') return;
   });
 }
@@ -483,6 +549,14 @@ async function handleParentButtons(
       await bot.sendMessage(chatId, askFeedbackMessage(teacher?.fullName), {
         parse_mode: 'Markdown',
         reply_markup: cancelKeyboard(),
+      });
+      break;
+    }
+
+    case '📮 Murojaat': {
+      await bot.sendMessage(chatId, "📮 *Murojaat turini tanlang:*", {
+        parse_mode: 'Markdown',
+        reply_markup: appealTypeKeyboard(),
       });
       break;
     }

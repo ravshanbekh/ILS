@@ -478,3 +478,28 @@ export const lessonSessionsApi = {
 
   adminUngraded: () => api.get('/lesson-sessions/admin/ungraded'),
 };
+
+export const groupEventsApi = {
+  create: (data: { groupId: string; title: string; eventAt: string; place?: string; description?: string }) =>
+    api.post('/group-events', data),
+
+  getByGroup: (groupId: string) => api.get('/group-events', { params: { groupId } }),
+
+  getRsvpSummary: (id: string) => api.get(`/group-events/${id}/rsvp-summary`),
+
+  delete: (id: string) => api.delete(`/group-events/${id}`),
+};
+
+export const appealsApi = {
+  getAll: (params?: { from?: string; to?: string; type?: string; status?: string; groupId?: string; teacherId?: string }) =>
+    api.get('/appeals', { params }),
+
+  getById: (id: string) => api.get(`/appeals/${id}`),
+
+  reply: (id: string, reply: string) => api.patch(`/appeals/${id}/reply`, { reply }),
+
+  updateStatus: (id: string, status: string) => api.patch(`/appeals/${id}/status`, { status }),
+
+  exportExcel: (params?: { from?: string; to?: string }) =>
+    api.get('/appeals/export', { params, responseType: 'blob' }),
+};
