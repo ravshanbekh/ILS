@@ -370,6 +370,15 @@ export const examApi = {
 
 export const botApi = {
   sendDailyReport: (action?: 'send' | 'preview') => api.post('/bot/send-daily-report', { action }),
+
+  getParentCoverage: (params?: { groupId?: string; teacherId?: string }) =>
+    api.get('/bot/parents', { params }),
+
+  aiPolishBroadcast: (message: string) =>
+    api.post('/bot/parents/ai-polish', { message }),
+
+  broadcastToParents: (data: { groupId?: string; teacherId?: string; message: string }) =>
+    api.post('/bot/parents/broadcast', data),
 };
 
 // ============ LIVE QUIZ API ============

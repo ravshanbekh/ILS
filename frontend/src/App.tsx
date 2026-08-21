@@ -44,6 +44,7 @@ import QuizJoinPage from '@/pages/quiz/QuizJoinPage';
 import LessonsPage from '@/pages/shared/LessonsPage';
 import TrashPage from '@/pages/admin/TrashPage';
 import LessonControlPage from '@/pages/admin/LessonControlPage';
+import ParentsPage from '@/pages/admin/ParentsPage';
 
 
 const queryClient = new QueryClient({
@@ -164,6 +165,7 @@ export default function App() {
               <Route path="/admin/lessons" element={<LessonsPage />} />
               <Route path="/admin/trash" element={<TrashPage />} />
               <Route path="/admin/lesson-control" element={<LessonControlPage />} />
+              <Route path="/admin/parents" element={<ParentsPage />} />
             </Route>
 
             {/* Teacher routes */}

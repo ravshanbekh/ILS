@@ -271,3 +271,38 @@ export async function notifyAdminUngradedGroups() {
 
   logger.info(`Bot: ${chatIds.length} ta rahbarga kunlik nazorat hisoboti yuborildi`);
 }
+
+// ============ OTA-ONALAR BAZASI: OMMAVIY XABAR ============
+
+/**
+ * Filtrlangan ota-onalarga bitta matnli xabar yuborish.
+ * {ism} shabloni har bir farzandning ismi bilan almashtiriladi.
+ * bot.controller.ts dan chaqiriladi.
+ */
+export async function broadcastToParents(
+  filters: { groupId?: string; teacherId?: string },
+  message: string
+): Promise<{ total: number; sent: number; failed: number }> {
+  if (!botInstance) return { total: 0, sent: 0, failed: 0 };
+
+  const recipients = await botService.getBroadcastRecipients(filters);
+  let sent = 0;
+  let failed = 0;
+
+  for (const r of recipients) {
+    const firstName = r.student.fullName.split(' ')[0];
+    const personalized = message.replace(/\{ism\}/g, firstName);
+    try {
+      await botInstance.sendMessage(Number(r.chatId), personalized, { parse_mode: 'Markdown' });
+      sent++;
+    } catch (err: any) {
+      failed++;
+      logger.warn(`Broadcast: chatId=${r.chatId} ga yuborilmadi — ${err.message}`);
+    }
+    // Telegram rate-limit uchun kichik pauza
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  }
+
+  logger.info(`Bot: ommaviy xabar — ${sent}/${recipients.length} ta ota-onaga yetkazildi (${failed} xato)`);
+  return { total: recipients.length, sent, failed };
+}

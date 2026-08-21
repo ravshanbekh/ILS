@@ -1,6 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 import { sendDailyAIReport, generateEducationalAIReport } from './bot.ai-report';
+import botService from './bot.service';
+import { broadcastToParents } from './bot.notifications';
+import { generateText, getAISettings } from '../../shared/utils/ai';
 
 const router = Router();
 
@@ -14,6 +17,52 @@ router.post('/send-daily-report', authenticate, roleGuard('admin'), async (req: 
     }
     const reportText = await sendDailyAIReport("Qo'lda Yuborilgan Admin Hisoboti");
     res.json({ success: true, message: "AI Ta'lim hisoboti Telegram bot orqali yuborildi", data: { report: reportText } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ============ OTA-ONALAR BAZASI ============
+
+// GET /api/bot/parents — qamrov ro'yxati (kim ulangan, kim yo'q)
+router.get('/parents', authenticate, roleGuard('admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { groupId, teacherId } = req.query as { groupId?: string; teacherId?: string };
+    const result = await botService.getParentCoverage({ groupId, teacherId });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/bot/parents/ai-polish — matnni AI bilan jilolash (yuborishdan oldin, ixtiyoriy)
+router.post('/parents/ai-polish', authenticate, roleGuard('admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { message } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, message: 'message majburiy' });
+    }
+    const { apiKey } = getAISettings();
+    if (!apiKey) {
+      return res.status(400).json({ success: false, message: 'AI sozlanmagan (Gemini/Groq API key yo\'q)' });
+    }
+    const prompt = `Quyidagi o'quv markazi ota-onalariga yuboriladigan Telegram xabarini o'zbek tilida, samimiy va professional ohangda, lekin qisqa va tabiiy qilib qayta yozing. {ism} degan shablon so'zni albatta o'zgarmasdan saqlang — u yuborishda farzand ismi bilan almashtiriladi. Faqat Telegram uchun oddiy Markdown (*qalin*) ishlating, ortiqcha uzaytirmang:\n\n"${message}"`;
+    const polished = await generateText(prompt, 500, 0.6);
+    res.json({ success: true, data: { polished } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/bot/parents/broadcast — ommaviy xabar yuborish
+router.post('/parents/broadcast', authenticate, roleGuard('admin'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { groupId, teacherId, message } = req.body;
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, message: 'message majburiy' });
+    }
+    const result = await broadcastToParents({ groupId, teacherId }, message.trim());
+    res.json({ success: true, data: result });
   } catch (err) {
     next(err);
   }

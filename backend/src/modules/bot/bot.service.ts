@@ -451,14 +451,14 @@ class BotService {
   }
 
   /**
-   * Haftalik statistika hisoblash
+   * Davr statistikasi (normativlar) — standart 7 kun (haftalik hisobot uchun ishlatiladi)
    */
-  async getWeeklyStats(studentId: string) {
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
+  async getWeeklyStats(studentId: string, days: number = 7) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
 
     const subs = await prisma.submission.findMany({
-      where: { studentId, submittedAt: { gte: weekAgo }, status: 'checked' },
+      where: { studentId, submittedAt: { gte: since }, status: 'checked' },
       select: { result: true, score: true },
     });
 
@@ -480,6 +480,110 @@ class BotService {
       select: { chatId: true, studentId: true },
     });
     return links;
+  }
+
+  /**
+   * O'quvchining rasmiy imtihon natijalari (bot "🏆 Imtihonlar" tugmasi uchun)
+   */
+  async getStudentExamResults(studentId: string) {
+    const participants = await prisma.examParticipant.findMany({
+      where: { studentId, status: { in: ['submitted', 'timeout'] } },
+      include: {
+        exam: {
+          select: { title: true, maxTestScore: true, maxAiScore: true, maxProjectScore: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    return participants.map((p) => ({
+      title: p.exam.title,
+      maxScore: p.exam.maxTestScore + p.exam.maxAiScore + p.exam.maxProjectScore,
+      totalScore: p.totalScore,
+      testScore: p.testScore,
+      graded: p.gradedAt !== null,
+      submittedAt: p.submittedAt,
+    }));
+  }
+
+  // ============ OTA-ONALAR BAZASI ============
+
+  /**
+   * Barcha faol o'quvchilar + ota-ona botga ulanganmi (qamrov ro'yxati)
+   */
+  async getParentCoverage(filters?: { groupId?: string; teacherId?: string }) {
+    const students = await prisma.user.findMany({
+      where: {
+        role: 'student',
+        isActive: true,
+        groupStudents: filters?.groupId || filters?.teacherId
+          ? {
+              some: {
+                ...(filters.groupId ? { groupId: filters.groupId } : {}),
+                ...(filters.teacherId ? { group: { teacherId: filters.teacherId } } : {}),
+              },
+            }
+          : undefined,
+      },
+      include: {
+        groupStudents: {
+          include: { group: { include: { teacher: { select: { fullName: true } } } } },
+          orderBy: { joinedAt: 'desc' },
+          take: 1,
+        },
+        telegramLinks: {
+          where: { role: 'parent', isActive: true },
+          select: { fullName: true, username: true, createdAt: true },
+          take: 1,
+        },
+      },
+      orderBy: { fullName: 'asc' },
+    });
+
+    const rows = students.map((s) => ({
+      id: s.id,
+      fullName: s.fullName,
+      groupId: s.groupStudents[0]?.group?.id || null,
+      groupName: s.groupStudents[0]?.group?.name || null,
+      teacherName: s.groupStudents[0]?.group?.teacher?.fullName || null,
+      linked: s.telegramLinks.length > 0,
+      parentName: s.telegramLinks[0]?.fullName || null,
+      parentUsername: s.telegramLinks[0]?.username || null,
+      linkedAt: s.telegramLinks[0]?.createdAt || null,
+    }));
+
+    const linkedCount = rows.filter((r) => r.linked).length;
+    return {
+      students: rows,
+      total: rows.length,
+      linkedCount,
+      coveragePercent: rows.length > 0 ? Math.round((linkedCount / rows.length) * 100) : 0,
+    };
+  }
+
+  /**
+   * Ommaviy xabar uchun qabul qiluvchilar ro'yxati (faqat ulangan ota-onalar)
+   */
+  async getBroadcastRecipients(filters?: { groupId?: string; teacherId?: string }) {
+    return prisma.telegramLink.findMany({
+      where: {
+        role: 'parent',
+        isActive: true,
+        student:
+          filters?.groupId || filters?.teacherId
+            ? {
+                groupStudents: {
+                  some: {
+                    ...(filters.groupId ? { groupId: filters.groupId } : {}),
+                    ...(filters.teacherId ? { group: { teacherId: filters.teacherId } } : {}),
+                  },
+                },
+              }
+            : undefined,
+      },
+      select: { chatId: true, student: { select: { fullName: true } } },
+    });
   }
 }
 

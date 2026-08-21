@@ -419,6 +419,48 @@ class LessonSessionsService {
 
     return { total: graded.length, full, partial, none, avgActivity };
   }
+
+  // ============ OTA-ONA BOTI: BUGUN / HAFTA / OY ============
+
+  /** Bugun yakunlangan darsdagi o'quvchi bahosi (bot "📅 Bugun" tugmasi uchun) */
+  async getStudentTodayGrade(studentId: string) {
+    const today = tashkentDateOnly();
+    return prisma.lessonGrade.findFirst({
+      where: { studentId, session: { date: today, status: 'yakunlandi' } },
+      include: { session: { select: { date: true, group: { select: { name: true } } } } },
+    });
+  }
+
+  /** So'nggi N kunlik dars baholari xulosasi (bot "🗓 Hafta" / "📆 Oy" tugmalari uchun) */
+  async getStudentLessonSummary(studentId: string, days: number) {
+    const since = tashkentDateOnly(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
+    const grades = await prisma.lessonGrade.findMany({
+      where: {
+        studentId,
+        session: { date: { gte: since }, status: { in: ['yakunlandi', 'avto_yopildi'] } },
+      },
+    });
+
+    const withHomework = grades.filter((g) => g.homeworkScore !== null);
+    const avgHomework = withHomework.length
+      ? withHomework.reduce((s, g) => s + (g.homeworkScore || 0), 0) / withHomework.length
+      : null;
+
+    const withActivity = grades.filter((g) => g.activityScore !== null);
+    const avgActivity = withActivity.length
+      ? withActivity.reduce((s, g) => s + (g.activityScore || 0), 0) / withActivity.length
+      : null;
+
+    return {
+      totalSessions: grades.length,
+      avgHomework,
+      avgActivity,
+      full: grades.filter((g) => g.homework === 'toliq').length,
+      partial: grades.filter((g) => g.homework === 'qisman').length,
+      none: grades.filter((g) => g.homework === 'bajarmagan').length,
+      absent: grades.filter((g) => g.homework === 'kelmadi').length,
+    };
+  }
 }
 
 export default new LessonSessionsService();

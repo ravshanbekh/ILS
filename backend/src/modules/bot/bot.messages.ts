@@ -359,3 +359,87 @@ export function adminUngradedReportMessage(report: {
   return lines.join('\n');
 }
 
+// ============ OTA-ONA BOTI: BUGUN / HAFTA / OY / IMTIHONLAR ============
+
+const HOMEWORK_LABEL: Record<string, string> = {
+  toliq: "✅ To'liq bajardi",
+  qisman: '🟡 Qisman bajardi',
+  bajarmagan: '❌ Bajarmadi',
+  kelmadi: '🚫 Darsga kelmadi',
+};
+
+/** "📅 Bugun" tugmasi */
+export function todayLessonMessage(
+  grade: {
+    homework: string | null;
+    homeworkScore: number | null;
+    activityScore: number | null;
+    comment: string | null;
+    session: { date: Date; group: { name: string } };
+  } | null
+): string {
+  if (!grade) {
+    return (
+      `📅 *BUGUNGI DARS*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Bugun uchun hali baholash yakunlanmagan.\n\n` +
+      `_Dars tugagach, natija shu yerda ko'rinadi._`
+    );
+  }
+  const date = new Date(grade.session.date).toLocaleDateString('uz-UZ');
+  return (
+    `📅 *BUGUNGI DARS*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `📖 ${esc(grade.session.group.name)} | 🗓 ${date}\n\n` +
+    `📝 Uy vazifasi: ${grade.homework ? HOMEWORK_LABEL[grade.homework] : '—'}` +
+    (grade.homeworkScore !== null ? ` — *${grade.homeworkScore} ball*` : '') +
+    `\n` +
+    (grade.activityScore !== null ? `⭐ Faollik: *${grade.activityScore}/5*\n` : '') +
+    (grade.comment ? `\n💬 O'qituvchi izohi: ${esc(grade.comment)}` : '')
+  );
+}
+
+/** "🗓 Hafta" / "📆 Oy" tugmalari — dars baholari + normativ statistikasi birga */
+export function lessonPeriodSummaryMessage(
+  period: 'hafta' | 'oy',
+  lesson: {
+    totalSessions: number;
+    avgHomework: number | null;
+    avgActivity: number | null;
+    full: number;
+    partial: number;
+    none: number;
+    absent: number;
+  },
+  normative: { newSubmissions: number; greenCount: number; blueCount: number; redCount: number; gainedScore: number }
+): string {
+  const title = period === 'hafta' ? 'HAFTALIK HISOBOT' : 'OYLIK HISOBOT';
+  return (
+    `📊 *${title}*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `*Darslar:* ${lesson.totalSessions} ta baholangan\n` +
+    `✅ To'liq: ${lesson.full} · 🟡 Qisman: ${lesson.partial} · ❌ Bajarmagan: ${lesson.none} · 🚫 Kelmagan: ${lesson.absent}\n` +
+    (lesson.avgHomework !== null ? `📝 Uy vazifasi o'rtachasi: *${lesson.avgHomework.toFixed(1)} ball*\n` : '') +
+    (lesson.avgActivity !== null ? `⭐ Faollik o'rtachasi: *${lesson.avgActivity.toFixed(1)}/5*\n` : '') +
+    `\n*Normativlar:*\n` +
+    `📤 Topshirilgan: *${normative.newSubmissions}* ta\n` +
+    `✅ Yashil: ${normative.greenCount} · ☑️ Ko'k: ${normative.blueCount} · ❌ Qizil: ${normative.redCount}\n` +
+    `🏆 Qo'shilgan ball: *+${normative.gainedScore}*`
+  );
+}
+
+/** "🏅 Imtihonlar" tugmasi */
+export function examResultsMessage(
+  results: Array<{ title: string; maxScore: number; totalScore: number | null; graded: boolean }>
+): string {
+  if (results.length === 0) {
+    return `🏅 *IMTIHON NATIJALARI*\n━━━━━━━━━━━━━━━━━━━━\n_Hozircha rasmiy imtihon natijalari yo'q._`;
+  }
+  const lines = results.map((r) =>
+    r.graded
+      ? `📋 *${esc(r.title)}* — ${r.totalScore}/${r.maxScore} ball`
+      : `📋 *${esc(r.title)}* — _tekshirilmoqda_`
+  );
+  return `🏅 *IMTIHON NATIJALARI*\n━━━━━━━━━━━━━━━━━━━━\n${lines.join('\n')}`;
+}
+

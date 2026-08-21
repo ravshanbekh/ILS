@@ -2,6 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 type BotInstance = InstanceType<typeof TelegramBot>;
 import botService from './bot.service';
 import { sendDailyAIReport } from './bot.ai-report';
+import lessonSessionsService from '../lesson-sessions/lesson-sessions.service';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 import {
   esc,
@@ -25,6 +26,9 @@ import {
   adminLinkedMessage,
   chatLinkedMessage,
   chatLinkInvalidMessage,
+  todayLessonMessage,
+  lessonPeriodSummaryMessage,
+  examResultsMessage,
 } from './bot.messages';
 import {
   mainMenuKeyboard,
@@ -405,6 +409,36 @@ async function handleParentButtons(
   const studentId = link.studentId;
 
   switch (text) {
+    case '📅 Bugun': {
+      const grade = await lessonSessionsService.getStudentTodayGrade(studentId);
+      await bot.sendMessage(chatId, todayLessonMessage(grade as any), { parse_mode: 'Markdown', reply_markup: mainMenuKeyboard() });
+      break;
+    }
+
+    case '🗓 Hafta': {
+      const [lesson, normative] = await Promise.all([
+        lessonSessionsService.getStudentLessonSummary(studentId, 7),
+        botService.getWeeklyStats(studentId, 7),
+      ]);
+      await bot.sendMessage(chatId, lessonPeriodSummaryMessage('hafta', lesson, normative), { parse_mode: 'Markdown', reply_markup: mainMenuKeyboard() });
+      break;
+    }
+
+    case '📆 Oy': {
+      const [lesson, normative] = await Promise.all([
+        lessonSessionsService.getStudentLessonSummary(studentId, 30),
+        botService.getWeeklyStats(studentId, 30),
+      ]);
+      await bot.sendMessage(chatId, lessonPeriodSummaryMessage('oy', lesson, normative), { parse_mode: 'Markdown', reply_markup: mainMenuKeyboard() });
+      break;
+    }
+
+    case '🏅 Imtihonlar': {
+      const results = await botService.getStudentExamResults(studentId);
+      await bot.sendMessage(chatId, examResultsMessage(results), { parse_mode: 'Markdown', reply_markup: mainMenuKeyboard() });
+      break;
+    }
+
     case '📊 Natijalar': {
       const stats = await botService.getStudentStats(studentId);
       if (!stats) { await bot.sendMessage(chatId, '❌ Ma\'lumot topilmadi.'); return; }

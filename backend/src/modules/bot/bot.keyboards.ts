@@ -9,6 +9,8 @@ import type {
 /** Asosiy ota-ona menu */
 export const mainMenuKeyboard = (): ReplyKeyboardMarkup => ({
   keyboard: [
+    [{ text: '📅 Bugun' }, { text: '🗓 Hafta' }],
+    [{ text: '📆 Oy' }, { text: '🏅 Imtihonlar' }],
     [{ text: '📊 Natijalar' }, { text: '📈 Reyting' }],
     [{ text: '📋 Ma\'lumot' }, { text: '🏆 Leaderboard' }],
     [{ text: '💬 Fikr bildirish' }, { text: '🤖 AI Konsultant' }],
