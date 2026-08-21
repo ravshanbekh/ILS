@@ -1,5 +1,19 @@
+import { LessonDayType } from '@prisma/client';
 import prisma from '../../config/database';
 import { generateText, getAISettings } from '../../shared/utils/ai';
+
+/** Berilgan oyda, guruhning dars kuni turiga ko'ra nechta dars kuni bo'lishi kerakligi */
+function countExpectedLessonDays(dayType: LessonDayType | null, year: number, month: number): number {
+  if (!dayType) return 0;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  if (dayType === 'har_kuni') return daysInMonth;
+  let count = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isEven = d % 2 === 0;
+    if ((dayType === 'juft' && isEven) || (dayType === 'toq' && !isEven)) count++;
+  }
+  return count;
+}
 
 // Human-readable sabab nomlari
 export const FREEZE_REASON_LABELS: Record<string, string> = {
@@ -326,6 +340,80 @@ class FreezesService {
           ? +((sumCoefficient / totalStudentsForKpi) * 100).toFixed(1)
           : 0;
 
+        // ── Kompozit reyting: intizom + natija + ushlab qolish + ota-ona ──
+        // Maqsad: reyting o'qituvchining o'zi qo'ygan baholarga (uy vazifasi 5/3/0)
+        // bog'liq bo'lmasin — faqat mustaqil, soxtalashtirib bo'lmaydigan manbalardan yig'iladi.
+
+        const teacherGroups = await prisma.group.findMany({
+          where: { teacherId: teacher.id, isActive: true },
+          select: { lessonDayType: true },
+        });
+        const expectedLessonDays = teacherGroups.reduce(
+          (sum, g) => sum + countExpectedLessonDays(g.lessonDayType, year, month),
+          0
+        );
+        const finalizedSessions = await prisma.lessonSession.count({
+          where: { teacherId: teacher.id, status: 'yakunlandi', date: { gte: startOfMonth, lte: endOfMonth } },
+        });
+        const disciplinePercent =
+          expectedLessonDays > 0 ? Math.min(100, +((finalizedSessions / expectedLessonDays) * 100).toFixed(1)) : null;
+
+        const examParticipants = await prisma.examParticipant.findMany({
+          where: {
+            teacherId: teacher.id,
+            status: 'submitted',
+            totalScore: { not: null },
+            gradedAt: { gte: startOfMonth, lte: endOfMonth },
+          },
+          include: { exam: { select: { maxTestScore: true, maxAiScore: true, maxProjectScore: true } } },
+        });
+        const examPercent =
+          examParticipants.length > 0
+            ? +(
+                examParticipants.reduce((sum, p) => {
+                  const max = p.exam.maxTestScore + p.exam.maxAiScore + p.exam.maxProjectScore;
+                  return sum + (max > 0 ? (p.totalScore! / max) * 100 : 0);
+                }, 0) / examParticipants.length
+              ).toFixed(1)
+            : null;
+
+        const appeals = await prisma.parentAppeal.findMany({
+          where: { teacherId: teacher.id, createdAt: { gte: startOfMonth, lte: endOfMonth } },
+          select: { type: true },
+        });
+        const thanksCount = appeals.filter((a) => a.type === 'minnatdorchilik').length;
+        const negativeCount = appeals.filter((a) => a.type === 'shikoyat' || a.type === 'etiroz').length;
+        const parentPercent = Math.min(100, Math.max(0, 70 + thanksCount * 10 - negativeCount * 15));
+
+        const retentionPercent = +(100 - dropoutPercent).toFixed(1);
+        const resultsPercent = examPercent ?? kpiPercent; // imtihon bo'lmasa normativ KPI ga tayanadi
+
+        const compositeScore = +(
+          (disciplinePercent ?? 70) * 0.3 +
+          resultsPercent * 0.3 +
+          retentionPercent * 0.25 +
+          parentPercent * 0.15
+        ).toFixed(1);
+
+        // Baho inflyatsiyasi shubhasi: uy vazifasi deyarli hammaga "to'liq", lekin imtihon natijasi past
+        let inflationSuspected = false;
+        if (examPercent !== null) {
+          const homeworkGrades = await prisma.lessonGrade.count({
+            where: {
+              session: { teacherId: teacher.id, date: { gte: startOfMonth, lte: endOfMonth } },
+              homework: { in: ['toliq', 'qisman', 'bajarmagan'] },
+            },
+          });
+          const fullGrades = await prisma.lessonGrade.count({
+            where: {
+              session: { teacherId: teacher.id, date: { gte: startOfMonth, lte: endOfMonth } },
+              homework: 'toliq',
+            },
+          });
+          const fullRate = homeworkGrades > 0 ? fullGrades / homeworkGrades : 0;
+          inflationSuspected = homeworkGrades >= 10 && fullRate >= 0.9 && examPercent < 60;
+        }
+
         return {
           teacherId: teacher.id,
           teacher: teacher.fullName,
@@ -335,13 +423,20 @@ class FreezesService {
           dropoutPercent,
           avgDuration,
           kpiPercent,
+          disciplinePercent,
+          resultsPercent,
+          examPercent,
+          retentionPercent,
+          parentPercent,
+          compositeScore,
+          inflationSuspected,
         };
       })
     );
 
     // Faqat aktiv yoki ketgan o'quvchisi bor o'qituvchilar
     const filtered = result.filter((r) => r.studentsAtStart > 0);
-    filtered.sort((a, b) => a.dropoutPercent - b.dropoutPercent);
+    filtered.sort((a, b) => b.compositeScore - a.compositeScore);
 
     return filtered.map((r, i) => ({ rank: i + 1, ...r }));
   }

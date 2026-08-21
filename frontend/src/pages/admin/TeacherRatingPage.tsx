@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import { freezesApi } from '@/api';
-import { Loader2, Trophy, ChevronLeft, ChevronRight, TrendingDown, BarChart2 } from 'lucide-react';
+import { Loader2, Trophy, ChevronLeft, ChevronRight, TrendingDown, BarChart2, AlertTriangle } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
@@ -55,6 +55,12 @@ export default function TeacherRatingPage() {
     return { bg: 'bg-red-500/10', text: 'text-red-400', badge: '🔴' };
   };
 
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-emerald-400';
+    if (score >= 60) return 'text-amber-400';
+    return 'text-red-400';
+  };
+
   const barColor = (pct: number) => {
     if (pct <= 5) return '#10b981';
     if (pct <= 15) return '#f59e0b';
@@ -65,7 +71,7 @@ export default function TeacherRatingPage() {
 
   return (
     <div>
-      <Header title="O'qituvchilar Reytingi" subtitle="Ketish hisoboti bo'yicha" />
+      <Header title="O'qituvchilar Reytingi" subtitle="Intizom 30% + Natija 30% + Ushlab qolish 25% + Ota-ona 15% — o'qituvchi o'zi qo'ygan baholarga bog'liq emas" />
 
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Oy nav */}
@@ -93,20 +99,20 @@ export default function TeacherRatingPage() {
             {/* Top 3 kartalar */}
             {data.length >= 3 && (
               <div className="grid grid-cols-3 gap-4 mb-2">
-                {data.slice(0,3).map((t: any, i: number) => {
-                  const c = getColor(t.dropoutPercent);
-                  return (
-                    <div key={i} className={`bg-zinc-900 border border-zinc-800 rounded-2xl p-5 text-center relative overflow-hidden ${i === 0 ? 'border-yellow-500/30' : ''}`}>
-                      <div className="text-3xl mb-2">{medals[i]}</div>
-                      <p className="text-white font-bold text-sm">{t.teacher}</p>
-                      <p className={`text-2xl font-black mt-2 ${c.text}`}>{t.dropoutPercent}%</p>
-                      <p className="text-zinc-500 text-xs mt-1">{t.frozenCount} ta ketgan</p>
-                      {i === 0 && (
-                        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-yellow-500 to-transparent" />
-                      )}
-                    </div>
-                  );
-                })}
+                {data.slice(0,3).map((t: any, i: number) => (
+                  <div key={i} className={`bg-zinc-900 border border-zinc-800 rounded-2xl p-5 text-center relative overflow-hidden ${i === 0 ? 'border-yellow-500/30' : ''}`}>
+                    <div className="text-3xl mb-2">{medals[i]}</div>
+                    <p className="text-white font-bold text-sm flex items-center justify-center gap-1.5">
+                      {t.teacher}
+                      {t.inflationSuspected && <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />}
+                    </p>
+                    <p className={`text-2xl font-black mt-2 ${getScoreColor(t.compositeScore)}`}>{t.compositeScore}</p>
+                    <p className="text-zinc-500 text-xs mt-1">Umumiy ball · {t.dropoutPercent}% ketgan</p>
+                    {i === 0 && (
+                      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-yellow-500 to-transparent" />
+                    )}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -114,18 +120,18 @@ export default function TeacherRatingPage() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
               <div className="p-4 border-b border-zinc-800 flex items-center gap-2">
                 <TrendingDown className="w-4 h-4 text-blue-400" />
-                <h3 className="text-white font-bold text-sm">Barcha o'qituvchilar (ketish % bo'yicha)</h3>
+                <h3 className="text-white font-bold text-sm">Barcha o'qituvchilar (umumiy ball bo'yicha)</h3>
               </div>
               <table className="w-full text-sm">
                 <thead className="bg-zinc-800/50 text-zinc-400 text-xs uppercase">
                   <tr>
                     <th className="px-4 py-3 text-center w-12">O'r.</th>
                     <th className="px-4 py-3 text-left">O'qituvchi</th>
-                    <th className="px-4 py-3 text-center">Aktiv o'q.</th>
+                    <th className="px-4 py-3 text-center" title="Dars kuni jadvaliga ko'ra necha % dars o'z vaqtida yakunlangan">Intizom</th>
+                    <th className="px-4 py-3 text-center" title="Imtihon natijasi (yo'q bo'lsa normativ KPI)">Natija</th>
                     <th className="px-4 py-3 text-center">Ketgan</th>
-                    <th className="px-4 py-3 text-center">O'rt. oy</th>
                     <th className="px-4 py-3 text-center">KPI (Normativlar)</th>
-                    <th className="px-4 py-3 text-center">Ulushi %</th>
+                    <th className="px-4 py-3 text-center">Umumiy ball</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
@@ -136,12 +142,27 @@ export default function TeacherRatingPage() {
                         <td className="px-4 py-3 text-center">
                           <span className="text-lg">{t.rank <= 3 ? medals[t.rank - 1] : t.rank}</span>
                         </td>
-                        <td className="px-4 py-3 text-white font-medium">{t.teacher}</td>
-                        <td className="px-4 py-3 text-center text-zinc-400">{t.activeStudents}</td>
-                        <td className="px-4 py-3 text-center font-bold text-red-400">{t.frozenCount}</td>
-                        <td className="px-4 py-3 text-center text-zinc-300">{t.avgDuration}</td>
+                        <td className="px-4 py-3 text-white font-medium">
+                          <span className="flex items-center gap-1.5">
+                            {t.teacher}
+                            {t.inflationSuspected && (
+                              <span title="Uy vazifasi deyarli hammaga 'to'liq' qo'yilgan, lekin imtihon natijasi past — baho inflyatsiyasi shubhasi">
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center text-zinc-300">
+                          {t.disciplinePercent !== null ? `${t.disciplinePercent}%` : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-center text-zinc-300">
+                          {t.resultsPercent}% {t.examPercent === null && <span className="text-zinc-600 text-[10px]">(normativ)</span>}
+                        </td>
                         <td className="px-4 py-3 text-center">
-                          <button 
+                          <span className={`font-bold ${c.text}`}>{t.frozenCount} · {t.dropoutPercent}% {c.badge}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
                             onClick={() => loadKpiDetails(t)}
                             className="px-2.5 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-xs font-bold flex items-center gap-1.5 mx-auto"
                             title="KPI batafsil ma'lumotlari"
@@ -150,7 +171,7 @@ export default function TeacherRatingPage() {
                           </button>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`font-bold ${c.text}`}>{t.dropoutPercent}% {c.badge}</span>
+                          <span className={`font-black text-base ${getScoreColor(t.compositeScore)}`}>{t.compositeScore}</span>
                         </td>
                       </tr>
                     );
