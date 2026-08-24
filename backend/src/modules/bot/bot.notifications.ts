@@ -408,8 +408,8 @@ export async function notifyAdminUrgentAppeal(data: {
 // ============ DEMO DAY FIKR-MULOHAZASI ============
 
 /**
- * Tugagan tadbirlar (3+ soat oldin) uchun guruhdagi barcha ulangan ota-onalarga
- * baho so'ralib xabar yuboriladi. group-events.scheduler.ts dan chaqiriladi.
+ * Kuniga 20:00 da — o'sha kungacha bo'lib o'tgan tadbirlar uchun guruhdagi barcha
+ * ulangan ota-onalarga baho so'ralib xabar yuboriladi. group-events.scheduler.ts dan chaqiriladi.
  */
 export async function sendEventFeedbackRequests() {
   if (!botInstance) return;

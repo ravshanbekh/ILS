@@ -102,11 +102,10 @@ class GroupEventsService {
     await prisma.groupEvent.update({ where: { id }, data: { [field]: new Date() } as any });
   }
 
-  /** Tugagan (3+ soat oldin bo'lib o'tgan), lekin fikr-mulohaza so'ralmagan tadbirlar */
+  /** Kuniga 20:00 da chaqiriladi — bo'lib o'tgan, lekin hali so'ralmagan tadbirlar */
   async getEventsPendingFeedbackRequest() {
-    const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
     return prisma.groupEvent.findMany({
-      where: { feedbackRequestedAt: null, eventAt: { lte: threeHoursAgo } },
+      where: { feedbackRequestedAt: null, eventAt: { lte: new Date() } },
       include: { group: { select: { id: true, name: true } } },
     });
   }

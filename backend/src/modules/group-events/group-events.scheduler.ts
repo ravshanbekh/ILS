@@ -40,14 +40,14 @@ export function startGroupEventsScheduler() {
     }
   }, { timezone: 'Asia/Tashkent' });
 
-  // Har 30 daqiqada — 3+ soat oldin tugagan tadbirlardan fikr-mulohaza so'rash
-  cron.schedule('*/30 * * * *', async () => {
+  // Kuniga 20:00 — bo'lib o'tgan tadbirlardan fikr-mulohaza so'rash (hammaga bir xil vaqtda)
+  cron.schedule('0 20 * * *', async () => {
     try {
       await sendEventFeedbackRequests();
     } catch (err) {
       logger.error('Demo Day fikr-mulohaza so\'rashda xato:', err);
     }
-  });
+  }, { timezone: 'Asia/Tashkent' });
 
   logger.info('⏰ Demo Day scheduleri ishga tushdi (taklifnoma + eslatmalar + fikr-mulohaza)');
 }
