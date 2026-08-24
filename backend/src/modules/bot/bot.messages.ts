@@ -218,23 +218,6 @@ export function inactivityMessage(studentName: string, days: number, completed: 
   );
 }
 
-/** Haftalik AI hisobot */
-export function weeklyReportMessage(
-  studentName: string,
-  weekStats: { newSubmissions: number; greenCount: number; blueCount: number; redCount: number; gainedScore: number },
-  aiSummary: string
-): string {
-  return (
-    `📋 *HAFTALIK HISOBOT*\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `👤 *${esc(studentName)}*\n\n` +
-    `Bu hafta:\n` +
-    `📤 Topshirilgan: *${weekStats.newSubmissions}* ta\n` +
-    `✅ Yashil: ${weekStats.greenCount} | ☑️ Ko'k: ${weekStats.blueCount} | ❌ Qizil: ${weekStats.redCount}\n` +
-    `🏆 Qo'shilgan ball: *+${weekStats.gainedScore}*\n\n` +
-    `🤖 *AI Tahlil:*\n${esc(aiSummary)}`
-  );
-}
 
 /** Admin sifatida kirish so'rash */
 export function adminAskLoginMessage(): string {
@@ -411,12 +394,14 @@ export function lessonPeriodSummaryMessage(
     none: number;
     absent: number;
   },
-  normative: { newSubmissions: number; greenCount: number; blueCount: number; redCount: number; gainedScore: number }
+  normative: { newSubmissions: number; greenCount: number; blueCount: number; redCount: number; gainedScore: number },
+  extra?: { studentName?: string; aiSummary?: string }
 ): string {
   const title = period === 'hafta' ? 'HAFTALIK HISOBOT' : 'OYLIK HISOBOT';
   return (
     `📊 *${title}*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
+    (extra?.studentName ? `👤 *${esc(extra.studentName)}*\n\n` : '') +
     `*Darslar:* ${lesson.totalSessions} ta baholangan\n` +
     `✅ To'liq: ${lesson.full} · 🟡 Qisman: ${lesson.partial} · ❌ Bajarmagan: ${lesson.none} · 🚫 Kelmagan: ${lesson.absent}\n` +
     (lesson.avgHomework !== null ? `📝 Uy vazifasi o'rtachasi: *${lesson.avgHomework.toFixed(1)} ball*\n` : '') +
@@ -424,7 +409,8 @@ export function lessonPeriodSummaryMessage(
     `\n*Normativlar:*\n` +
     `📤 Topshirilgan: *${normative.newSubmissions}* ta\n` +
     `✅ Yashil: ${normative.greenCount} · ☑️ Ko'k: ${normative.blueCount} · ❌ Qizil: ${normative.redCount}\n` +
-    `🏆 Qo'shilgan ball: *+${normative.gainedScore}*`
+    `🏆 Qo'shilgan ball: *+${normative.gainedScore}*` +
+    (extra?.aiSummary ? `\n\n🤖 *AI Tahlil:*\n${esc(extra.aiSummary)}` : '')
   );
 }
 

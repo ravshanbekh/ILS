@@ -5,7 +5,7 @@ type BotInstance = InstanceType<typeof TelegramBot>;
 import { env } from '../../config/env';
 import logger from '../../shared/utils/logger';
 import { registerHandlers } from './bot.handlers';
-import { setBotInstance } from './bot.notifications';
+import { setBotInstance, setBotUsername } from './bot.notifications';
 import { setReportBotInstance } from './bot.ai-report';
 import { startScheduler } from './bot.scheduler';
 
@@ -77,6 +77,7 @@ export function startBot(customToken?: string): BotInstance | null {
     // Bot info olish
     bot.getMe().then((me) => {
       logger.info(`🤖 Telegram bot ishga tushdi: @${me.username} (ID: ${me.id})`);
+      if (me.username) setBotUsername(me.username);
     }).catch((err) => {
       logger.error(`⚠️ Telegram bot ulanish xatosi (token yaroqsiz bo'lishi mumkin yoki tarmoq muammosi): ${err.message}`);
     });

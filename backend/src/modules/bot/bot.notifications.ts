@@ -5,6 +5,7 @@ import {
   checkNotificationMessage,
   inactivityMessage,
   lessonGradeParentMessage,
+  lessonPeriodSummaryMessage,
   groupDailySummaryMessage,
   adminUngradedReportMessage,
   eventInvitationMessage,
@@ -18,10 +19,21 @@ import lessonSessionsService from '../lesson-sessions/lesson-sessions.service';
 import groupEventsService from '../group-events/group-events.service';
 
 let botInstance: BotInstance | null = null;
+let botUsername: string | null = null;
 
 /** Bot instansini o'rnatish */
 export function setBotInstance(bot: BotInstance) {
   botInstance = bot;
+}
+
+/** Bot username'ini o'rnatish (bot.ts dagi getMe() dan) — guruh xabarlaridagi havola uchun */
+export function setBotUsername(username: string) {
+  botUsername = username;
+}
+
+/** Ota-onaga "/start bosing" havolasi — guruh kunlik xulosasida ishlatiladi */
+export function getBotLink(): string | undefined {
+  return botUsername ? `https://t.me/${botUsername}` : undefined;
 }
 
 type SendOpts = Parameters<TelegramBot['sendMessage']>[2];
@@ -131,6 +143,7 @@ export async function sendWeeklyReports() {
     if (!stats) continue;
 
     const weekStats = await botService.getWeeklyStats(link.studentId);
+    const lessonStats = await lessonSessionsService.getStudentLessonSummary(link.studentId, 7);
 
     let aiSummary = '';
     if (apiKey && weekStats.newSubmissions > 0) {
@@ -141,8 +154,10 @@ export async function sendWeeklyReports() {
         : '_AI tahlil mavjud emas (API key sozlanmagan)._';
     }
 
-    const { weeklyReportMessage } = await import('./bot.messages');
-    const message = weeklyReportMessage(stats.student.fullName, weekStats, aiSummary);
+    const message = lessonPeriodSummaryMessage('hafta', lessonStats, weekStats, {
+      studentName: stats.student.fullName,
+      aiSummary,
+    });
 
     await safeSend(link.chatId, message, { parse_mode: 'Markdown' });
     count++;
@@ -251,7 +266,7 @@ export async function sendGroupDailySummaries() {
     const summary = await lessonSessionsService.getGroupDailySummary(session.id);
     if (!summary || summary.total === 0) continue;
 
-    const message = groupDailySummaryMessage(summary);
+    const message = groupDailySummaryMessage({ ...summary, botLink: getBotLink() });
     await safeSend(session.group.telegramChatId!, message, { parse_mode: 'Markdown' });
     count++;
   }

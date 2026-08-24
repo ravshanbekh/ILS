@@ -37,10 +37,15 @@ export default function AppealsPage() {
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [exporting, setExporting] = useState(false);
   const [selected, setSelected] = useState<Appeal | null>(null);
   const [replyText, setReplyText] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
+
+  const toIsoStart = (d: string) => (d ? new Date(`${d}T00:00:00`).toISOString() : undefined);
+  const toIsoEnd = (d: string) => (d ? new Date(`${d}T23:59:59.999`).toISOString() : undefined);
 
   const load = async () => {
     setLoading(true);
@@ -48,6 +53,8 @@ export default function AppealsPage() {
       const res = await appealsApi.getAll({
         type: typeFilter || undefined,
         status: statusFilter || undefined,
+        from: toIsoStart(fromDate),
+        to: toIsoEnd(toDate),
       });
       setAppeals(res.data.data);
     } finally {
@@ -58,13 +65,26 @@ export default function AppealsPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeFilter, statusFilter]);
+  }, [typeFilter, statusFilter, fromDate, toDate]);
+
+  const setPreset = (days: number) => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+    setFromDate(from.toISOString().slice(0, 10));
+    setToDate(to.toISOString().slice(0, 10));
+  };
+
+  const clearDates = () => {
+    setFromDate('');
+    setToDate('');
+  };
 
   const handleExport = async () => {
     setExporting(true);
     try {
-      const res = await appealsApi.exportExcel();
-      downloadBlob(res.data, `murojaatlar_${Date.now()}.xlsx`);
+      const res = await appealsApi.exportExcel({ from: toIsoStart(fromDate), to: toIsoEnd(toDate) });
+      downloadBlob(res.data, `murojaatlar_${fromDate || 'hammasi'}_${toDate || Date.now()}.xlsx`);
     } catch {
       alert('Eksport qilishda xatolik');
     } finally {
@@ -110,6 +130,19 @@ export default function AppealsPage() {
             <option value="korib_chiqilmoqda">Ko'rib chiqilmoqda</option>
             <option value="hal_qilindi">Hal qilindi</option>
           </select>
+
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setPreset(0)} className="px-2.5 py-2 rounded-lg text-xs font-semibold border border-zinc-800 text-zinc-400 hover:text-white">Bugun</button>
+            <button onClick={() => setPreset(7)} className="px-2.5 py-2 rounded-lg text-xs font-semibold border border-zinc-800 text-zinc-400 hover:text-white">Hafta</button>
+            <button onClick={() => setPreset(30)} className="px-2.5 py-2 rounded-lg text-xs font-semibold border border-zinc-800 text-zinc-400 hover:text-white">Oy</button>
+            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="bg-[#18181b] border border-zinc-800 rounded-lg px-2.5 py-2 text-xs text-white" />
+            <span className="text-zinc-600 text-xs">—</span>
+            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="bg-[#18181b] border border-zinc-800 rounded-lg px-2.5 py-2 text-xs text-white" />
+            {(fromDate || toDate) && (
+              <button onClick={clearDates} className="text-zinc-500 hover:text-white text-xs px-1.5">✕</button>
+            )}
+          </div>
+
           <button
             onClick={handleExport}
             disabled={exporting}
