@@ -43,4 +43,7 @@ router.post('/:id/normatives', roleGuard('admin', 'teacher'), normativesControll
 // POST /api/groups/:id/chat-code — Telegram guruh chatini ulash uchun kod yaratish
 router.post('/:id/chat-code', roleGuard('admin', 'teacher'), groupsController.generateChatCode);
 
+// DELETE /api/groups/:id/chat-link — Telegram guruh chatini uzish
+router.delete('/:id/chat-link', roleGuard('admin', 'teacher'), groupsController.unlinkChat);
+
 export default router;

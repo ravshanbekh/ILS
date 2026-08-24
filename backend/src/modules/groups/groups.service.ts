@@ -433,6 +433,30 @@ class GroupsService {
 
     return { code, expiresAt };
   }
+
+  /**
+   * Telegram guruh chatini uzish (qayta ulash uchun kod olib qo'yish shart emas)
+   */
+  async unlinkChat(id: string, requesterId?: string, requesterRole?: string) {
+    const group = await prisma.group.findUnique({ where: { id } });
+    if (!group) throw ApiError.notFound('Guruh topilmadi');
+
+    if (requesterRole === 'teacher' && group.teacherId !== requesterId) {
+      throw ApiError.forbidden('Bu guruh sizga tegishli emas');
+    }
+
+    await prisma.group.update({
+      where: { id },
+      data: {
+        telegramChatId: null,
+        telegramChatTitle: null,
+        chatLinkCode: null,
+        chatLinkCodeExpiresAt: null,
+      },
+    });
+
+    return { message: "Chat uzildi" };
+  }
 }
 
 export default new GroupsService();

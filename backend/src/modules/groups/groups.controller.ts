@@ -194,6 +194,22 @@ class GroupsController {
       next(error);
     }
   }
+
+  /**
+   * DELETE /api/groups/:id/chat-link — Telegram guruh chatini uzish
+   */
+  async unlinkChat(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await groupsService.unlinkChat(
+        req.params.id,
+        req.user?.userId,
+        req.user?.role
+      );
+      res.json({ success: true, ...result });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new GroupsController();

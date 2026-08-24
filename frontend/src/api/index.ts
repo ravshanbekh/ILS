@@ -67,6 +67,9 @@ export const groupsApi = {
 
   generateChatCode: (groupId: string) =>
     api.post(`/groups/${groupId}/chat-code`),
+
+  unlinkChat: (groupId: string) =>
+    api.delete(`/groups/${groupId}/chat-link`),
 };
 
 export const normativesApi = {

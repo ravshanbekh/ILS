@@ -56,11 +56,13 @@ export default function GroupDetailPage() {
   const [aiError, setAiError] = useState('');
 
   const handleSetDayType = async (lessonDayType: 'juft' | 'toq' | 'har_kuni') => {
-    if (!id) return;
+    if (!id || group?.lessonDayType === lessonDayType) return;
     setDayTypeSaving(true);
     try {
       await groupsApi.update(id, { lessonDayType });
       await fetchGroupData();
+    } catch (e: any) {
+      alert(e?.response?.data?.error?.message || e?.response?.data?.message || "Dars kunini o'zgartirishda xatolik");
     } finally {
       setDayTypeSaving(false);
     }
@@ -73,6 +75,23 @@ export default function GroupDetailPage() {
     try {
       const res = await groupsApi.generateChatCode(id);
       setChatCode(res.data.data.code);
+    } catch (e: any) {
+      alert(e?.response?.data?.error?.message || e?.response?.data?.message || 'Kod olishda xatolik');
+    } finally {
+      setChatCodeLoading(false);
+    }
+  };
+
+  const handleUnlinkChat = async () => {
+    if (!id) return;
+    if (!window.confirm("Telegram chatini uzishni tasdiqlaysizmi? Guruh kunlik xulosasi endi shu chatga yuborilmaydi.")) return;
+    setChatCodeLoading(true);
+    try {
+      await groupsApi.unlinkChat(id);
+      setChatCode(null);
+      await fetchGroupData();
+    } catch (e: any) {
+      alert(e?.response?.data?.error?.message || e?.response?.data?.message || 'Uzishda xatolik');
     } finally {
       setChatCodeLoading(false);
     }
@@ -361,7 +380,16 @@ export default function GroupDetailPage() {
         {/* Telegram guruh chati */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181b] border border-zinc-800 text-sm">
           {group?.telegramChatId ? (
-            <span className="text-emerald-400 font-medium">✅ Chat ulangan{group.telegramChatTitle ? `: ${group.telegramChatTitle}` : ''}</span>
+            <>
+              <span className="text-emerald-400 font-medium">✅ Chat ulangan{group.telegramChatTitle ? `: ${group.telegramChatTitle}` : ''}</span>
+              <button
+                onClick={handleUnlinkChat}
+                disabled={chatCodeLoading}
+                className="text-red-400 hover:text-red-300 font-medium disabled:opacity-50 text-xs border-l border-zinc-800 pl-2 ml-1"
+              >
+                Uzish
+              </button>
+            </>
           ) : chatCode ? (
             <span className="text-zinc-300">
               Chatga yozing: <code className="text-blue-400 font-mono">/ulash {chatCode}</code>
