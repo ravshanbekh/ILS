@@ -99,3 +99,19 @@ export const appealTypeKeyboard = (): InlineKeyboardMarkup => ({
   ],
 });
 
+/** Demo Day fikr-mulohaza bahosi */
+export const eventFeedbackKeyboard = (eventId: string): InlineKeyboardMarkup => ({
+  inline_keyboard: [
+    [
+      { text: '😊 Ko\'nglim to\'ldi', callback_data: `event_fb:${eventId}:mamnun` },
+      { text: '😐 Oddiy', callback_data: `event_fb:${eventId}:oddiy` },
+      { text: '😞 Yoqmadi', callback_data: `event_fb:${eventId}:norozi` },
+    ],
+  ],
+});
+
+/** Fikr-mulohaza bahosidan keyin — izoh yozish yoki o'tkazib yuborish */
+export const eventFeedbackCommentKeyboard = (): InlineKeyboardMarkup => ({
+  inline_keyboard: [[{ text: "⏭ O'tkazib yuborish", callback_data: 'event_fb_skip' }]],
+});
+

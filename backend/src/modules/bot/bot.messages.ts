@@ -463,7 +463,10 @@ export function eventReminderMessage(
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `${esc(event.groupName)} guruhi tadbirigacha *${when}* qoldi!\n` +
     `🗓 ${date}` +
-    (event.place ? `\n📍 ${esc(event.place)}` : '')
+    (event.place ? `\n📍 ${esc(event.place)}` : '') +
+    (stage === '2h'
+      ? `\n\n👉 Tadbirda farzandingizning login-parolini bilsangiz, shu yerdan (/login) botga ulaning — barcha natijalar va hisobotlar bir joyda bo'ladi.`
+      : '')
   );
 }
 
@@ -519,5 +522,27 @@ export function urgentAppealAdminMessage(data: {
     `👤 ${esc(data.studentName)} | 📖 ${esc(data.groupName || '—')} | 👨‍🏫 ${esc(data.teacherName || '—')}\n\n` +
     `💬 ${esc(data.message)}`
   );
+}
+
+// ============ DEMO DAY FIKR-MULOHAZASI ============
+
+/** Tadbir tugagach — baho so'rash */
+export function eventFeedbackRequestMessage(eventTitle: string, groupName: string): string {
+  return (
+    `🎉 *${esc(eventTitle)}* tugadi!\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `${esc(groupName)} guruhi tadbiridan ko'nglingiz to'ldimi?\n\n` +
+    `Fikringiz biz uchun juda muhim — keyingi tadbirni yanada yaxshiroq o'tkazishga yordam beradi.`
+  );
+}
+
+/** Baho bergandan keyin — izoh so'rash */
+export function eventFeedbackAskCommentMessage(): string {
+  return `Rahmat! 🙏\n\nQo'shimcha fikr yoki taklifingiz bo'lsa, yozib qoldiring (ixtiyoriy):`;
+}
+
+/** Izoh yozilgandan keyin yakuniy tashakkur */
+export function eventFeedbackThanksMessage(): string {
+  return `✅ Fikringiz uchun rahmat! Buni albatta hisobga olamiz.`;
 }
 

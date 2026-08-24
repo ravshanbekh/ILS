@@ -582,7 +582,7 @@ class BotService {
               }
             : undefined,
       },
-      select: { chatId: true, student: { select: { fullName: true } } },
+      select: { id: true, chatId: true, student: { select: { fullName: true } } },
     });
   }
 }

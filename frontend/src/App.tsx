@@ -46,6 +46,7 @@ import TrashPage from '@/pages/admin/TrashPage';
 import LessonControlPage from '@/pages/admin/LessonControlPage';
 import ParentsPage from '@/pages/admin/ParentsPage';
 import AppealsPage from '@/pages/admin/AppealsPage';
+import EventFeedbackPage from '@/pages/admin/EventFeedbackPage';
 
 
 const queryClient = new QueryClient({
@@ -168,6 +169,7 @@ export default function App() {
               <Route path="/admin/lesson-control" element={<LessonControlPage />} />
               <Route path="/admin/parents" element={<ParentsPage />} />
               <Route path="/admin/appeals" element={<AppealsPage />} />
+              <Route path="/admin/event-feedback" element={<EventFeedbackPage />} />
             </Route>
 
             {/* Teacher routes */}

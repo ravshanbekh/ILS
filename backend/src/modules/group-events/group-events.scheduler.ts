@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import groupEventsService from './group-events.service';
-import { sendEventInvitations, sendEventReminders } from '../bot/bot.notifications';
+import { sendEventInvitations, sendEventReminders, sendEventFeedbackRequests } from '../bot/bot.notifications';
 import logger from '../../shared/utils/logger';
 
 let schedulerStarted = false;
@@ -40,5 +40,14 @@ export function startGroupEventsScheduler() {
     }
   }, { timezone: 'Asia/Tashkent' });
 
-  logger.info('⏰ Demo Day scheduleri ishga tushdi (taklifnoma + eslatmalar)');
+  // Har 30 daqiqada — 3+ soat oldin tugagan tadbirlardan fikr-mulohaza so'rash
+  cron.schedule('*/30 * * * *', async () => {
+    try {
+      await sendEventFeedbackRequests();
+    } catch (err) {
+      logger.error('Demo Day fikr-mulohaza so\'rashda xato:', err);
+    }
+  });
+
+  logger.info('⏰ Demo Day scheduleri ishga tushdi (taklifnoma + eslatmalar + fikr-mulohaza)');
 }

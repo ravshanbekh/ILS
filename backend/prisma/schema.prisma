@@ -54,41 +54,43 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
-  teacherGroups          Group[]               @relation("TeacherGroups")
-  groupStudents          GroupStudent[]
-  submissions            Submission[]          @relation("StudentSubmissions")
-  checkedBy              Submission[]          @relation("CheckedByTeacher")
-  notifications          Notification[]
-  auditLogs              AuditLog[]
-  checklistEntries       DailyChecklistEntry[]
-  frozenEntries          StudentFreeze[]       @relation("FrozenStudents")
-  frozenByEntries        StudentFreeze[]       @relation("FrozenBy")
-  monitoringCalls        MonitoringCall[]      @relation("MonitoringCalledBy")
-  monitoringNotes        MonitoringNote[]      @relation("MonitoringNotes")
-  feedbacksWritten       StudentFeedback[]     @relation("FeedbackByStudent")
-  feedbacksReceived      StudentFeedback[]     @relation("FeedbackForTeacher")
-  telegramLinks          TelegramLink[]        @relation("TelegramStudentLinks")
-  feedbackStudent        TelegramFeedback[]    @relation("FeedbackStudent")
-  feedbackTeacher        TelegramFeedback[]    @relation("FeedbackTeacher")
+  teacherGroups           Group[]               @relation("TeacherGroups")
+  groupStudents           GroupStudent[]
+  submissions             Submission[]          @relation("StudentSubmissions")
+  checkedBy               Submission[]          @relation("CheckedByTeacher")
+  notifications           Notification[]
+  auditLogs               AuditLog[]
+  checklistEntries        DailyChecklistEntry[]
+  frozenEntries           StudentFreeze[]       @relation("FrozenStudents")
+  frozenByEntries         StudentFreeze[]       @relation("FrozenBy")
+  monitoringCalls         MonitoringCall[]      @relation("MonitoringCalledBy")
+  monitoringNotes         MonitoringNote[]      @relation("MonitoringNotes")
+  feedbacksWritten        StudentFeedback[]     @relation("FeedbackByStudent")
+  feedbacksReceived       StudentFeedback[]     @relation("FeedbackForTeacher")
+  telegramLinks           TelegramLink[]        @relation("TelegramStudentLinks")
+  feedbackStudent         TelegramFeedback[]    @relation("FeedbackStudent")
+  feedbackTeacher         TelegramFeedback[]    @relation("FeedbackTeacher")
   // Exam relations
-  createdExams           Exam[]                @relation("ExamCreator")
-  examParticipations     ExamParticipant[]     @relation("ExamParticipants")
-  gradedExams            ExamParticipant[]     @relation("ExamGrader")
-  createdQuizzes         LiveQuiz[]            @relation("QuizCreator")
-  activeQuizzes          LiveQuiz[]            @relation("ActiveQuizTeacher")
-  quizResults            LiveQuizResult[]      @relation("TeacherQuizResults")
+  createdExams            Exam[]                @relation("ExamCreator")
+  examParticipations      ExamParticipant[]     @relation("ExamParticipants")
+  gradedExams             ExamParticipant[]     @relation("ExamGrader")
+  createdQuizzes          LiveQuiz[]            @relation("QuizCreator")
+  activeQuizzes           LiveQuiz[]            @relation("ActiveQuizTeacher")
+  quizResults             LiveQuizResult[]      @relation("TeacherQuizResults")
   // Lessons relations
-  createdFolders         LessonFolder[]        @relation("FolderCreator")
-  lessonAccess           LessonFolderAccess[]  @relation("TeacherAccess")
+  createdFolders          LessonFolder[]        @relation("FolderCreator")
+  lessonAccess            LessonFolderAccess[]  @relation("TeacherAccess")
   // Dars baholash relations
-  taughtLessonSessions   LessonSession[]       @relation("LessonSessionTeacher")
-  unlockedLessonSessions LessonSession[]       @relation("LessonSessionUnlockedBy")
-  lessonGrades           LessonGrade[]         @relation("LessonGradeStudent")
+  taughtLessonSessions    LessonSession[]       @relation("LessonSessionTeacher")
+  unlockedLessonSessions  LessonSession[]       @relation("LessonSessionUnlockedBy")
+  lessonGrades            LessonGrade[]         @relation("LessonGradeStudent")
   // Demo Day va Murojaatlar
-  createdGroupEvents     GroupEvent[]          @relation("GroupEventCreator")
-  appealsAsStudent       ParentAppeal[]        @relation("AppealStudent")
-  appealsAsTeacher       ParentAppeal[]        @relation("AppealTeacher")
-  appealsReplied         ParentAppeal[]        @relation("AppealRepliedBy")
+  createdGroupEvents      GroupEvent[]          @relation("GroupEventCreator")
+  appealsAsStudent        ParentAppeal[]        @relation("AppealStudent")
+  appealsAsTeacher        ParentAppeal[]        @relation("AppealTeacher")
+  appealsReplied          ParentAppeal[]        @relation("AppealRepliedBy")
+  eventFeedbacksAsStudent EventFeedback[]       @relation("EventFeedbackStudent")
+  eventFeedbacksAsTeacher EventFeedback[]       @relation("EventFeedbackTeacher")
 
   @@map("users")
 }
@@ -123,6 +125,7 @@ model Group {
   lessonSessions   LessonSession[]
   events           GroupEvent[]
   appeals          ParentAppeal[]
+  eventFeedbacks   EventFeedback[]
 
   @@map("groups")
 }
@@ -418,9 +421,10 @@ model TelegramLink {
   createdAt        DateTime @default(now()) @map("created_at")
 
   // Relations
-  student    User           @relation("TelegramStudentLinks", fields: [studentId], references: [id])
-  eventRsvps EventRsvp[]
-  appeals    ParentAppeal[]
+  student        User            @relation("TelegramStudentLinks", fields: [studentId], references: [id])
+  eventRsvps     EventRsvp[]
+  appeals        ParentAppeal[]
+  eventFeedbacks EventFeedback[]
 
   @@map("telegram_links")
 }
@@ -882,16 +886,18 @@ model GroupEvent {
   description String?  @db.VarChar(1000)
   createdById String   @map("created_by_id") @db.Uuid
 
-  invitedAt    DateTime? @map("invited_at")
-  reminder7dAt DateTime? @map("reminder_7d_at")
-  reminder1dAt DateTime? @map("reminder_1d_at")
-  reminder2hAt DateTime? @map("reminder_2h_at")
+  invitedAt           DateTime? @map("invited_at")
+  reminder7dAt        DateTime? @map("reminder_7d_at")
+  reminder1dAt        DateTime? @map("reminder_1d_at")
+  reminder2hAt        DateTime? @map("reminder_2h_at")
+  feedbackRequestedAt DateTime? @map("feedback_requested_at")
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  group     Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  createdBy User        @relation("GroupEventCreator", fields: [createdById], references: [id])
+  group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User            @relation("GroupEventCreator", fields: [createdById], references: [id])
   rsvps     EventRsvp[]
+  feedbacks EventFeedback[]
 
   @@map("group_events")
 }
@@ -961,4 +967,37 @@ model ParentAppeal {
   repliedBy    User?        @relation("AppealRepliedBy", fields: [repliedById], references: [id])
 
   @@map("parent_appeals")
+}
+
+// ============================================================
+//  DEMO DAY FIKR-MULOHAZASI (Tadbirdan keyingi ota-ona feedback)
+// ============================================================
+
+enum EventFeedbackSatisfaction {
+  mamnun // 😊 Ko'ngli to'ldi
+  oddiy // 😐 Oddiy
+  norozi // 😞 Yoqmadi
+}
+
+model EventFeedback {
+  id             String  @id @default(uuid()) @db.Uuid
+  eventId        String  @map("event_id") @db.Uuid
+  telegramLinkId String  @map("telegram_link_id") @db.Uuid
+  studentId      String  @map("student_id") @db.Uuid
+  groupId        String  @map("group_id") @db.Uuid // snapshot — filtrlash tez bo'lishi uchun
+  teacherId      String? @map("teacher_id") @db.Uuid // snapshot
+
+  satisfaction EventFeedbackSatisfaction
+  comment      String?                   @db.VarChar(1000)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event        GroupEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  telegramLink TelegramLink @relation(fields: [telegramLinkId], references: [id], onDelete: Cascade)
+  student      User         @relation("EventFeedbackStudent", fields: [studentId], references: [id])
+  teacher      User?        @relation("EventFeedbackTeacher", fields: [teacherId], references: [id])
+  group        Group        @relation(fields: [groupId], references: [id])
+
+  @@unique([eventId, telegramLinkId])
+  @@map("event_feedbacks")
 }

@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
-  Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare
+  Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -59,6 +59,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/lesson-control', label: 'Dars nazorati', icon: AlarmClock },
       { to: '/admin/parents', label: 'Ota-onalar bazasi', icon: Heart },
       { to: '/admin/appeals', label: 'Murojaatlar', icon: MessageSquare },
+      { to: '/admin/event-feedback', label: 'Demo Day fikrlari', icon: PartyPopper },
       { to: '/admin/frozen-students', label: 'Muzlatilganlar', icon: Snowflake },
       { to: '/admin/teacher-rating', label: "O'qituvchi reytingi", icon: Star },
       { to: '/admin/monitoring', label: 'Monitoring', icon: Phone },

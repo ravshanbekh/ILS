@@ -5,6 +5,7 @@ import { sendDailyAIReport } from './bot.ai-report';
 import lessonSessionsService from '../lesson-sessions/lesson-sessions.service';
 import groupEventsService from '../group-events/group-events.service';
 import appealsService from '../appeals/appeals.service';
+import eventFeedbackService from '../event-feedback/event-feedback.service';
 import { notifyAdminUrgentAppeal } from './bot.notifications';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 import {
@@ -35,6 +36,8 @@ import {
   askAppealMessage,
   appealReceivedMessage,
   rsvpConfirmedMessage,
+  eventFeedbackAskCommentMessage,
+  eventFeedbackThanksMessage,
 } from './bot.messages';
 import {
   mainMenuKeyboard,
@@ -42,6 +45,7 @@ import {
   removeKeyboard,
   settingsInlineKeyboard,
   appealTypeKeyboard,
+  eventFeedbackCommentKeyboard,
 } from './bot.keyboards';
 import { BotUserState } from './bot.types';
 import logger from '../../shared/utils/logger';
@@ -317,6 +321,17 @@ export function registerHandlers(bot: BotInstance) {
       return;
     }
 
+    // ── Demo Day fikr-mulohaza izohi kutilmoqda ──
+    if (state.step === 'await_event_feedback_comment' && state.pendingFeedbackEventId) {
+      const link = await botService.getLinkByTelegramId(telegramId);
+      if (!link) return;
+
+      await eventFeedbackService.addComment(state.pendingFeedbackEventId, link.id, text);
+      clearState(chatId);
+      await bot.sendMessage(chatId, eventFeedbackThanksMessage(), { reply_markup: mainMenuKeyboard() });
+      return;
+    }
+
     // ── AI savoli kutilmoqda ──
     if (state.step === 'await_ai_query') {
       const link = await botService.getLinkByTelegramId(telegramId);
@@ -456,6 +471,27 @@ Qoidalarga rioya qiling:
 
       await groupEventsService.recordRsvp(eventId, link.id, answer as any);
       await bot.sendMessage(chatId, rsvpConfirmedMessage(answer as any));
+      return;
+    }
+
+    // Demo Day fikr-mulohaza bahosi
+    if (data.startsWith('event_fb:')) {
+      const [, eventId, satisfaction] = data.split(':');
+      const link = await botService.getLinkByTelegramId(telegramId);
+      if (!link || link.role !== 'parent') return;
+
+      await eventFeedbackService.submitSatisfaction(eventId, link.id, satisfaction as any);
+      setState(chatId, { step: 'await_event_feedback_comment', pendingFeedbackEventId: eventId });
+      await bot.sendMessage(chatId, eventFeedbackAskCommentMessage(), {
+        reply_markup: eventFeedbackCommentKeyboard(),
+      });
+      return;
+    }
+
+    // Demo Day fikr-mulohaza — izohni o'tkazib yuborish
+    if (data === 'event_fb_skip') {
+      clearState(chatId);
+      await bot.sendMessage(chatId, eventFeedbackThanksMessage(), { reply_markup: mainMenuKeyboard() });
       return;
     }
 

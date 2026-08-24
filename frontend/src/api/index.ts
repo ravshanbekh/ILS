@@ -506,3 +506,14 @@ export const appealsApi = {
   exportExcel: (params?: { from?: string; to?: string }) =>
     api.get('/appeals/export', { params, responseType: 'blob' }),
 };
+
+export const eventFeedbackApi = {
+  getAll: (params?: { groupId?: string; teacherId?: string; eventId?: string; from?: string; to?: string }) =>
+    api.get('/event-feedback', { params }),
+
+  getStats: (params?: { groupId?: string; teacherId?: string; eventId?: string; from?: string; to?: string }) =>
+    api.get('/event-feedback/stats', { params }),
+
+  aiAnalyze: (params?: { groupId?: string; teacherId?: string; eventId?: string; from?: string; to?: string }) =>
+    api.get('/event-feedback/ai-analyze', { params }),
+};

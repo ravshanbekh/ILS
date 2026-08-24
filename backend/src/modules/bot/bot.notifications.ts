@@ -10,8 +10,9 @@ import {
   adminUngradedReportMessage,
   eventInvitationMessage,
   eventReminderMessage,
+  eventFeedbackRequestMessage,
 } from './bot.messages';
-import { rsvpInlineKeyboard } from './bot.keyboards';
+import { rsvpInlineKeyboard, eventFeedbackKeyboard } from './bot.keyboards';
 import { NotifyCheckPayload } from './bot.types';
 import logger from '../../shared/utils/logger';
 import { generateText, getAISettings } from '../../shared/utils/ai';
@@ -402,4 +403,29 @@ export async function notifyAdminUrgentAppeal(data: {
     await safeSend(chatId, message, { parse_mode: 'Markdown' });
   }
   logger.info(`Bot: shoshilinch murojaat #${data.code} haqida rahbarga xabar yuborildi`);
+}
+
+// ============ DEMO DAY FIKR-MULOHAZASI ============
+
+/**
+ * Tugagan tadbirlar (3+ soat oldin) uchun guruhdagi barcha ulangan ota-onalarga
+ * baho so'ralib xabar yuboriladi. group-events.scheduler.ts dan chaqiriladi.
+ */
+export async function sendEventFeedbackRequests() {
+  if (!botInstance) return;
+
+  const events = await groupEventsService.getEventsPendingFeedbackRequest();
+
+  for (const event of events) {
+    const recipients = await botService.getBroadcastRecipients({ groupId: event.groupId });
+    const message = eventFeedbackRequestMessage(event.title, event.group.name);
+
+    for (const r of recipients as Array<{ id: string; chatId: bigint }>) {
+      await safeSend(r.chatId, message, { parse_mode: 'Markdown', reply_markup: eventFeedbackKeyboard(event.id) });
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    }
+
+    await groupEventsService.markFeedbackRequested(event.id);
+    logger.info(`Bot: "${event.title}" uchun ${recipients.length} ta ota-onadan fikr-mulohaza so'raldi`);
+  }
 }

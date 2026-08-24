@@ -101,6 +101,19 @@ class GroupEventsService {
     const field = stage === '7d' ? 'reminder7dAt' : stage === '1d' ? 'reminder1dAt' : 'reminder2hAt';
     await prisma.groupEvent.update({ where: { id }, data: { [field]: new Date() } as any });
   }
+
+  /** Tugagan (3+ soat oldin bo'lib o'tgan), lekin fikr-mulohaza so'ralmagan tadbirlar */
+  async getEventsPendingFeedbackRequest() {
+    const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    return prisma.groupEvent.findMany({
+      where: { feedbackRequestedAt: null, eventAt: { lte: threeHoursAgo } },
+      include: { group: { select: { id: true, name: true } } },
+    });
+  }
+
+  async markFeedbackRequested(id: string) {
+    await prisma.groupEvent.update({ where: { id }, data: { feedbackRequestedAt: new Date() } });
+  }
 }
 
 export default new GroupEventsService();
