@@ -42,6 +42,17 @@ export const createQuiz = async (req: Request, res: Response, next: NextFunction
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
 
+    if (!title || !String(title).trim()) {
+      return res.status(400).json({ error: 'Quiz nomi kerak' });
+    }
+
+    if (categoryId) {
+      const category = await prisma.category.findUnique({ where: { id: categoryId } });
+      if (!category) {
+        return res.status(400).json({ error: 'Tanlangan kategoriya topilmadi — ro\'yxatni yangilab ko\'ring' });
+      }
+    }
+
     // Faqat admin global quiz yarata oladi
     const canBeGlobal = userRole === 'admin' && isGlobal;
 
@@ -310,6 +321,16 @@ export const startQuiz = async (req: Request, res: Response, next: NextFunction)
 
     if (existingQuiz.questions.length === 0) {
       return res.status(400).json({ error: 'Savol yo\'q. Avval savol qo\'shing.' });
+    }
+
+    if (groupId) {
+      const group = await prisma.group.findUnique({ where: { id: groupId } });
+      if (!group) return res.status(400).json({ error: 'Tanlangan guruh topilmadi — ro\'yxatni yangilab ko\'ring' });
+    }
+
+    if (musicId) {
+      const music = await prisma.quizMusic.findUnique({ where: { id: musicId } });
+      if (!music) return res.status(400).json({ error: 'Tanlangan musiqa topilmadi — ro\'yxatni yangilab ko\'ring' });
     }
 
     // Eski o'yinchilarni va ularning natijalarini tozalash

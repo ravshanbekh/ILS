@@ -8,6 +8,16 @@ import { useAuthStore } from '@/stores/authStore';
 const SOCKET_URL = (import.meta.env.VITE_API_URL?.replace('/api', '') || '') || window.location.origin;
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
+// Backend xato javobi { error: { message } } yoki { message } shaklida bo'lishi mumkin —
+// to'g'ridan-to'g'ri obyektni alert() ga berish "[object Object]" chiqarib yuboradi.
+function getErrMsg(e: any, fallback: string): string {
+  const err = e?.response?.data?.error;
+  if (typeof err === 'string') return err;
+  if (err?.message) return err.message;
+  if (e?.response?.data?.message) return e.response.data.message;
+  return fallback;
+}
+
 // ── Animated score counter ────────────────────────────────────────────────────
 function AnimatedNum({ value, duration = 800 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(value);
@@ -155,7 +165,7 @@ export default function LiveQuizPage() {
       setShowStartModal(false);
       await fetchAll();
     } catch (e: any) {
-      alert(e.response?.data?.error || 'O\'yinni boshlashda xatolik');
+      alert(getErrMsg(e, "O'yinni boshlashda xatolik"));
     }
   }
 
@@ -198,7 +208,7 @@ export default function LiveQuizPage() {
         setSelectedCategoryId(res.data.data.id);
       }
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Kategoriya yaratishda xatolik');
+      alert(getErrMsg(e, 'Kategoriya yaratishda xatolik'));
     } finally {
       setCreatingCat(false);
     }
@@ -219,7 +229,7 @@ export default function LiveQuizPage() {
       setMusicUploadForm({ title: '' });
       if (musicFileRef.current) musicFileRef.current.value = '';
       await fetchMusics();
-    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    } catch (e: any) { alert(getErrMsg(e, 'Xato')); }
     finally { setMusicUploading(false); }
   }
 
@@ -229,7 +239,7 @@ export default function LiveQuizPage() {
       await liveQuizApi.deleteMusic(id);
       if (selectedMusicId === id) setSelectedMusicId(null);
       await fetchMusics();
-    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    } catch (e: any) { alert(getErrMsg(e, 'Xato')); }
   }
 
   useEffect(() => {
@@ -338,7 +348,7 @@ export default function LiveQuizPage() {
       setForm({ title: '', description: '', categoryId: '', timePerQ: 20, isGlobal: false });
       await fetchAll();
       loadQuiz(res.data.data);
-    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    } catch (e: any) { alert(getErrMsg(e, 'Xato')); }
     finally { setCreating(false); }
   }
 
@@ -350,7 +360,7 @@ export default function LiveQuizPage() {
       await fetchAll();
       const res = await liveQuizApi.getById(selected.id);
       setSelected(res.data.data);
-    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    } catch (e: any) { alert(getErrMsg(e, 'Xato')); }
   }
 
   async function handleDeleteQuiz(quiz: Quiz) {
@@ -359,7 +369,7 @@ export default function LiveQuizPage() {
       await liveQuizApi.deleteQuiz(quiz.id);
       if (selected?.id === quiz.id) { setSelected(null); setGamePhase('idle'); }
       await fetchAll();
-    } catch (e: any) { alert(e.response?.data?.error || 'Ruxsat yo\'q'); }
+    } catch (e: any) { alert(getErrMsg(e, "Ruxsat yo'q")); }
   }
 
   async function loadQuiz(q: Quiz) {
@@ -390,7 +400,7 @@ export default function LiveQuizPage() {
       await fetchAll();
       await loadQuiz(res.data.data);
       setListTab('my');
-    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    } catch (e: any) { alert(getErrMsg(e, 'Xato')); }
   }
 
   // ── Game flow: Lobby uchun tayyorlash ───────────────────────────────────────
@@ -404,7 +414,7 @@ export default function LiveQuizPage() {
       setAnsweredCount(0);
       setGamePhase('lobby');
       setTab('game');
-    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    } catch (e: any) { alert(getErrMsg(e, 'Xato')); }
   }
 
   // ── Birinchi savolni yuborish (LOBBY → QUESTION) ─────────────────────────────
@@ -415,7 +425,7 @@ export default function LiveQuizPage() {
       setAnsweredCount(0);
       setBoardFull(true); // Test boshlanishi bilan doska to'liq ekranga ochiladi
       // quiz:question event socket orqali keladi → gamePhase = 'question'
-    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    } catch (e: any) { alert(getErrMsg(e, 'Xato')); }
   }
 
   // ── Natijani ko'rsatish (QUESTION → LEADERBOARD) ─────────────────────────────
@@ -428,7 +438,7 @@ export default function LiveQuizPage() {
       await liveQuizApi.nextQuestion(selected.id, currentQData.id);
       // quiz:leaderboard event socket orqali keladi → gamePhase = 'leaderboard'
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Xato');
+      alert(getErrMsg(e, 'Xato'));
     }
   }
 
@@ -447,7 +457,7 @@ export default function LiveQuizPage() {
     try {
       await liveQuizApi.showQuestion(selected.id);
       // quiz:question event socket orqali keladi → gamePhase = 'question'
-    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    } catch (e: any) { alert(getErrMsg(e, 'Xato')); }
   }
 
   // ── Quiz yakunlash ────────────────────────────────────────────────────────────
@@ -461,7 +471,7 @@ export default function LiveQuizPage() {
       // quiz:finished event keladi
       const statsRes = await liveQuizApi.getStats(selected.id);
       setStatsData(statsRes.data.data);
-    } catch (e: any) { alert(e.response?.data?.error || 'Xato'); }
+    } catch (e: any) { alert(getErrMsg(e, 'Xato')); }
   }
 
   async function loadStats() {
@@ -490,7 +500,7 @@ export default function LiveQuizPage() {
         fetchAll();
         alert(`${parsed.length} ta savol import qilindi`);
       } catch (err: any) {
-        alert(err.response?.data?.error || 'Importda xatolik yuz berdi');
+        alert(getErrMsg(err, 'Importda xatolik yuz berdi'));
       } finally { setQLoading(false); }
     };
     reader.readAsBinaryString(file);
@@ -503,7 +513,7 @@ export default function LiveQuizPage() {
     try {
       const res = await liveQuizApi.uploadImage(file);
       setManualQ(q => ({ ...q, imageUrl: res.data.data.imageUrl }));
-    } catch (err: any) { alert(err.response?.data?.error || 'Rasm yuklanmadi'); }
+    } catch (err: any) { alert(getErrMsg(err, 'Rasm yuklanmadi')); }
     e.target.value = '';
   }
 
@@ -635,7 +645,7 @@ export default function LiveQuizPage() {
                   onClick={async () => {
                     if (!window.confirm(`Rostdan ham ${p.fullName} ni chiqarib yubormoqchimisiz?`)) return;
                     try { await liveQuizApi.kickPlayer(selected!.id, p.id); }
-                    catch(e:any) { alert(e.response?.data?.error || "Xatolik"); }
+                    catch(e:any) { alert(getErrMsg(e, "Xatolik")); }
                   }}
                   className="text-red-500 transition hover:bg-red-500/20 rounded p-1"
                   title="O'yinchini chiqarib yuborish"
@@ -1378,7 +1388,7 @@ export default function LiveQuizPage() {
                               onClick={async () => {
                                 if (!window.confirm(`Rostdan ham ${p.fullName} ni chiqarib yubormoqchimisiz?`)) return;
                                 try { await liveQuizApi.kickPlayer(selected!.id, p.id); }
-                                catch(e:any) { alert(e.response?.data?.error || "Xatolik"); }
+                                catch(e:any) { alert(getErrMsg(e, "Xatolik")); }
                               }}
                               className="text-red-500 transition hover:bg-red-500/20 rounded p-1"
                               title="O'yinchini chiqarib yuborish"
