@@ -1,7 +1,8 @@
-import { LessonDayType, LessonSessionStatus, HomeworkGrade } from '@prisma/client';
+import { LessonSessionStatus, HomeworkGrade } from '@prisma/client';
 import prisma from '../../config/database';
 import { ApiError } from '../../shared/middleware/errorHandler';
 import logger from '../../shared/utils/logger';
+import { isLessonDay } from '../../shared/utils/lessonSchedule';
 
 const LESSON_WINDOW_MINUTES = 100; // 1 soat 40 daqiqa
 
@@ -21,14 +22,6 @@ function tashkentDateOnly(d: Date = new Date()): Date {
     day: '2-digit',
   }).format(d);
   return new Date(`${parts}T00:00:00.000Z`);
-}
-
-function isLessonDay(dayType: LessonDayType | null, date: Date): boolean {
-  if (!dayType) return false;
-  if (dayType === 'har_kuni') return true;
-  // date — tashkentDateOnly() bilan hosil qilingan UTC yarim tun qiymati
-  const dayOfMonth = date.getUTCDate();
-  return dayType === 'juft' ? dayOfMonth % 2 === 0 : dayOfMonth % 2 === 1;
 }
 
 class LessonSessionsService {

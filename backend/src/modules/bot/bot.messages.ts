@@ -34,7 +34,16 @@ export function linkedSuccessMessage(studentName: string, groupName?: string): s
     `✅ *Muvaffaqiyatli bog'landingiz!*\n\n` +
     `👤 O'quvchi: *${esc(studentName)}*\n` +
     (groupName ? `📚 Guruh: *${esc(groupName)}*\n` : '') +
-    `\nQuyidagi tugmalardan foydalaning:`
+    `\nYana bir farzandingiz bo'lsa, /login buyrug'ini qayta yuborib uni ham ulashingiz mumkin.\n\n` +
+    `Quyidagi tugmalardan foydalaning:`
+  );
+}
+
+/** Bu farzandga boshqa Telegram akkaunt allaqachon ulangan */
+export function alreadyLinkedElsewhereMessage(): string {
+  return (
+    `⛔ *Bu o'quvchiga allaqachon boshqa Telegram akkaunt ulangan.*\n\n` +
+    `Bir vaqtning o'zida faqat bitta kishi kuzatishi mumkin. Agar ulanish sizga tegishli bo'lmasa yoki almashtirmoqchi bo'lsangiz, avval eskisi /unlink buyrug'i orqali uzishi kerak.`
   );
 }
 
@@ -186,8 +195,26 @@ export function settingsMessage(): string {
 }
 
 /** Bog'lanish uzildi */
-export function unlinkedMessage(): string {
-  return `🔗 *Bog'lanish uzildi.*\n\nQayta bog'lanish uchun /login buyrug'ini yuboring.`;
+export function unlinkedMessage(hasOtherChildren: boolean = false): string {
+  return (
+    `🔗 *Bog'lanish uzildi.*\n\n` +
+    (hasOtherChildren
+      ? `Boshqa farzandlaringiz hali ulangan — "🔀 Farzandlar" tugmasi orqali ko'ring.`
+      : `Qayta bog'lanish uchun /login buyrug'ini yuboring.`)
+  );
+}
+
+// ============ FARZAND ALMASHTIRISH ============
+
+/** "🔀 Farzandlar" tugmasi — bir nechta farzand bo'lsa tanlash, bitta bo'lsa xabar */
+export function childSwitcherMessage(count: number): string {
+  if (count <= 1) return `👶 Sizda hozircha faqat bitta ulangan farzand bor.`;
+  return `👨‍👩‍👧‍👦 *Farzandingizni tanlang:*`;
+}
+
+/** Farzand almashtirildi */
+export function childSwitchedMessage(studentName: string): string {
+  return `✅ Endi *${esc(studentName)}* natijalari ko'rsatilyapti.`;
 }
 
 // ============ PROAKTIV XABARLAR ============

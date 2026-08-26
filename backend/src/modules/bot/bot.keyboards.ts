@@ -15,7 +15,7 @@ export const mainMenuKeyboard = (): ReplyKeyboardMarkup => ({
     [{ text: '📋 Ma\'lumot' }, { text: '🏆 Leaderboard' }],
     [{ text: '💬 Fikr bildirish' }, { text: '📮 Murojaat' }],
     [{ text: '🤖 AI Konsultant' }, { text: '⚙️ Sozlamalar' }],
-    [{ text: '🔗 Bog\'lanishni uzish' }],
+    [{ text: '🔀 Farzandlar' }, { text: '🔗 Bog\'lanishni uzish' }],
   ],
   resize_keyboard: true,
   is_persistent: true,
@@ -113,5 +113,12 @@ export const eventFeedbackKeyboard = (eventId: string): InlineKeyboardMarkup => 
 /** Fikr-mulohaza bahosidan keyin — izoh yozish yoki o'tkazib yuborish */
 export const eventFeedbackCommentKeyboard = (): InlineKeyboardMarkup => ({
   inline_keyboard: [[{ text: "⏭ O'tkazib yuborish", callback_data: 'event_fb_skip' }]],
+});
+
+/** Bir nechta farzand orasida tanlash */
+export const childSwitcherKeyboard = (
+  children: Array<{ studentId: string; fullName: string }>
+): InlineKeyboardMarkup => ({
+  inline_keyboard: children.map((c) => [{ text: c.fullName, callback_data: `switch_child:${c.studentId}` }]),
 });
 

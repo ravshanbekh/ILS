@@ -32,6 +32,11 @@ export function setBotUsername(username: string) {
   botUsername = username;
 }
 
+/** Bot username'ini olish (@ belgisiz) — nusxalash tugmasi uchun */
+export function getBotUsername(): string | null {
+  return botUsername;
+}
+
 /** Ota-onaga "/start bosing" havolasi — guruh kunlik xulosasida ishlatiladi */
 export function getBotLink(): string | undefined {
   return botUsername ? `https://t.me/${botUsername}` : undefined;

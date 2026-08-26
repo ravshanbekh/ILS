@@ -374,6 +374,8 @@ export const examApi = {
 export const botApi = {
   sendDailyReport: (action?: 'send' | 'preview') => api.post('/bot/send-daily-report', { action }),
 
+  getInfo: () => api.get('/bot/info'),
+
   getParentCoverage: (params?: { groupId?: string; teacherId?: string }) =>
     api.get('/bot/parents', { params }),
 

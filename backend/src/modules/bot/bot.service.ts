@@ -6,11 +6,14 @@ class BotService {
   // ============ ALOQA BO'LGAN O'QUVCHI ============
 
   /**
-   * Telegram ID bo'yicha bog'langan linkni olish
+   * Telegram ID bo'yicha "faol" (oxirgi tanlangan) farzand linkini olish.
+   * Bir ota-ona bir nechta farzandga ulangan bo'lishi mumkin — shundan
+   * lastActiveAt bo'yicha eng oxirgisi "hozir ko'rsatilayotgan bola" hisoblanadi.
    */
   async getLinkByTelegramId(telegramId: number | bigint): Promise<TelegramLinkRecord | null> {
-    return prisma.telegramLink.findUnique({
+    return prisma.telegramLink.findFirst({
       where: { telegramId: BigInt(telegramId) },
+      orderBy: { lastActiveAt: 'desc' },
       include: {
         student: {
           select: {
@@ -30,7 +33,29 @@ class BotService {
   }
 
   /**
-   * Login va parol orqali o'quvchini tekshirib bog'lash (ota-ona uchun)
+   * Shu Telegram akkauntga ulangan barcha farzandlar (bola almashtirish menyusi uchun)
+   */
+  async getAllChildLinksByTelegramId(telegramId: number | bigint) {
+    return prisma.telegramLink.findMany({
+      where: { telegramId: BigInt(telegramId), role: 'parent', isActive: true },
+      orderBy: { lastActiveAt: 'desc' },
+      include: { student: { select: { id: true, fullName: true } } },
+    });
+  }
+
+  /** Bir nechta farzand orasida "hozir faol" bolani almashtirish */
+  async setActiveChild(telegramId: number | bigint, studentId: string): Promise<void> {
+    await prisma.telegramLink.updateMany({
+      where: { telegramId: BigInt(telegramId), studentId },
+      data: { lastActiveAt: new Date() },
+    });
+  }
+
+  /**
+   * Login va parol orqali o'quvchini tekshirib bog'lash (ota-ona uchun).
+   * Bitta ota-ona bir nechta farzandga ulana oladi, lekin bitta farzandga
+   * bir vaqtning o'zida faqat bitta Telegram akkaunt ulangan bo'lishi mumkin —
+   * boshqasi ulanmoqchi bo'lsa, avval eskisi /unlink qilishi kerak.
    */
   async linkParent(data: {
     telegramId: number;
@@ -51,6 +76,19 @@ class BotService {
     const valid = await bcrypt.compare(data.password, user.passwordHash);
     if (!valid) return { success: false, message: 'wrong_password' };
 
+    // Bu farzandga boshqa Telegram akkaunt allaqachon ulanganmi?
+    const existingForStudent = await prisma.telegramLink.findFirst({
+      where: {
+        studentId: user.id,
+        role: 'parent',
+        isActive: true,
+        telegramId: { not: BigInt(data.telegramId) },
+      },
+    });
+    if (existingForStudent) {
+      return { success: false, message: 'already_linked_elsewhere' };
+    }
+
     // Guruhini olish
     const groupStudent = await prisma.groupStudent.findFirst({
       where: { studentId: user.id },
@@ -58,9 +96,9 @@ class BotService {
       orderBy: { joinedAt: 'desc' },
     });
 
-    // TelegramLink yaratish yoki yangilash
+    // TelegramLink yaratish yoki yangilash — shu bola uchun (boshqa farzandlarga ulanish saqlanib qoladi)
     await prisma.telegramLink.upsert({
-      where: { telegramId: BigInt(data.telegramId) },
+      where: { telegramId_studentId: { telegramId: BigInt(data.telegramId), studentId: user.id } },
       create: {
         telegramId: BigInt(data.telegramId),
         chatId: BigInt(data.chatId),
@@ -68,14 +106,15 @@ class BotService {
         role: 'parent',
         fullName: data.fullName,
         username: data.username,
+        lastActiveAt: new Date(),
       },
       update: {
         chatId: BigInt(data.chatId),
-        studentId: user.id,
         role: 'parent',
         fullName: data.fullName,
         username: data.username,
         isActive: true,
+        lastActiveAt: new Date(),
       },
     });
 
@@ -112,7 +151,7 @@ class BotService {
     if (!valid) return { success: false, message: 'wrong_password' };
 
     await prisma.telegramLink.upsert({
-      where: { telegramId: BigInt(data.telegramId) },
+      where: { telegramId_studentId: { telegramId: BigInt(data.telegramId), studentId: user.id } },
       create: {
         telegramId: BigInt(data.telegramId),
         chatId: BigInt(data.chatId),
@@ -120,14 +159,15 @@ class BotService {
         role: 'admin',
         fullName: data.fullName || user.fullName,
         username: data.username,
+        lastActiveAt: new Date(),
       },
       update: {
         chatId: BigInt(data.chatId),
-        studentId: user.id,
         role: 'admin',
         fullName: data.fullName || user.fullName,
         username: data.username,
         isActive: true,
+        lastActiveAt: new Date(),
       },
     });
 
@@ -135,13 +175,25 @@ class BotService {
   }
 
   /**
-   * Telegram bog'lanishni uzish
+   * Telegram bog'lanishni uzish. studentId berilmasa — hozir "faol" (oxirgi ko'rilgan)
+   * farzand bilan bog'lanish uziladi, boshqa farzandlarga ulanish saqlanib qoladi.
    */
-  async unlink(telegramId: number): Promise<void> {
-    await prisma.telegramLink.updateMany({
+  async unlink(telegramId: number, studentId?: string): Promise<void> {
+    if (studentId) {
+      await prisma.telegramLink.updateMany({
+        where: { telegramId: BigInt(telegramId), studentId },
+        data: { isActive: false },
+      });
+      return;
+    }
+
+    const active = await prisma.telegramLink.findFirst({
       where: { telegramId: BigInt(telegramId) },
-      data: { isActive: false },
+      orderBy: { lastActiveAt: 'desc' },
     });
+    if (active) {
+      await prisma.telegramLink.update({ where: { id: active.id }, data: { isActive: false } });
+    }
   }
 
   // ============ O'QUVCHI MA'LUMOTLARI ============
@@ -300,11 +352,12 @@ class BotService {
   // ============ SOZLAMALAR ============
 
   /**
-   * Bildirishnoma sozlamalarini olish
+   * Bildirishnoma sozlamalarini olish — hozir faol (oxirgi ko'rilgan) farzand uchun
    */
   async getNotificationSettings(telegramId: number) {
-    return prisma.telegramLink.findUnique({
+    return prisma.telegramLink.findFirst({
       where: { telegramId: BigInt(telegramId) },
+      orderBy: { lastActiveAt: 'desc' },
       select: {
         notifyOnCheck: true,
         notifyOnRank: true,
@@ -315,15 +368,21 @@ class BotService {
   }
 
   /**
-   * Bildirishnoma sozlamalarini yangilash
+   * Bildirishnoma sozlamalarini yangilash — hozir faol farzand uchun
    */
   async updateNotificationSettings(
     telegramId: number,
     field: 'notifyOnCheck' | 'notifyOnRank' | 'notifyWeekly' | 'notifyInactivity',
     value: boolean
   ) {
-    return prisma.telegramLink.update({
+    const active = await prisma.telegramLink.findFirst({
       where: { telegramId: BigInt(telegramId) },
+      orderBy: { lastActiveAt: 'desc' },
+    });
+    if (!active) return null;
+
+    return prisma.telegramLink.update({
+      where: { id: active.id },
       data: { [field]: value },
       select: {
         notifyOnCheck: true,

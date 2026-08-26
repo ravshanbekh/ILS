@@ -406,7 +406,7 @@ model MonitoringNote {
 /// Telegram Chat bog'lanishi (Ota-ona/Operator → O'quvchi)
 model TelegramLink {
   id               String   @id @default(uuid()) @db.Uuid
-  telegramId       BigInt   @unique @map("telegram_id") // Telegram user ID
+  telegramId       BigInt   @map("telegram_id") // Telegram user ID — bitta ota-ona bir nechta farzandga ulanishi uchun endi yakka o'zi unique emas
   chatId           BigInt   @map("chat_id") // Telegram chat ID
   studentId        String   @map("student_id") @db.Uuid // Bog'langan o'quvchi
   role             String   @default("parent") @db.VarChar(20) // "parent" | "admin"
@@ -418,6 +418,7 @@ model TelegramLink {
   notifyOnRank     Boolean  @default(true) @map("notify_on_rank")
   notifyWeekly     Boolean  @default(true) @map("notify_weekly")
   notifyInactivity Boolean  @default(true) @map("notify_inactivity")
+  lastActiveAt     DateTime @default(now()) @map("last_active_at") // Botda oxirgi marta "faol farzand" sifatida tanlangan payt
   createdAt        DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -426,6 +427,7 @@ model TelegramLink {
   appeals        ParentAppeal[]
   eventFeedbacks EventFeedback[]
 
+  @@unique([telegramId, studentId])
   @@map("telegram_links")
 }
 

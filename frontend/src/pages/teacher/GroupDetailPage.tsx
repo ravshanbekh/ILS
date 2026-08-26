@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
-import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi, monitoringApi, freezesApi } from '@/api';
-import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain, RefreshCw, Snowflake, LogOut, X, Sparkles, ClipboardCheck } from 'lucide-react';
+import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi, monitoringApi, freezesApi, botApi } from '@/api';
+import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain, RefreshCw, Snowflake, LogOut, X, Sparkles, ClipboardCheck, ExternalLink, Copy, Check } from 'lucide-react';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import LessonGradingPanel from '@/components/shared/LessonGradingPanel';
 import GroupEventsCard from '@/components/shared/GroupEventsCard';
@@ -21,7 +21,9 @@ export default function GroupDetailPage() {
   const [dayTypeSaving, setDayTypeSaving] = useState(false);
   const [chatCode, setChatCode] = useState<string | null>(null);
   const [chatCodeLoading, setChatCodeLoading] = useState(false);
-  
+  const [botInfo, setBotInfo] = useState<{ username: string | null; link: string | null } | null>(null);
+  const [usernameCopied, setUsernameCopied] = useState(false);
+
   // Student management states
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [allStudents, setAllStudents] = useState<any[]>([]);
@@ -138,6 +140,28 @@ export default function GroupDetailPage() {
   useEffect(() => {
     fetchGroupData();
   }, [id]);
+
+  useEffect(() => {
+    botApi.getInfo().then((res) => setBotInfo(res.data.data)).catch(() => {});
+  }, []);
+
+  // Guruhdagi o'quvchilarning ota-ona ulanish holati real vaqtga yaqin bo'lishi uchun
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchGroupData();
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [id]);
+
+  const handleCopyUsername = () => {
+    if (!botInfo?.username) return;
+    navigator.clipboard.writeText(`@${botInfo.username}`).then(() => {
+      setUsernameCopied(true);
+      setTimeout(() => setUsernameCopied(false), 2000);
+    }).catch(() => {
+      alert(`@${botInfo.username}`);
+    });
+  };
 
   const handleOpenStudentModal = async () => {
     try {
@@ -382,6 +406,27 @@ export default function GroupDetailPage() {
           {group?.telegramChatId ? (
             <>
               <span className="text-emerald-400 font-medium">✅ Chat ulangan{group.telegramChatTitle ? `: ${group.telegramChatTitle}` : ''}</span>
+              {botInfo?.link && (
+                <a
+                  href={botInfo.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 text-xs border-l border-zinc-800 pl-2 ml-1 flex items-center gap-1"
+                  title="Telegram botni ochish"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Bot
+                </a>
+              )}
+              {botInfo?.username && (
+                <button
+                  onClick={handleCopyUsername}
+                  className="text-zinc-400 hover:text-white text-xs flex items-center gap-1"
+                  title="Bot username'ini nusxalash"
+                >
+                  {usernameCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  @{botInfo.username}
+                </button>
+              )}
               <button
                 onClick={handleUnlinkChat}
                 disabled={chatCodeLoading}
@@ -546,13 +591,14 @@ export default function GroupDetailPage() {
                   <th className="px-6 py-4 w-16 text-center">N</th>
                   <th className="px-6 py-4">O'quvchi</th>
                   <th className="px-6 py-4">Login</th>
+                  <th className="px-6 py-4">Ota-ona</th>
                   <th className="px-6 py-4 text-right">Amallar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/50 bg-[#09090b]">
                 {students.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-zinc-500">
+                    <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
                       Guruhda hali o'quvchi yo'q. "O'quvchi qo'shish" tugmasini bosing.
                     </td>
                   </tr>
@@ -576,6 +622,17 @@ export default function GroupDetailPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 font-mono text-blue-400 text-sm">{student.login}</td>
+                      <td className="px-6 py-4">
+                        {student.parentLinked ? (
+                          <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-medium" title={student.parentName || ''}>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" /> Ulangan
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 text-zinc-600 text-xs font-medium">
+                            <span className="w-2 h-2 rounded-full bg-zinc-700" /> Ulanmagan
+                          </span>
+                        )}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end">
                           <button 

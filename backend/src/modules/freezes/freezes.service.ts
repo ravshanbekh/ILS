@@ -1,19 +1,6 @@
-import { LessonDayType } from '@prisma/client';
 import prisma from '../../config/database';
 import { generateText, getAISettings } from '../../shared/utils/ai';
-
-/** Berilgan oyda, guruhning dars kuni turiga ko'ra nechta dars kuni bo'lishi kerakligi */
-function countExpectedLessonDays(dayType: LessonDayType | null, year: number, month: number): number {
-  if (!dayType) return 0;
-  const daysInMonth = new Date(year, month, 0).getDate();
-  if (dayType === 'har_kuni') return daysInMonth;
-  let count = 0;
-  for (let d = 1; d <= daysInMonth; d++) {
-    const isEven = d % 2 === 0;
-    if ((dayType === 'juft' && isEven) || (dayType === 'toq' && !isEven)) count++;
-  }
-  return count;
-}
+import { countExpectedLessonDaysInMonth as countExpectedLessonDays } from '../../shared/utils/lessonSchedule';
 
 // Human-readable sabab nomlari
 export const FREEZE_REASON_LABELS: Record<string, string> = {

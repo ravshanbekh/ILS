@@ -38,6 +38,9 @@ import {
   rsvpConfirmedMessage,
   eventFeedbackAskCommentMessage,
   eventFeedbackThanksMessage,
+  alreadyLinkedElsewhereMessage,
+  childSwitcherMessage,
+  childSwitchedMessage,
 } from './bot.messages';
 import {
   mainMenuKeyboard,
@@ -46,6 +49,7 @@ import {
   settingsInlineKeyboard,
   appealTypeKeyboard,
   eventFeedbackCommentKeyboard,
+  childSwitcherKeyboard,
 } from './bot.keyboards';
 import { BotUserState } from './bot.types';
 import logger from '../../shared/utils/logger';
@@ -92,11 +96,6 @@ export function registerHandlers(bot: BotInstance) {
   // ─── /login ─── (ota-ona uchun)
   bot.onText(/\/login/, async (msg) => {
     const chatId = msg.chat.id;
-    const link = await botService.getLinkByTelegramId(msg.from!.id);
-    if (link && link.isActive && link.role === 'parent') {
-      await bot.sendMessage(chatId, `✅ Siz allaqachon *${esc(link.student?.fullName)}* bilan bog'langansiz.\n\nBoshqa o'quvchiga o'tish uchun avval /unlink buyrug'ini yuboring.`, { parse_mode: 'Markdown', reply_markup: mainMenuKeyboard() });
-      return;
-    }
     setState(chatId, { step: 'await_login' });
     await bot.sendMessage(chatId, askLoginMessage(), {
       parse_mode: 'Markdown',
@@ -150,9 +149,10 @@ export function registerHandlers(bot: BotInstance) {
   bot.onText(/\/unlink/, async (msg) => {
     await botService.unlink(msg.from!.id);
     clearState(msg.chat.id);
-    await bot.sendMessage(msg.chat.id, unlinkedMessage(), {
+    const remaining = await botService.getAllChildLinksByTelegramId(msg.from!.id);
+    await bot.sendMessage(msg.chat.id, unlinkedMessage(remaining.length > 0), {
       parse_mode: 'Markdown',
-      reply_markup: removeKeyboard(),
+      reply_markup: remaining.length > 0 ? mainMenuKeyboard() : removeKeyboard(),
     });
   });
 
@@ -224,6 +224,8 @@ export function registerHandlers(bot: BotInstance) {
         );
       } else if (result.message === 'not_student') {
         await bot.sendMessage(chatId, notStudentMessage(), { parse_mode: 'Markdown' });
+      } else if (result.message === 'already_linked_elsewhere') {
+        await bot.sendMessage(chatId, alreadyLinkedElsewhereMessage(), { parse_mode: 'Markdown' });
       } else {
         await bot.sendMessage(chatId, wrongCredentialsMessage(), { parse_mode: 'Markdown' });
       }
@@ -437,6 +439,7 @@ Qoidalarga rioya qiling:
       if (!current) return;
       const newVal = !current[field];
       const updated = await botService.updateNotificationSettings(telegramId, field, newVal);
+      if (!updated) return;
       await bot.editMessageReplyMarkup(settingsInlineKeyboard(updated), {
         chat_id: chatId,
         message_id: query.message!.message_id,
@@ -459,6 +462,19 @@ Qoidalarga rioya qiling:
       await bot.sendMessage(chatId, askAppealMessage(type), {
         parse_mode: 'Markdown',
         reply_markup: cancelKeyboard(),
+      });
+      return;
+    }
+
+    // Farzand almashtirish
+    if (data.startsWith('switch_child:')) {
+      const studentId = data.replace('switch_child:', '');
+      await botService.setActiveChild(telegramId, studentId);
+      const link = await botService.getLinkByTelegramId(telegramId);
+      if (!link) return;
+      await bot.sendMessage(chatId, childSwitchedMessage(link.student.fullName), {
+        parse_mode: 'Markdown',
+        reply_markup: mainMenuKeyboard(),
       });
       return;
     }
@@ -616,10 +632,27 @@ async function handleParentButtons(
       break;
     }
 
+    case '🔀 Farzandlar': {
+      const children = await botService.getAllChildLinksByTelegramId(telegramId);
+      if (children.length <= 1) {
+        await bot.sendMessage(chatId, childSwitcherMessage(children.length), { parse_mode: 'Markdown' });
+        return;
+      }
+      await bot.sendMessage(chatId, childSwitcherMessage(children.length), {
+        parse_mode: 'Markdown',
+        reply_markup: childSwitcherKeyboard(children.map((c) => ({ studentId: c.studentId, fullName: c.student.fullName }))),
+      });
+      break;
+    }
+
     case '🔗 Bog\'lanishni uzish': {
       await botService.unlink(telegramId);
       clearState(chatId);
-      await bot.sendMessage(chatId, unlinkedMessage(), { parse_mode: 'Markdown', reply_markup: { remove_keyboard: true } });
+      const remaining = await botService.getAllChildLinksByTelegramId(telegramId);
+      await bot.sendMessage(chatId, unlinkedMessage(remaining.length > 0), {
+        parse_mode: 'Markdown',
+        reply_markup: remaining.length > 0 ? mainMenuKeyboard() : { remove_keyboard: true },
+      });
       break;
     }
   }

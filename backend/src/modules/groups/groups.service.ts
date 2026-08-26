@@ -133,6 +133,15 @@ class GroupsService {
       }
     }
 
+    const studentIds = group.groupStudents.map((gs) => gs.studentId);
+    const parentLinks = studentIds.length
+      ? await prisma.telegramLink.findMany({
+          where: { studentId: { in: studentIds }, role: 'parent', isActive: true },
+          select: { studentId: true, fullName: true },
+        })
+      : [];
+    const parentLinkMap = new Map(parentLinks.map((l) => [l.studentId, l.fullName]));
+
     return {
       ...group,
       // BigInt JSON.stringify da xato beradi — stringga o'giramiz
@@ -140,6 +149,8 @@ class GroupsService {
       students: group.groupStudents.map((gs) => ({
         ...gs.student,
         joinedAt: gs.joinedAt,
+        parentLinked: parentLinkMap.has(gs.studentId),
+        parentName: parentLinkMap.get(gs.studentId) || null,
       })),
       normatives: groupNormatives.map((gn) => ({
         ...gn.normative,
