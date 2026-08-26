@@ -184,7 +184,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                 <>
                   <p className="text-zinc-300 mb-1">Bugungi dars uchun baholash boshlanmagan.</p>
                   <p className="text-zinc-500 text-sm mb-6">
-                    Boshlagach 1 soat 40 daqiqa vaqt beriladi.
+                    Boshlagach 2 soat vaqt beriladi.
                   </p>
                   <button
                     onClick={handleStart}
@@ -210,7 +210,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
           ) : session.status === 'avto_yopildi' ? (
             <div className="text-center py-12">
               <Lock className="w-10 h-10 text-red-500 mx-auto mb-3" />
-              <p className="text-zinc-300 mb-1">Bu darsning baholash vaqti (1:40) tugab, avtomatik yopilgan.</p>
+              <p className="text-zinc-300 mb-1">Bu darsning baholash vaqti (2:00) tugab, avtomatik yopilgan.</p>
               <p className="text-zinc-500 text-sm">Qayta ochish uchun administratordan (Ravshan) ruxsat so'rang.</p>
             </div>
           ) : (

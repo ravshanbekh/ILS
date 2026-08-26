@@ -809,7 +809,7 @@ enum LessonDayType {
 enum LessonSessionStatus {
   ochiq // O'qituvchi boshladi, baholash davom etmoqda
   yakunlandi // O'qituvchi "Yakunlash" bosdi
-  avto_yopildi // 1 soat 40 daqiqa o'tib, yakunlanmagani uchun tizim yopdi
+  avto_yopildi // 2 soat o'tib, yakunlanmagani uchun tizim yopdi
 }
 
 enum HomeworkGrade {
@@ -829,7 +829,7 @@ model LessonSession {
   topic     String?             @db.VarChar(300)
 
   startedAt        DateTime  @default(now()) @map("started_at")
-  deadlineAt       DateTime  @map("deadline_at") // startedAt + 100 daqiqa
+  deadlineAt       DateTime  @map("deadline_at") // startedAt + 120 daqiqa
   homeworkGradedAt DateTime? @map("homework_graded_at") // barcha o'quvchi uy vazifasi bo'yicha baholangan payt
   finalizedAt      DateTime? @map("finalized_at") // "Yakunlash" bosilgan payt
   parentNotifyAt   DateTime? @map("parent_notify_at") // finalizedAt + 1 soat

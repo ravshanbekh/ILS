@@ -9,7 +9,7 @@ export function startLessonSessionsScheduler() {
   if (schedulerStarted) return;
   schedulerStarted = true;
 
-  // Har 2 daqiqada — vaqti (1:40) tugagan, lekin yakunlanmagan sessiyalarni avtomatik yopish
+  // Har 2 daqiqada — vaqti (2:00) tugagan, lekin yakunlanmagan sessiyalarni avtomatik yopish
   cron.schedule('*/2 * * * *', async () => {
     try {
       const closed = await lessonSessionsService.closeExpiredSessions();

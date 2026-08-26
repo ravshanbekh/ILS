@@ -4,7 +4,7 @@ import { ApiError } from '../../shared/middleware/errorHandler';
 import logger from '../../shared/utils/logger';
 import { isLessonDay } from '../../shared/utils/lessonSchedule';
 
-const LESSON_WINDOW_MINUTES = 100; // 1 soat 40 daqiqa
+const LESSON_WINDOW_MINUTES = 120; // 2 soat
 
 const HOMEWORK_SCORE: Record<HomeworkGrade, number | null> = {
   toliq: 5,
@@ -131,7 +131,7 @@ class LessonSessionsService {
       );
     }
     if (new Date() > session.deadlineAt) {
-      throw ApiError.badRequest('Baholash vaqti (1 soat 40 daqiqa) tugadi');
+      throw ApiError.badRequest('Baholash vaqti (2 soat) tugadi');
     }
   }
 
