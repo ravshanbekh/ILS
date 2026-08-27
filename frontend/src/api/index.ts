@@ -131,6 +131,9 @@ export const rankingsApi = {
 
   getGroupRanking: (groupId: string) =>
     api.get(`/rankings/group/${groupId}`),
+
+  getCategories: (params?: { groupId?: string; teacherId?: string }) =>
+    api.get('/rankings/categories', { params }),
 };
 
 export const settingsApi = {
@@ -382,7 +385,7 @@ export const botApi = {
   aiPolishBroadcast: (message: string) =>
     api.post('/bot/parents/ai-polish', { message }),
 
-  broadcastToParents: (data: { groupId?: string; teacherId?: string; message: string }) =>
+  broadcastToParents: (data: { groupId?: string; teacherId?: string; category?: string; message: string }) =>
     api.post('/bot/parents/broadcast', data),
 };
 

@@ -310,7 +310,7 @@ export async function notifyAdminUngradedGroups() {
  * bot.controller.ts dan chaqiriladi.
  */
 export async function broadcastToParents(
-  filters: { groupId?: string; teacherId?: string },
+  filters: { groupId?: string; teacherId?: string; studentIds?: string[] },
   message: string
 ): Promise<{ total: number; sent: number; failed: number }> {
   if (!botInstance) return { total: 0, sent: 0, failed: 0 };

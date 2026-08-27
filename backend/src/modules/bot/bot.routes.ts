@@ -4,6 +4,7 @@ import { sendDailyAIReport, generateEducationalAIReport } from './bot.ai-report'
 import botService from './bot.service';
 import { broadcastToParents, getBotUsername, getBotLink } from './bot.notifications';
 import { generateText, getAISettings } from '../../shared/utils/ai';
+import rankingsService, { StudentCategory } from '../rankings/rankings.service';
 
 const router = Router();
 
@@ -59,14 +60,26 @@ router.post('/parents/ai-polish', authenticate, roleGuard('admin'), async (req: 
   }
 });
 
-// POST /api/bot/parents/broadcast — ommaviy xabar yuborish
+// POST /api/bot/parents/broadcast — ommaviy xabar yuborish (ixtiyoriy: natija kategoriyasi bo'yicha)
 router.post('/parents/broadcast', authenticate, roleGuard('admin'), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { groupId, teacherId, message } = req.body;
+    const { groupId, teacherId, category, message } = req.body as {
+      groupId?: string;
+      teacherId?: string;
+      category?: StudentCategory;
+      message?: string;
+    };
     if (!message || !message.trim()) {
       return res.status(400).json({ success: false, message: 'message majburiy' });
     }
-    const result = await broadcastToParents({ groupId, teacherId }, message.trim());
+
+    let studentIds: string[] | undefined;
+    if (category) {
+      const categorized = await rankingsService.getStudentCategories({ groupId, teacherId });
+      studentIds = categorized.students.filter((s) => s.category === category).map((s) => s.id);
+    }
+
+    const result = await broadcastToParents({ groupId, teacherId, studentIds }, message.trim());
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);

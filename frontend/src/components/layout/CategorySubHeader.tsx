@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
-  Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper
+  Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -49,6 +49,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/submissions', label: 'Topshiriqlar', icon: ClipboardCheck },
       { to: '/admin/stats', label: 'Statistika', icon: BarChart3 },
       { to: '/admin/rankings', label: "O'quvchilar reytingi", icon: Trophy },
+      { to: '/admin/student-categories', label: 'Natija kategoriyalari', icon: LayoutGrid },
     ]
   },
   {
@@ -114,6 +115,7 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
       { to: '/teacher/normatives', label: 'Normativlar', icon: BookOpen },
       { to: '/teacher/pending', label: 'Tekshirish', icon: ClipboardCheck },
       { to: '/teacher/rankings', label: "O'quvchilar reytingi", icon: Trophy },
+      { to: '/teacher/student-categories', label: 'Natija kategoriyalari', icon: LayoutGrid },
     ]
   },
   {

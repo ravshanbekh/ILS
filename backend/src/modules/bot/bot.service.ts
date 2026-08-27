@@ -624,13 +624,14 @@ class BotService {
   /**
    * Ommaviy xabar uchun qabul qiluvchilar ro'yxati (faqat ulangan ota-onalar)
    */
-  async getBroadcastRecipients(filters?: { groupId?: string; teacherId?: string }) {
+  async getBroadcastRecipients(filters?: { groupId?: string; teacherId?: string; studentIds?: string[] }) {
     return prisma.telegramLink.findMany({
       where: {
         role: 'parent',
         isActive: true,
-        student:
-          filters?.groupId || filters?.teacherId
+        student: filters?.studentIds
+          ? { id: { in: filters.studentIds } }
+          : filters?.groupId || filters?.teacherId
             ? {
                 groupStudents: {
                   some: {

@@ -47,6 +47,7 @@ import LessonControlPage from '@/pages/admin/LessonControlPage';
 import ParentsPage from '@/pages/admin/ParentsPage';
 import AppealsPage from '@/pages/admin/AppealsPage';
 import EventFeedbackPage from '@/pages/admin/EventFeedbackPage';
+import StudentCategoriesPage from '@/pages/admin/StudentCategoriesPage';
 
 
 const queryClient = new QueryClient({
@@ -168,6 +169,7 @@ export default function App() {
               <Route path="/admin/trash" element={<TrashPage />} />
               <Route path="/admin/lesson-control" element={<LessonControlPage />} />
               <Route path="/admin/parents" element={<ParentsPage />} />
+              <Route path="/admin/student-categories" element={<StudentCategoriesPage />} />
               <Route path="/admin/appeals" element={<AppealsPage />} />
               <Route path="/admin/event-feedback" element={<EventFeedbackPage />} />
             </Route>
@@ -188,6 +190,7 @@ export default function App() {
               <Route path="/teacher/normatives" element={<TeacherNormativesPage />} />
               <Route path="/teacher/pending" element={<TeacherPendingPage />} />
               <Route path="/teacher/rankings" element={<StudentRankingPage />} />
+              <Route path="/teacher/student-categories" element={<StudentCategoriesPage />} />
               <Route path="/teacher/export" element={<ExportPage />} />
               <Route path="/teacher/exams" element={<ExamsPage />} />
               <Route path="/teacher/live-quiz" element={<LiveQuizPage />} />

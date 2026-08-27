@@ -33,6 +33,27 @@ class RankingsController {
       next(error);
     }
   }
+
+  /**
+   * GET /api/rankings/categories — O'quvchilarni past/o'rtacha/yuqori natijaga bo'lish.
+   * O'qituvchi faqat o'z o'quvchilarini ko'radi, admin hammasini (yoki filtr bo'yicha).
+   */
+  async getCategories(req: Request, res: Response, next: NextFunction) {
+    try {
+      const filters: { teacherId?: string; groupId?: string } = {
+        groupId: req.query.groupId as string | undefined,
+      };
+      if (req.user?.role === 'teacher') {
+        filters.teacherId = req.user.userId;
+      } else {
+        filters.teacherId = req.query.teacherId as string | undefined;
+      }
+      const result = await rankingsService.getStudentCategories(filters);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new RankingsController();

@@ -1,6 +1,11 @@
 import prisma from '../../config/database';
 import { PaginationParams, createPaginatedResult } from '../../shared/utils/pagination';
 
+export type StudentCategory = 'past' | 'ortacha' | 'yuqori' | 'malumot_yoq';
+
+// Natija foizi (checked topshiriqlar bali / guruhga biriktirilgan normativlarning umumiy max bali)
+const CATEGORY_THRESHOLDS = { yuqori: 80, ortacha: 50 };
+
 class RankingsService {
   /**
    * Umumiy reyting (o'quv markaz, o'qituvchi yoki guruh bo'yicha)
@@ -100,6 +105,98 @@ class RankingsService {
     const paginated = ranked.slice(params.skip, params.skip + params.limit);
 
     return createPaginatedResult(paginated, total, params);
+  }
+
+  /**
+   * O'quvchilarni natijasiga qarab 3 kategoriyaga bo'lish (past / o'rtacha / yuqori)
+   * — o'qituvchi faqat o'z o'quvchilarini, admin hammasini ko'radi (scoping controllerda).
+   */
+  async getStudentCategories(filters?: { teacherId?: string; groupId?: string }) {
+    const whereClause: any = { role: 'student', isActive: true };
+    if (filters?.groupId) {
+      whereClause.groupStudents = { some: { groupId: filters.groupId } };
+    } else if (filters?.teacherId) {
+      whereClause.groupStudents = { some: { group: { teacherId: filters.teacherId } } };
+    }
+
+    const students = await prisma.user.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        fullName: true,
+        groupStudents: {
+          orderBy: { joinedAt: 'desc' },
+          take: 1,
+          select: { group: { select: { id: true, name: true, teacher: { select: { fullName: true } } } } },
+        },
+        telegramLinks: {
+          where: { role: 'parent', isActive: true },
+          select: { id: true },
+          take: 1,
+        },
+      },
+      orderBy: { fullName: 'asc' },
+    });
+
+    // Guruh normativlarini har bir guruh uchun bir marta hisoblash (N+1 oldini olish)
+    const groupMaxCache = new Map<string, { normativeIds: string[]; maxPossible: number }>();
+    const getGroupNormatives = async (groupId: string) => {
+      if (!groupMaxCache.has(groupId)) {
+        const groupNormatives = await prisma.groupNormative.findMany({
+          where: { groupId },
+          select: { normativeId: true, normative: { select: { maxScore: true } } },
+        });
+        groupMaxCache.set(groupId, {
+          normativeIds: groupNormatives.map((gn) => gn.normativeId),
+          maxPossible: groupNormatives.reduce((sum, gn) => sum + gn.normative.maxScore, 0),
+        });
+      }
+      return groupMaxCache.get(groupId)!;
+    };
+
+    const results = await Promise.all(
+      students.map(async (student) => {
+        const group = student.groupStudents[0]?.group;
+        let percent: number | null = null;
+
+        if (group) {
+          const { normativeIds, maxPossible } = await getGroupNormatives(group.id);
+          if (maxPossible > 0) {
+            const submissions = await prisma.submission.findMany({
+              where: { studentId: student.id, normativeId: { in: normativeIds }, status: 'checked' },
+              select: { score: true },
+            });
+            const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
+            percent = Math.round((totalScore / maxPossible) * 100);
+          }
+        }
+
+        const category: StudentCategory =
+          percent === null
+            ? 'malumot_yoq'
+            : percent >= CATEGORY_THRESHOLDS.yuqori
+            ? 'yuqori'
+            : percent >= CATEGORY_THRESHOLDS.ortacha
+            ? 'ortacha'
+            : 'past';
+
+        return {
+          id: student.id,
+          fullName: student.fullName,
+          groupId: group?.id || null,
+          groupName: group?.name || null,
+          teacherName: group?.teacher?.fullName || null,
+          percent,
+          category,
+          parentLinked: student.telegramLinks.length > 0,
+        };
+      })
+    );
+
+    const counts: Record<StudentCategory, number> = { past: 0, ortacha: 0, yuqori: 0, malumot_yoq: 0 };
+    results.forEach((r) => counts[r.category]++);
+
+    return { students: results, counts, total: results.length };
   }
 
   /**
