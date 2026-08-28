@@ -59,8 +59,9 @@ initSocketIO(socketIoServer);
 // /uploads dagi rasmlar va API javoblari bloklanmasligi kerak.
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-// Serve uploads statically
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Serve uploads statically — jismoniy joyi data/uploads (persistent volume), URL /uploads bo'lib qoladi
+// (docker-compose'da faqat /app/data volume qilingan — bevosita uploads/ ga yozilsa, har deployda o'chib ketardi)
+app.use('/uploads', express.static(path.join(process.cwd(), 'data', 'uploads')));
 
 // CORS
 app.use(cors({

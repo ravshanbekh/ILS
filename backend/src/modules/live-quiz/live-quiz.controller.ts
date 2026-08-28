@@ -1082,7 +1082,7 @@ export const deleteQuizMusic = async (req: Request, res: Response, next: NextFun
     const music = await prisma.quizMusic.findUnique({ where: { id: musicId } });
     if (!music) return res.status(404).json({ error: 'Musiqa topilmadi' });
 
-    const filePath = path.join(process.cwd(), music.url);
+    const filePath = path.join(process.cwd(), 'data', music.url);
     if (fs.existsSync(filePath)) {
       try {
         fs.unlinkSync(filePath);

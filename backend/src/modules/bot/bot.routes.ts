@@ -2,14 +2,17 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 import { sendDailyAIReport, generateEducationalAIReport } from './bot.ai-report';
 import botService from './bot.service';
-import { broadcastToParents, getBotUsername, getBotLink } from './bot.notifications';
+import { broadcastToParents, getBotUsername, getBotLink, ensureBotUsername } from './bot.notifications';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 import rankingsService, { StudentCategory } from '../rankings/rankings.service';
 
 const router = Router();
 
 // GET /api/bot/info — Bot username va havolasi (guruh chatini ulash ekranida ko'rsatish uchun)
-router.get('/info', authenticate, (_req: Request, res: Response) => {
+router.get('/info', authenticate, async (_req: Request, res: Response) => {
+  // Server endigina qayta ishga tushgan bo'lsa, getMe() hali ulgurmagan bo'lishi mumkin —
+  // shu holatda live urinib ko'ramiz, aks holda havola/username doim bo'sh ko'rinib qolardi.
+  await ensureBotUsername();
   res.json({ success: true, data: { username: getBotUsername(), link: getBotLink() || null } });
 });
 

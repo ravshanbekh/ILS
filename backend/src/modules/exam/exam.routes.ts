@@ -10,7 +10,9 @@ import fs from 'fs';
 const router = Router();
 
 // ── Multer (Rasm yuklash) ────────────────────────────────────────────────────
-const uploadDir = path.join(process.cwd(), 'uploads', 'exam-images');
+// data/ ostida — shu papka docker-compose'da persistent volume, uploads/ emas
+// (qarang: live-quiz.routes.ts dagi xuddi shunday izoh).
+const uploadDir = path.join(process.cwd(), 'data', 'uploads', 'exam-images');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({

@@ -37,6 +37,23 @@ export function getBotUsername(): string | null {
   return botUsername;
 }
 
+/**
+ * Bot username hali keshlanmagan bo'lsa (masalan, server endigina qayta ishga tushgan
+ * paytda getMe() ulgurmagan bo'lsa), live getMe() bilan qayta urinib ko'radi.
+ * Har safar bo'sh chiqmaydi — muvaffaqiyatsizlik keshlanmaydi, keyingi so'rov qayta uradi.
+ */
+export async function ensureBotUsername(): Promise<string | null> {
+  if (botUsername) return botUsername;
+  if (!botInstance) return null;
+  try {
+    const me = await botInstance.getMe();
+    if (me.username) botUsername = me.username;
+  } catch (err: any) {
+    logger.warn(`Bot username olishda xato (keyingi so'rovda qayta urinib ko'riladi): ${err.message}`);
+  }
+  return botUsername;
+}
+
 /** Ota-onaga "/start bosing" havolasi — guruh kunlik xulosasida ishlatiladi */
 export function getBotLink(): string | undefined {
   return botUsername ? `https://t.me/${botUsername}` : undefined;

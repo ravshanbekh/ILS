@@ -8,7 +8,10 @@ import fs from 'fs';
 const router = Router();
 
 // ── Multer (Rasm yuklash) ────────────────────────────────────────────────────
-const uploadDir = path.join(process.cwd(), 'uploads', 'quiz-images');
+// data/ ichida saqlanadi — docker-compose'da shu papka volume qilingan (backend_data),
+// uploads/ esa emas, shuning uchun uploads/ ga to'g'ridan-to'g'ri yozilgan fayllar
+// har safar konteyner qayta deploy qilinganda o'chib ketadi.
+const uploadDir = path.join(process.cwd(), 'data', 'uploads', 'quiz-images');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -28,7 +31,7 @@ const upload = multer({
 });
 
 // ── Multer (Musiqa yuklash) ──────────────────────────────────────────────────
-const musicUploadDir = path.join(process.cwd(), 'uploads', 'quiz-music');
+const musicUploadDir = path.join(process.cwd(), 'data', 'uploads', 'quiz-music');
 if (!fs.existsSync(musicUploadDir)) fs.mkdirSync(musicUploadDir, { recursive: true });
 
 const musicStorage = multer.diskStorage({
