@@ -285,7 +285,7 @@ class BotService {
   }
 
   /**
-   * Guruh top-10 leaderboard
+   * Guruh leaderboardi — guruhdagi barcha o'quvchilar
    */
   async getGroupLeaderboard(
     groupId: string
@@ -309,7 +309,7 @@ class BotService {
     );
 
     scores.sort((a, b) => b.score - a.score);
-    return scores.slice(0, 10).map((s, i) => ({ ...s, rank: i + 1 }));
+    return scores.map((s, i) => ({ ...s, rank: i + 1 }));
   }
 
   // ============ FEEDBACK ============
