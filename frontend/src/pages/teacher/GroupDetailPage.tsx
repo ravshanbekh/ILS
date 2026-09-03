@@ -145,13 +145,18 @@ export default function GroupDetailPage() {
     botApi.getInfo().then((res) => setBotInfo(res.data.data)).catch(() => {});
   }, []);
 
-  // Guruhdagi o'quvchilarning ota-ona ulanish holati real vaqtga yaqin bo'lishi uchun
+  // Guruhdagi o'quvchilarning ota-ona ulanish holati real vaqtga yaqin bo'lishi uchun +
+  // bot linki: agar birinchi urinish tarmoq xatosi bilan tugagan bo'lsa, shu davriy
+  // so'rov qayta urinib, sahifani qayta ochmasdan ham to'ldirib qo'yadi.
   useEffect(() => {
     const interval = setInterval(() => {
       fetchGroupData();
+      if (!botInfo?.username) {
+        botApi.getInfo().then((res) => setBotInfo(res.data.data)).catch(() => {});
+      }
     }, 20000);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [id, botInfo?.username]);
 
   const handleCopyUsername = () => {
     if (!botInfo?.username) return;
@@ -406,27 +411,6 @@ export default function GroupDetailPage() {
           {group?.telegramChatId ? (
             <>
               <span className="text-emerald-400 font-medium">✅ Chat ulangan{group.telegramChatTitle ? `: ${group.telegramChatTitle}` : ''}</span>
-              {botInfo?.link && (
-                <a
-                  href={botInfo.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:text-blue-300 text-xs border-l border-zinc-800 pl-2 ml-1 flex items-center gap-1"
-                  title="Telegram botni ochish"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" /> Bot
-                </a>
-              )}
-              {botInfo?.username && (
-                <button
-                  onClick={handleCopyUsername}
-                  className="text-zinc-400 hover:text-white text-xs flex items-center gap-1"
-                  title="Bot username'ini nusxalash"
-                >
-                  {usernameCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  @{botInfo.username}
-                </button>
-              )}
               <button
                 onClick={handleUnlinkChat}
                 disabled={chatCodeLoading}
@@ -446,6 +430,29 @@ export default function GroupDetailPage() {
               className="text-blue-400 hover:text-blue-300 font-medium disabled:opacity-50"
             >
               {chatCodeLoading ? 'Kod olinmoqda...' : '🔗 Telegram chatni ulash'}
+            </button>
+          )}
+          {/* Bot linki/username — chat ulangan-ulanmaganidan qat'iy nazar doim ko'rinadi,
+              chunki ulash uchun ham (/ulash buyrug'ini yuborish uchun) botni topish kerak */}
+          {botInfo?.link && (
+            <a
+              href={botInfo.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 text-xs border-l border-zinc-800 pl-2 ml-1 flex items-center gap-1"
+              title="Telegram botni ochish"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Bot
+            </a>
+          )}
+          {botInfo?.username && (
+            <button
+              onClick={handleCopyUsername}
+              className="text-zinc-400 hover:text-white text-xs flex items-center gap-1"
+              title="Bot username'ini nusxalash"
+            >
+              {usernameCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              @{botInfo.username}
             </button>
           )}
         </div>
