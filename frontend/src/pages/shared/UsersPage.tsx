@@ -17,6 +17,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'student' | 'non_student'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -55,8 +56,10 @@ export default function UsersPage() {
         setTotalPages(res.data.pagination?.totalPages || 1);
         setTotalCount(res.data.pagination?.total || res.data.data.length);
       } else {
-        // Admin: barcha foydalanuvchilar
-        const res = await usersApi.getAll(page, ITEMS_PER_PAGE, undefined, search || undefined);
+        // Admin: barcha foydalanuvchilar (yoki tanlangan filtrga qarab)
+        const role = roleFilter === 'student' ? 'student' : undefined;
+        const excludeRole = roleFilter === 'non_student' ? 'student' : undefined;
+        const res = await usersApi.getAll(page, ITEMS_PER_PAGE, role, search || undefined, excludeRole);
         setUsers(res.data.data);
         setTotalPages(res.data.pagination?.totalPages || 1);
         setTotalCount(res.data.pagination?.total || res.data.data.length);
@@ -66,7 +69,7 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, isTeacher]);
+  }, [user?.id, isTeacher, roleFilter]);
 
   // Debounce search
   useEffect(() => {
@@ -80,6 +83,10 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers(currentPage, debouncedSearch);
   }, [currentPage, debouncedSearch, fetchUsers]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [roleFilter]);
 
   const handleOpenModal = (userToEdit: any = null) => {
     if (userToEdit) {
@@ -170,7 +177,7 @@ export default function UsersPage() {
       />
 
       <div className="p-8 max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 mb-4">
           {/* Search */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -213,6 +220,28 @@ export default function UsersPage() {
             </div>
           )}
         </div>
+
+        {!isTeacher && (
+          <div className="flex items-center gap-2 mb-6">
+            {([
+              ['all', 'Barchasi'],
+              ['student', "O'quvchilar"],
+              ['non_student', "Boshqa rollar"],
+            ] as const).map(([val, label]) => (
+              <button
+                key={val}
+                onClick={() => setRoleFilter(val)}
+                className={`px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                  roleFilter === val
+                    ? 'bg-blue-600 border-blue-600 text-white'
+                    : 'bg-[#18181b] border-zinc-800 text-zinc-400 hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">

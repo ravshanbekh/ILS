@@ -10,11 +10,13 @@ class UsersService {
   /**
    * Barcha foydalanuvchilarni olish (pagination bilan)
    */
-  async getAll(params: PaginationParams, filters?: { role?: string; search?: string }) {
+  async getAll(params: PaginationParams, filters?: { role?: string; excludeRole?: string; search?: string }) {
     const where: Prisma.UserWhereInput = { isActive: true };
 
     if (filters?.role) {
       where.role = filters.role as any;
+    } else if (filters?.excludeRole) {
+      where.role = { not: filters.excludeRole as any };
     }
 
     if (filters?.search) {

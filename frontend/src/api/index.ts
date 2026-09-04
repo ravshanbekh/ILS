@@ -16,8 +16,8 @@ export const authApi = {
 };
 
 export const usersApi = {
-  getAll: (page: number = 1, limit: number = 100, role?: string, search?: string) =>
-    api.get('/users', { params: { page, limit, role, search } }),
+  getAll: (page: number = 1, limit: number = 100, role?: string, search?: string, excludeRole?: string) =>
+    api.get('/users', { params: { page, limit, role, search, excludeRole } }),
 
   // Guruhsiz o'quvchilar (bug fix - pagination chegarasiz)
   getUngrouped: (search?: string) =>

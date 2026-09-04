@@ -28,6 +28,7 @@ class UsersController {
       const pagination = getPagination(req.query as any);
       const filters = {
         role: req.query.role as string | undefined,
+        excludeRole: req.query.excludeRole as string | undefined,
         search: req.query.search as string | undefined,
       };
 
