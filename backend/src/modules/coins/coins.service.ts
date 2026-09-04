@@ -35,17 +35,18 @@ class CoinsService {
   }
 
   /**
-   * O'qituvchi dars baholash paytida bitta o'quvchiga coin belgilaydi.
-   * LessonGrade.coinAwarded ustiga yoziladi; farq (delta) CoinTransaction sifatida
-   * qo'shiladi — shu bilan balans har doim ledger yig'indisidan hisoblanadi, ikki marta
-   * bosilib qolsa ham (masalan 10 dan 15 ga o'zgartirilsa) faqat +5 lik yozuv qo'shiladi.
+   * O'qituvchi (yoki admin) o'quvchining shu darsdagi coiniga delta qo'shadi/ayiradi —
+   * musbat son kiritilsa qo'shiladi, manfiy son (masalan -5) kiritilsa ayiriladi.
+   * LessonGrade.coinAwarded — shu darsda jami berilgan coin (0 dan kamaymaydi);
+   * har bir amal alohida CoinTransaction yozuvi sifatida ledgerga tushadi, shu bilan
+   * o'quvchining umumiy balansi har doim shu ledger yig'indisidan hisoblanadi.
    */
-  async setLessonCoin(sessionId: string, studentId: string, teacherId: string, amount: number) {
-    if (!Number.isInteger(amount) || amount < 0) {
-      throw ApiError.badRequest("Coin manfiy bo'lmagan butun son bo'lishi kerak");
+  async adjustLessonCoin(sessionId: string, studentId: string, teacherId: string, delta: number) {
+    if (!Number.isInteger(delta) || delta === 0) {
+      throw ApiError.badRequest("Coin o'zgarishi nol bo'lmagan butun son bo'lishi kerak");
     }
-    if (amount > 1000) {
-      throw ApiError.badRequest("Bir martada 1000 coindan ortiq berib bo'lmaydi");
+    if (Math.abs(delta) > 1000) {
+      throw ApiError.badRequest("Bir martada 1000 coindan ortiq o'zgartirib bo'lmaydi");
     }
 
     const grade = await prisma.lessonGrade.findUnique({
@@ -54,24 +55,25 @@ class CoinsService {
     if (!grade) throw ApiError.notFound('Baholash yozuvi topilmadi');
 
     const previous = grade.coinAwarded || 0;
-    const delta = amount - previous;
+    const next = previous + delta;
+    if (next < 0) {
+      throw ApiError.badRequest(`Bu darsda berilgan coin (${previous}) dan ko'p ayirib bo'lmaydi`);
+    }
 
     await prisma.$transaction(async (tx) => {
       await tx.lessonGrade.update({
         where: { id: grade.id },
-        data: { coinAwarded: amount, coinAwardedAt: new Date() },
+        data: { coinAwarded: next, coinAwardedAt: new Date() },
       });
-      if (delta !== 0) {
-        await tx.coinTransaction.create({
-          data: {
-            studentId,
-            teacherId,
-            amount: delta,
-            reason: 'Dars uchun gamifikatsiya coini',
-            lessonSessionId: sessionId,
-          },
-        });
-      }
+      await tx.coinTransaction.create({
+        data: {
+          studentId,
+          teacherId,
+          amount: delta,
+          reason: 'Dars uchun gamifikatsiya coini',
+          lessonSessionId: sessionId,
+        },
+      });
     });
 
     if (delta > 0) {
@@ -80,7 +82,7 @@ class CoinsService {
       });
     }
 
-    return { coinAwarded: amount, balance: await this.getBalance(studentId) };
+    return { coinAwarded: next, balance: await this.getBalance(studentId) };
   }
 
   /**

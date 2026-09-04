@@ -119,6 +119,13 @@ class LessonSessionsService {
     return session;
   }
 
+  /** Faqat egalik tekshiruvi — coin uchun, dars vaqti/holatidan qat'iy nazar ishlaydi */
+  private assertOwner(session: { teacherId: string }, teacherId: string, isAdmin: boolean) {
+    if (!isAdmin && session.teacherId !== teacherId) {
+      throw ApiError.forbidden('Bu sessiya sizga tegishli emas');
+    }
+  }
+
   private assertOwnerAndOpen(session: { teacherId: string; status: LessonSessionStatus; deadlineAt: Date }, teacherId: string, isAdmin: boolean) {
     if (!isAdmin && session.teacherId !== teacherId) {
       throw ApiError.forbidden('Bu sessiya sizga tegishli emas');
@@ -178,16 +185,18 @@ class LessonSessionsService {
   }
 
   /**
-   * O'qituvchi darsni baholash paytida o'quvchiga gamifikatsiya coin belgilaydi.
-   * Haqiqiy CoinTransaction yozuvi va limit tekshiruvi coinsService ichida.
+   * O'qituvchi (yoki admin) o'quvchiga gamifikatsiya coin qo'shadi/ayiradi (delta).
+   * Dars sessiyasining ochiq/yopiqligi yoki 2 soatlik muddatidan qat'iy nazar ishlaydi —
+   * coin berish uy vazifa/faollik baholashdagi kabi vaqt bilan cheklanmaydi, faqat
+   * guruh egasi (yoki admin) bo'lishi kifoya.
    */
-  async gradeCoin(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, amount: number) {
+  async gradeCoin(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, delta: number) {
     const session = await prisma.lessonSession.findUnique({ where: { id: sessionId } });
     if (!session) throw ApiError.notFound('Sessiya topilmadi');
-    this.assertOwnerAndOpen(session, teacherId, isAdmin);
+    this.assertOwner(session, teacherId, isAdmin);
 
     const coinsService = (await import('../coins/coins.service')).default;
-    await coinsService.setLessonCoin(sessionId, studentId, session.teacherId, amount);
+    await coinsService.adjustLessonCoin(sessionId, studentId, session.teacherId, delta);
 
     return this.getById(sessionId);
   }

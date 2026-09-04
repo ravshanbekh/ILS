@@ -125,12 +125,20 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
     }
   };
 
-  const handleCoin = async (studentId: string, amount: number) => {
-    if (!session || busyRef.current.has(studentId) || Number.isNaN(amount) || amount < 0) return;
+  // delta: musbat son = qo'shish, manfiy son (masalan -5) = ayirish. Dars sessiyasi
+  // qanday holatda bo'lishidan qat'iy nazar ishlaydi — coin vaqt bilan cheklanmaydi.
+  const handleCoin = async (studentId: string, delta: number) => {
+    if (!session || busyRef.current.has(studentId) || Number.isNaN(delta) || delta === 0) return;
+    const grade = session.grades.find((g) => g.studentId === studentId);
+    const next = (grade?.coinAwarded ?? 0) + delta;
+    if (next < 0) {
+      setError("Bu darsda berilgan coindan ko'p ayirib bo'lmaydi");
+      return;
+    }
     busyRef.current.add(studentId);
-    setLocalGrade(studentId, { coinAwarded: amount });
+    setLocalGrade(studentId, { coinAwarded: next });
     try {
-      await lessonSessionsApi.gradeCoin(session.id, studentId, amount);
+      await lessonSessionsApi.gradeCoin(session.id, studentId, delta);
     } catch (e: any) {
       setError(e?.response?.data?.error?.message || e?.response?.data?.message || "Coin berishda xatolik — qayta urinib ko'ring");
       load();
@@ -223,14 +231,18 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                 </>
               )}
             </div>
-          ) : session.status === 'avto_yopildi' ? (
-            <div className="text-center py-12">
-              <Lock className="w-10 h-10 text-red-500 mx-auto mb-3" />
-              <p className="text-zinc-300 mb-1">Bu darsning baholash vaqti (2:00) tugab, avtomatik yopilgan.</p>
-              <p className="text-zinc-500 text-sm">Qayta ochish uchun administratordan (Ravshan) ruxsat so'rang.</p>
-            </div>
           ) : (
             <>
+              {session.status === 'avto_yopildi' && (
+                <div className="mb-4 flex items-start gap-2.5 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">
+                  <Lock className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>
+                    Uy vazifasi va faollik baholash vaqti (2:00) tugab, avtomatik yopilgan — qayta ochish uchun administratordan so'rang.
+                    <br />🪙 Coin berish bundan mustasno, istalgan vaqt ishlaydi.
+                  </span>
+                </div>
+              )}
+
               {/* Step switch */}
               <div className="flex gap-2 mb-5">
                 <button
@@ -256,8 +268,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                 </button>
                 <button
                   onClick={() => setStep('coin')}
-                  disabled={session.status !== 'ochiq'}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
                     step === 'coin'
                       ? 'bg-amber-500 border-amber-500 text-white'
                       : 'bg-transparent border-zinc-800 text-zinc-400 hover:text-white'
@@ -266,6 +277,12 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                   3. 🪙 Coin
                 </button>
               </div>
+
+              {step === 'coin' && (
+                <p className="text-zinc-500 text-xs mb-4">
+                  Musbat son (masalan 10) — qo'shadi, manfiy son (masalan -5) — ayiradi. Enter yoki boshqa joyga bosilganda saqlanadi.
+                </p>
+              )}
 
               {error && (
                 <div className="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
@@ -348,12 +365,14 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-amber-400 text-sm font-bold w-10 text-right" title="Shu darsda jami berilgan coin">
+                          🪙 {g.coinAwarded ?? 0}
+                        </span>
                         <input
                           type="number"
-                          min={0}
                           max={1000}
-                          disabled={session.status !== 'ochiq'}
-                          placeholder={String(g.coinAwarded ?? 0)}
+                          min={-1000}
+                          placeholder="+/-"
                           value={coinDrafts[g.studentId] ?? ''}
                           onChange={(e) => setCoinDrafts((prev) => ({ ...prev, [g.studentId]: e.target.value }))}
                           onKeyDown={(e) => {
@@ -363,16 +382,15 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                             const raw = coinDrafts[g.studentId];
                             if (raw === undefined || raw === '') return;
                             const n = parseInt(raw, 10);
-                            if (!Number.isNaN(n)) handleCoin(g.studentId, n);
+                            if (!Number.isNaN(n) && n !== 0) handleCoin(g.studentId, n);
                             setCoinDrafts((prev) => {
                               const next = { ...prev };
                               delete next[g.studentId];
                               return next;
                             });
                           }}
-                          className="w-20 px-2.5 py-2 rounded-lg text-sm font-bold border border-zinc-700 bg-transparent text-white text-center disabled:opacity-40 focus:outline-none focus:border-amber-500"
+                          className="w-20 px-2.5 py-2 rounded-lg text-sm font-bold border border-zinc-700 bg-transparent text-white text-center focus:outline-none focus:border-amber-500"
                         />
-                        {(g.coinAwarded ?? 0) > 0 && <span className="text-amber-400 text-xs font-bold">🪙</span>}
                       </div>
                     )}
                   </div>

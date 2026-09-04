@@ -20,7 +20,8 @@ export const gradeActivitySchema = z.object({
 
 export const gradeCoinSchema = z.object({
   studentId: z.string().uuid('Noto\'g\'ri o\'quvchi ID'),
-  amount: z.number().int().min(0).max(1000),
+  // Musbat son = qo'shish, manfiy son = ayirish (masalan -5)
+  delta: z.number().int().refine((n) => n !== 0, 'delta nolga teng bo\'lmasligi kerak').refine((n) => Math.abs(n) <= 1000, "Bir martada 1000 coindan ortiq o'zgartirib bo'lmaydi"),
 });
 
 export const adminUnlockSchema = z.object({
@@ -33,4 +34,5 @@ export type StartSessionInput = z.infer<typeof startSessionSchema>;
 export type GradeHomeworkInput = z.infer<typeof gradeHomeworkSchema>;
 export type GradeActivityInput = z.infer<typeof gradeActivitySchema>;
 export type GradeCoinInput = z.infer<typeof gradeCoinSchema>;
+
 export type AdminUnlockInput = z.infer<typeof adminUnlockSchema>;

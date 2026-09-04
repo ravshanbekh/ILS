@@ -478,8 +478,9 @@ export const lessonSessionsApi = {
   gradeActivity: (sessionId: string, studentId: string, activityScore: number) =>
     api.patch(`/lesson-sessions/${sessionId}/activity`, { studentId, activityScore }),
 
-  gradeCoin: (sessionId: string, studentId: string, amount: number) =>
-    api.patch(`/lesson-sessions/${sessionId}/coin`, { studentId, amount }),
+  // delta: musbat son = qo'shish, manfiy son (masalan -5) = ayirish
+  gradeCoin: (sessionId: string, studentId: string, delta: number) =>
+    api.patch(`/lesson-sessions/${sessionId}/coin`, { studentId, delta }),
 
   finalize: (sessionId: string) => api.post(`/lesson-sessions/${sessionId}/finalize`),
 

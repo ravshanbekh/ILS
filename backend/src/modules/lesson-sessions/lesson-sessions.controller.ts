@@ -108,7 +108,7 @@ class LessonSessionsController {
         req.user!.userId,
         isAdminRole(req.user?.role),
         validated.data.studentId,
-        validated.data.amount
+        validated.data.delta
       );
       res.json({ success: true, data: session });
     } catch (error) {
