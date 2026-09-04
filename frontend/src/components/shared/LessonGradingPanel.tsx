@@ -347,21 +347,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                         ))}
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {[5, 10, 20, 50].map((n) => (
-                          <button
-                            key={n}
-                            disabled={session.status !== 'ochiq'}
-                            onClick={() => handleCoin(g.studentId, n)}
-                            className={`px-2.5 py-2 rounded-lg text-xs font-bold border transition-colors disabled:opacity-40 ${
-                              g.coinAwarded === n
-                                ? 'bg-amber-500 border-amber-500 text-white'
-                                : 'border-zinc-700 text-zinc-400 hover:border-amber-500 hover:text-amber-400'
-                            }`}
-                          >
-                            {n}
-                          </button>
-                        ))}
+                      <div className="flex items-center gap-2 shrink-0">
                         <input
                           type="number"
                           min={0}
@@ -370,6 +356,9 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                           placeholder={String(g.coinAwarded ?? 0)}
                           value={coinDrafts[g.studentId] ?? ''}
                           onChange={(e) => setCoinDrafts((prev) => ({ ...prev, [g.studentId]: e.target.value }))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          }}
                           onBlur={() => {
                             const raw = coinDrafts[g.studentId];
                             if (raw === undefined || raw === '') return;
@@ -381,7 +370,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                               return next;
                             });
                           }}
-                          className="w-16 px-2 py-2 rounded-lg text-xs font-bold border border-zinc-700 bg-transparent text-white text-center disabled:opacity-40 focus:outline-none focus:border-amber-500"
+                          className="w-20 px-2.5 py-2 rounded-lg text-sm font-bold border border-zinc-700 bg-transparent text-white text-center disabled:opacity-40 focus:outline-none focus:border-amber-500"
                         />
                         {(g.coinAwarded ?? 0) > 0 && <span className="text-amber-400 text-xs font-bold">🪙</span>}
                       </div>
