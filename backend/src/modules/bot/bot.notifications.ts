@@ -427,6 +427,27 @@ export async function notifyAdminUrgentAppeal(data: {
   logger.info(`Bot: shoshilinch murojaat #${data.code} haqida rahbarga xabar yuborildi`);
 }
 
+// ============ GAMIFIKATSIYA — COIN NAZORATI ============
+
+/** O'qituvchi kunlik coin chegarasidan oshganda — rahbarlarga darhol xabar */
+export async function notifyAdminCoinLimitExceeded(data: {
+  teacherName: string;
+  todayTotal: number;
+  limit: number;
+}) {
+  if (!botInstance) return;
+
+  const chatIds = await botService.getAdminChatIds();
+  if (chatIds.length === 0) return;
+
+  const { coinLimitExceededMessage } = await import('./bot.messages');
+  const message = coinLimitExceededMessage(data);
+  for (const chatId of chatIds) {
+    await safeSend(chatId, message, { parse_mode: 'Markdown' });
+  }
+  logger.info(`Bot: coin chegarasi haqida rahbarlarga xabar yuborildi (teacher: ${data.teacherName})`);
+}
+
 // ============ DEMO DAY FIKR-MULOHAZASI ============
 
 /**

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Play, CheckCircle2, Clock, Users, Lock, AlertTriangle } from 'lucide-react';
+import { X, Play, CheckCircle2, Clock, Users, Lock, AlertTriangle, Coins } from 'lucide-react';
 import { lessonSessionsApi } from '@/api';
 
 type HomeworkGrade = 'toliq' | 'qisman' | 'bajarmagan' | 'kelmadi';
@@ -10,6 +10,7 @@ interface GradeRow {
   homework: HomeworkGrade | null;
   homeworkScore: number | null;
   activityScore: number | null;
+  coinAwarded: number | null;
   student: { id: string; fullName: string; avatarUrl?: string | null };
 }
 
@@ -42,7 +43,8 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
   const [isLessonDay, setIsLessonDay] = useState(true);
   const [lessonDayType, setLessonDayType] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
-  const [step, setStep] = useState<'homework' | 'activity'>('homework');
+  const [step, setStep] = useState<'homework' | 'activity' | 'coin'>('homework');
+  const [coinDrafts, setCoinDrafts] = useState<Record<string, string>>({});
   const [now, setNow] = useState(Date.now());
   const [finalizing, setFinalizing] = useState(false);
   const [error, setError] = useState('');
@@ -117,6 +119,20 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
       await lessonSessionsApi.gradeActivity(session.id, studentId, activityScore);
     } catch (e: any) {
       setError(e?.response?.data?.error?.message || "Baholashda xatolik — qayta urinib ko'ring");
+      load();
+    } finally {
+      busyRef.current.delete(studentId);
+    }
+  };
+
+  const handleCoin = async (studentId: string, amount: number) => {
+    if (!session || busyRef.current.has(studentId) || Number.isNaN(amount) || amount < 0) return;
+    busyRef.current.add(studentId);
+    setLocalGrade(studentId, { coinAwarded: amount });
+    try {
+      await lessonSessionsApi.gradeCoin(session.id, studentId, amount);
+    } catch (e: any) {
+      setError(e?.response?.data?.error?.message || e?.response?.data?.message || "Coin berishda xatolik — qayta urinib ko'ring");
       load();
     } finally {
       busyRef.current.delete(studentId);
@@ -238,6 +254,17 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                 >
                   2. Faollik ({gradedActivityCount}/{total})
                 </button>
+                <button
+                  onClick={() => setStep('coin')}
+                  disabled={session.status !== 'ochiq'}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-40 ${
+                    step === 'coin'
+                      ? 'bg-amber-500 border-amber-500 text-white'
+                      : 'bg-transparent border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  3. 🪙 Coin
+                </button>
               </div>
 
               {error && (
@@ -302,7 +329,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                           🚫
                         </button>
                       </div>
-                    ) : (
+                    ) : step === 'activity' ? (
                       <div className="flex items-center gap-1.5 shrink-0">
                         {[1, 2, 3, 4, 5].map((n) => (
                           <button
@@ -318,6 +345,45 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                             {n}
                           </button>
                         ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {[5, 10, 20, 50].map((n) => (
+                          <button
+                            key={n}
+                            disabled={session.status !== 'ochiq'}
+                            onClick={() => handleCoin(g.studentId, n)}
+                            className={`px-2.5 py-2 rounded-lg text-xs font-bold border transition-colors disabled:opacity-40 ${
+                              g.coinAwarded === n
+                                ? 'bg-amber-500 border-amber-500 text-white'
+                                : 'border-zinc-700 text-zinc-400 hover:border-amber-500 hover:text-amber-400'
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        ))}
+                        <input
+                          type="number"
+                          min={0}
+                          max={1000}
+                          disabled={session.status !== 'ochiq'}
+                          placeholder={String(g.coinAwarded ?? 0)}
+                          value={coinDrafts[g.studentId] ?? ''}
+                          onChange={(e) => setCoinDrafts((prev) => ({ ...prev, [g.studentId]: e.target.value }))}
+                          onBlur={() => {
+                            const raw = coinDrafts[g.studentId];
+                            if (raw === undefined || raw === '') return;
+                            const n = parseInt(raw, 10);
+                            if (!Number.isNaN(n)) handleCoin(g.studentId, n);
+                            setCoinDrafts((prev) => {
+                              const next = { ...prev };
+                              delete next[g.studentId];
+                              return next;
+                            });
+                          }}
+                          className="w-16 px-2 py-2 rounded-lg text-xs font-bold border border-zinc-700 bg-transparent text-white text-center disabled:opacity-40 focus:outline-none focus:border-amber-500"
+                        />
+                        {(g.coinAwarded ?? 0) > 0 && <span className="text-amber-400 text-xs font-bold">🪙</span>}
                       </div>
                     )}
                   </div>

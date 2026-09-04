@@ -48,6 +48,10 @@ import ParentsPage from '@/pages/admin/ParentsPage';
 import AppealsPage from '@/pages/admin/AppealsPage';
 import EventFeedbackPage from '@/pages/admin/EventFeedbackPage';
 import StudentCategoriesPage from '@/pages/admin/StudentCategoriesPage';
+import ShopManagePage from '@/pages/admin/ShopManagePage';
+import ShopOrdersPage from '@/pages/shared/ShopOrdersPage';
+import CoinOversightPage from '@/pages/shared/CoinOversightPage';
+import StudentShopPage from '@/pages/student/ShopPage';
 
 
 const queryClient = new QueryClient({
@@ -170,6 +174,9 @@ export default function App() {
               <Route path="/admin/lesson-control" element={<LessonControlPage />} />
               <Route path="/admin/parents" element={<ParentsPage />} />
               <Route path="/admin/student-categories" element={<StudentCategoriesPage />} />
+              <Route path="/admin/shop-items" element={<ShopManagePage />} />
+              <Route path="/admin/shop-orders" element={<ShopOrdersPage />} />
+              <Route path="/admin/coin-oversight" element={<CoinOversightPage />} />
               <Route path="/admin/appeals" element={<AppealsPage />} />
               <Route path="/admin/event-feedback" element={<EventFeedbackPage />} />
             </Route>
@@ -218,6 +225,7 @@ export default function App() {
               <Route path="/student/history" element={<StudentHistoryPage />} />
               <Route path="/student/my-normatives" element={<MyNormativesGuidePage />} />
               <Route path="/student/ranking" element={<StudentRankingPage />} />
+              <Route path="/student/shop" element={<StudentShopPage />} />
             </Route>
 
             {/* Viewer routes — all new roles */}
@@ -238,6 +246,8 @@ export default function App() {
               <Route path="/viewer/:role/trash" element={<TrashPage />} />
               <Route path="/viewer/nazoratchi/checklist-stats" element={<ChecklistStatsPage />} />
               <Route path="/viewer/nazoratchi/checklist-manage" element={<ChecklistManagePage />} />
+              <Route path="/viewer/:role/shop-orders" element={<ShopOrdersPage />} />
+              <Route path="/viewer/:role/coin-oversight" element={<CoinOversightPage />} />
             </Route>
 
             {/* Default redirect */}

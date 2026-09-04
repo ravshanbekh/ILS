@@ -178,6 +178,21 @@ class LessonSessionsService {
   }
 
   /**
+   * O'qituvchi darsni baholash paytida o'quvchiga gamifikatsiya coin belgilaydi.
+   * Haqiqiy CoinTransaction yozuvi va limit tekshiruvi coinsService ichida.
+   */
+  async gradeCoin(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, amount: number) {
+    const session = await prisma.lessonSession.findUnique({ where: { id: sessionId } });
+    if (!session) throw ApiError.notFound('Sessiya topilmadi');
+    this.assertOwnerAndOpen(session, teacherId, isAdmin);
+
+    const coinsService = (await import('../coins/coins.service')).default;
+    await coinsService.setLessonCoin(sessionId, studentId, session.teacherId, amount);
+
+    return this.getById(sessionId);
+  }
+
+  /**
    * O'qituvchi "Yakunlash" bosadi. Baholanmagan o'quvchilar (kelmadi belgilanmaganlar) 0 ball oladi.
    */
   async finalize(sessionId: string, teacherId: string, isAdmin: boolean) {

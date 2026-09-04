@@ -42,6 +42,8 @@ import groupEventsRoutes from './modules/group-events/group-events.routes';
 import appealsRoutes from './modules/appeals/appeals.routes';
 import { startGroupEventsScheduler } from './modules/group-events/group-events.scheduler';
 import eventFeedbackRoutes from './modules/event-feedback/event-feedback.routes';
+import coinsRoutes from './modules/coins/coins.routes';
+import shopRoutes from './modules/shop/shop.routes';
 
 const app = express();
 app.set('trust proxy', 1); // nginx orqasida turgani uchun — rate limit va req.ip to'g'ri ishlashi uchun
@@ -125,6 +127,8 @@ app.use('/api/lesson-sessions', lessonSessionsRoutes);
 app.use('/api/group-events', groupEventsRoutes);
 app.use('/api/appeals', appealsRoutes);
 app.use('/api/event-feedback', eventFeedbackRoutes);
+app.use('/api/coins', coinsRoutes);
+app.use('/api/shop', shopRoutes);
 
 // 404 handler
 app.use((_req, res) => {

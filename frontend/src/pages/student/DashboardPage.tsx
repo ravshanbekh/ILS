@@ -1,16 +1,18 @@
 import { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
-import { statsApi, feedbackApi } from '@/api';
+import { statsApi, feedbackApi, coinsApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
-import { Trophy, Target, Clock, Star, Loader2, TrendingUp, Brain, Sparkles, MessageSquare, Send, CheckCircle2, Zap } from 'lucide-react';
+import { Trophy, Target, Clock, Star, Loader2, TrendingUp, Brain, Sparkles, MessageSquare, Send, CheckCircle2, Zap, Coins, Gift } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [coinBalance, setCoinBalance] = useState<number | null>(null);
 
   // AI Analysis state
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
@@ -27,6 +29,9 @@ export default function StudentDashboard() {
         .then((res) => setStats(res.data.data))
         .catch(console.error)
         .finally(() => setLoading(false));
+      coinsApi.getBalance(user.id)
+        .then((res) => setCoinBalance(res.data.data.balance))
+        .catch(() => {});
     }
   }, [user?.id]);
 
@@ -115,6 +120,28 @@ export default function StudentDashboard() {
           </div>
 
           <div className="absolute right-0 top-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3"></div>
+        </div>
+
+        {/* Coin balansi + Do'kon */}
+        <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
+              <Coins className="w-7 h-7 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm text-zinc-400 font-medium mb-1">Mening coinlarim</p>
+              <p className="text-3xl font-bold text-amber-400 tracking-tight">
+                {coinBalance === null ? <Loader2 className="w-6 h-6 animate-spin" /> : coinBalance}
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/student/shop"
+            className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-black px-5 py-3 rounded-xl font-semibold text-sm transition-colors"
+          >
+            <Gift className="w-4 h-4" />
+            Do'konga o'tish
+          </Link>
         </div>
 
         {/* Badges Section */}

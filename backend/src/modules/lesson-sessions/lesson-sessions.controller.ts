@@ -4,6 +4,7 @@ import {
   startSessionSchema,
   gradeHomeworkSchema,
   gradeActivitySchema,
+  gradeCoinSchema,
   adminUnlockSchema,
 } from './lesson-sessions.validation';
 import { ApiError } from '../../shared/middleware/errorHandler';
@@ -88,6 +89,26 @@ class LessonSessionsController {
         isAdminRole(req.user?.role),
         validated.data.studentId,
         validated.data.activityScore
+      );
+      res.json({ success: true, data: session });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /** PATCH /api/lesson-sessions/:id/coin */
+  async gradeCoin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = gradeCoinSchema.safeParse(req.body);
+      if (!validated.success) {
+        throw ApiError.badRequest(validated.error.errors.map((e) => e.message).join(', '));
+      }
+      const session = await lessonSessionsService.gradeCoin(
+        req.params.id,
+        req.user!.userId,
+        isAdminRole(req.user?.role),
+        validated.data.studentId,
+        validated.data.amount
       );
       res.json({ success: true, data: session });
     } catch (error) {

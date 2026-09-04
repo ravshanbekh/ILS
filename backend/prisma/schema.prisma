@@ -54,43 +54,48 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
-  teacherGroups           Group[]               @relation("TeacherGroups")
-  groupStudents           GroupStudent[]
-  submissions             Submission[]          @relation("StudentSubmissions")
-  checkedBy               Submission[]          @relation("CheckedByTeacher")
-  notifications           Notification[]
-  auditLogs               AuditLog[]
-  checklistEntries        DailyChecklistEntry[]
-  frozenEntries           StudentFreeze[]       @relation("FrozenStudents")
-  frozenByEntries         StudentFreeze[]       @relation("FrozenBy")
-  monitoringCalls         MonitoringCall[]      @relation("MonitoringCalledBy")
-  monitoringNotes         MonitoringNote[]      @relation("MonitoringNotes")
-  feedbacksWritten        StudentFeedback[]     @relation("FeedbackByStudent")
-  feedbacksReceived       StudentFeedback[]     @relation("FeedbackForTeacher")
-  telegramLinks           TelegramLink[]        @relation("TelegramStudentLinks")
-  feedbackStudent         TelegramFeedback[]    @relation("FeedbackStudent")
-  feedbackTeacher         TelegramFeedback[]    @relation("FeedbackTeacher")
+  teacherGroups             Group[]               @relation("TeacherGroups")
+  groupStudents             GroupStudent[]
+  submissions               Submission[]          @relation("StudentSubmissions")
+  checkedBy                 Submission[]          @relation("CheckedByTeacher")
+  notifications             Notification[]
+  auditLogs                 AuditLog[]
+  checklistEntries          DailyChecklistEntry[]
+  frozenEntries             StudentFreeze[]       @relation("FrozenStudents")
+  frozenByEntries           StudentFreeze[]       @relation("FrozenBy")
+  monitoringCalls           MonitoringCall[]      @relation("MonitoringCalledBy")
+  monitoringNotes           MonitoringNote[]      @relation("MonitoringNotes")
+  feedbacksWritten          StudentFeedback[]     @relation("FeedbackByStudent")
+  feedbacksReceived         StudentFeedback[]     @relation("FeedbackForTeacher")
+  telegramLinks             TelegramLink[]        @relation("TelegramStudentLinks")
+  feedbackStudent           TelegramFeedback[]    @relation("FeedbackStudent")
+  feedbackTeacher           TelegramFeedback[]    @relation("FeedbackTeacher")
   // Exam relations
-  createdExams            Exam[]                @relation("ExamCreator")
-  examParticipations      ExamParticipant[]     @relation("ExamParticipants")
-  gradedExams             ExamParticipant[]     @relation("ExamGrader")
-  createdQuizzes          LiveQuiz[]            @relation("QuizCreator")
-  activeQuizzes           LiveQuiz[]            @relation("ActiveQuizTeacher")
-  quizResults             LiveQuizResult[]      @relation("TeacherQuizResults")
+  createdExams              Exam[]                @relation("ExamCreator")
+  examParticipations        ExamParticipant[]     @relation("ExamParticipants")
+  gradedExams               ExamParticipant[]     @relation("ExamGrader")
+  createdQuizzes            LiveQuiz[]            @relation("QuizCreator")
+  activeQuizzes             LiveQuiz[]            @relation("ActiveQuizTeacher")
+  quizResults               LiveQuizResult[]      @relation("TeacherQuizResults")
   // Lessons relations
-  createdFolders          LessonFolder[]        @relation("FolderCreator")
-  lessonAccess            LessonFolderAccess[]  @relation("TeacherAccess")
+  createdFolders            LessonFolder[]        @relation("FolderCreator")
+  lessonAccess              LessonFolderAccess[]  @relation("TeacherAccess")
   // Dars baholash relations
-  taughtLessonSessions    LessonSession[]       @relation("LessonSessionTeacher")
-  unlockedLessonSessions  LessonSession[]       @relation("LessonSessionUnlockedBy")
-  lessonGrades            LessonGrade[]         @relation("LessonGradeStudent")
+  taughtLessonSessions      LessonSession[]       @relation("LessonSessionTeacher")
+  unlockedLessonSessions    LessonSession[]       @relation("LessonSessionUnlockedBy")
+  lessonGrades              LessonGrade[]         @relation("LessonGradeStudent")
   // Demo Day va Murojaatlar
-  createdGroupEvents      GroupEvent[]          @relation("GroupEventCreator")
-  appealsAsStudent        ParentAppeal[]        @relation("AppealStudent")
-  appealsAsTeacher        ParentAppeal[]        @relation("AppealTeacher")
-  appealsReplied          ParentAppeal[]        @relation("AppealRepliedBy")
-  eventFeedbacksAsStudent EventFeedback[]       @relation("EventFeedbackStudent")
-  eventFeedbacksAsTeacher EventFeedback[]       @relation("EventFeedbackTeacher")
+  createdGroupEvents        GroupEvent[]          @relation("GroupEventCreator")
+  appealsAsStudent          ParentAppeal[]        @relation("AppealStudent")
+  appealsAsTeacher          ParentAppeal[]        @relation("AppealTeacher")
+  appealsReplied            ParentAppeal[]        @relation("AppealRepliedBy")
+  eventFeedbacksAsStudent   EventFeedback[]       @relation("EventFeedbackStudent")
+  eventFeedbacksAsTeacher   EventFeedback[]       @relation("EventFeedbackTeacher")
+  // Gamifikatsiya — coin va do'kon
+  coinTransactionsAsStudent CoinTransaction[]     @relation("CoinTransactionStudent")
+  coinTransactionsAsTeacher CoinTransaction[]     @relation("CoinTransactionTeacher")
+  shopOrdersAsStudent       ShopOrder[]           @relation("ShopOrderStudent")
+  shopOrdersFulfilled       ShopOrder[]           @relation("ShopOrderFulfilledBy")
 
   @@map("users")
 }
@@ -843,10 +848,11 @@ model LessonSession {
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  group      Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  teacher    User          @relation("LessonSessionTeacher", fields: [teacherId], references: [id])
-  unlockedBy User?         @relation("LessonSessionUnlockedBy", fields: [unlockedById], references: [id])
-  grades     LessonGrade[]
+  group            Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  teacher          User              @relation("LessonSessionTeacher", fields: [teacherId], references: [id])
+  unlockedBy       User?             @relation("LessonSessionUnlockedBy", fields: [unlockedById], references: [id])
+  grades           LessonGrade[]
+  coinTransactions CoinTransaction[]
 
   @@unique([groupId, date])
   @@map("lesson_sessions")
@@ -862,6 +868,9 @@ model LessonGrade {
   homeworkScore Int?           @map("homework_score") // 5 | 3 | 0 | null (kelmadi)
   activityScore Int?           @map("activity_score") // 1..5
   autoZero      Boolean        @default(false) @map("auto_zero") // vaqt tugab, o'qituvchi ulgurmagani uchun avtomatik 0
+
+  coinAwarded   Int?      @map("coin_awarded") // shu darsda berilgan gamifikatsiya coini
+  coinAwardedAt DateTime? @map("coin_awarded_at")
 
   comment          String?   @db.VarChar(500)
   gradedAt         DateTime? @map("graded_at") // uy vazifasi baholangan payt
@@ -1002,4 +1011,77 @@ model EventFeedback {
 
   @@unique([eventId, telegramLinkId])
   @@map("event_feedbacks")
+}
+
+// ============================================================
+//  GAMIFIKATSIYA — COIN TIZIMI VA DO'KON
+// ============================================================
+
+/// Coin harakati — o'qituvchi bergan (musbat) yoki do'kondan sarflangan/qaytarilgan (manfiy/musbat) har bir yozuv.
+/// O'quvchining joriy balansi shu jadvaldagi barcha amount'lar yig'indisi sifatida hisoblanadi (keshlanmaydi).
+model CoinTransaction {
+  id              String   @id @default(uuid()) @db.Uuid
+  studentId       String   @map("student_id") @db.Uuid
+  teacherId       String?  @map("teacher_id") @db.Uuid // kim berdi — do'kon xarid/qaytarishda null
+  amount          Int // musbat = berildi, manfiy = sarflandi
+  reason          String?  @db.VarChar(300)
+  lessonSessionId String?  @map("lesson_session_id") @db.Uuid // ixtiyoriy — qaysi dars orqali berilgani
+  shopOrderId     String?  @map("shop_order_id") @db.Uuid // ixtiyoriy — do'kon xaridi/qaytarish bo'lsa
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  student       User           @relation("CoinTransactionStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher       User?          @relation("CoinTransactionTeacher", fields: [teacherId], references: [id])
+  lessonSession LessonSession? @relation(fields: [lessonSessionId], references: [id], onDelete: SetNull)
+  shopOrder     ShopOrder?     @relation(fields: [shopOrderId], references: [id], onDelete: SetNull)
+
+  @@index([studentId])
+  @@index([teacherId, createdAt])
+  @@map("coin_transactions")
+}
+
+/// Do'kon tovari/sovg'asi (admin kiritadi)
+model ShopItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(150)
+  description String?  @db.VarChar(1000)
+  price       Int // necha coin turadi
+  imageUrl    String?  @map("image_url")
+  stock       Int? // ixtiyoriy — cheklangan miqdor (null = cheksiz)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  orders ShopOrder[]
+
+  @@map("shop_items")
+}
+
+enum ShopOrderStatus {
+  kutilmoqda
+  berildi
+  bekor_qilindi
+}
+
+/// O'quvchining do'kondan sovg'a so'rovi (zayavka)
+model ShopOrder {
+  id        String @id @default(uuid()) @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  itemId    String @map("item_id") @db.Uuid
+
+  priceAtOrder Int             @map("price_at_order") // buyurtma paytidagi narx (tarixiy)
+  status       ShopOrderStatus @default(kutilmoqda)
+
+  fulfilledById String?   @map("fulfilled_by_id") @db.Uuid // kassir/admin kim berdi
+  fulfilledAt   DateTime? @map("fulfilled_at")
+  cancelNote    String?   @map("cancel_note") @db.VarChar(300)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  student          User              @relation("ShopOrderStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  item             ShopItem          @relation(fields: [itemId], references: [id])
+  fulfilledBy      User?             @relation("ShopOrderFulfilledBy", fields: [fulfilledById], references: [id])
+  coinTransactions CoinTransaction[]
+
+  @@map("shop_orders")
 }

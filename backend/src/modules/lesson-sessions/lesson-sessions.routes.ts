@@ -11,6 +11,7 @@ router.get('/today', roleGuard('admin', 'teacher'), lessonSessionsController.tod
 router.get('/:id', roleGuard('admin', 'teacher'), lessonSessionsController.getById);
 router.patch('/:id/homework', roleGuard('admin', 'teacher'), lessonSessionsController.gradeHomework);
 router.patch('/:id/activity', roleGuard('admin', 'teacher'), lessonSessionsController.gradeActivity);
+router.patch('/:id/coin', roleGuard('admin', 'teacher'), lessonSessionsController.gradeCoin);
 router.post('/:id/finalize', roleGuard('admin', 'teacher'), lessonSessionsController.finalize);
 
 // Faqat admin (Ravshan) — nazorat va ruxsat berish

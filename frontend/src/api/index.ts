@@ -478,6 +478,9 @@ export const lessonSessionsApi = {
   gradeActivity: (sessionId: string, studentId: string, activityScore: number) =>
     api.patch(`/lesson-sessions/${sessionId}/activity`, { studentId, activityScore }),
 
+  gradeCoin: (sessionId: string, studentId: string, amount: number) =>
+    api.patch(`/lesson-sessions/${sessionId}/coin`, { studentId, amount }),
+
   finalize: (sessionId: string) => api.post(`/lesson-sessions/${sessionId}/finalize`),
 
   // Faqat admin
@@ -521,4 +524,57 @@ export const eventFeedbackApi = {
 
   aiAnalyze: (params?: { groupId?: string; teacherId?: string; eventId?: string; from?: string; to?: string }) =>
     api.get('/event-feedback/ai-analyze', { params }),
+};
+
+// ============ GAMIFIKATSIYA — COIN ============
+export const coinsApi = {
+  getBalance: (studentId: string) => api.get(`/coins/balance/${studentId}`),
+
+  getHistory: (studentId: string) => api.get(`/coins/history/${studentId}`),
+
+  getTeacherStats: (period?: 'today' | 'week' | 'month') =>
+    api.get('/coins/teacher-stats', { params: { period } }),
+
+  getSettings: () => api.get('/coins/settings'),
+
+  updateSettings: (coinDailyLimitPerTeacher: number) =>
+    api.put('/coins/settings', { coinDailyLimitPerTeacher }),
+};
+
+// ============ DO'KON ============
+export const shopApi = {
+  getItems: () => api.get('/shop/items'),
+
+  createItem: (data: { name: string; description?: string; price: number; stock?: number | null; image?: File }) => {
+    const form = new FormData();
+    form.append('name', data.name);
+    if (data.description) form.append('description', data.description);
+    form.append('price', String(data.price));
+    if (data.stock !== undefined && data.stock !== null) form.append('stock', String(data.stock));
+    if (data.image) form.append('image', data.image);
+    return api.post('/shop/items', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+
+  updateItem: (id: string, data: Partial<{ name: string; description: string; price: number; stock: number | null; isActive: boolean; image: File }>) => {
+    const form = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value === undefined) return;
+      if (key === 'image' && value instanceof File) form.append('image', value);
+      else if (key !== 'image') form.append(key, String(value));
+    });
+    return api.put(`/shop/items/${id}`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+
+  deleteItem: (id: string) => api.delete(`/shop/items/${id}`),
+
+  createOrder: (itemId: string) => api.post('/shop/orders', { itemId }),
+
+  getMyOrders: () => api.get('/shop/orders/mine'),
+
+  listOrders: (params?: { status?: string; groupId?: string; teacherId?: string; from?: string; to?: string }) =>
+    api.get('/shop/orders', { params }),
+
+  fulfillOrder: (id: string) => api.patch(`/shop/orders/${id}/fulfill`),
+
+  cancelOrder: (id: string, note?: string) => api.patch(`/shop/orders/${id}/cancel`, { note }),
 };

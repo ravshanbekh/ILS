@@ -3,7 +3,8 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
-  Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid
+  Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid,
+  Coins, Gift, Package
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -77,6 +78,16 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
     ]
   },
   {
+    id: 'gamification',
+    label: 'Gamifikatsiya',
+    icon: Coins,
+    items: [
+      { to: '/admin/shop-items', label: "Do'kon boshqaruvi", icon: Gift },
+      { to: '/admin/shop-orders', label: 'Buyurtmalar', icon: Package },
+      { to: '/admin/coin-oversight', label: 'Coin nazorati', icon: Coins },
+    ]
+  },
+  {
     id: 'settings_backup',
     label: 'Sozlamalar',
     icon: Settings,
@@ -138,6 +149,7 @@ export const STUDENT_GROUPS: NavCategoryGroup[] = [
       { to: '/student/normatives', label: 'Normativlar', icon: BookOpen },
       { to: '/student/history', label: 'Topshiriqlarim', icon: ClipboardCheck },
       { to: '/student/ranking', label: 'Reyting', icon: Trophy },
+      { to: '/student/shop', label: "Do'kon", icon: Gift },
     ]
   }
 ];

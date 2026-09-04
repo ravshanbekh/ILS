@@ -34,6 +34,7 @@ const defaultSettings: any = {
   groqModel: 'llama-3.3-70b-versatile',
   aiProvider: 'gemini',
   telegramBotToken: '',
+  coinDailyLimitPerTeacher: 100, // bir o'qituvchi bir kunda jami shuncha coingacha berishi kutiladi — undan oshsa admin/kassirga bildirishnoma ketadi
 };
 
 class SettingsService {
@@ -176,6 +177,21 @@ class SettingsService {
       telegramBotToken: (settings as any).telegramBotToken || '',
       isBotConfigured: !!((settings as any).telegramBotToken || process.env.TELEGRAM_BOT_TOKEN),
     };
+  }
+
+  /**
+   * Coin tizimi sozlamalari (bir o'qituvchi kuniga necha coin bera olishi kutiladi)
+   */
+  async getCoinSettings() {
+    const settings = this.readSettings();
+    return { coinDailyLimitPerTeacher: (settings as any).coinDailyLimitPerTeacher ?? 100 };
+  }
+
+  async updateCoinSettings(data: { coinDailyLimitPerTeacher: number }) {
+    const settings = this.readSettings();
+    (settings as any).coinDailyLimitPerTeacher = data.coinDailyLimitPerTeacher;
+    this.writeSettings(settings);
+    return { coinDailyLimitPerTeacher: (settings as any).coinDailyLimitPerTeacher };
   }
 
   /**

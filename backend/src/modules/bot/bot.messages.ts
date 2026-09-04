@@ -551,6 +551,23 @@ export function urgentAppealAdminMessage(data: {
   );
 }
 
+// ============ GAMIFIKATSIYA — COIN NAZORATI ============
+
+/** O'qituvchi kunlik coin chegarasidan oshganda admin/kassirga bot orqali ogohlantirish */
+export function coinLimitExceededMessage(data: {
+  teacherName: string;
+  todayTotal: number;
+  limit: number;
+}): string {
+  return (
+    `⚠️ *COIN CHEGARASI OSHIB KETDI*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `👨‍🏫 ${esc(data.teacherName)}\n` +
+    `🪙 Bugun berdi: *${data.todayTotal}* (chegara: ${data.limit})\n\n` +
+    `Admin panelda "Coin nazorati" bo'limidan tekshiring.`
+  );
+}
+
 // ============ DEMO DAY FIKR-MULOHAZASI ============
 
 /** Tadbir tugagach — baho so'rash */

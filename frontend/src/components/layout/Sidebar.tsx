@@ -4,7 +4,8 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   LayoutDashboard, GraduationCap, LogOut, X, ChevronDown, ChevronRight,
   PanelLeftClose, PanelLeftOpen,
-  Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2
+  Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
+  Gift, Package, Coins
 } from 'lucide-react';
 import { ADMIN_GROUPS, TEACHER_GROUPS, STUDENT_GROUPS } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
@@ -14,6 +15,7 @@ const studentLinks = [
   { to: '/student/normatives', icon: BookOpen, label: 'Normativlar' },
   { to: '/student/history', icon: ClipboardCheck, label: 'Topshiriqlarim' },
   { to: '/student/ranking', icon: Trophy, label: 'Reyting' },
+  { to: '/student/shop', icon: Gift, label: "Do'kon" },
 ];
 
 const VIEWER_ROLES = [
@@ -103,6 +105,10 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     ] : []),
     ...(['filial_rahbari', 'administrator'].includes(user!.role) ? [
       { to: `/viewer/${user!.role}/trash`, icon: Trash2, label: 'Korzinka (Savat)' }
+    ] : []),
+    ...(['filial_rahbari', 'administrator', 'kassir'].includes(user!.role) ? [
+      { to: `/viewer/${user!.role}/shop-orders`, icon: Package, label: "Do'kon buyurtmalari" },
+      { to: `/viewer/${user!.role}/coin-oversight`, icon: Coins, label: 'Coin nazorati' },
     ] : []),
   ] : [];
 
