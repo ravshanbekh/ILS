@@ -132,7 +132,7 @@ export default function ShopOrdersPage() {
                       </td>
                       <td className="px-5 py-3 text-zinc-300 flex items-center gap-2">
                         {o.item.imageUrl ? (
-                          <img src={`${(import.meta.env.VITE_API_URL || '').replace('/api', '')}${o.item.imageUrl}`} className="w-8 h-8 rounded object-cover" alt="" />
+                          <img src={`${(import.meta.env.VITE_API_URL || '').replace('/api', '')}${o.item.imageUrl}`} className="w-8 h-8 rounded object-contain bg-zinc-900" alt="" />
                         ) : (
                           <Gift className="w-4 h-4 text-zinc-600" />
                         )}

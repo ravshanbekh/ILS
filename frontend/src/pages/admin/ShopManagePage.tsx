@@ -128,7 +128,7 @@ export default function ShopManagePage() {
               <div key={item.id} className={`bg-[#18181b] border rounded-xl overflow-hidden flex flex-col ${item.isActive ? 'border-zinc-800' : 'border-zinc-800 opacity-50'}`}>
                 <div className="h-36 bg-zinc-900 flex items-center justify-center relative">
                   {item.imageUrl ? (
-                    <img src={`${API_BASE}${item.imageUrl}`} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={`${API_BASE}${item.imageUrl}`} alt={item.name} className="w-full h-full object-contain" />
                   ) : (
                     <Gift className="w-8 h-8 text-zinc-700" />
                   )}

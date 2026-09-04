@@ -111,7 +111,7 @@ export default function ShopPage() {
                 <div key={item.id} className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden flex flex-col">
                   <div className="h-40 bg-zinc-900 flex items-center justify-center">
                     {item.imageUrl ? (
-                      <img src={`${API_BASE}${item.imageUrl}`} alt={item.name} className="w-full h-full object-cover" />
+                      <img src={`${API_BASE}${item.imageUrl}`} alt={item.name} className="w-full h-full object-contain" />
                     ) : (
                       <Gift className="w-10 h-10 text-zinc-700" />
                     )}
