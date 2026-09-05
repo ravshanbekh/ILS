@@ -356,7 +356,9 @@ export const startQuiz = async (req: Request, res: Response, next: NextFunction)
         activeTeacherId: userId,
         groupId: groupId || null,
       },
-      include: { questions: { orderBy: { order: 'asc' } }, music: true, group: true },
+      // group: faqat id/name — Group.telegramChatId BigInt bo'lgani uchun "true" bilan
+      // to'liq qo'shilsa, JSON.stringify uni serialize qila olmay 500 bilan qulaydi.
+      include: { questions: { orderBy: { order: 'asc' } }, music: true, group: { select: { id: true, name: true } } },
     });
 
     filterActiveQuestions(quiz);
