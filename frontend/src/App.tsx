@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
+import { usePermissionStore } from '@/stores/permissionStore';
 
 // Layout
 import AppLayout from '@/components/layout/AppLayout';
@@ -52,6 +53,7 @@ import ShopManagePage from '@/pages/admin/ShopManagePage';
 import ShopOrdersPage from '@/pages/shared/ShopOrdersPage';
 import CoinOversightPage from '@/pages/shared/CoinOversightPage';
 import StudentShopPage from '@/pages/student/ShopPage';
+import PermissionsPage from '@/pages/admin/PermissionsPage';
 
 
 const queryClient = new QueryClient({
@@ -120,6 +122,23 @@ function GlobalSocket() {
   return null;
 }
 
+/** Kirgan foydalanuvchining qo'lda berilgan ruxsatlarini yuklab qo'yadi */
+function GlobalPermissions() {
+  const { isAuthenticated, user } = useAuthStore();
+  const fetchPermissions = usePermissionStore((s) => s.fetch);
+  const resetPermissions = usePermissionStore((s) => s.reset);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchPermissions();
+    } else {
+      resetPermissions();
+    }
+  }, [isAuthenticated, user?.id, fetchPermissions, resetPermissions]);
+
+  return null;
+}
+
 import { GlobalErrorBoundary } from '@/components/GlobalErrorBoundary';
 
 export default function App() {
@@ -127,6 +146,7 @@ export default function App() {
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <GlobalSocket />
+        <GlobalPermissions />
         <BrowserRouter>
           <Routes>
             {/* Auth */}
@@ -171,6 +191,7 @@ export default function App() {
               <Route path="/admin/live-quiz" element={<LiveQuizPage />} />
               <Route path="/admin/lessons" element={<LessonsPage />} />
               <Route path="/admin/trash" element={<TrashPage />} />
+              <Route path="/admin/permissions" element={<PermissionsPage />} />
               <Route path="/admin/lesson-control" element={<LessonControlPage />} />
               <Route path="/admin/parents" element={<ParentsPage />} />
               <Route path="/admin/student-categories" element={<StudentCategoriesPage />} />

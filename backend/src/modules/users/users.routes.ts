@@ -1,6 +1,7 @@
 import { Router, json } from 'express';
 import usersController from './users.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
+import { permissionGuard } from '../../shared/middleware/permission.middleware';
 
 const router = Router();
 
@@ -22,10 +23,10 @@ router.get('/', roleGuard(...VIEWER_ROLES), usersController.getAll);
 router.get('/:id', roleGuard(...VIEWER_ROLES), usersController.getById);
 
 // POST /api/users/bulk — Ko'p foydalanuvchi yaratish (bulk import, Excel'dan yuzlab qator kelishi mumkin)
-router.post('/bulk', roleGuard('admin', 'teacher'), json({ limit: '5mb' }), usersController.bulkCreate);
+router.post('/bulk', roleGuard('admin', 'teacher'), permissionGuard('bulk_import_students'), json({ limit: '5mb' }), usersController.bulkCreate);
 
 // POST /api/users — Yangi foydalanuvchi yaratish (admin yoki teacher)
-router.post('/', roleGuard('admin', 'teacher'), usersController.create);
+router.post('/', roleGuard('admin', 'teacher'), permissionGuard('create_student'), usersController.create);
 
 // PUT /api/users/:id — Yangilash (admin yoki teacher)
 router.put('/:id', roleGuard('admin', 'teacher'), usersController.update);

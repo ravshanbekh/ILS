@@ -527,6 +527,23 @@ export const eventFeedbackApi = {
     api.get('/event-feedback/ai-analyze', { params }),
 };
 
+// ============ RUXSATLAR ============
+export const permissionsApi = {
+  // O'zining ruxsatlari — tugmalarni ko'rsatish/yashirish uchun
+  getMine: () => api.get('/permissions/me'),
+
+  // Admin: mavjud ruxsatlar ro'yxati
+  getCatalog: () => api.get('/permissions/catalog'),
+
+  // Admin: odamlar + ularning ruxsatlari
+  getUsers: (params?: { search?: string; role?: string }) =>
+    api.get('/permissions/users', { params }),
+
+  // Admin: bitta odamning ruxsatlarini to'liq belgilash
+  setUserPermissions: (userId: string, permissions: string[]) =>
+    api.put(`/permissions/users/${userId}`, { permissions }),
+};
+
 // ============ GAMIFIKATSIYA — COIN ============
 export const coinsApi = {
   getBalance: (studentId: string) => api.get(`/coins/balance/${studentId}`),

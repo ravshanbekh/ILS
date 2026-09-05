@@ -4,7 +4,7 @@ import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
   Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid,
-  Coins, Gift, Package
+  Coins, Gift, Package, ShieldCheck
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -28,6 +28,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
     items: [
       { to: '/admin/users', label: 'Foydalanuvchilar', icon: Users },
       { to: '/admin/groups', label: 'Guruhlar', icon: FolderOpen },
+      { to: '/admin/permissions', label: 'Ruxsatlar', icon: ShieldCheck },
       { to: '/admin/trash', label: 'Korzinka (Savat)', icon: Trash2 },
     ]
   },

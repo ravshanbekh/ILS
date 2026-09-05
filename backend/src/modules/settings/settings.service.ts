@@ -180,6 +180,21 @@ class SettingsService {
   }
 
   /**
+   * Ruxsatlar tizimi boshlang'ich sozlangan-sozlanmagani (bir martalik belgi).
+   * initPermissions shu belgiga qarab ishlaydi — qarang: config/initPermissions.ts
+   */
+  async getPermissionsSeedState(): Promise<{ permissionsSeededAt: string | null }> {
+    const settings = this.readSettings();
+    return { permissionsSeededAt: (settings as any).permissionsSeededAt || null };
+  }
+
+  async markPermissionsSeeded() {
+    const settings = this.readSettings();
+    (settings as any).permissionsSeededAt = new Date().toISOString();
+    this.writeSettings(settings);
+  }
+
+  /**
    * Coin tizimi sozlamalari (bir o'qituvchi kuniga necha coin bera olishi kutiladi)
    */
   async getCoinSettings() {

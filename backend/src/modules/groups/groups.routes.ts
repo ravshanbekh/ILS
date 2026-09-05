@@ -2,6 +2,7 @@ import { Router, json } from 'express';
 import groupsController from './groups.controller';
 import normativesController from '../normatives/normatives.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
+import { permissionGuard } from '../../shared/middleware/permission.middleware';
 
 const router = Router();
 
@@ -17,10 +18,10 @@ router.get('/', roleGuard('admin', 'teacher', 'kassir', 'administrator', 'sotuv_
 router.get('/:id', roleGuard('admin', 'teacher', 'student', 'kassir', 'administrator', 'sotuv_operatori', 'filial_rahbari', 'moliya_rahbari', 'assistant', 'nazoratchi', 'hr_rahbari', 'call_operatori'), groupsController.getById);
 
 // POST /api/groups — Guruh yaratish
-router.post('/', roleGuard('admin', 'teacher'), groupsController.create);
+router.post('/', roleGuard('admin', 'teacher'), permissionGuard('create_group'), groupsController.create);
 
 // PUT /api/groups/:id — Guruhni yangilash
-router.put('/:id', roleGuard('admin', 'teacher'), groupsController.update);
+router.put('/:id', roleGuard('admin', 'teacher'), permissionGuard('edit_group'), groupsController.update);
 
 // DELETE /api/groups/:id — Guruhni o'chirish
 router.delete('/:id', roleGuard('admin'), groupsController.delete);
@@ -32,10 +33,10 @@ router.post('/:id/students', roleGuard('admin', 'teacher'), groupsController.add
 router.post('/:id/students/bulk', roleGuard('admin', 'teacher'), json({ limit: '5mb' }), groupsController.addStudents);
 
 // DELETE /api/groups/:id/students/:studentId — O'quvchini chiqarish
-router.delete('/:id/students/:studentId', roleGuard('admin', 'teacher'), groupsController.removeStudent);
+router.delete('/:id/students/:studentId', roleGuard('admin', 'teacher'), permissionGuard('remove_student'), groupsController.removeStudent);
 
 // POST /api/groups/transfer-student — O'quvchini bir guruhdan boshqa guruhga o'tkazish
-router.post('/transfer-student', roleGuard('admin', 'teacher', 'administrator', 'sotuv_operatori'), groupsController.transferStudent);
+router.post('/transfer-student', roleGuard('admin', 'teacher', 'administrator', 'sotuv_operatori'), permissionGuard('transfer_student'), groupsController.transferStudent);
 
 // POST /api/groups/:id/normatives — Guruhga normativ biriktirish
 router.post('/:id/normatives', roleGuard('admin', 'teacher'), normativesController.assignToGroup);

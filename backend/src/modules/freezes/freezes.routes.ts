@@ -1,16 +1,19 @@
 import { Router } from 'express';
 import freezesController from './freezes.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
+import { permissionGuard } from '../../shared/middleware/permission.middleware';
 
 const router = Router();
 router.use(authenticate);
 
 // ============================================================
 // MUZLATISH (POST) — admin, administrator, sotuv_operatori, kassir
+// + qo'lda "freeze_student" ruxsati berilgan o'qituvchilar
 // ============================================================
 router.post(
   '/',
-  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir'),
+  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher'),
+  permissionGuard('freeze_student'),
   freezesController.freeze
 );
 
@@ -63,8 +66,13 @@ router.post(
 );
 
 // ============================================================
-// BEKOR QILISH (DELETE) — faqat admin
+// MUZLATISHNI BEKOR QILISH (DELETE) — muzlatish bilan bir xil ruxsat
 // ============================================================
-router.delete('/:id', roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir'), freezesController.unfreeze);
+router.delete(
+  '/:id',
+  roleGuard('admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher'),
+  permissionGuard('freeze_student'),
+  freezesController.unfreeze
+);
 
 export default router;

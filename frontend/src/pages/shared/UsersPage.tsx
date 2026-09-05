@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import { usePermissionStore } from '@/stores/permissionStore';
 import { usersApi, groupsApi } from '@/api';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import ConfirmModal from '@/components/shared/ConfirmModal';
-import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight, FolderOpen, ExternalLink } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight, FolderOpen, ExternalLink, ShieldCheck } from 'lucide-react';
 import { formatDateTime } from '@/utils';
 
 export default function UsersPage() {
@@ -13,6 +14,7 @@ export default function UsersPage() {
   const isAdmin = user?.role === 'admin';
   const isTeacher = user?.role === 'teacher';
   const isReadOnly = !isAdmin && !isTeacher;
+  const can = usePermissionStore((s) => s.can);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -201,22 +203,36 @@ export default function UsersPage() {
                     <Trash2 className="w-4 h-4 text-red-400" />
                     Korzinka
                   </button>
-                  <button
-                    onClick={() => setShowBulkModal(true)}
-                    className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    Exceldan yuklash
-                  </button>
+                  {can('bulk_import_students') && (
+                    <button
+                      onClick={() => setShowBulkModal(true)}
+                      className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Exceldan yuklash
+                    </button>
+                  )}
                 </>
               )}
-              <button
-                onClick={() => handleOpenModal()}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-              >
-                <UserPlus className="w-4 h-4" />
-                {isTeacher ? "Yangi o'quvchi" : "Yangi qo'shish"}
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => navigate('/admin/permissions')}
+                  className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  title="Xodimlarga huquq berish / olib qo'yish"
+                >
+                  <ShieldCheck className="w-4 h-4 text-blue-400" />
+                  Ruxsatlar
+                </button>
+              )}
+              {can('create_student') && (
+                <button
+                  onClick={() => handleOpenModal()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  {isTeacher ? "Yangi o'quvchi" : "Yangi qo'shish"}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -362,6 +378,15 @@ export default function UsersPage() {
                             </>
                           ) : (
                             <>
+                              {isAdmin && u.role !== 'student' && u.role !== 'admin' && (
+                                <button
+                                  onClick={() => navigate(`/admin/permissions?user=${u.id}`)}
+                                  className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
+                                  title="Ruxsatlarini sozlash"
+                                >
+                                  <ShieldCheck className="w-4 h-4" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleOpenModal(u)}
                                 className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"

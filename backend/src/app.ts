@@ -44,6 +44,7 @@ import { startGroupEventsScheduler } from './modules/group-events/group-events.s
 import eventFeedbackRoutes from './modules/event-feedback/event-feedback.routes';
 import coinsRoutes from './modules/coins/coins.routes';
 import shopRoutes from './modules/shop/shop.routes';
+import permissionsRoutes from './modules/permissions/permissions.routes';
 
 const app = express();
 app.set('trust proxy', 1); // nginx orqasida turgani uchun — rate limit va req.ip to'g'ri ishlashi uchun
@@ -129,6 +130,7 @@ app.use('/api/appeals', appealsRoutes);
 app.use('/api/event-feedback', eventFeedbackRoutes);
 app.use('/api/coins', coinsRoutes);
 app.use('/api/shop', shopRoutes);
+app.use('/api/permissions', permissionsRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -175,6 +177,10 @@ const startServer = async () => {
     // Boshlang'ich admin yaratish (INITIAL_ADMIN_* env orqali)
     const { initAdmin } = await import('./config/initAdmin');
     await initAdmin();
+
+    // Ruxsatlar tizimi — birinchi ishga tushishda mavjud huquqlarni saqlab qolish
+    const { initPermissions } = await import('./config/initPermissions');
+    await initPermissions();
 
     httpServer.listen(env.PORT, () => {
       logger.info(`🚀 Server ishga tushdi: http://localhost:${env.PORT}`);

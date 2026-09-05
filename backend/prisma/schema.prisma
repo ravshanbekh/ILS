@@ -96,6 +96,9 @@ model User {
   coinTransactionsAsTeacher CoinTransaction[]     @relation("CoinTransactionTeacher")
   shopOrdersAsStudent       ShopOrder[]           @relation("ShopOrderStudent")
   shopOrdersFulfilled       ShopOrder[]           @relation("ShopOrderFulfilledBy")
+  // Qo'lda beriladigan ruxsatlar
+  permissions               UserPermission[]      @relation("UserPermissions")
+  permissionsGranted        UserPermission[]      @relation("PermissionGrantedBy")
 
   @@map("users")
 }
@@ -1011,6 +1014,28 @@ model EventFeedback {
 
   @@unique([eventId, telegramLinkId])
   @@map("event_feedbacks")
+}
+
+// ============================================================
+//  QO'LDA BERILADIGAN RUXSATLAR (rol ustiga qo'shimcha)
+// ============================================================
+
+/// Foydalanuvchiga admin tomonidan qo'lda berilgan bitta ruxsat.
+/// Yozuv bor = ruxsat bor, yozuv yo'q = ruxsat yo'q. Admin roli har doim
+/// to'liq huquqli (uning uchun bu jadval tekshirilmaydi).
+model UserPermission {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  permission  String   @db.VarChar(64) // shared/constants/permissions.ts dagi kalit
+  grantedById String?  @map("granted_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user      User  @relation("UserPermissions", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User? @relation("PermissionGrantedBy", fields: [grantedById], references: [id])
+
+  @@unique([userId, permission])
+  @@index([userId])
+  @@map("user_permissions")
 }
 
 // ============================================================
