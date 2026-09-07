@@ -512,46 +512,53 @@ class FreezesService {
       },
     });
 
-    const studentDetails = await Promise.all(
-      groupStudents.map(async (gs) => {
-        const submissions = await prisma.submission.findMany({
+    // Barcha o'quvchilarning shu oydagi topshiriqlari — bitta so'rovda
+    // (ilgari har bir o'quvchi uchun alohida so'rov ketardi)
+    const kpiStudentIds = groupStudents.map((gs) => gs.studentId);
+    const kpiSubs = kpiStudentIds.length
+      ? await prisma.submission.findMany({
           where: {
-            studentId: gs.studentId,
+            studentId: { in: kpiStudentIds },
             status: 'checked',
             result: { in: ['green', 'blue'] },
-            submittedAt: {
-              gte: startOfMonth,
-              lte: endOfMonth,
-            },
+            submittedAt: { gte: startOfMonth, lte: endOfMonth },
           },
           include: {
-            normative: {
-              select: { taskNumber: true, title: true }
-            }
+            normative: { select: { taskNumber: true, title: true } },
           },
-          orderBy: { submittedAt: 'asc' }
-        });
+          orderBy: { submittedAt: 'asc' },
+        })
+      : [];
 
-        const checkedCount = submissions.length;
-        const coefficient = Math.min(checkedCount / 8, 1.0);
+    // studentId bo'yicha guruhlash — tartib (submittedAt asc) saqlanadi
+    const kpiSubsByStudent = new Map<string, typeof kpiSubs>();
+    for (const s of kpiSubs) {
+      const list = kpiSubsByStudent.get(s.studentId);
+      if (list) list.push(s);
+      else kpiSubsByStudent.set(s.studentId, [s]);
+    }
 
-        return {
-          studentId: gs.studentId,
-          fullName: gs.student.fullName,
-          groupName: gs.group.name,
-          submissionsCount: checkedCount,
-          coefficient: +coefficient.toFixed(4),
-          percent: +(coefficient * 100).toFixed(1),
-          submissions: submissions.map(sub => ({
-            id: sub.id,
-            taskNumber: sub.normative.taskNumber,
-            title: sub.normative.title,
-            submittedAt: sub.submittedAt,
-            score: sub.score
-          }))
-        };
-      })
-    );
+    const studentDetails = groupStudents.map((gs) => {
+      const submissions = kpiSubsByStudent.get(gs.studentId) || [];
+      const checkedCount = submissions.length;
+      const coefficient = Math.min(checkedCount / 8, 1.0);
+
+      return {
+        studentId: gs.studentId,
+        fullName: gs.student.fullName,
+        groupName: gs.group.name,
+        submissionsCount: checkedCount,
+        coefficient: +coefficient.toFixed(4),
+        percent: +(coefficient * 100).toFixed(1),
+        submissions: submissions.map(sub => ({
+          id: sub.id,
+          taskNumber: sub.normative.taskNumber,
+          title: sub.normative.title,
+          submittedAt: sub.submittedAt,
+          score: sub.score
+        }))
+      };
+    });
 
     const totalStudents = studentDetails.length;
     const sumCoefficient = studentDetails.reduce((sum, s) => sum + s.coefficient, 0);

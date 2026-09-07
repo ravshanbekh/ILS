@@ -218,41 +218,73 @@ class StatisticsService {
       },
     });
 
-    // Guruhlar bo'yicha statistika
-    const groupStats = await Promise.all(
-      groups.map(async (group) => {
-        const groupNormatives = await prisma.groupNormative.findMany({ where: { groupId: group.id }, select: { normativeId: true } });
-        const normativeIds = groupNormatives.map(gn => gn.normativeId);
-        
-        const groupStudents = await prisma.groupStudent.findMany({ where: { groupId: group.id }, select: { studentId: true } });
-        const studentIds = groupStudents.map(gs => gs.studentId);
+    // Guruhlar bo'yicha statistika — kerakli hamma narsa uchta so'rovda
+    // (ilgari har bir guruh uchun 3 tadan so'rov ketardi)
+    const statGroupIds = groups.map((g) => g.id);
+    const [gnRows, gsRows] = await Promise.all([
+      statGroupIds.length
+        ? prisma.groupNormative.findMany({
+            where: { groupId: { in: statGroupIds } },
+            select: { groupId: true, normativeId: true },
+          })
+        : Promise.resolve([] as { groupId: string; normativeId: string }[]),
+      statGroupIds.length
+        ? prisma.groupStudent.findMany({
+            where: { groupId: { in: statGroupIds } },
+            select: { groupId: true, studentId: true },
+          })
+        : Promise.resolve([] as { groupId: string; studentId: string }[]),
+    ]);
 
-        const submissions = await prisma.submission.findMany({
-          where: { studentId: { in: studentIds }, normativeId: { in: normativeIds }, status: 'checked' },
-          select: { score: true, result: true },
-        });
+    const statSubs = gsRows.length && gnRows.length
+      ? await prisma.submission.findMany({
+          where: {
+            studentId: { in: [...new Set(gsRows.map((r) => r.studentId))] },
+            normativeId: { in: [...new Set(gnRows.map((r) => r.normativeId))] },
+            status: 'checked',
+          },
+          select: { studentId: true, normativeId: true, score: true, result: true },
+        })
+      : [];
 
-        const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
-        const studentsCount = group.groupStudents.length;
-        const avgScore = studentsCount > 0
-          ? Math.round(totalScore / studentsCount)
-          : 0;
+    const statSubsByStudent = new Map<string, typeof statSubs>();
+    for (const s of statSubs) {
+      const list = statSubsByStudent.get(s.studentId);
+      if (list) list.push(s);
+      else statSubsByStudent.set(s.studentId, [s]);
+    }
 
-        const greenCount = submissions.filter((s) => s.result === 'green').length;
-        const blueCount = submissions.filter((s) => s.result === 'blue').length;
-        const redCount = submissions.filter((s) => s.result === 'red').length;
+    const groupStats = groups.map((group) => {
+      const normativeIds = new Set(gnRows.filter((r) => r.groupId === group.id).map((r) => r.normativeId));
+      const studentIds = gsRows.filter((r) => r.groupId === group.id).map((r) => r.studentId);
 
-        return {
-          id: group.id,
-          name: group.name,
-          studentsCount,
-          normativesCount: group._count.groupNormatives,
-          submissionsCount: group._count.submissions,
-          avgScore,
-          results: { green: greenCount, blue: blueCount, red: redCount },
-        };
-      })
-    );
+      let totalScore = 0;
+      let greenCount = 0;
+      let blueCount = 0;
+      let redCount = 0;
+      for (const sid of studentIds) {
+        for (const s of statSubsByStudent.get(sid) || []) {
+          if (!normativeIds.has(s.normativeId)) continue;
+          totalScore += s.score;
+          if (s.result === 'green') greenCount++;
+          else if (s.result === 'blue') blueCount++;
+          else if (s.result === 'red') redCount++;
+        }
+      }
+
+      const studentsCount = group.groupStudents.length;
+      const avgScore = studentsCount > 0 ? Math.round(totalScore / studentsCount) : 0;
+
+      return {
+        id: group.id,
+        name: group.name,
+        studentsCount,
+        normativesCount: group._count.groupNormatives,
+        submissionsCount: group._count.submissions,
+        avgScore,
+        results: { green: greenCount, blue: blueCount, red: redCount },
+      };
+    });
 
     return {
       groupsCount: groups.length,

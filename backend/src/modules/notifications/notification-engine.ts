@@ -196,18 +196,30 @@ class NotificationEngine {
 
     const admins = await this.getAdmins();
 
+    // Barcha guruhlarning ballari — bitta guruhlangan so'rovda.
+    // Ilgari har bir guruhning har bir o'quvchisi uchun alohida aggregate
+    // so'rovi ketardi va bu scheduler har safar ishlaganda takrorlanardi.
+    const scoreRows = groups.length
+      ? await prisma.submission.groupBy({
+          by: ['groupId', 'studentId'],
+          where: { groupId: { in: groups.map((g) => g.id) } },
+          _sum: { score: true },
+        })
+      : [];
+    const scoreByGroupStudent = new Map<string, number>();
+    for (const row of scoreRows) {
+      if (!row.groupId) continue;
+      scoreByGroupStudent.set(`${row.groupId}:${row.studentId}`, row._sum.score || 0);
+    }
+
     for (const group of groups) {
       if (!group.teacherId || group.groupStudents.length < 5) continue;
-      
-      const studentScores = await Promise.all(
-        group.groupStudents.map(async gs => {
-          const total = await prisma.submission.aggregate({
-            where: { studentId: gs.studentId, groupId: group.id },
-            _sum: { score: true }
-          });
-          return { id: gs.studentId, name: gs.student.fullName, score: total._sum.score || 0 };
-        })
-      );
+
+      const studentScores = group.groupStudents.map((gs) => ({
+        id: gs.studentId,
+        name: gs.student.fullName,
+        score: scoreByGroupStudent.get(`${group.id}:${gs.studentId}`) || 0,
+      }));
 
       const sorted = studentScores.sort((a, b) => a.score - b.score);
       const avg = sorted.reduce((s, x) => s + x.score, 0) / sorted.length;

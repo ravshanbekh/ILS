@@ -56,28 +56,37 @@ class ExportService {
       fgColor: { argb: 'FF1F2937' },
     };
 
-    // O'quvchilar ma'lumotlarini hisoblash va qo'shish
-    const studentStats = await Promise.all(
-      group.groupStudents.map(async (gs) => {
-        const submissions = await prisma.submission.findMany({
-          where: { studentId: gs.student.id, groupId },
-          select: { score: true, result: true, status: true },
-        });
+    // O'quvchilar ma'lumotlari — bitta so'rovda (ilgari har bir o'quvchi uchun alohida edi)
+    const exportStudentIds = group.groupStudents.map((gs) => gs.student.id);
+    const exportSubs = exportStudentIds.length
+      ? await prisma.submission.findMany({
+          where: { studentId: { in: exportStudentIds }, groupId },
+          select: { studentId: true, score: true, result: true, status: true },
+        })
+      : [];
 
-        const checked = submissions.filter((s) => s.status === 'checked');
-        const totalScore = checked.reduce((sum, s) => sum + s.score, 0);
+    const exportSubsByStudent = new Map<string, typeof exportSubs>();
+    for (const s of exportSubs) {
+      const list = exportSubsByStudent.get(s.studentId);
+      if (list) list.push(s);
+      else exportSubsByStudent.set(s.studentId, [s]);
+    }
 
-        return {
-          student: gs.student,
-          totalScore,
-          completed: checked.length,
-          pending: submissions.length - checked.length,
-          green: checked.filter((s) => s.result === 'green').length,
-          blue: checked.filter((s) => s.result === 'blue').length,
-          red: checked.filter((s) => s.result === 'red').length,
-        };
-      })
-    );
+    const studentStats = group.groupStudents.map((gs) => {
+      const submissions = exportSubsByStudent.get(gs.student.id) || [];
+      const checked = submissions.filter((s) => s.status === 'checked');
+      const totalScore = checked.reduce((sum, s) => sum + s.score, 0);
+
+      return {
+        student: gs.student,
+        totalScore,
+        completed: checked.length,
+        pending: submissions.length - checked.length,
+        green: checked.filter((s) => s.result === 'green').length,
+        blue: checked.filter((s) => s.result === 'blue').length,
+        red: checked.filter((s) => s.result === 'red').length,
+      };
+    });
 
     // Ball bo'yicha tartiblash
     studentStats.sort((a, b) => b.totalScore - a.totalScore);
@@ -299,42 +308,69 @@ class ExportService {
       where: { role: 'teacher', isActive: true },
     });
 
-    const teacherStats = await Promise.all(
-      teachers.map(async (teacher) => {
-        const groups = await prisma.group.findMany({
-          where: { teacherId: teacher.id, isActive: true },
-          include: { _count: { select: { groupStudents: true } } },
-        });
+    // Barcha o'qituvchilarning guruhlari va topshiriqlari — ikkita so'rovda
+    // (ilgari har bir o'qituvchi uchun 2 tadan so'rov ketardi)
+    const reportTeacherIds = teachers.map((t) => t.id);
+    const reportGroups = await prisma.group.findMany({
+      where: { teacherId: { in: reportTeacherIds }, isActive: true },
+      include: { _count: { select: { groupStudents: true } } },
+    });
 
-        const groupIds = groups.map((g) => g.id);
-        const studentsCount = groups.reduce((sum, g) => sum + g._count.groupStudents, 0);
+    const reportSubs = reportGroups.length
+      ? await prisma.submission.findMany({
+          where: { groupId: { in: reportGroups.map((g) => g.id) }, status: 'checked' },
+          select: { groupId: true, score: true, result: true },
+        })
+      : [];
 
-        const submissions = await prisma.submission.findMany({
-          where: { groupId: { in: groupIds }, status: 'checked' },
-          select: { score: true, result: true },
-        });
+    const reportGroupsByTeacher = new Map<string, typeof reportGroups>();
+    for (const g of reportGroups) {
+      if (!g.teacherId) continue;
+      const list = reportGroupsByTeacher.get(g.teacherId);
+      if (list) list.push(g);
+      else reportGroupsByTeacher.set(g.teacherId, [g]);
+    }
 
-        const checkedCount = submissions.length;
-        const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
-        const avgScore = checkedCount > 0 ? Math.round(totalScore / checkedCount) : 0;
+    const reportSubsByGroup = new Map<string, typeof reportSubs>();
+    for (const s of reportSubs) {
+      if (!s.groupId) continue;
+      const list = reportSubsByGroup.get(s.groupId);
+      if (list) list.push(s);
+      else reportSubsByGroup.set(s.groupId, [s]);
+    }
 
-        const green = submissions.filter((s) => s.result === 'green').length;
-        const blue = submissions.filter((s) => s.result === 'blue').length;
-        const red = submissions.filter((s) => s.result === 'red').length;
+    const teacherStats = teachers.map((teacher) => {
+      const groups = reportGroupsByTeacher.get(teacher.id) || [];
+      const studentsCount = groups.reduce((sum, g) => sum + g._count.groupStudents, 0);
 
-        return {
-          teacher: teacher.fullName,
-          groupsCount: groups.length,
-          studentsCount,
-          checkedCount,
-          green,
-          blue,
-          red,
-          avgScore,
-          scoreForSort: checkedCount * avgScore // Simple metric for ranking
-        };
-      })
-    );
+      let checkedCount = 0;
+      let totalScore = 0;
+      let green = 0;
+      let blue = 0;
+      let red = 0;
+      for (const g of groups) {
+        for (const s of reportSubsByGroup.get(g.id) || []) {
+          checkedCount++;
+          totalScore += s.score;
+          if (s.result === 'green') green++;
+          else if (s.result === 'blue') blue++;
+          else if (s.result === 'red') red++;
+        }
+      }
+      const avgScore = checkedCount > 0 ? Math.round(totalScore / checkedCount) : 0;
+
+      return {
+        teacher: teacher.fullName,
+        groupsCount: groups.length,
+        studentsCount,
+        checkedCount,
+        green,
+        blue,
+        red,
+        avgScore,
+        scoreForSort: checkedCount * avgScore // Simple metric for ranking
+      };
+    });
 
     // Sort by performance (volume * quality)
     teacherStats.sort((a, b) => b.scoreForSort - a.scoreForSort);
