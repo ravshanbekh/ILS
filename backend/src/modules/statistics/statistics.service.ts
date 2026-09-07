@@ -57,60 +57,125 @@ class StatisticsService {
       where: { role: 'teacher', isActive: true },
     });
 
-    const teacherStats = await Promise.all(
-      teachers.map(async (teacher) => {
-        const groups = await prisma.group.findMany({
-          where: { teacherId: teacher.id, isActive: true },
-          include: { 
-            groupStudents: {
-              where: { student: { isActive: true } },
-              select: { id: true }
-            } 
+    // Barcha o'qituvchilarning guruh/o'quvchi/normativ/topshiriq ma'lumotlari —
+    // to'rtta so'rovda (ilgari har bir o'qituvchi uchun 4 tadan so'rov ketardi)
+    const teacherIds = teachers.map((t) => t.id);
+
+    const allGroups = await prisma.group.findMany({
+      where: { teacherId: { in: teacherIds }, isActive: true },
+      include: {
+        groupStudents: {
+          where: { student: { isActive: true } },
+          select: { id: true },
+        },
+      },
+    });
+
+    const allGroupIds = allGroups.map((g) => g.id);
+    const [allGroupNormatives, allGroupStudents] = await Promise.all([
+      prisma.groupNormative.findMany({
+        where: { groupId: { in: allGroupIds } },
+        select: { groupId: true, normativeId: true },
+      }),
+      prisma.groupStudent.findMany({
+        where: { groupId: { in: allGroupIds } },
+        select: { groupId: true, studentId: true },
+      }),
+    ]);
+
+    // guruh -> o'qituvchi bog'lanishi
+    const teacherOfGroup = new Map(allGroups.map((g) => [g.id, g.teacherId]));
+
+    const groupsByTeacher = new Map<string, typeof allGroups>();
+    for (const g of allGroups) {
+      if (!g.teacherId) continue;
+      const list = groupsByTeacher.get(g.teacherId) || [];
+      list.push(g);
+      groupsByTeacher.set(g.teacherId, list);
+    }
+
+    const normativeIdsByTeacher = new Map<string, Set<string>>();
+    for (const gn of allGroupNormatives) {
+      const tid = teacherOfGroup.get(gn.groupId);
+      if (!tid) continue;
+      let set = normativeIdsByTeacher.get(tid);
+      if (!set) { set = new Set(); normativeIdsByTeacher.set(tid, set); }
+      set.add(gn.normativeId);
+    }
+
+    const studentIdsByTeacher = new Map<string, Set<string>>();
+    for (const gs of allGroupStudents) {
+      const tid = teacherOfGroup.get(gs.groupId);
+      if (!tid) continue;
+      let set = studentIdsByTeacher.get(tid);
+      if (!set) { set = new Set(); studentIdsByTeacher.set(tid, set); }
+      set.add(gs.studentId);
+    }
+
+    // Barcha tegishli topshiriqlar — bitta so'rovda
+    const everyStudentId = [...new Set(allGroupStudents.map((gs) => gs.studentId))];
+    const everyNormativeId = [...new Set(allGroupNormatives.map((gn) => gn.normativeId))];
+    const allSubmissions = everyStudentId.length && everyNormativeId.length
+      ? await prisma.submission.findMany({
+          where: {
+            studentId: { in: everyStudentId },
+            normativeId: { in: everyNormativeId },
+            status: 'checked',
           },
-        });
+          select: { studentId: true, normativeId: true, score: true, result: true },
+        })
+      : [];
 
-        const groupIds = groups.map((g) => g.id);
-        const studentsCount = groups.reduce((sum, g) => sum + g.groupStudents.length, 0);
+    // O'quvchi bo'yicha indekslash — har bir o'qituvchi uchun butun ro'yxatni
+    // qayta aylanib chiqmaslik uchun (aks holda o'qituvchilar soni × topshiriqlar soni)
+    const submissionsByStudent = new Map<string, typeof allSubmissions>();
+    for (const s of allSubmissions) {
+      const list = submissionsByStudent.get(s.studentId);
+      if (list) list.push(s);
+      else submissionsByStudent.set(s.studentId, [s]);
+    }
 
-        const groupNormatives = await prisma.groupNormative.findMany({
-          where: { groupId: { in: groupIds } },
-          select: { normativeId: true }
-        });
-        const normativeIds = groupNormatives.map(gn => gn.normativeId);
+    const teacherStats = teachers.map((teacher) => {
+      const groups = groupsByTeacher.get(teacher.id) || [];
+      const studentsCount = groups.reduce((sum, g) => sum + g.groupStudents.length, 0);
 
-        const studentsInGroups = await prisma.groupStudent.findMany({
-          where: { groupId: { in: groupIds } },
-          select: { studentId: true }
-        });
-        const studentIds = studentsInGroups.map(gs => gs.studentId);
+      const normativeIds = normativeIdsByTeacher.get(teacher.id) || new Set<string>();
+      const studentIds = studentIdsByTeacher.get(teacher.id) || new Set<string>();
 
-        const submissions = await prisma.submission.findMany({
-          where: { studentId: { in: studentIds }, normativeId: { in: normativeIds }, status: 'checked' },
-          select: { score: true, result: true },
-        });
+      // Ilgarigi shart bilan bir xil: o'qituvchining o'quvchisi VA uning
+      // guruhlariga biriktirilgan normativ bo'yicha tekshirilgan topshiriqlar
+      let checkedCount = 0;
+      let totalScore = 0;
+      let green = 0;
+      let blue = 0;
+      let red = 0;
+      for (const studentId of studentIds) {
+        const subs = submissionsByStudent.get(studentId);
+        if (!subs) continue;
+        for (const s of subs) {
+          if (!normativeIds.has(s.normativeId)) continue;
+          checkedCount++;
+          totalScore += s.score;
+          if (s.result === 'green') green++;
+          else if (s.result === 'blue') blue++;
+          else if (s.result === 'red') red++;
+        }
+      }
+      const avgScore = checkedCount > 0 ? Math.round(totalScore / checkedCount) : 0;
 
-        const checkedCount = submissions.length;
-        const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
-        const avgScore = checkedCount > 0 ? Math.round(totalScore / checkedCount) : 0;
-
-        const green = submissions.filter((s) => s.result === 'green').length;
-        const blue = submissions.filter((s) => s.result === 'blue').length;
-        const red = submissions.filter((s) => s.result === 'red').length;
-
-        return {
-          id: teacher.id,
-          teacher: teacher.fullName,
-          groupsCount: groups.length,
-          studentsCount,
-          checkedCount,
-          green,
-          blue,
-          red,
-          avgScore,
-          scoreForSort: checkedCount * avgScore
-        };
-      })
-    );
+      return {
+        id: teacher.id,
+        teacher: teacher.fullName,
+        groupsCount: groups.length,
+        studentsCount,
+        checkedCount,
+        green,
+        blue,
+        red,
+        avgScore,
+        scoreForSort: checkedCount * avgScore
+      };
+    });
 
     teacherStats.sort((a, b) => b.scoreForSort - a.scoreForSort);
     let currentRank = 1;
@@ -267,38 +332,49 @@ class StatisticsService {
       }
     }
 
-    // Har bir o'quvchining natijalari
-    const studentStats = await Promise.all(
-      group.groupStudents.map(async (gs) => {
-        const submissions = await prisma.submission.findMany({
-          where: { studentId: gs.studentId, normativeId: { in: normativeIds } },
+    // Guruhdagi barcha o'quvchilarning topshiriqlari — bitta so'rovda
+    // (ilgari har bir o'quvchi uchun alohida so'rov ketardi)
+    const groupStudentIds = group.groupStudents.map((gs) => gs.studentId);
+    const allSubmissions = groupStudentIds.length
+      ? await prisma.submission.findMany({
+          where: { studentId: { in: groupStudentIds }, normativeId: { in: normativeIds } },
           include: {
             normative: { select: { taskNumber: true, maxScore: true } },
           },
-        });
+        })
+      : [];
 
-        const totalScore = submissions
-          .filter((s) => s.status === 'checked')
-          .reduce((sum, s) => sum + s.score, 0);
+    const submissionsByStudent = new Map<string, typeof allSubmissions>();
+    for (const s of allSubmissions) {
+      const list = submissionsByStudent.get(s.studentId) || [];
+      list.push(s);
+      submissionsByStudent.set(s.studentId, list);
+    }
 
-        const completed = submissions.filter((s) => s.status === 'checked').length;
-        const pending = submissions.filter((s) => s.status === 'pending').length;
+    const studentStats = group.groupStudents.map((gs) => {
+      const submissions = submissionsByStudent.get(gs.studentId) || [];
 
-        return {
-          student: gs.student,
-          totalScore,
-          completed,
-          pending,
-          totalNormatives: groupNormatives.length,
-          submissions: submissions.map((s) => ({
-            normativeTaskNumber: s.normative.taskNumber,
-            status: s.status,
-            result: s.result,
-            score: s.score,
-          })),
-        };
-      })
-    );
+      const totalScore = submissions
+        .filter((s) => s.status === 'checked')
+        .reduce((sum, s) => sum + s.score, 0);
+
+      const completed = submissions.filter((s) => s.status === 'checked').length;
+      const pending = submissions.filter((s) => s.status === 'pending').length;
+
+      return {
+        student: gs.student,
+        totalScore,
+        completed,
+        pending,
+        totalNormatives: groupNormatives.length,
+        submissions: submissions.map((s) => ({
+          normativeTaskNumber: s.normative.taskNumber,
+          status: s.status,
+          result: s.result,
+          score: s.score,
+        })),
+      };
+    });
 
     // O'ringa bo'yicha tartiblash
     studentStats.sort((a, b) => b.totalScore - a.totalScore);
@@ -370,31 +446,60 @@ class StatisticsService {
     const completed = submissions.filter((s) => s.status === 'checked').length;
     const pending = submissions.filter((s) => s.status === 'pending').length;
 
-    // Guruh ichidagi o'rin
-    const groupRanks = await Promise.all(
-      groupStudents.map(async (gs) => {
-        const allStudentsInGroup = await prisma.groupStudent.findMany({
-          where: { groupId: gs.groupId, student: { isActive: true } },
-          select: { studentId: true },
-        });
-
-        const groupNormatives = await prisma.groupNormative.findMany({
-          where: { groupId: gs.groupId },
-          select: { normativeId: true }
-        });
-        const normativeIds = groupNormatives.map(gn => gn.normativeId);
-
-        const scores = await Promise.all(
-          allStudentsInGroup.map(async (s) => {
-            const subs = await prisma.submission.findMany({
-              where: { studentId: s.studentId, normativeId: { in: normativeIds }, status: 'checked' },
-            });
-            return {
-              studentId: s.studentId,
-              totalScore: subs.reduce((sum, sub) => sum + sub.score, 0),
-            };
+    // Guruh ichidagi o'rin.
+    // Ilgari bu yerda ikki qavatli sikl bor edi: har bir guruh uchun, o'sha guruhdagi
+    // HAR BIR o'quvchi uchun alohida so'rov (guruhda 15 o'quvchi = 15 so'rov, 2 guruh = 30+).
+    // Endi kerakli hamma narsa uchta so'rovda olinadi va xotirada hisoblanadi.
+    const myGroupIds = groupStudents.map((gs) => gs.groupId);
+    const [peersInGroups, normativesOfGroups] = await Promise.all([
+      myGroupIds.length
+        ? prisma.groupStudent.findMany({
+            where: { groupId: { in: myGroupIds }, student: { isActive: true } },
+            select: { groupId: true, studentId: true },
           })
+        : Promise.resolve([] as { groupId: string; studentId: string }[]),
+      myGroupIds.length
+        ? prisma.groupNormative.findMany({
+            where: { groupId: { in: myGroupIds } },
+            select: { groupId: true, normativeId: true },
+          })
+        : Promise.resolve([] as { groupId: string; normativeId: string }[]),
+    ]);
+
+    const peerIds = [...new Set(peersInGroups.map((p) => p.studentId))];
+    const peerNormativeIds = [...new Set(normativesOfGroups.map((n) => n.normativeId))];
+    const peerSubmissions = peerIds.length && peerNormativeIds.length
+      ? await prisma.submission.findMany({
+          where: {
+            studentId: { in: peerIds },
+            normativeId: { in: peerNormativeIds },
+            status: 'checked',
+          },
+          select: { studentId: true, normativeId: true, score: true },
+        })
+      : [];
+
+    // O'quvchi bo'yicha indekslash — pastdagi hisobda butun ro'yxatni qayta aylanmaslik uchun
+    const peerSubsByStudent = new Map<string, typeof peerSubmissions>();
+    for (const s of peerSubmissions) {
+      const list = peerSubsByStudent.get(s.studentId);
+      if (list) list.push(s);
+      else peerSubsByStudent.set(s.studentId, [s]);
+    }
+
+    const groupRanks = groupStudents.map((gs) => {
+        const allStudentsInGroup = peersInGroups.filter((p) => p.groupId === gs.groupId);
+        const normativeIds = new Set(
+          normativesOfGroups.filter((n) => n.groupId === gs.groupId).map((n) => n.normativeId)
         );
+
+        const scores = allStudentsInGroup.map((s) => {
+          let totalScore = 0;
+          for (const sub of peerSubsByStudent.get(s.studentId) || []) {
+            if (normativeIds.has(sub.normativeId)) totalScore += sub.score;
+          }
+          return { studentId: s.studentId, totalScore };
+        });
 
         scores.sort((a, b) => b.totalScore - a.totalScore);
         
@@ -418,8 +523,7 @@ class StatisticsService {
           rank,
           totalInGroup: scores.length,
         };
-      })
-    );
+    });
 
     const level = Math.floor(totalScore / 50) + 1;
     const progressToNextLevel = (totalScore % 50) * 2; // out of 100% (since each level is 50 pts)

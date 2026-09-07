@@ -1,5 +1,10 @@
 import prisma from '../../config/database';
 import { PaginationParams, createPaginatedResult } from '../../shared/utils/pagination';
+import {
+  getCheckedStatsByStudent,
+  getTotalCountByStudent,
+  emptyStats,
+} from '../../shared/utils/submissionAggregate';
 
 export type StudentCategory = 'past' | 'ortacha' | 'yuqori' | 'malumot_yoq';
 
@@ -48,40 +53,28 @@ class RankingsService {
       targetNormativeIds = gNorms.map(g => g.normativeId);
     }
 
-    // Har bir o'quvchining umumiy balini hisoblash
-    const studentScores = await Promise.all(
-      students.map(async (student) => {
-        // Agar teacherId yoki groupId bo'lsa, faqat shu guruhlarga oid topshiriqlarni sanaymiz
-        const subWhereClause: any = { studentId: student.id, status: 'checked' };
-        if (targetNormativeIds !== null) {
-          subWhereClause.normativeId = { in: targetNormativeIds };
-        }
-
-        const submissions = await prisma.submission.findMany({
-          where: subWhereClause,
-          select: { score: true, result: true },
-        });
-
-        const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
-        const completed = submissions.length;
-        const greenCount = submissions.filter((s) => s.result === 'green').length;
-        const blueCount = submissions.filter((s) => s.result === 'blue').length;
-        const redCount = submissions.filter((s) => s.result === 'red').length;
-
-        return {
-          student: {
-            id: student.id,
-            fullName: student.fullName,
-            login: student.login,
-            avatarUrl: student.avatarUrl,
-          },
-          groups: student.groupStudents.map((gs) => gs.group),
-          totalScore,
-          completed,
-          results: { green: greenCount, blue: blueCount, red: redCount },
-        };
-      })
+    // Barcha o'quvchilarning topshiriqlari — bitta so'rovda (ilgari har bir
+    // o'quvchi uchun alohida so'rov ketardi: 300 o'quvchi = 300 so'rov)
+    const statsByStudent = await getCheckedStatsByStudent(
+      students.map((s) => s.id),
+      targetNormativeIds
     );
+
+    const studentScores = students.map((student) => {
+      const stats = statsByStudent.get(student.id) || emptyStats();
+      return {
+        student: {
+          id: student.id,
+          fullName: student.fullName,
+          login: student.login,
+          avatarUrl: student.avatarUrl,
+        },
+        groups: student.groupStudents.map((gs) => gs.group),
+        totalScore: stats.totalScore,
+        completed: stats.completed,
+        results: { green: stats.green, blue: stats.blue, red: stats.red },
+      };
+    });
 
     // Ball bo'yicha tartiblash
     studentScores.sort((a, b) => b.totalScore - a.totalScore);
@@ -138,60 +131,82 @@ class RankingsService {
       orderBy: { fullName: 'asc' },
     });
 
-    // Guruh normativlarini har bir guruh uchun bir marta hisoblash (N+1 oldini olish)
-    const groupMaxCache = new Map<string, { normativeIds: string[]; maxPossible: number }>();
-    const getGroupNormatives = async (groupId: string) => {
-      if (!groupMaxCache.has(groupId)) {
-        const groupNormatives = await prisma.groupNormative.findMany({
-          where: { groupId },
-          select: { normativeId: true, normative: { select: { maxScore: true } } },
-        });
-        groupMaxCache.set(groupId, {
-          normativeIds: groupNormatives.map((gn) => gn.normativeId),
-          maxPossible: groupNormatives.reduce((sum, gn) => sum + gn.normative.maxScore, 0),
-        });
+    // Kerakli guruhlarning normativlari — bitta so'rovda (ilgari har bir guruh uchun alohida edi)
+    const groupIds = [...new Set(students.map((s) => s.groupStudents[0]?.group?.id).filter(Boolean) as string[])];
+    const groupNormatives = groupIds.length
+      ? await prisma.groupNormative.findMany({
+          where: { groupId: { in: groupIds } },
+          select: { groupId: true, normativeId: true, normative: { select: { maxScore: true } } },
+        })
+      : [];
+
+    const groupInfo = new Map<string, { normativeIds: Set<string>; maxPossible: number }>();
+    for (const gn of groupNormatives) {
+      let info = groupInfo.get(gn.groupId);
+      if (!info) {
+        info = { normativeIds: new Set(), maxPossible: 0 };
+        groupInfo.set(gn.groupId, info);
       }
-      return groupMaxCache.get(groupId)!;
-    };
+      info.normativeIds.add(gn.normativeId);
+      info.maxPossible += gn.normative.maxScore;
+    }
 
-    const results = await Promise.all(
-      students.map(async (student) => {
-        const group = student.groupStudents[0]?.group;
-        let percent: number | null = null;
+    // Barcha o'quvchilarning tekshirilgan topshiriqlari — bitta so'rovda.
+    // Har bir o'quvchi baribir faqat O'Z guruhi normativlari bo'yicha sanaladi
+    // (quyida normativeIds to'plami orqali filtrlanadi) — natija ilgarigidek.
+    const checked = students.length
+      ? await prisma.submission.findMany({
+          where: { studentId: { in: students.map((s) => s.id) }, status: 'checked' },
+          select: { studentId: true, normativeId: true, score: true },
+        })
+      : [];
 
-        if (group) {
-          const { normativeIds, maxPossible } = await getGroupNormatives(group.id);
-          if (maxPossible > 0) {
-            const submissions = await prisma.submission.findMany({
-              where: { studentId: student.id, normativeId: { in: normativeIds }, status: 'checked' },
-              select: { score: true },
-            });
-            const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
-            percent = Math.round((totalScore / maxPossible) * 100);
+    const subsByStudent = new Map<string, { normativeId: string; score: number }[]>();
+    for (const s of checked) {
+      let list = subsByStudent.get(s.studentId);
+      if (!list) {
+        list = [];
+        subsByStudent.set(s.studentId, list);
+      }
+      list.push({ normativeId: s.normativeId, score: s.score });
+    }
+
+    const results = students.map((student) => {
+      const group = student.groupStudents[0]?.group;
+      let percent: number | null = null;
+
+      if (group) {
+        const info = groupInfo.get(group.id);
+        if (info && info.maxPossible > 0) {
+          const subs = subsByStudent.get(student.id) || [];
+          let totalScore = 0;
+          for (const s of subs) {
+            if (info.normativeIds.has(s.normativeId)) totalScore += s.score;
           }
+          percent = Math.round((totalScore / info.maxPossible) * 100);
         }
+      }
 
-        const category: StudentCategory =
-          percent === null
-            ? 'malumot_yoq'
-            : percent >= CATEGORY_THRESHOLDS.yuqori
-            ? 'yuqori'
-            : percent >= CATEGORY_THRESHOLDS.ortacha
-            ? 'ortacha'
-            : 'past';
+      const category: StudentCategory =
+        percent === null
+          ? 'malumot_yoq'
+          : percent >= CATEGORY_THRESHOLDS.yuqori
+          ? 'yuqori'
+          : percent >= CATEGORY_THRESHOLDS.ortacha
+          ? 'ortacha'
+          : 'past';
 
-        return {
-          id: student.id,
-          fullName: student.fullName,
-          groupId: group?.id || null,
-          groupName: group?.name || null,
-          teacherName: group?.teacher?.fullName || null,
-          percent,
-          category,
-          parentLinked: student.telegramLinks.length > 0,
-        };
-      })
-    );
+      return {
+        id: student.id,
+        fullName: student.fullName,
+        groupId: group?.id || null,
+        groupName: group?.name || null,
+        teacherName: group?.teacher?.fullName || null,
+        percent,
+        category,
+        parentLinked: student.telegramLinks.length > 0,
+      };
+    });
 
     const counts: Record<StudentCategory, number> = { past: 0, ortacha: 0, yuqori: 0, malumot_yoq: 0 };
     results.forEach((r) => counts[r.category]++);
@@ -230,34 +245,26 @@ class RankingsService {
     const normativeIds = groupNormatives.map(gn => gn.normativeId);
     const normativesCount = normativeIds.length;
 
-    // Har bir o'quvchining balini hisoblash
-    const studentScores = await Promise.all(
-      groupStudents.map(async (gs) => {
-        const submissions = await prisma.submission.findMany({
-          where: { studentId: gs.studentId, normativeId: { in: normativeIds }, status: 'checked' },
-          select: { score: true, result: true },
-        });
+    // Guruhdagi barcha o'quvchilar statistikasi — ikkita so'rovda
+    // (ilgari har bir o'quvchi uchun 2 tadan so'rov ketardi)
+    const studentIds = groupStudents.map((gs) => gs.studentId);
+    const [statsByStudent, totalByStudent] = await Promise.all([
+      getCheckedStatsByStudent(studentIds, normativeIds),
+      getTotalCountByStudent(studentIds, normativeIds),
+    ]);
 
-        const totalSubmissions = await prisma.submission.count({
-          where: { studentId: gs.studentId, normativeId: { in: normativeIds } },
-        });
+    const studentScores = groupStudents.map((gs) => {
+      const stats = statsByStudent.get(gs.studentId) || emptyStats();
+      const totalSubmissions = totalByStudent.get(gs.studentId) || 0;
 
-        const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
-        const completed = submissions.length;
-        const pending = totalSubmissions - completed;
-        const greenCount = submissions.filter((s) => s.result === 'green').length;
-        const blueCount = submissions.filter((s) => s.result === 'blue').length;
-        const redCount = submissions.filter((s) => s.result === 'red').length;
-
-        return {
-          student: gs.student,
-          totalScore,
-          completed,
-          pending,
-          results: { green: greenCount, blue: blueCount, red: redCount },
-        };
-      })
-    );
+      return {
+        student: gs.student,
+        totalScore: stats.totalScore,
+        completed: stats.completed,
+        pending: totalSubmissions - stats.completed,
+        results: { green: stats.green, blue: stats.blue, red: stats.red },
+      };
+    });
 
     // Ball bo'yicha tartiblash
     studentScores.sort((a, b) => b.totalScore - a.totalScore);

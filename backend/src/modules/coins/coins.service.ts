@@ -150,23 +150,28 @@ class CoinsService {
       select: { id: true, fullName: true },
     });
 
-    const stats = await Promise.all(
-      teachers.map(async (t) => {
-        const agg = await prisma.coinTransaction.aggregate({
-          where: { teacherId: t.id, amount: { gt: 0 }, createdAt: { gte: since } },
-          _sum: { amount: true },
-          _count: true,
-        });
-        const total = agg._sum.amount || 0;
-        return {
-          teacherId: t.id,
-          teacherName: t.fullName,
-          total,
-          awardsCount: agg._count,
-          overLimit: period === 'today' && coinDailyLimitPerTeacher > 0 && total > coinDailyLimitPerTeacher,
-        };
-      })
+    // Barcha o'qituvchilar bo'yicha yig'indi — bitta guruhlangan so'rovda
+    // (ilgari har bir o'qituvchi uchun alohida aggregate so'rovi ketardi)
+    const grouped = await prisma.coinTransaction.groupBy({
+      by: ['teacherId'],
+      where: { teacherId: { in: teachers.map((t) => t.id) }, amount: { gt: 0 }, createdAt: { gte: since } },
+      _sum: { amount: true },
+      _count: { _all: true },
+    });
+    const byTeacher = new Map(
+      grouped.map((row) => [row.teacherId as string, { total: row._sum.amount || 0, count: row._count._all }])
     );
+
+    const stats = teachers.map((t) => {
+      const agg = byTeacher.get(t.id) || { total: 0, count: 0 };
+      return {
+        teacherId: t.id,
+        teacherName: t.fullName,
+        total: agg.total,
+        awardsCount: agg.count,
+        overLimit: period === 'today' && coinDailyLimitPerTeacher > 0 && agg.total > coinDailyLimitPerTeacher,
+      };
+    });
 
     stats.sort((a, b) => b.total - a.total);
     return { period, dailyLimit: coinDailyLimitPerTeacher, teachers: stats };

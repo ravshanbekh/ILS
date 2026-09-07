@@ -6,54 +6,72 @@ import { usePermissionStore } from '@/stores/permissionStore';
 // Layout
 import AppLayout from '@/components/layout/AppLayout';
 
-// Pages
+// Login sahifasi darhol kerak — u lazy bo'lsa birinchi ochilishda "miltillash" bo'ladi
 import LoginPage from '@/pages/auth/LoginPage';
-import AdminDashboard from '@/pages/admin/DashboardPage';
-import TeacherDashboard from '@/pages/teacher/DashboardPage';
-import TeacherPendingPage from '@/pages/teacher/PendingPage';
-import StudentDashboard from '@/pages/student/DashboardPage';
-import StudentNormativesPage from '@/pages/student/NormativesPage';
-import StudentHistoryPage from '@/pages/student/HistoryPage';
-import StudentRankingPage from '@/pages/student/RankingPage';
-import MyNormativesGuidePage from '@/pages/student/MyNormativesGuidePage';
-import GroupDetailPage from '@/pages/teacher/GroupDetailPage';
-import TeacherNormativesPage from '@/pages/teacher/NormativesPage';
-import StudentProfilePage from '@/pages/teacher/StudentProfilePage';
-import ExportPage from '@/pages/shared/ExportPage';
-import UsersPage from '@/pages/shared/UsersPage';
-import GroupsPage from '@/pages/shared/GroupsPage';
-import NormativesPage from '@/pages/shared/NormativesPage';
-import AdminSubmissionsPage from '@/pages/admin/SubmissionsPage';
-import AdminStatsPage from '@/pages/admin/StatsPage';
-import AdminRankingsPage from '@/pages/admin/RankingsPage';
-import AdminSettingsPage from '@/pages/admin/SettingsPage';
-import MonthlyReportPrintPage from '@/pages/admin/MonthlyReportPrintPage';
-import ViewerDashboardPage from '@/pages/viewer/DashboardPage';
-import FrozenStudentsPage from '@/pages/shared/FrozenStudentsPage';
-import MonitoringPage from '@/pages/shared/MonitoringPage';
-import TeacherRatingPage from '@/pages/admin/TeacherRatingPage';
-import ChecklistStatsPage from '@/pages/admin/ChecklistStatsPage';
-import ChecklistManagePage from '@/pages/admin/ChecklistManagePage';
-import PredictionsPage from '@/pages/admin/PredictionsPage';
 import AIChatbot from '@/components/AIChatbot';
 import { socket } from '@/utils/socket';
-import { useEffect } from 'react';
-import ExamsPage from '@/pages/teacher/ExamsPage';
-import LiveQuizPage from '@/pages/teacher/LiveQuizPage';
-import ExamLobbyPage from '@/pages/exam/ExamLobbyPage';
-import QuizJoinPage from '@/pages/quiz/QuizJoinPage';
-import LessonsPage from '@/pages/shared/LessonsPage';
-import TrashPage from '@/pages/admin/TrashPage';
-import LessonControlPage from '@/pages/admin/LessonControlPage';
-import ParentsPage from '@/pages/admin/ParentsPage';
-import AppealsPage from '@/pages/admin/AppealsPage';
-import EventFeedbackPage from '@/pages/admin/EventFeedbackPage';
-import StudentCategoriesPage from '@/pages/admin/StudentCategoriesPage';
-import ShopManagePage from '@/pages/admin/ShopManagePage';
-import ShopOrdersPage from '@/pages/shared/ShopOrdersPage';
-import CoinOversightPage from '@/pages/shared/CoinOversightPage';
-import StudentShopPage from '@/pages/student/ShopPage';
-import PermissionsPage from '@/pages/admin/PermissionsPage';
+import { useEffect, lazy, Suspense } from 'react';
+
+/**
+ * Sahifalar talab bo'yicha (lazy) yuklanadi.
+ *
+ * Ilgari hamma sahifa bitta faylga yig'ilar edi: o'quvchi ham, kassir ham
+ * kirishi bilan butun admin panel, grafiklar, Excel kutubxonasi va Live Quiz
+ * kodini yuklab olardi. Endi har bir sahifa alohida bo'lak — foydalanuvchi
+ * faqat o'zi ochgan sahifani yuklaydi.
+ */
+const AdminDashboard = lazy(() => import('@/pages/admin/DashboardPage'));
+const TeacherDashboard = lazy(() => import('@/pages/teacher/DashboardPage'));
+const TeacherPendingPage = lazy(() => import('@/pages/teacher/PendingPage'));
+const StudentDashboard = lazy(() => import('@/pages/student/DashboardPage'));
+const StudentNormativesPage = lazy(() => import('@/pages/student/NormativesPage'));
+const StudentHistoryPage = lazy(() => import('@/pages/student/HistoryPage'));
+const StudentRankingPage = lazy(() => import('@/pages/student/RankingPage'));
+const MyNormativesGuidePage = lazy(() => import('@/pages/student/MyNormativesGuidePage'));
+const GroupDetailPage = lazy(() => import('@/pages/teacher/GroupDetailPage'));
+const TeacherNormativesPage = lazy(() => import('@/pages/teacher/NormativesPage'));
+const StudentProfilePage = lazy(() => import('@/pages/teacher/StudentProfilePage'));
+const ExportPage = lazy(() => import('@/pages/shared/ExportPage'));
+const UsersPage = lazy(() => import('@/pages/shared/UsersPage'));
+const GroupsPage = lazy(() => import('@/pages/shared/GroupsPage'));
+const NormativesPage = lazy(() => import('@/pages/shared/NormativesPage'));
+const AdminSubmissionsPage = lazy(() => import('@/pages/admin/SubmissionsPage'));
+const AdminStatsPage = lazy(() => import('@/pages/admin/StatsPage'));
+const AdminRankingsPage = lazy(() => import('@/pages/admin/RankingsPage'));
+const AdminSettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
+const MonthlyReportPrintPage = lazy(() => import('@/pages/admin/MonthlyReportPrintPage'));
+const ViewerDashboardPage = lazy(() => import('@/pages/viewer/DashboardPage'));
+const FrozenStudentsPage = lazy(() => import('@/pages/shared/FrozenStudentsPage'));
+const MonitoringPage = lazy(() => import('@/pages/shared/MonitoringPage'));
+const TeacherRatingPage = lazy(() => import('@/pages/admin/TeacherRatingPage'));
+const ChecklistStatsPage = lazy(() => import('@/pages/admin/ChecklistStatsPage'));
+const ChecklistManagePage = lazy(() => import('@/pages/admin/ChecklistManagePage'));
+const PredictionsPage = lazy(() => import('@/pages/admin/PredictionsPage'));
+const ExamsPage = lazy(() => import('@/pages/teacher/ExamsPage'));
+const LiveQuizPage = lazy(() => import('@/pages/teacher/LiveQuizPage'));
+const ExamLobbyPage = lazy(() => import('@/pages/exam/ExamLobbyPage'));
+const QuizJoinPage = lazy(() => import('@/pages/quiz/QuizJoinPage'));
+const LessonsPage = lazy(() => import('@/pages/shared/LessonsPage'));
+const TrashPage = lazy(() => import('@/pages/admin/TrashPage'));
+const LessonControlPage = lazy(() => import('@/pages/admin/LessonControlPage'));
+const ParentsPage = lazy(() => import('@/pages/admin/ParentsPage'));
+const AppealsPage = lazy(() => import('@/pages/admin/AppealsPage'));
+const EventFeedbackPage = lazy(() => import('@/pages/admin/EventFeedbackPage'));
+const StudentCategoriesPage = lazy(() => import('@/pages/admin/StudentCategoriesPage'));
+const ShopManagePage = lazy(() => import('@/pages/admin/ShopManagePage'));
+const ShopOrdersPage = lazy(() => import('@/pages/shared/ShopOrdersPage'));
+const CoinOversightPage = lazy(() => import('@/pages/shared/CoinOversightPage'));
+const StudentShopPage = lazy(() => import('@/pages/student/ShopPage'));
+const PermissionsPage = lazy(() => import('@/pages/admin/PermissionsPage'));
+
+/** Sahifa yuklanayotgan paytdagi ko'rsatkich */
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-8 h-8 rounded-full border-2 border-zinc-700 border-t-blue-500 animate-spin" />
+    </div>
+  );
+}
 
 
 const queryClient = new QueryClient({
@@ -148,6 +166,7 @@ export default function App() {
         <GlobalSocket />
         <GlobalPermissions />
         <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Auth */}
             <Route path="/login" element={<AuthRedirect />} />
@@ -275,6 +294,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
+          </Suspense>
           <AIChatbot />
         </BrowserRouter>
       </QueryClientProvider>

@@ -257,16 +257,126 @@ class FreezesService {
 
     const startOfMonth = new Date(year, month - 1, 1);
     const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+    const teacherIds = teachers.map((t) => t.id);
+    const monthRange = { gte: startOfMonth, lte: endOfMonth };
 
-    const result = await Promise.all(
-      teachers.map(async (teacher) => {
-        // Joriy aktiv o'quvchilar
-        const activeStudents = await prisma.groupStudent.count({
+    // ── Barcha o'qituvchilar uchun kerakli ma'lumotlar OLDINDAN, guruhlab olinadi ──
+    // Ilgari bularning har biri sikl ichida, har bir o'qituvchi (va hatto har bir
+    // o'quvchi) uchun alohida so'rov bilan olinardi. Natija o'zgarmaydi — faqat
+    // so'rovlar soni keskin kamayadi.
+    const [
+      allGroupStudents,
+      allTeacherGroups,
+      finalizedSessionsGrouped,
+      allExamParticipants,
+      allAppeals,
+      allHomeworkGrades,
+    ] = await Promise.all([
+      prisma.groupStudent.findMany({
+        where: { group: { teacherId: { in: teacherIds }, isActive: true }, student: { isActive: true } },
+        select: { studentId: true, group: { select: { teacherId: true } } },
+      }),
+      prisma.group.findMany({
+        where: { teacherId: { in: teacherIds }, isActive: true },
+        select: { teacherId: true, lessonDayType: true },
+      }),
+      prisma.lessonSession.groupBy({
+        by: ['teacherId'],
+        where: { teacherId: { in: teacherIds }, status: 'yakunlandi', date: monthRange },
+        _count: { _all: true },
+      }),
+      prisma.examParticipant.findMany({
+        where: {
+          teacherId: { in: teacherIds },
+          status: 'submitted',
+          totalScore: { not: null },
+          gradedAt: monthRange,
+        },
+        select: {
+          teacherId: true,
+          totalScore: true,
+          exam: { select: { maxTestScore: true, maxAiScore: true, maxProjectScore: true } },
+        },
+      }),
+      prisma.parentAppeal.findMany({
+        where: { teacherId: { in: teacherIds }, createdAt: monthRange },
+        select: { teacherId: true, type: true },
+      }),
+      prisma.lessonGrade.findMany({
+        where: {
+          session: { teacherId: { in: teacherIds }, date: monthRange },
+          homework: { in: ['toliq', 'qisman', 'bajarmagan'] },
+        },
+        select: { homework: true, session: { select: { teacherId: true } } },
+      }),
+    ]);
+
+    // O'qituvchi bo'yicha guruhlash
+    const studentIdsByTeacher = new Map<string, string[]>();
+    for (const gs of allGroupStudents) {
+      const tid = gs.group.teacherId;
+      if (!tid) continue;
+      const list = studentIdsByTeacher.get(tid) || [];
+      list.push(gs.studentId);
+      studentIdsByTeacher.set(tid, list);
+    }
+
+    // KPI uchun: shu oy "yaxshi" (green/blue) topshirgan topshiriqlar soni —
+    // barcha o'quvchilar bo'yicha bitta groupBy so'rovi bilan
+    const allStudentIds = allGroupStudents.map((gs) => gs.studentId);
+    const checkedGrouped = allStudentIds.length
+      ? await prisma.submission.groupBy({
+          by: ['studentId'],
           where: {
-            group: { teacherId: teacher.id, isActive: true },
-            student: { isActive: true },
+            studentId: { in: allStudentIds },
+            status: 'checked',
+            result: { in: ['green', 'blue'] },
+            submittedAt: monthRange,
           },
-        });
+          _count: { _all: true },
+        })
+      : [];
+    const checkedCountByStudent = new Map(checkedGrouped.map((r) => [r.studentId, r._count._all]));
+
+    const groupsByTeacher = new Map<string, typeof allTeacherGroups>();
+    for (const g of allTeacherGroups) {
+      if (!g.teacherId) continue;
+      const list = groupsByTeacher.get(g.teacherId) || [];
+      list.push(g);
+      groupsByTeacher.set(g.teacherId, list);
+    }
+
+    const finalizedByTeacher = new Map(finalizedSessionsGrouped.map((r) => [r.teacherId, r._count._all]));
+
+    const examsByTeacher = new Map<string, typeof allExamParticipants>();
+    for (const p of allExamParticipants) {
+      if (!p.teacherId) continue;
+      const list = examsByTeacher.get(p.teacherId) || [];
+      list.push(p);
+      examsByTeacher.set(p.teacherId, list);
+    }
+
+    const appealsByTeacher = new Map<string, typeof allAppeals>();
+    for (const a of allAppeals) {
+      if (!a.teacherId) continue;
+      const list = appealsByTeacher.get(a.teacherId) || [];
+      list.push(a);
+      appealsByTeacher.set(a.teacherId, list);
+    }
+
+    const homeworkByTeacher = new Map<string, { total: number; full: number }>();
+    for (const g of allHomeworkGrades) {
+      const tid = g.session.teacherId;
+      const acc = homeworkByTeacher.get(tid) || { total: 0, full: 0 };
+      acc.total++;
+      if (g.homework === 'toliq') acc.full++;
+      homeworkByTeacher.set(tid, acc);
+    }
+
+    const result = teachers.map((teacher) => {
+        // Joriy aktiv o'quvchilar
+        const teacherStudentIds = studentIdsByTeacher.get(teacher.id) || [];
+        const activeStudents = teacherStudentIds.length;
 
         // Shu oy bu o'qituvchidan ketganlar
         const frozenCount = freezes.filter(
@@ -294,33 +404,13 @@ class FreezesService {
             ? +(durations.reduce((s, d) => s + d, 0) / durations.length).toFixed(2)
             : 0;
 
-        // KPI koeffitsiyenti hisoblash: o'quvchilarning normativ topshirishi boyicha
-        const groupStudents = await prisma.groupStudent.findMany({
-          where: {
-            group: { teacherId: teacher.id, isActive: true },
-            student: { isActive: true },
-          },
-          select: { studentId: true },
-        });
-
+        // KPI koeffitsiyenti: o'quvchilarning normativ topshirishi bo'yicha
         let sumCoefficient = 0;
-        const totalStudentsForKpi = groupStudents.length;
+        const totalStudentsForKpi = teacherStudentIds.length;
 
-        if (totalStudentsForKpi > 0) {
-          for (const gs of groupStudents) {
-            const checkedCount = await prisma.submission.count({
-              where: {
-                studentId: gs.studentId,
-                status: 'checked',
-                result: { in: ['green', 'blue'] },
-                submittedAt: {
-                  gte: startOfMonth,
-                  lte: endOfMonth,
-                },
-              },
-            });
-            sumCoefficient += Math.min(checkedCount / 8, 1.0);
-          }
+        for (const studentId of teacherStudentIds) {
+          const checkedCount = checkedCountByStudent.get(studentId) || 0;
+          sumCoefficient += Math.min(checkedCount / 8, 1.0);
         }
 
         const kpiPercent = totalStudentsForKpi > 0
@@ -331,29 +421,16 @@ class FreezesService {
         // Maqsad: reyting o'qituvchining o'zi qo'ygan baholarga (uy vazifasi 5/3/0)
         // bog'liq bo'lmasin — faqat mustaqil, soxtalashtirib bo'lmaydigan manbalardan yig'iladi.
 
-        const teacherGroups = await prisma.group.findMany({
-          where: { teacherId: teacher.id, isActive: true },
-          select: { lessonDayType: true },
-        });
+        const teacherGroups = groupsByTeacher.get(teacher.id) || [];
         const expectedLessonDays = teacherGroups.reduce(
           (sum, g) => sum + countExpectedLessonDays(g.lessonDayType, year, month),
           0
         );
-        const finalizedSessions = await prisma.lessonSession.count({
-          where: { teacherId: teacher.id, status: 'yakunlandi', date: { gte: startOfMonth, lte: endOfMonth } },
-        });
+        const finalizedSessions = finalizedByTeacher.get(teacher.id) || 0;
         const disciplinePercent =
           expectedLessonDays > 0 ? Math.min(100, +((finalizedSessions / expectedLessonDays) * 100).toFixed(1)) : null;
 
-        const examParticipants = await prisma.examParticipant.findMany({
-          where: {
-            teacherId: teacher.id,
-            status: 'submitted',
-            totalScore: { not: null },
-            gradedAt: { gte: startOfMonth, lte: endOfMonth },
-          },
-          include: { exam: { select: { maxTestScore: true, maxAiScore: true, maxProjectScore: true } } },
-        });
+        const examParticipants = examsByTeacher.get(teacher.id) || [];
         const examPercent =
           examParticipants.length > 0
             ? +(
@@ -364,10 +441,7 @@ class FreezesService {
               ).toFixed(1)
             : null;
 
-        const appeals = await prisma.parentAppeal.findMany({
-          where: { teacherId: teacher.id, createdAt: { gte: startOfMonth, lte: endOfMonth } },
-          select: { type: true },
-        });
+        const appeals = appealsByTeacher.get(teacher.id) || [];
         const thanksCount = appeals.filter((a) => a.type === 'minnatdorchilik').length;
         const negativeCount = appeals.filter((a) => a.type === 'shikoyat' || a.type === 'etiroz').length;
         const parentPercent = Math.min(100, Math.max(0, 70 + thanksCount * 10 - negativeCount * 15));
@@ -385,20 +459,9 @@ class FreezesService {
         // Baho inflyatsiyasi shubhasi: uy vazifasi deyarli hammaga "to'liq", lekin imtihon natijasi past
         let inflationSuspected = false;
         if (examPercent !== null) {
-          const homeworkGrades = await prisma.lessonGrade.count({
-            where: {
-              session: { teacherId: teacher.id, date: { gte: startOfMonth, lte: endOfMonth } },
-              homework: { in: ['toliq', 'qisman', 'bajarmagan'] },
-            },
-          });
-          const fullGrades = await prisma.lessonGrade.count({
-            where: {
-              session: { teacherId: teacher.id, date: { gte: startOfMonth, lte: endOfMonth } },
-              homework: 'toliq',
-            },
-          });
-          const fullRate = homeworkGrades > 0 ? fullGrades / homeworkGrades : 0;
-          inflationSuspected = homeworkGrades >= 10 && fullRate >= 0.9 && examPercent < 60;
+          const hw = homeworkByTeacher.get(teacher.id) || { total: 0, full: 0 };
+          const fullRate = hw.total > 0 ? hw.full / hw.total : 0;
+          inflationSuspected = hw.total >= 10 && fullRate >= 0.9 && examPercent < 60;
         }
 
         return {
@@ -418,8 +481,7 @@ class FreezesService {
           compositeScore,
           inflationSuspected,
         };
-      })
-    );
+    });
 
     // Faqat aktiv yoki ketgan o'quvchisi bor o'qituvchilar
     const filtered = result.filter((r) => r.studentsAtStart > 0);

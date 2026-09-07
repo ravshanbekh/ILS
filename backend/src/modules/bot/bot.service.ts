@@ -228,30 +228,50 @@ class BotService {
     const pending = submissions.filter((s) => s.status === 'pending').length;
     const level = Math.floor(totalScore / 50) + 1;
 
-    // Guruh reytingi
-    const groups = await Promise.all(
-      groupStudents.map(async (gs) => {
-        const allInGroup = await prisma.groupStudent.findMany({
-          where: { groupId: gs.groupId },
-          select: { studentId: true },
-        });
-        const scores = await Promise.all(
-          allInGroup.map(async (s) => {
-            const subs = await prisma.submission.findMany({
-              where: { studentId: s.studentId, groupId: gs.groupId, status: 'checked' },
-            });
-            return { studentId: s.studentId, total: subs.reduce((sum, sub) => sum + sub.score, 0) };
+    // Guruh reytingi — ilgari bu yerda ikki qavatli sikl bor edi (har bir guruh uchun,
+    // guruhdagi har bir o'quvchi uchun alohida so'rov). Endi ikkita so'rov kifoya.
+    const myGroupIds = groupStudents.map((gs) => gs.groupId);
+    const [peers, peerSubs] = await Promise.all([
+      myGroupIds.length
+        ? prisma.groupStudent.findMany({
+            where: { groupId: { in: myGroupIds } },
+            select: { groupId: true, studentId: true },
           })
-        );
-        scores.sort((a, b) => b.total - a.total);
-        let rank = 1;
-        for (let i = 0; i < scores.length; i++) {
-          if (i > 0 && scores[i].total < scores[i - 1].total) rank++;
-          if (scores[i].studentId === studentId) break;
-        }
-        return { group: gs.group, rank, totalInGroup: allInGroup.length };
-      })
-    );
+        : Promise.resolve([] as { groupId: string; studentId: string }[]),
+      myGroupIds.length
+        ? prisma.submission.findMany({
+            where: { groupId: { in: myGroupIds }, status: 'checked' },
+            select: { studentId: true, groupId: true, score: true },
+          })
+        : Promise.resolve([] as { studentId: string; groupId: string | null; score: number }[]),
+    ]);
+
+    // guruh -> (o'quvchi -> jami ball) — bitta o'tishda tayyorlanadi
+    const totalsByGroup = new Map<string, Map<string, number>>();
+    for (const sub of peerSubs) {
+      if (!sub.groupId) continue;
+      let totals = totalsByGroup.get(sub.groupId);
+      if (!totals) { totals = new Map(); totalsByGroup.set(sub.groupId, totals); }
+      totals.set(sub.studentId, (totals.get(sub.studentId) || 0) + sub.score);
+    }
+
+    const groups = groupStudents.map((gs) => {
+      const allInGroup = peers.filter((p) => p.groupId === gs.groupId);
+      const totals = totalsByGroup.get(gs.groupId) || new Map<string, number>();
+
+      const scores = allInGroup.map((s) => ({
+        studentId: s.studentId,
+        total: totals.get(s.studentId) || 0,
+      }));
+
+      scores.sort((a, b) => b.total - a.total);
+      let rank = 1;
+      for (let i = 0; i < scores.length; i++) {
+        if (i > 0 && scores[i].total < scores[i - 1].total) rank++;
+        if (scores[i].studentId === studentId) break;
+      }
+      return { group: gs.group, rank, totalInGroup: allInGroup.length };
+    });
 
     // Badges (oddiy versiya)
     const badges: Array<{ id: string; name: string }> = [];
@@ -295,18 +315,22 @@ class BotService {
       include: { student: { select: { id: true, fullName: true } } },
     });
 
-    const scores = await Promise.all(
-      groupStudents.map(async (gs) => {
-        const subs = await prisma.submission.findMany({
-          where: { studentId: gs.studentId, groupId, status: 'checked' },
-        });
-        return {
-          name: gs.student.fullName,
-          studentId: gs.studentId,
-          score: subs.reduce((s, sub) => s + sub.score, 0),
-        };
-      })
-    );
+    // Guruhdagi barcha ballar — bitta guruhlangan so'rovda
+    // (ilgari har bir o'quvchi uchun alohida so'rov ketardi)
+    const grouped = groupStudents.length
+      ? await prisma.submission.groupBy({
+          by: ['studentId'],
+          where: { studentId: { in: groupStudents.map((gs) => gs.studentId) }, groupId, status: 'checked' },
+          _sum: { score: true },
+        })
+      : [];
+    const scoreByStudent = new Map(grouped.map((row) => [row.studentId, row._sum.score || 0]));
+
+    const scores = groupStudents.map((gs) => ({
+      name: gs.student.fullName,
+      studentId: gs.studentId,
+      score: scoreByStudent.get(gs.studentId) || 0,
+    }));
 
     scores.sort((a, b) => b.score - a.score);
     return scores.map((s, i) => ({ ...s, rank: i + 1 }));
