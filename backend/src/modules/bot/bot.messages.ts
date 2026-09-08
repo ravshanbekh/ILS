@@ -29,21 +29,29 @@ export function askPasswordMessage(login: string): string {
 }
 
 /** Muvaffaqiyatli bog'lanish */
-export function linkedSuccessMessage(studentName: string, groupName?: string): string {
+export function linkedSuccessMessage(
+  studentName: string,
+  groupName?: string,
+  parentCount?: number
+): string {
   return (
     `✅ *Muvaffaqiyatli bog'landingiz!*\n\n` +
     `👤 O'quvchi: *${esc(studentName)}*\n` +
     (groupName ? `📚 Guruh: *${esc(groupName)}*\n` : '') +
+    (parentCount && parentCount > 1
+      ? `\n👨‍👩‍👦 Bu farzandni endi *${parentCount} ta* ota-ona kuzatyapti — xabarlar barchangizga boradi.\n`
+      : '') +
     `\nYana bir farzandingiz bo'lsa, /login buyrug'ini qayta yuborib uni ham ulashingiz mumkin.\n\n` +
     `Quyidagi tugmalardan foydalaning:`
   );
 }
 
-/** Bu farzandga boshqa Telegram akkaunt allaqachon ulangan */
-export function alreadyLinkedElsewhereMessage(): string {
+/** Bu farzandga ulanish chegarasi to'lgan (masalan, ota va ona allaqachon ulangan) */
+export function parentLimitReachedMessage(limit: number): string {
   return (
-    `⛔ *Bu o'quvchiga allaqachon boshqa Telegram akkaunt ulangan.*\n\n` +
-    `Bir vaqtning o'zida faqat bitta kishi kuzatishi mumkin. Agar ulanish sizga tegishli bo'lmasa yoki almashtirmoqchi bo'lsangiz, avval eskisi /unlink buyrug'i orqali uzishi kerak.`
+    `⛔ *Bu o'quvchiga allaqachon ${limit} ta Telegram akkaunt ulangan.*\n\n` +
+    `Bitta farzandni eng ko'pi bilan ${limit} kishi (masalan, ota va ona) kuzatishi mumkin. ` +
+    `Joy bo'shatish kerak bo'lsa, ulangan akkauntlardan biri /unlink buyrug'ini yuborsin.`
   );
 }
 
@@ -234,14 +242,73 @@ export function checkNotificationMessage(payload: NotifyCheckPayload): string {
   );
 }
 
-/** Faolsizlik eslatmasi */
-export function inactivityMessage(studentName: string, days: number, completed: number, total: number): string {
+/**
+ * Faolsizlik eslatmasi.
+ *
+ * Ilgari bu yerda bitta matn bor edi va u barcha normativini tugatgan
+ * o'quvchining ota-onasiga ham "normativ topshirmagan" deb ketardi. Endi qolgan
+ * normativ soniga qarab matn tanlanadi; hammasi tugagan holat esa bu yerga
+ * umuman kelmaydi — allNormativesDoneMessage ishlatiladi.
+ */
+export function inactivityMessage(
+  studentName: string,
+  days: number,
+  submitted: number,
+  assigned: number,
+  checked: number
+): string {
+  const remaining = Math.max(assigned - submitted, 0);
+  const sinceText =
+    days < 0
+      ? 'hali birorta ham normativ topshirmagan'
+      : `${days} kundan beri yangi normativ topshirmagan`;
+
+  const progressLine =
+    `📊 Bajarildi: *${submitted}* / *${assigned}* ta` +
+    (checked < submitted ? ` (tekshirilgani: ${checked} ta)` : '') +
+    `\n`;
+
+  // Finishga ozgina qoldi — bu ogohlantirish emas, turtki
+  if (remaining > 0 && remaining <= 2) {
+    return (
+      `⏳ *Finishgacha ozgina qoldi!*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 *${esc(studentName)}*\n\n` +
+      progressLine +
+      `🎯 Qolgani: atigi *${remaining}* ta normativ\n\n` +
+      `_Bir-ikki kunlik harakat qoldi — farzandingizni qo'llab-quvvatlang! 💪_`
+    );
+  }
+
   return (
     `⚠️ *Faolsizlik eslatmasi*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `👤 *${esc(studentName)}* ${days} kundan beri yangi normativ topshirmagan.\n\n` +
-    `📊 Hozirgi holat: *${completed}* ta bajarilgan\n\n` +
+    `👤 *${esc(studentName)}* ${sinceText}.\n\n` +
+    progressLine +
+    `🎯 Qolgani: *${remaining}* ta normativ\n\n` +
     `_Farzandingizni rag'batlantirish vaqti keldi! 💪_`
+  );
+}
+
+/**
+ * Barcha normativni topshirib bo'lgan o'quvchi — eslatma emas, tabrik.
+ * Har kuni takrorlanmasligi uchun bitta bog'lanishga bir marta yuboriladi.
+ */
+export function allNormativesDoneMessage(
+  studentName: string,
+  assigned: number,
+  checked: number,
+  totalScore?: number
+): string {
+  return (
+    `🎉 *Tabriklaymiz!*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `👤 *${esc(studentName)}* o'ziga biriktirilgan *${assigned} ta normativning hammasini* topshirib bo'ldi! 🏁\n\n` +
+    `✅ Bajarildi: *${assigned}* / *${assigned}* ta\n` +
+    (checked < assigned ? `🔍 Tekshiruvda: *${assigned - checked}* ta\n` : '') +
+    (totalScore !== undefined ? `🏆 Umumiy ball: *${totalScore}*\n` : '') +
+    `\n_Bu bosqich to'liq yakunlandi. Farzandingizni tabriklashni unutmang! 👏_\n` +
+    `_Yangi normativ qo'shilsa, sizga darhol xabar beramiz._`
   );
 }
 

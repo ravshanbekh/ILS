@@ -2,6 +2,7 @@ import prisma from '../../config/database';
 import fs from 'fs';
 import path from 'path';
 import { generateText, getAISettings } from '../../shared/utils/ai';
+import botService from '../bot/bot.service';
 
 class NotificationEngine {
   // Har 6 soatda ishga tushadi (cron yoki server startup)
@@ -120,9 +121,19 @@ class NotificationEngine {
       }
     });
 
-    const inactive = students.filter(s => {
+    const staleStudents = students.filter(s => {
       const last = s.submissions[0]?.submittedAt;
       return !last || new Date(last) < threshold;
+    });
+
+    // Biriktirilgan barcha normativni topshirib bo'lgan o'quvchi "faolsiz" emas —
+    // unda yangi topshiriq bo'lmasligi tabiiy. Aks holda kursni tugatgan bolalar
+    // haqida o'qituvchi va adminga bekorga ogohlantirish ketardi.
+    const progress = await botService.getNormativeProgress(staleStudents.map(s => s.id));
+    const inactive = staleStudents.filter(s => {
+      const p = progress.get(s.id);
+      if (!p || p.assigned === 0) return true;
+      return p.submitted < p.assigned;
     });
 
     const admins = await this.getAdmins();

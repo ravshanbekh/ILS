@@ -2,6 +2,13 @@ import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
 import { TelegramLinkRecord } from './bot.types';
 
+/**
+ * Bitta farzandga eng ko'pi bilan shuncha Telegram akkaunt ulanishi mumkin.
+ * Ikkitasi — ota va ona. Cheklovsiz qoldirilsa, login-parolni bilgan har kim
+ * ulanib bola haqidagi barcha xabarlarni ola boshlardi.
+ */
+export const MAX_PARENTS_PER_STUDENT = 2;
+
 class BotService {
   // ============ ALOQA BO'LGAN O'QUVCHI ============
 
@@ -53,9 +60,10 @@ class BotService {
 
   /**
    * Login va parol orqali o'quvchini tekshirib bog'lash (ota-ona uchun).
-   * Bitta ota-ona bir nechta farzandga ulana oladi, lekin bitta farzandga
-   * bir vaqtning o'zida faqat bitta Telegram akkaunt ulangan bo'lishi mumkin —
-   * boshqasi ulanmoqchi bo'lsa, avval eskisi /unlink qilishi kerak.
+   * Bitta ota-ona bir nechta farzandga ulana oladi va bitta farzandga
+   * MAX_PARENTS_PER_STUDENT tagacha Telegram akkaunt ulanishi mumkin
+   * (ota va ona alohida kuzatishi uchun). Chegara oshsa — avval kimdir
+   * /unlink qilishi kerak.
    */
   async linkParent(data: {
     telegramId: number;
@@ -64,7 +72,13 @@ class BotService {
     password: string;
     fullName?: string;
     username?: string;
-  }): Promise<{ success: boolean; message: string; studentName?: string; groupName?: string }> {
+  }): Promise<{
+    success: boolean;
+    message: string;
+    studentName?: string;
+    groupName?: string;
+    parentCount?: number;
+  }> {
     // O'quvchini topish
     const user = await prisma.user.findUnique({ where: { login: data.login } });
 
@@ -76,8 +90,8 @@ class BotService {
     const valid = await bcrypt.compare(data.password, user.passwordHash);
     if (!valid) return { success: false, message: 'wrong_password' };
 
-    // Bu farzandga boshqa Telegram akkaunt allaqachon ulanganmi?
-    const existingForStudent = await prisma.telegramLink.findFirst({
+    // Bu farzandga nechta BOSHQA Telegram akkaunt ulangan?
+    const otherParents = await prisma.telegramLink.count({
       where: {
         studentId: user.id,
         role: 'parent',
@@ -85,8 +99,8 @@ class BotService {
         telegramId: { not: BigInt(data.telegramId) },
       },
     });
-    if (existingForStudent) {
-      return { success: false, message: 'already_linked_elsewhere' };
+    if (otherParents >= MAX_PARENTS_PER_STUDENT) {
+      return { success: false, message: 'link_limit_reached' };
     }
 
     // Guruhini olish
@@ -123,6 +137,8 @@ class BotService {
       message: 'ok',
       studentName: user.fullName,
       groupName: groupStudent?.group.name,
+      // Shu farzandni endi nechta ota-ona kuzatyapti (o'zi bilan birga)
+      parentCount: otherParents + 1,
     };
   }
 
@@ -479,58 +495,184 @@ class BotService {
   }
 
   /**
-   * 3+ kun topshiriq bermagan o'quvchilarga bog'langan ota-onalar
+   * O'quvchiga BIRIKTIRILGAN normativlar soni va u qanchasini topshirgani.
+   *
+   * "Biriktirilgan" hisobi o'quvchining o'z sahifasidagi ro'yxat bilan bir xil
+   * bo'lishi shart, aks holda ota-onaga boshqa raqam ketadi:
+   *   guruhiga biriktirilgan normativlar  ∪  o'zi allaqachon topshirganlari.
+   * Guruhga hech narsa biriktirilmagan bo'lsa — barcha faol normativlar.
+   *
+   * Hammasi bitta o'tishda hisoblanadi (o'quvchi boshiga alohida so'rov yo'q).
+   */
+  async getNormativeProgress(studentIds: string[]): Promise<
+    Map<string, { assigned: number; submitted: number; checked: number }>
+  > {
+    const result = new Map<string, { assigned: number; submitted: number; checked: number }>();
+    if (studentIds.length === 0) return result;
+
+    const [groupLinks, submissions, activeNormatives] = await Promise.all([
+      prisma.groupStudent.findMany({
+        where: { studentId: { in: studentIds } },
+        select: { studentId: true, groupId: true },
+      }),
+      prisma.submission.findMany({
+        where: { studentId: { in: studentIds } },
+        select: { studentId: true, normativeId: true, status: true },
+      }),
+      prisma.normative.findMany({ where: { isActive: true }, select: { id: true } }),
+    ]);
+
+    const groupIds = [...new Set(groupLinks.map((g) => g.groupId))];
+    const groupNormatives = groupIds.length
+      ? await prisma.groupNormative.findMany({
+          where: { groupId: { in: groupIds }, normative: { isActive: true } },
+          select: { groupId: true, normativeId: true },
+        })
+      : [];
+
+    const normsByGroup = new Map<string, string[]>();
+    for (const gn of groupNormatives) {
+      const list = normsByGroup.get(gn.groupId);
+      if (list) list.push(gn.normativeId);
+      else normsByGroup.set(gn.groupId, [gn.normativeId]);
+    }
+
+    const groupsByStudent = new Map<string, string[]>();
+    for (const g of groupLinks) {
+      const list = groupsByStudent.get(g.studentId);
+      if (list) list.push(g.groupId);
+      else groupsByStudent.set(g.studentId, [g.groupId]);
+    }
+
+    const subsByStudent = new Map<string, { normativeId: string; status: string }[]>();
+    for (const sub of submissions) {
+      const list = subsByStudent.get(sub.studentId);
+      if (list) list.push(sub);
+      else subsByStudent.set(sub.studentId, [sub]);
+    }
+
+    const allActiveIds = activeNormatives.map((n) => n.id);
+
+    for (const studentId of studentIds) {
+      const subs = subsByStudent.get(studentId) || [];
+      const assigned = new Set<string>();
+
+      for (const groupId of groupsByStudent.get(studentId) || []) {
+        for (const nid of normsByGroup.get(groupId) || []) assigned.add(nid);
+      }
+      // O'zi topshirgan normativ ham ro'yxatda ko'rinadi
+      for (const sub of subs) assigned.add(sub.normativeId);
+
+      // Guruhga hech narsa biriktirilmagan va topshiriq ham yo'q — barcha faollar
+      if (assigned.size === 0) for (const nid of allActiveIds) assigned.add(nid);
+
+      const submittedIds = new Set(subs.map((sub) => sub.normativeId));
+      const checkedIds = new Set(
+        subs.filter((sub) => sub.status === 'checked').map((sub) => sub.normativeId)
+      );
+
+      result.set(studentId, {
+        assigned: assigned.size,
+        submitted: submittedIds.size,
+        checked: checkedIds.size,
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * N kundan beri yangi topshiriq bermagan o'quvchilar va ularning ota-onalari.
+   *
+   * Diqqat: "yangi topshiriq yo'q" hali "ishlamayapti" degani emas — barcha
+   * normativini tugatgan o'quvchida ham yangi topshiriq bo'lmaydi. Shuning uchun
+   * bu yerda normativ holati ham qaytariladi va xabar matni shunga qarab tanlanadi.
    */
   async getInactiveStudentParents(days = 3): Promise<Array<{
     studentId: string;
     studentName: string;
-    chatIds: bigint[];
-    completed: number;
+    links: Array<{ id: string; chatId: bigint; completionCongratsAt: Date | null }>;
+    assigned: number;
+    submitted: number;
+    checked: number;
+    daysSinceLastSubmission: number;
   }>> {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
 
-    // Barcha aktiv link'lar (parent)
     const links = await prisma.telegramLink.findMany({
       where: { role: 'parent', isActive: true, notifyInactivity: true },
-      select: { studentId: true, chatId: true },
+      select: { id: true, studentId: true, chatId: true, completionCongratsAt: true },
     });
+    if (links.length === 0) return [];
 
-    // Unikal studentlar
-    const studentMap = new Map<string, bigint[]>();
+    const linksByStudent = new Map<string, typeof links>();
     for (const l of links) {
-      if (!studentMap.has(l.studentId)) studentMap.set(l.studentId, []);
-      studentMap.get(l.studentId)!.push(l.chatId);
+      const list = linksByStudent.get(l.studentId);
+      if (list) list.push(l);
+      else linksByStudent.set(l.studentId, [l]);
     }
 
-    const result: Array<{ studentId: string; studentName: string; chatIds: bigint[]; completed: number }> = [];
+    const studentIds = [...linksByStudent.keys()];
 
-    for (const [studentId, chatIds] of studentMap.entries()) {
-      // So'nggi submission sanasini tekshirish
-      const lastSub = await prisma.submission.findFirst({
-        where: { studentId },
-        orderBy: { submittedAt: 'desc' },
-        select: { submittedAt: true },
+    const [students, lastSubs, progress] = await Promise.all([
+      prisma.user.findMany({
+        where: { id: { in: studentIds } },
+        select: { id: true, fullName: true },
+      }),
+      prisma.submission.groupBy({
+        by: ['studentId'],
+        where: { studentId: { in: studentIds } },
+        _max: { submittedAt: true },
+      }),
+      this.getNormativeProgress(studentIds),
+    ]);
+
+    const nameById = new Map(students.map((st) => [st.id, st.fullName]));
+    const lastByStudent = new Map(lastSubs.map((r) => [r.studentId, r._max.submittedAt]));
+
+    const result = [];
+    for (const studentId of studentIds) {
+      const fullName = nameById.get(studentId);
+      if (!fullName) continue;
+
+      const last = lastByStudent.get(studentId) || null;
+      if (last && last >= cutoff) continue; // yaqinda topshirgan — eslatma kerak emas
+
+      const p = progress.get(studentId) || { assigned: 0, submitted: 0, checked: 0 };
+
+      result.push({
+        studentId,
+        studentName: fullName,
+        links: linksByStudent.get(studentId)!,
+        assigned: p.assigned,
+        submitted: p.submitted,
+        checked: p.checked,
+        daysSinceLastSubmission: last
+          ? Math.floor((Date.now() - new Date(last).getTime()) / 86400000)
+          : -1, // hech qachon topshirmagan
       });
-
-      const isInactive = !lastSub || lastSub.submittedAt < cutoff;
-      if (!isInactive) continue;
-
-      const student = await prisma.user.findUnique({
-        where: { id: studentId },
-        select: { fullName: true },
-      });
-
-      const completed = await prisma.submission.count({
-        where: { studentId, status: 'checked' },
-      });
-
-      if (student) {
-        result.push({ studentId, studentName: student.fullName, chatIds, completed });
-      }
     }
 
     return result;
+  }
+
+  /** Tabrik yuborilganini belgilash — har kuni takrorlanmasligi uchun */
+  async markCompletionCongrats(linkIds: string[]): Promise<void> {
+    if (linkIds.length === 0) return;
+    await prisma.telegramLink.updateMany({
+      where: { id: { in: linkIds } },
+      data: { completionCongratsAt: new Date() },
+    });
+  }
+
+  /** Yangi normativ qo'shilib, o'quvchi yana "tugatmagan" holatga o'tsa — tabrik qayta ochiladi */
+  async resetCompletionCongrats(studentIds: string[]): Promise<void> {
+    if (studentIds.length === 0) return;
+    await prisma.telegramLink.updateMany({
+      where: { studentId: { in: studentIds }, completionCongratsAt: { not: null } },
+      data: { completionCongratsAt: null },
+    });
   }
 
   /**

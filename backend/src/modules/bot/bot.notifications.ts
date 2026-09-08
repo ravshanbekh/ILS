@@ -4,6 +4,7 @@ import botService from './bot.service';
 import {
   checkNotificationMessage,
   inactivityMessage,
+  allNormativesDoneMessage,
   lessonGradeParentMessage,
   lessonPeriodSummaryMessage,
   groupDailySummaryMessage,
@@ -120,33 +121,73 @@ export async function notifyParentsOnCheck(studentId: string, submission: {
 }
 
 /**
- * Faolsizlik eslatmasi — scheduler tomonidan chaqiriladi.
+ * Faolsizlik eslatmasi — scheduler tomonidan chaqiriladi (har kuni 20:00).
+ *
+ * "Yangi topshiriq yo'q" o'z-o'zidan "ishlamayapti" degani emas: barcha
+ * normativini tugatgan o'quvchida ham yangi topshiriq bo'lmaydi. Shuning uchun
+ * bu yerda uch xil holat ajratiladi:
+ *   1) hammasi topshirilgan  -> tabrik, va faqat BIR MARTA (har kuni emas)
+ *   2) 1-2 ta qolgan         -> "finishgacha ozgina qoldi" turtkisi
+ *   3) qolgani ko'p          -> odatdagi eslatma, aniq X/Y raqami bilan
  */
 export async function sendInactivityAlerts() {
   if (!botInstance) return;
 
-  const inactiveStudents = await botService.getInactiveStudentParents(3);
-  let count = 0;
+  const items = await botService.getInactiveStudentParents(3);
+  let reminderCount = 0;
+  let congratsCount = 0;
 
-  for (const item of inactiveStudents) {
-    const stats = await botService.getStudentStats(item.studentId);
-    const daysSince = await getDaysSinceLastSubmission(item.studentId);
+  const congratsSentLinkIds: string[] = [];
+  const stillWorkingStudentIds: string[] = [];
+
+  for (const item of items) {
+    const finishedAll = item.assigned > 0 && item.submitted >= item.assigned;
+
+    if (finishedAll) {
+      // Tabrikni faqat hali olmagan ota-onaga yuboramiz
+      const fresh = item.links.filter((l) => l.completionCongratsAt === null);
+      if (fresh.length === 0) continue;
+
+      const stats = await botService.getStudentStats(item.studentId);
+      const message = allNormativesDoneMessage(
+        item.studentName,
+        item.assigned,
+        item.checked,
+        stats?.totalScore
+      );
+
+      for (const link of fresh) {
+        await safeSend(link.chatId, message, { parse_mode: 'Markdown' });
+        congratsSentLinkIds.push(link.id);
+        congratsCount++;
+      }
+      continue;
+    }
+
+    // Yana bajariladigan normativ bor — keyin tugatsa, tabrik qayta yuborilsin
+    stillWorkingStudentIds.push(item.studentId);
 
     const message = inactivityMessage(
       item.studentName,
-      daysSince,
-      item.completed,
-      stats?.submissions.length || 0
+      item.daysSinceLastSubmission,
+      item.submitted,
+      item.assigned,
+      item.checked
     );
 
-    for (const chatId of item.chatIds) {
-      await safeSend(chatId, message, { parse_mode: 'Markdown' });
-      count++;
+    for (const link of item.links) {
+      await safeSend(link.chatId, message, { parse_mode: 'Markdown' });
+      reminderCount++;
     }
   }
 
-  if (count > 0) {
-    logger.info(`Bot: ${count} ta ota-onaga faolsizlik eslatmasi yuborildi`);
+  await botService.markCompletionCongrats(congratsSentLinkIds);
+  await botService.resetCompletionCongrats(stillWorkingStudentIds);
+
+  if (reminderCount > 0 || congratsCount > 0) {
+    logger.info(
+      `Bot: ${reminderCount} ta faolsizlik eslatmasi, ${congratsCount} ta tugatish tabrigi yuborildi`
+    );
   }
 }
 
@@ -195,18 +236,6 @@ export async function sendWeeklyReports() {
 }
 
 // ============ HELPER FUNKSIYALAR ============
-
-async function getDaysSinceLastSubmission(studentId: string): Promise<number> {
-  const prisma = (await import('../../config/database')).default;
-  const last = await prisma.submission.findFirst({
-    where: { studentId },
-    orderBy: { submittedAt: 'desc' },
-    select: { submittedAt: true },
-  });
-  if (!last) return 999;
-  const diff = Date.now() - new Date(last.submittedAt).getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
 
 async function generateWeeklyAISummary(
   studentName: string,

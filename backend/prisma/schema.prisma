@@ -427,6 +427,7 @@ model TelegramLink {
   notifyWeekly     Boolean  @default(true) @map("notify_weekly")
   notifyInactivity Boolean  @default(true) @map("notify_inactivity")
   lastActiveAt     DateTime @default(now()) @map("last_active_at") // Botda oxirgi marta "faol farzand" sifatida tanlangan payt
+  completionCongratsAt DateTime? @map("completion_congrats_at") // Barcha normativ tugagani uchun tabrik yuborilgan payt (kunlik takrorlanmasligi uchun)
   createdAt        DateTime @default(now()) @map("created_at")
 
   // Relations

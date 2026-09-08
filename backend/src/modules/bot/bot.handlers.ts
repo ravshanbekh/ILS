@@ -1,6 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 type BotInstance = InstanceType<typeof TelegramBot>;
-import botService from './bot.service';
+import botService, { MAX_PARENTS_PER_STUDENT } from './bot.service';
 import { sendDailyAIReport } from './bot.ai-report';
 import lessonSessionsService from '../lesson-sessions/lesson-sessions.service';
 import groupEventsService from '../group-events/group-events.service';
@@ -38,7 +38,7 @@ import {
   rsvpConfirmedMessage,
   eventFeedbackAskCommentMessage,
   eventFeedbackThanksMessage,
-  alreadyLinkedElsewhereMessage,
+  parentLimitReachedMessage,
   childSwitcherMessage,
   childSwitchedMessage,
 } from './bot.messages';
@@ -219,13 +219,15 @@ export function registerHandlers(bot: BotInstance) {
       if (result.success) {
         await bot.sendMessage(
           chatId,
-          linkedSuccessMessage(result.studentName!, result.groupName),
+          linkedSuccessMessage(result.studentName!, result.groupName, result.parentCount),
           { parse_mode: 'Markdown', reply_markup: mainMenuKeyboard() }
         );
       } else if (result.message === 'not_student') {
         await bot.sendMessage(chatId, notStudentMessage(), { parse_mode: 'Markdown' });
-      } else if (result.message === 'already_linked_elsewhere') {
-        await bot.sendMessage(chatId, alreadyLinkedElsewhereMessage(), { parse_mode: 'Markdown' });
+      } else if (result.message === 'link_limit_reached') {
+        await bot.sendMessage(chatId, parentLimitReachedMessage(MAX_PARENTS_PER_STUDENT), {
+          parse_mode: 'Markdown',
+        });
       } else {
         await bot.sendMessage(chatId, wrongCredentialsMessage(), { parse_mode: 'Markdown' });
       }
