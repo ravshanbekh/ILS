@@ -1,29 +1,33 @@
 import permissionsService from '../modules/permissions/permissions.service';
 import settingsService from '../modules/settings/settings.service';
+import { PERMISSION_KEYS } from '../shared/constants/permissions';
 import logger from '../shared/utils/logger';
 
 /**
- * Ruxsatlar tizimi birinchi marta ishga tushganda — mavjud holatni saqlab qoladi.
+ * Har bir ruxsat birinchi marta paydo bo'lganda — uni o'sha amalni roli tufayli
+ * allaqachon bajara olgan xodimlarga bir marta berib chiqadi (permissions.ts
+ * dagi `legacyRoles`). Shu bilan yangi ruxsat yoqilganda hech kimning ishi
+ * to'xtab qolmaydi.
  *
- * Ilgari amallar faqat ROL bo'yicha ochiq edi (masalan bola o'tkazish barcha
- * o'qituvchilarda). Yangi tizim yoqilganda hech kimning ishi to'xtab qolmasligi
- * uchun, o'sha amalni roli tufayli bajara olgan har bir odamga aynan o'sha ruxsat
- * bir marta berib chiqiladi. Keyin admin kerakmaslarini qo'lda olib qo'yadi.
- *
- * Faqat BIR MARTA ishlaydi — settings.json dagi belgi bilan nazorat qilinadi,
- * shuning uchun admin ruxsatni olib qo'ygandan keyin server qayta ishga tushsa ham
- * u qaytib berilmaydi.
+ * Har bir ruxsat ALOHIDA belgilanadi (settings.json dagi `seededPermissionKeys`),
+ * shuning uchun:
+ *   • admin ruxsatni olib qo'ysa, server qayta ishga tushganda u qaytib kelmaydi;
+ *   • keyinchalik qo'shilgan yangi ruxsat esa o'z navbatida taqsimlanadi.
  */
 export async function initPermissions() {
   try {
-    const { permissionsSeededAt } = await settingsService.getPermissionsSeedState();
-    if (permissionsSeededAt) return;
+    const alreadySeeded = await settingsService.getSeededPermissionKeys();
+    const newKeys = PERMISSION_KEYS.filter((k) => !alreadySeeded.includes(k));
 
-    const granted = await permissionsService.seedLegacyPermissions();
-    await settingsService.markPermissionsSeeded();
+    if (newKeys.length === 0) return;
 
-    logger.info(`🔐 Ruxsatlar tizimi ishga tushdi — mavjud huquqlar saqlandi (${granted} ta yozuv)`);
+    const { granted } = await permissionsService.seedLegacyPermissions(newKeys);
+    await settingsService.markPermissionsSeeded(newKeys);
+
+    logger.info(
+      `🔐 Yangi ruxsatlar taqsimlandi: ${newKeys.join(', ')} — ${granted} ta yozuv berildi`
+    );
   } catch (error) {
-    logger.error('❌ Ruxsatlarni boshlang\'ich sozlashda xatolik:', error);
+    logger.error("❌ Ruxsatlarni boshlang'ich sozlashda xatolik:", error);
   }
 }

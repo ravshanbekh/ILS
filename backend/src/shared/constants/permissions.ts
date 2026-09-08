@@ -79,6 +79,32 @@ export const PERMISSIONS = {
     // saqlanadi. 'teacher' ro'yxatda yo'q: unga faqat qo'lda beriladi.
     legacyRoles: ['administrator', 'sotuv_operatori', 'kassir'],
   },
+
+  // ── Gamifikatsiya (coin va do'kon) ──
+  shop_orders: {
+    label: "Do'kon buyurtmalarini ko'rish va berish",
+    description: "O'quvchilar so'ragan sovg'alar ro'yxati; sovg'ani berildi deb belgilash yoki bekor qilish",
+    category: 'Gamifikatsiya',
+    legacyRoles: ['kassir', 'moliya_rahbari'],
+  },
+  shop_manage: {
+    label: "Do'konga mahsulot qo'shish",
+    description: "Sovg'a/tovar qo'shish, narxini va rasmini o'zgartirish, yashirish",
+    category: 'Gamifikatsiya',
+    legacyRoles: ['kassir', 'moliya_rahbari'],
+  },
+  coin_oversight: {
+    label: 'Coin nazorati',
+    description: "Qaysi o'qituvchi qancha coin berayotgani va qaysi o'quvchi qancha coin to'plagani",
+    category: 'Gamifikatsiya',
+    legacyRoles: ['kassir', 'moliya_rahbari'],
+  },
+  coin_settings: {
+    label: "Coin kunlik chegarasini o'zgartirish",
+    description: "Bitta o'qituvchi bir kunda necha coin bera olishini belgilash",
+    category: 'Gamifikatsiya',
+    legacyRoles: [], // faqat admin, kerak bo'lsa qo'lda beriladi
+  },
 } as const satisfies Record<string, PermissionMeta>;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

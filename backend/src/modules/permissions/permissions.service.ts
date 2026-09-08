@@ -126,11 +126,12 @@ class PermissionsService {
    * foydalanuvchilarga o'sha ruxsat beriladi. Shu bilan yangi tizim yoqilganda
    * hech kimning ishi to'xtamaydi; admin keyin kerakmaslarini olib qo'yadi.
    */
-  async seedLegacyPermissions(): Promise<number> {
+  async seedLegacyPermissions(onlyKeys?: string[]): Promise<{ granted: number; keys: string[] }> {
     const { PERMISSIONS } = await import('../../shared/constants/permissions');
+    const keys = (onlyKeys ?? PERMISSION_KEYS) as PermissionKey[];
 
     let granted = 0;
-    for (const key of PERMISSION_KEYS) {
+    for (const key of keys) {
       const legacyRoles = PERMISSIONS[key].legacyRoles as readonly string[];
       if (legacyRoles.length === 0) continue;
 
@@ -147,7 +148,7 @@ class PermissionsService {
       granted += result.count;
     }
 
-    return granted;
+    return { granted, keys: keys as string[] };
   }
 }
 

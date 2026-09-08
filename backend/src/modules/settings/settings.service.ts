@@ -180,17 +180,39 @@ class SettingsService {
   }
 
   /**
-   * Ruxsatlar tizimi boshlang'ich sozlangan-sozlanmagani (bir martalik belgi).
-   * initPermissions shu belgiga qarab ishlaydi — qarang: config/initPermissions.ts
+   * Qaysi ruxsatlar uchun boshlang'ich taqsimot allaqachon bajarilgani.
+   *
+   * Har bir ruxsat ALOHIDA belgilanadi: shu bilan keyinchalik yangi ruxsat
+   * qo'shilsa, u ham o'z navbatida bir marta taqsimlanadi. (Ilgari bitta umumiy
+   * "bajarildi" belgisi bor edi — natijada keyin qo'shilgan ruxsatlar hech kimga
+   * tegmay qolardi.)
    */
-  async getPermissionsSeedState(): Promise<{ permissionsSeededAt: string | null }> {
-    const settings = this.readSettings();
-    return { permissionsSeededAt: (settings as any).permissionsSeededAt || null };
+  async getSeededPermissionKeys(): Promise<string[]> {
+    const settings = this.readSettings() as any;
+    if (Array.isArray(settings.seededPermissionKeys)) return settings.seededPermissionKeys;
+
+    // Eski format bilan moslik: bitta umumiy belgi bo'lsa, o'sha paytdagi
+    // ruxsatlar allaqachon taqsimlangan deb hisoblaymiz.
+    if (settings.permissionsSeededAt) {
+      return [
+        'transfer_student',
+        'remove_student',
+        'create_group',
+        'edit_group',
+        'create_student',
+        'bulk_import_students',
+        'export_data',
+        'freeze_student',
+      ];
+    }
+    return [];
   }
 
-  async markPermissionsSeeded() {
-    const settings = this.readSettings();
-    (settings as any).permissionsSeededAt = new Date().toISOString();
+  async markPermissionsSeeded(keys: string[]) {
+    const settings = this.readSettings() as any;
+    const already = await this.getSeededPermissionKeys();
+    settings.seededPermissionKeys = [...new Set([...already, ...keys])];
+    settings.permissionsSeededAt = new Date().toISOString();
     this.writeSettings(settings);
   }
 

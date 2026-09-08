@@ -37,3 +37,21 @@ export const permissionGuard = (permission: PermissionKey) => {
     }
   };
 };
+
+/**
+ * Guard emas — controller ichida "shu ruxsat bormi?" deb tekshirish uchun.
+ * Masalan do'kon ro'yxatida yashirilgan mahsulotlarni faqat boshqaruv
+ * ruxsati borlarga ko'rsatish uchun ishlatiladi.
+ */
+export const hasPermission = async (
+  user: { userId: string; role: string } | undefined,
+  permission: PermissionKey
+): Promise<boolean> => {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const granted = await prisma.userPermission.findUnique({
+    where: { userId_permission: { userId: user.userId, permission } },
+    select: { id: true },
+  });
+  return !!granted;
+};

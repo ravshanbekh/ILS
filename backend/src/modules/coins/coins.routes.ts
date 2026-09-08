@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import coinsController from './coins.controller';
-import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
+import { authenticate } from '../../shared/middleware/auth.middleware';
+import { permissionGuard } from '../../shared/middleware/permission.middleware';
 
 const router = Router();
 router.use(authenticate);
@@ -9,11 +10,13 @@ router.use(authenticate);
 router.get('/balance/:studentId', coinsController.getBalance);
 router.get('/history/:studentId', coinsController.getHistory);
 
-// Admin/kassir — o'qituvchilar bo'yicha nazorat
-router.get('/teacher-stats', roleGuard('admin', 'kassir'), coinsController.getTeacherStats);
+// Nazorat — "coin_oversight" ruxsati bo'lganlar (admin har doim)
+router.get('/teacher-stats', permissionGuard('coin_oversight'), coinsController.getTeacherStats);
+router.get('/student-stats', permissionGuard('coin_oversight'), coinsController.getStudentStats);
+router.get('/teacher-breakdown/:teacherId', permissionGuard('coin_oversight'), coinsController.getTeacherBreakdown);
 
 // Kunlik chegara sozlamasi
-router.get('/settings', roleGuard('admin', 'kassir'), coinsController.getSettings);
-router.put('/settings', roleGuard('admin'), coinsController.updateSettings);
+router.get('/settings', permissionGuard('coin_oversight'), coinsController.getSettings);
+router.put('/settings', permissionGuard('coin_settings'), coinsController.updateSettings);
 
 export default router;

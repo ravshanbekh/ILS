@@ -287,6 +287,7 @@ export default function App() {
               <Route path="/viewer/nazoratchi/checklist-stats" element={<ChecklistStatsPage />} />
               <Route path="/viewer/nazoratchi/checklist-manage" element={<ChecklistManagePage />} />
               <Route path="/viewer/:role/shop-orders" element={<ShopOrdersPage />} />
+              <Route path="/viewer/:role/shop-items" element={<ShopManagePage />} />
               <Route path="/viewer/:role/coin-oversight" element={<CoinOversightPage />} />
             </Route>
 

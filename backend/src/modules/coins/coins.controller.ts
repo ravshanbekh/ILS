@@ -64,7 +64,37 @@ class CoinsController {
   }
 
   /**
-   * GET /api/coins/settings — admin/kassir ko'radi
+   * GET /api/coins/student-stats — o'quvchilar kesimida coin nazorati
+   */
+  async getStudentStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { period, groupId, teacherId } = req.query as Record<string, string | undefined>;
+      const result = await coinsService.getStudentStats({
+        period: (period as any) || 'month',
+        groupId,
+        teacherId,
+      });
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/coins/teacher-breakdown/:teacherId — bitta o'qituvchi kimga qancha qo'ygan
+   */
+  async getTeacherBreakdown(req: Request, res: Response, next: NextFunction) {
+    try {
+      const period = (req.query.period as any) || 'month';
+      const result = await coinsService.getTeacherBreakdown(req.params.teacherId, period);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/coins/settings — nazorat ruxsati borlar ko'radi
    */
   async getSettings(req: Request, res: Response, next: NextFunction) {
     try {

@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import shopService from './shop.service';
+import { hasPermission } from '../../shared/middleware/permission.middleware';
 
 class ShopController {
-  /** GET /api/shop/items — admin: hammasi, boshqalar: faqat faol */
+  /** GET /api/shop/items — do'kon boshqaruvi ruxsati borlar: hammasi, boshqalar: faqat faol */
   async getItems(req: Request, res: Response, next: NextFunction) {
     try {
-      const isAdmin = req.user?.role === 'admin';
-      const items = isAdmin ? await shopService.getAllItems() : await shopService.getActiveItems();
+      const canManage = await hasPermission(req.user, 'shop_manage');
+      const items = canManage ? await shopService.getAllItems() : await shopService.getActiveItems();
       res.json({ success: true, data: items });
     } catch (error) {
       next(error);

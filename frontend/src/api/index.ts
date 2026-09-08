@@ -553,6 +553,14 @@ export const coinsApi = {
   getTeacherStats: (period?: 'today' | 'week' | 'month') =>
     api.get('/coins/teacher-stats', { params: { period } }),
 
+  // O'quvchilar kesimi: kim qancha coin to'plagan / sarflagan
+  getStudentStats: (params?: { period?: string; groupId?: string; teacherId?: string }) =>
+    api.get('/coins/student-stats', { params }),
+
+  // Bitta o'qituvchi qaysi o'quvchilarga qancha qo'ygan
+  getTeacherBreakdown: (teacherId: string, period?: string) =>
+    api.get(`/coins/teacher-breakdown/${teacherId}`, { params: { period } }),
+
   getSettings: () => api.get('/coins/settings'),
 
   updateSettings: (coinDailyLimitPerTeacher: number) =>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { usePermissionStore } from '@/stores/permissionStore';
 import {
   LayoutDashboard, GraduationCap, LogOut, X, ChevronDown, ChevronRight,
   PanelLeftClose, PanelLeftOpen,
@@ -69,6 +70,12 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
 
   const isViewer = user?.role && VIEWER_ROLES.includes(user.role as ViewerRole);
 
+  // Gamifikatsiya bo'limlari qo'lda beriladigan ruxsatga bog'liq
+  const can = usePermissionStore((s) => s.can);
+  const canShopOrders = can('shop_orders');
+  const canShopManage = can('shop_manage');
+  const canCoinOversight = can('coin_oversight');
+
   const rawGroups: NavCategoryGroup[] = user?.role === 'admin'
     ? ADMIN_GROUPS
     : user?.role === 'teacher'
@@ -106,10 +113,18 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     ...(['filial_rahbari', 'administrator'].includes(user!.role) ? [
       { to: `/viewer/${user!.role}/trash`, icon: Trash2, label: 'Korzinka (Savat)' }
     ] : []),
-    ...(['filial_rahbari', 'administrator', 'kassir'].includes(user!.role) ? [
-      { to: `/viewer/${user!.role}/shop-orders`, icon: Package, label: "Do'kon buyurtmalari" },
-      { to: `/viewer/${user!.role}/coin-oversight`, icon: Coins, label: 'Coin nazorati' },
-    ] : []),
+    // Gamifikatsiya — rolga emas, qo'lda berilgan RUXSATGA qarab ko'rinadi.
+    // (Ilgari rol ro'yxati bo'yicha ko'rsatilardi va ba'zi rollarda havola
+    // ko'rinib, bosilganda server rad etardi.)
+    ...(canShopOrders
+      ? [{ to: `/viewer/${user!.role}/shop-orders`, icon: Package, label: "Do'kon buyurtmalari" }]
+      : []),
+    ...(canShopManage
+      ? [{ to: `/viewer/${user!.role}/shop-items`, icon: Gift, label: "Do'kon boshqaruvi" }]
+      : []),
+    ...(canCoinOversight
+      ? [{ to: `/viewer/${user!.role}/coin-oversight`, icon: Coins, label: 'Coin nazorati' }]
+      : []),
   ] : [];
 
   const flatLinks = user?.role === 'student'

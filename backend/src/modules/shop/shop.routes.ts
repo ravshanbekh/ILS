@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import shopController from './shop.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
+import { permissionGuard } from '../../shared/middleware/permission.middleware';
 
 const router = Router();
 router.use(authenticate);
@@ -30,16 +31,17 @@ const upload = multer({
 });
 
 // ── Tovarlar ──────────────────────────────────────────────────────────────────
-router.get('/items', shopController.getItems); // hamma rol ko'radi (admin — hammasi, boshqalar — faol)
-router.post('/items', roleGuard('admin'), upload.single('image'), shopController.createItem);
-router.put('/items/:id', roleGuard('admin'), upload.single('image'), shopController.updateItem);
-router.delete('/items/:id', roleGuard('admin'), shopController.deleteItem);
+// Ko'rish hammaga ochiq (o'quvchi do'konni ko'rishi kerak), o'zgartirish — ruxsat bilan
+router.get('/items', shopController.getItems); // admin — hammasi, boshqalar — faqat faol
+router.post('/items', permissionGuard('shop_manage'), upload.single('image'), shopController.createItem);
+router.put('/items/:id', permissionGuard('shop_manage'), upload.single('image'), shopController.updateItem);
+router.delete('/items/:id', permissionGuard('shop_manage'), shopController.deleteItem);
 
 // ── Buyurtmalar ───────────────────────────────────────────────────────────────
 router.post('/orders', roleGuard('student'), shopController.createOrder);
 router.get('/orders/mine', roleGuard('student'), shopController.getMyOrders);
-router.get('/orders', roleGuard('admin', 'kassir'), shopController.listOrders);
-router.patch('/orders/:id/fulfill', roleGuard('admin', 'kassir'), shopController.fulfillOrder);
-router.patch('/orders/:id/cancel', roleGuard('admin', 'kassir'), shopController.cancelOrder);
+router.get('/orders', permissionGuard('shop_orders'), shopController.listOrders);
+router.patch('/orders/:id/fulfill', permissionGuard('shop_orders'), shopController.fulfillOrder);
+router.patch('/orders/:id/cancel', permissionGuard('shop_orders'), shopController.cancelOrder);
 
 export default router;
