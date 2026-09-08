@@ -99,6 +99,13 @@ export const PERMISSIONS = {
     category: 'Gamifikatsiya',
     legacyRoles: ['kassir', 'moliya_rahbari'],
   },
+  support_oversight: {
+    label: 'Assistent qabul soatlari nazorati',
+    description:
+      "Qaysi assistent qaysi soatlarni ochgani, kim yozilgani va kim kelgani \u2014 kunlik nazorat",
+    category: 'Nazorat',
+    legacyRoles: ['filial_rahbari', 'nazoratchi', 'administrator', 'hr_rahbari'],
+  },
   coin_settings: {
     label: "Coin kunlik chegarasini o'zgartirish",
     description: "Bitta o'qituvchi bir kunda necha coin bera olishini belgilash",

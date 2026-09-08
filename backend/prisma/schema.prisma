@@ -97,6 +97,8 @@ model User {
   shopOrdersAsStudent       ShopOrder[]           @relation("ShopOrderStudent")
   shopOrdersFulfilled       ShopOrder[]           @relation("ShopOrderFulfilledBy")
   // Qo'lda beriladigan ruxsatlar
+  supportSlots              SupportSlot[]         @relation("AssistantSupportSlots")
+  supportBookings           SupportBooking[]      @relation("StudentSupportBookings")
   permissions               UserPermission[]      @relation("UserPermissions")
   permissionsGranted        UserPermission[]      @relation("PermissionGrantedBy")
 
@@ -413,22 +415,22 @@ model MonitoringNote {
 
 /// Telegram Chat bog'lanishi (Ota-ona/Operator → O'quvchi)
 model TelegramLink {
-  id               String   @id @default(uuid()) @db.Uuid
-  telegramId       BigInt   @map("telegram_id") // Telegram user ID — bitta ota-ona bir nechta farzandga ulanishi uchun endi yakka o'zi unique emas
-  chatId           BigInt   @map("chat_id") // Telegram chat ID
-  studentId        String   @map("student_id") @db.Uuid // Bog'langan o'quvchi
-  role             String   @default("parent") @db.VarChar(20) // "parent" | "admin"
-  fullName         String?  @map("full_name") @db.VarChar(200)
-  username         String?  @db.VarChar(100) // @username
-  isActive         Boolean  @default(true) @map("is_active")
-  language         String   @default("uz") @db.VarChar(5) // "uz" | "ru"
-  notifyOnCheck    Boolean  @default(true) @map("notify_on_check")
-  notifyOnRank     Boolean  @default(true) @map("notify_on_rank")
-  notifyWeekly     Boolean  @default(true) @map("notify_weekly")
-  notifyInactivity Boolean  @default(true) @map("notify_inactivity")
-  lastActiveAt     DateTime @default(now()) @map("last_active_at") // Botda oxirgi marta "faol farzand" sifatida tanlangan payt
+  id                   String    @id @default(uuid()) @db.Uuid
+  telegramId           BigInt    @map("telegram_id") // Telegram user ID — bitta ota-ona bir nechta farzandga ulanishi uchun endi yakka o'zi unique emas
+  chatId               BigInt    @map("chat_id") // Telegram chat ID
+  studentId            String    @map("student_id") @db.Uuid // Bog'langan o'quvchi
+  role                 String    @default("parent") @db.VarChar(20) // "parent" | "admin"
+  fullName             String?   @map("full_name") @db.VarChar(200)
+  username             String?   @db.VarChar(100) // @username
+  isActive             Boolean   @default(true) @map("is_active")
+  language             String    @default("uz") @db.VarChar(5) // "uz" | "ru"
+  notifyOnCheck        Boolean   @default(true) @map("notify_on_check")
+  notifyOnRank         Boolean   @default(true) @map("notify_on_rank")
+  notifyWeekly         Boolean   @default(true) @map("notify_weekly")
+  notifyInactivity     Boolean   @default(true) @map("notify_inactivity")
+  lastActiveAt         DateTime  @default(now()) @map("last_active_at") // Botda oxirgi marta "faol farzand" sifatida tanlangan payt
   completionCongratsAt DateTime? @map("completion_congrats_at") // Barcha normativ tugagani uchun tabrik yuborilgan payt (kunlik takrorlanmasligi uchun)
-  createdAt        DateTime @default(now()) @map("created_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
 
   // Relations
   student        User            @relation("TelegramStudentLinks", fields: [studentId], references: [id])
@@ -1110,4 +1112,52 @@ model ShopOrder {
   coinTransactions CoinTransaction[]
 
   @@map("shop_orders")
+}
+
+// ============================================================
+//  YORDAMCHI (ASSISTENT) QABUL SOATLARI
+//  Assistent dars vaqtidan tashqari bo'sh soatlarini o'zi ochadi,
+//  o'quvchi profilidan bitta soatga yoziladi.
+// ============================================================
+
+enum SupportBookingStatus {
+  band // yozilgan, hali bo'lmagan
+  keldi // qatnashdi
+  kelmadi // yozilib kelmadi
+  bekor // bekor qilingan
+}
+
+model SupportSlot {
+  id          String   @id @default(uuid()) @db.Uuid
+  assistantId String   @map("assistant_id") @db.Uuid
+  date        DateTime @db.Date // faqat sana (soatsiz)
+  startHour   Int      @map("start_hour") // 8..18 — soat boshi, davomiyligi 1 soat
+  capacity    Int      @default(10) // bir soatga eng ko'pi bilan nechta o'quvchi
+  note        String?  @db.VarChar(300)
+  isOpen      Boolean  @default(true) @map("is_open") // yopilsa yangi yozilish qabul qilinmaydi
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  assistant User             @relation("AssistantSupportSlots", fields: [assistantId], references: [id], onDelete: Cascade)
+  bookings  SupportBooking[]
+
+  @@unique([assistantId, date, startHour])
+  @@index([date])
+  @@map("support_slots")
+}
+
+model SupportBooking {
+  id          String               @id @default(uuid()) @db.Uuid
+  slotId      String               @map("slot_id") @db.Uuid
+  studentId   String               @map("student_id") @db.Uuid
+  status      SupportBookingStatus @default(band)
+  topic       String?              @db.VarChar(300) // nima bo'yicha yordam kerak
+  createdAt   DateTime             @default(now()) @map("created_at")
+  cancelledAt DateTime?            @map("cancelled_at")
+
+  slot    SupportSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  student User        @relation("StudentSupportBookings", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([slotId, studentId])
+  @@index([studentId])
+  @@map("support_bookings")
 }

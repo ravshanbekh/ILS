@@ -604,3 +604,32 @@ export const shopApi = {
 
   cancelOrder: (id: string, note?: string) => api.patch(`/shop/orders/${id}/cancel`, { note }),
 };
+
+// ============ ASSISTENT QABUL SOATLARI ============
+export const supportHoursApi = {
+  /** Ish vaqti, tushlik va chegaralar — backenddagi yagona manbadan */
+  getRules: () => api.get('/support-hours/rules'),
+
+  // Assistent
+  getMyDay: (date: string, assistantId?: string) =>
+    api.get('/support-hours/my-day', { params: { date, assistantId } }),
+  getMyWeek: (from: string, days = 7) =>
+    api.get('/support-hours/my-week', { params: { date: from, days } }),
+  setMyDay: (data: { date: string; hours: number[]; capacity?: number; note?: string | null; assistantId?: string }) =>
+    api.put('/support-hours/my-day', data),
+  toggleSlot: (id: string, isOpen: boolean) =>
+    api.patch(`/support-hours/slots/${id}/toggle`, { isOpen }),
+  deleteSlot: (id: string) => api.delete(`/support-hours/slots/${id}`),
+  markAttendance: (bookingId: string, status: 'keldi' | 'kelmadi') =>
+    api.patch(`/support-hours/bookings/${bookingId}/attendance`, { status }),
+
+  // O'quvchi
+  getAvailable: (date: string) => api.get('/support-hours/available', { params: { date } }),
+  book: (slotId: string, topic?: string) => api.post('/support-hours/bookings', { slotId, topic }),
+  cancelBooking: (id: string) => api.delete(`/support-hours/bookings/${id}`),
+  getMyBookings: () => api.get('/support-hours/bookings/mine'),
+
+  // Admin nazorati
+  getOverview: (date: string) => api.get('/support-hours/overview', { params: { date } }),
+  getAssistants: () => api.get('/support-hours/assistants'),
+};

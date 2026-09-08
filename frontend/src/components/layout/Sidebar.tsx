@@ -7,7 +7,7 @@ import {
   PanelLeftClose, PanelLeftOpen,
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
   Gift, Package, Coins
-} from 'lucide-react';
+, CalendarClock} from 'lucide-react';
 import { ADMIN_GROUPS, TEACHER_GROUPS, STUDENT_GROUPS } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
 
@@ -17,6 +17,7 @@ const studentLinks = [
   { to: '/student/history', icon: ClipboardCheck, label: 'Topshiriqlarim' },
   { to: '/student/ranking', icon: Trophy, label: 'Reyting' },
   { to: '/student/shop', icon: Gift, label: "Do'kon" },
+  { to: '/student/support-hours', icon: CalendarClock, label: 'Yordamchi ustoz' },
 ];
 
 const VIEWER_ROLES = [
@@ -75,6 +76,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   const canShopOrders = can('shop_orders');
   const canShopManage = can('shop_manage');
   const canCoinOversight = can('coin_oversight');
+  const canSupportOversight = can('support_oversight');
 
   const rawGroups: NavCategoryGroup[] = user?.role === 'admin'
     ? ADMIN_GROUPS
@@ -124,6 +126,14 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
       : []),
     ...(canCoinOversight
       ? [{ to: `/viewer/${user!.role}/coin-oversight`, icon: Coins, label: 'Coin nazorati' }]
+      : []),
+    // Assistent o'z qabul soatlarini boshqaradi
+    ...(['assistant', 'robototexnika_ustoz'].includes(user!.role)
+      ? [{ to: `/viewer/${user!.role}/my-support-hours`, icon: CalendarClock, label: 'Qabul soatlarim' }]
+      : []),
+    // Nazorat — qo'lda beriladigan ruxsat
+    ...(canSupportOversight
+      ? [{ to: `/viewer/${user!.role}/support-hours`, icon: ClipboardList, label: 'Assistent soatlari' }]
       : []),
   ] : [];
 

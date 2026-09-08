@@ -5,7 +5,7 @@ import {
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
   Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid,
   Coins, Gift, Package, ShieldCheck
-} from 'lucide-react';
+, CalendarClock} from 'lucide-react';
 
 export interface SubNavItem {
   to: string;
@@ -67,6 +67,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/teacher-rating', label: "O'qituvchi reytingi", icon: Star },
       { to: '/admin/monitoring', label: 'Monitoring', icon: Phone },
       { to: '/admin/predictions', label: 'AI Prognozlar', icon: TrendingDown },
+      { to: '/admin/support-hours', label: 'Assistent soatlari', icon: CalendarClock },
     ]
   },
   {
@@ -151,6 +152,7 @@ export const STUDENT_GROUPS: NavCategoryGroup[] = [
       { to: '/student/history', label: 'Topshiriqlarim', icon: ClipboardCheck },
       { to: '/student/ranking', label: 'Reyting', icon: Trophy },
       { to: '/student/shop', label: "Do'kon", icon: Gift },
+      { to: '/student/support-hours', label: 'Yordamchi ustoz', icon: CalendarClock },
     ]
   }
 ];

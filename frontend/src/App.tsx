@@ -61,6 +61,9 @@ const StudentCategoriesPage = lazy(() => import('@/pages/admin/StudentCategories
 const ShopManagePage = lazy(() => import('@/pages/admin/ShopManagePage'));
 const ShopOrdersPage = lazy(() => import('@/pages/shared/ShopOrdersPage'));
 const CoinOversightPage = lazy(() => import('@/pages/shared/CoinOversightPage'));
+const SupportBookingPage = lazy(() => import('@/pages/student/SupportBookingPage'));
+const MySupportHoursPage = lazy(() => import('@/pages/shared/MySupportHoursPage'));
+const SupportOversightPage = lazy(() => import('@/pages/shared/SupportOversightPage'));
 const StudentShopPage = lazy(() => import('@/pages/student/ShopPage'));
 const PermissionsPage = lazy(() => import('@/pages/admin/PermissionsPage'));
 
@@ -217,6 +220,8 @@ export default function App() {
               <Route path="/admin/shop-items" element={<ShopManagePage />} />
               <Route path="/admin/shop-orders" element={<ShopOrdersPage />} />
               <Route path="/admin/coin-oversight" element={<CoinOversightPage />} />
+              <Route path="/admin/support-hours" element={<SupportOversightPage />} />
+              <Route path="/admin/my-support-hours" element={<MySupportHoursPage />} />
               <Route path="/admin/appeals" element={<AppealsPage />} />
               <Route path="/admin/event-feedback" element={<EventFeedbackPage />} />
             </Route>
@@ -266,6 +271,7 @@ export default function App() {
               <Route path="/student/my-normatives" element={<MyNormativesGuidePage />} />
               <Route path="/student/ranking" element={<StudentRankingPage />} />
               <Route path="/student/shop" element={<StudentShopPage />} />
+              <Route path="/student/support-hours" element={<SupportBookingPage />} />
             </Route>
 
             {/* Viewer routes — all new roles */}
@@ -289,6 +295,8 @@ export default function App() {
               <Route path="/viewer/:role/shop-orders" element={<ShopOrdersPage />} />
               <Route path="/viewer/:role/shop-items" element={<ShopManagePage />} />
               <Route path="/viewer/:role/coin-oversight" element={<CoinOversightPage />} />
+              <Route path="/viewer/:role/my-support-hours" element={<MySupportHoursPage />} />
+              <Route path="/viewer/:role/support-hours" element={<SupportOversightPage />} />
             </Route>
 
             {/* Default redirect */}
