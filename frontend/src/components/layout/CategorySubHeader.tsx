@@ -40,6 +40,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/lessons', label: 'Darsliklar', icon: BookOpen },
       { to: '/admin/exams', label: 'Imtihonlar', icon: FileText },
       { to: '/admin/live-quiz', label: 'Live Quiz', icon: Zap },
+      { to: '/admin/homework-bank', label: 'Uyga vazifa bankasi', icon: BookOpen },
     ]
   },
   {
@@ -152,6 +153,7 @@ export const STUDENT_GROUPS: NavCategoryGroup[] = [
       { to: '/student/history', label: 'Topshiriqlarim', icon: ClipboardCheck },
       { to: '/student/ranking', label: 'Reyting', icon: Trophy },
       { to: '/student/shop', label: "Do'kon", icon: Gift },
+      { to: '/student/homework', label: 'Uyga vazifalar', icon: BookOpen },
       { to: '/student/support-hours', label: 'Yordamchi ustoz', icon: CalendarClock },
     ]
   }

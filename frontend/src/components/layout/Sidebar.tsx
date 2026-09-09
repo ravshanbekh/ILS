@@ -17,6 +17,7 @@ const studentLinks = [
   { to: '/student/history', icon: ClipboardCheck, label: 'Topshiriqlarim' },
   { to: '/student/ranking', icon: Trophy, label: 'Reyting' },
   { to: '/student/shop', icon: Gift, label: "Do'kon" },
+  { to: '/student/homework', icon: BookOpen, label: 'Uyga vazifalar' },
   { to: '/student/support-hours', icon: CalendarClock, label: 'Yordamchi ustoz' },
 ];
 

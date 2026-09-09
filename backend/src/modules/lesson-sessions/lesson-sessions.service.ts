@@ -3,6 +3,7 @@ import prisma from '../../config/database';
 import { ApiError } from '../../shared/middleware/errorHandler';
 import logger from '../../shared/utils/logger';
 import { isLessonDay } from '../../shared/utils/lessonSchedule';
+import homeworkService from '../homework/homework.service';
 
 const LESSON_WINDOW_MINUTES = 120; // 2 soat
 
@@ -152,6 +153,11 @@ class LessonSessionsService {
     });
     if (!grade) throw ApiError.notFound("O'quvchi bu sessiyada topilmadi");
 
+    // Baho AYNAN qaysi vazifaga qo'yilayotganini yozib qo'yamiz.
+    // Baholanayotgan vazifa — guruhning OLDINGI darsida berilgani.
+    // Vazifa berilmagan bo'lsa assignmentId null qoladi (baholash bloklanmaydi).
+    const toGrade = await homeworkService.getAssignmentToGrade(session);
+
     await prisma.lessonGrade.update({
       where: { id: grade.id },
       data: {
@@ -160,6 +166,7 @@ class LessonSessionsService {
         autoZero: false,
         comment: comment ?? grade.comment,
         gradedAt: new Date(),
+        assignmentId: toGrade?.assignmentId ?? null,
       },
     });
 

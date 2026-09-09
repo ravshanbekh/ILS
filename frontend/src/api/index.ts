@@ -650,3 +650,38 @@ export const supportHoursApi = {
   getOverview: (date: string) => api.get('/support-hours/overview', { params: { date } }),
   getAssistants: () => api.get('/support-hours/assistants'),
 };
+
+// ============ UYGA VAZIFA ============
+export const homeworkApi = {
+  // Bank (admin yozadi, o'qituvchi ko'radi)
+  listBank: (params: { lessonItemId?: string; folderId?: string }) =>
+    api.get('/homework/bank', { params }),
+  createBank: (data: {
+    lessonItemId: string;
+    title: string;
+    description?: string;
+    contentType: 'link' | 'text';
+    content: string;
+    order?: number;
+  }) => api.post('/homework/bank', data),
+  updateBank: (id: string, data: Partial<{
+    title: string;
+    description: string | null;
+    contentType: 'link' | 'text';
+    content: string;
+    order: number;
+    isActive: boolean;
+  }>) => api.put(`/homework/bank/${id}`, data),
+  deleteBank: (id: string) => api.delete(`/homework/bank/${id}`),
+
+  // O'qituvchi: darsga vazifa biriktirish
+  getAssignOptions: (sessionId: string) => api.get(`/homework/session/${sessionId}/options`),
+  assign: (sessionId: string, homeworkId: string, note?: string) =>
+    api.post(`/homework/session/${sessionId}/assign`, { homeworkId, note }),
+  unassign: (sessionId: string) => api.delete(`/homework/session/${sessionId}/assign`),
+  /** Shu darsda qaysi vazifa baholanayotgani (oldingi darsda berilgani) */
+  getToGrade: (sessionId: string) => api.get(`/homework/session/${sessionId}/to-grade`),
+
+  // O'quvchi
+  getMine: () => api.get('/homework/mine'),
+};

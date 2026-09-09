@@ -1,8 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Play, CheckCircle2, Clock, Users, Lock, AlertTriangle, Coins } from 'lucide-react';
-import { lessonSessionsApi } from '@/api';
+import { X, Play, CheckCircle2, Clock, Users, Lock, AlertTriangle, Coins, Link2, BookOpen, Check } from 'lucide-react';
+import { lessonSessionsApi, homeworkApi } from '@/api';
 
 type HomeworkGrade = 'toliq' | 'qisman' | 'bajarmagan' | 'kelmadi';
+
+/** Shu darsda baholanayotgan vazifa (oldingi darsda berilgani) */
+interface ToGrade {
+  assignmentId: string;
+  title: string;
+  contentType: string;
+  content: string;
+  note: string | null;
+  assignedLessonNumber: number;
+  assignedTopic: string | null;
+  assignedDate: string;
+}
+
+/** Keyingi darsga vazifa berish uchun tanlov */
+interface AssignOptions {
+  lessonNumber: number;
+  current: { assignmentId: string; homeworkId: string; title: string; note: string | null } | null;
+  lessons: {
+    itemId: string;
+    itemTitle: string;
+    folderName: string;
+    items: { id: string; title: string; description: string | null; contentType: string; content: string }[];
+  }[];
+}
 
 interface GradeRow {
   id: string;
@@ -50,6 +74,13 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
   const [error, setError] = useState('');
   const busyRef = useRef<Set<string>>(new Set());
 
+  // Uyga vazifa: nima baholanmoqda va keyingi darsga nima beriladi
+  const [toGrade, setToGrade] = useState<ToGrade | null>(null);
+  const [assignOpts, setAssignOpts] = useState<AssignOptions | null>(null);
+  const [showAssign, setShowAssign] = useState(false);
+  const [assignNote, setAssignNote] = useState('');
+  const [assigning, setAssigning] = useState(false);
+
   const load = async () => {
     setLoading(true);
     setError('');
@@ -57,7 +88,22 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
       const res = await lessonSessionsApi.getToday(groupId);
       setIsLessonDay(res.data.data.isLessonDay);
       setLessonDayType(res.data.data.lessonDayType);
-      setSession(res.data.data.session);
+      const sess = res.data.data.session;
+      setSession(sess);
+
+      if (sess) {
+        // Baholanayotgan vazifa va berish variantlari — xato bo'lsa ham
+        // baholash ishlashda davom etsin
+        const [tg, opts] = await Promise.allSettled([
+          homeworkApi.getToGrade(sess.id),
+          homeworkApi.getAssignOptions(sess.id),
+        ]);
+        setToGrade(tg.status === 'fulfilled' ? tg.value.data.data : null);
+        if (opts.status === 'fulfilled') {
+          setAssignOpts(opts.value.data.data);
+          setAssignNote(opts.value.data.data?.current?.note || '');
+        }
+      }
     } catch (e: any) {
       setError(e?.response?.data?.error?.message || e?.response?.data?.message || 'Xatolik yuz berdi');
     } finally {
@@ -278,6 +324,48 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                 </button>
               </div>
 
+              {/* Qaysi uyga vazifaga baho qo'yilayotgani — aniq ko'rinib tursin */}
+              {step === 'homework' && (
+                <div className="mb-4">
+                  {toGrade ? (
+                    <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
+                      <p className="text-[11px] uppercase tracking-wide text-blue-400 font-semibold mb-1.5">
+                        Shu vazifa baholanmoqda
+                      </p>
+                      <p className="text-white font-semibold text-sm">{toGrade.title}</p>
+                      <p className="text-zinc-400 text-xs mt-1">
+                        {toGrade.assignedLessonNumber}-dars
+                        {toGrade.assignedTopic ? ` · ${toGrade.assignedTopic}` : ''}
+                        {` · ${toGrade.assignedDate} da berilgan`}
+                      </p>
+                      {toGrade.contentType === 'link' ? (
+                        <a
+                          href={toGrade.content}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-xs mt-2 break-all"
+                        >
+                          <Link2 className="w-3 h-3 shrink-0" />
+                          {toGrade.content}
+                        </a>
+                      ) : (
+                        <p className="text-zinc-300 text-xs mt-2 whitespace-pre-wrap line-clamp-3">
+                          {toGrade.content}
+                        </p>
+                      )}
+                      {toGrade.note && (
+                        <p className="text-amber-300/90 text-xs mt-2">Izohingiz: {toGrade.note}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 text-xs text-amber-200/90">
+                      Oldingi darsda uyga vazifa biriktirilmagan — baho umumiy bajarilish bo'yicha
+                      qo'yiladi va aniq vazifaga bog'lanmaydi.
+                    </div>
+                  )}
+                </div>
+              )}
+
               {step === 'coin' && (
                 <p className="text-zinc-500 text-xs mb-4">
                   Musbat son (masalan 10) — qo'shadi, manfiy son (masalan -5) — ayiradi. Enter yoki boshqa joyga bosilganda saqlanadi.
@@ -396,6 +484,146 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                   </div>
                 ))}
               </div>
+
+              {/* Keyingi darsga uyga vazifa berish */}
+              {step === 'homework' && assignOpts && (
+                <div className="mt-6 pt-5 border-t border-zinc-800">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-zinc-500" />
+                        Keyingi darsga uyga vazifa
+                      </h3>
+                      <p className="text-zinc-500 text-xs mt-0.5">
+                        Bugun ({assignOpts.lessonNumber}-dars) berasiz, keyingi darsda baholaysiz
+                      </p>
+                    </div>
+                    {!showAssign && (
+                      <button
+                        onClick={() => setShowAssign(true)}
+                        className="text-blue-400 hover:text-blue-300 text-xs font-semibold shrink-0"
+                      >
+                        {assignOpts.current ? "O'zgartirish" : 'Vazifa tanlash'}
+                      </button>
+                    )}
+                  </div>
+
+                  {assignOpts.current && !showAssign && (
+                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3.5">
+                      <p className="text-emerald-300 text-sm font-medium flex items-center gap-1.5">
+                        <Check className="w-4 h-4" />
+                        {assignOpts.current.title}
+                      </p>
+                      {assignOpts.current.note && (
+                        <p className="text-zinc-400 text-xs mt-1">Izoh: {assignOpts.current.note}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {!assignOpts.current && !showAssign && (
+                    <p className="text-zinc-500 text-xs bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5">
+                      Hali vazifa tanlanmagan
+                    </p>
+                  )}
+
+                  {showAssign && (
+                    <div className="space-y-3">
+                      {assignOpts.lessons.length === 0 ? (
+                        <p className="text-amber-300/90 text-xs bg-amber-500/5 border border-amber-500/20 rounded-lg px-3 py-2.5">
+                          Vazifa bankasi bo'sh — administrator darsliklarga vazifa qo'shishi kerak.
+                        </p>
+                      ) : (
+                        <>
+                          <div className="max-h-56 overflow-y-auto space-y-3 pr-1">
+                            {assignOpts.lessons.map((lesson) => (
+                              <div key={lesson.itemId}>
+                                <p className="text-[11px] uppercase tracking-wide text-zinc-500 mb-1.5">
+                                  {lesson.folderName} · {lesson.itemTitle}
+                                </p>
+                                <div className="space-y-1.5">
+                                  {lesson.items.map((hw) => {
+                                    const active = assignOpts.current?.homeworkId === hw.id;
+                                    return (
+                                      <button
+                                        key={hw.id}
+                                        disabled={assigning}
+                                        onClick={async () => {
+                                          setAssigning(true);
+                                          setError('');
+                                          try {
+                                            await homeworkApi.assign(session.id, hw.id, assignNote.trim() || undefined);
+                                            setShowAssign(false);
+                                            await load();
+                                          } catch (e: any) {
+                                            setError(
+                                              e?.response?.data?.error?.message ||
+                                                'Vazifa biriktirilmadi'
+                                            );
+                                          } finally {
+                                            setAssigning(false);
+                                          }
+                                        }}
+                                        className={`w-full text-left rounded-lg border px-3 py-2 transition-colors disabled:opacity-50 ${
+                                          active
+                                            ? 'bg-blue-600/15 border-blue-600 text-white'
+                                            : 'bg-[#0f0f11] border-zinc-800 text-zinc-300 hover:border-blue-600'
+                                        }`}
+                                      >
+                                        <span className="text-sm font-medium block">{hw.title}</span>
+                                        {hw.description && (
+                                          <span className="text-zinc-500 text-xs block mt-0.5 line-clamp-1">
+                                            {hw.description}
+                                          </span>
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <input
+                            type="text"
+                            value={assignNote}
+                            onChange={(e) => setAssignNote(e.target.value.slice(0, 500))}
+                            placeholder="Qo'shimcha izoh (ixtiyoriy) — masalan: faqat 1-3 misollar"
+                            className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+                          />
+                        </>
+                      )}
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setShowAssign(false)}
+                          className="text-zinc-400 hover:text-white text-xs"
+                        >
+                          Yopish
+                        </button>
+                        {assignOpts.current && (
+                          <button
+                            onClick={async () => {
+                              setAssigning(true);
+                              try {
+                                await homeworkApi.unassign(session.id);
+                                setShowAssign(false);
+                                await load();
+                              } catch {
+                                setError("Vazifani olib tashlab bo'lmadi");
+                              } finally {
+                                setAssigning(false);
+                              }
+                            }}
+                            className="text-red-400 hover:text-red-300 text-xs"
+                          >
+                            Vazifani olib tashlash
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

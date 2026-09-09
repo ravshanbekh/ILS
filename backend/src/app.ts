@@ -46,6 +46,7 @@ import coinsRoutes from './modules/coins/coins.routes';
 import shopRoutes from './modules/shop/shop.routes';
 import permissionsRoutes from './modules/permissions/permissions.routes';
 import supportHoursRoutes from './modules/support-hours/support-hours.routes';
+import homeworkRoutes from './modules/homework/homework.routes';
 
 const app = express();
 app.set('trust proxy', 1); // nginx orqasida turgani uchun — rate limit va req.ip to'g'ri ishlashi uchun
@@ -143,6 +144,7 @@ app.use('/api/coins', coinsRoutes);
 app.use('/api/shop', shopRoutes);
 app.use('/api/permissions', permissionsRoutes);
 app.use('/api/support-hours', supportHoursRoutes);
+app.use('/api/homework', homeworkRoutes);
 
 // 404 handler
 app.use((_req, res) => {

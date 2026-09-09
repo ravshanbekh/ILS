@@ -102,6 +102,8 @@ model User {
   shopOrdersAsStudent       ShopOrder[]           @relation("ShopOrderStudent")
   shopOrdersFulfilled       ShopOrder[]           @relation("ShopOrderFulfilledBy")
   // Qo'lda beriladigan ruxsatlar
+  createdHomeworks          Homework[]            @relation("HomeworkCreator")
+  homeworkAssignments       HomeworkAssignment[]  @relation("HomeworkAssigner")
   supportSlots              SupportSlot[]         @relation("AssistantSupportSlots")
   supportBookings           SupportBooking[]      @relation("StudentSupportBookings")
   permissions               UserPermission[]      @relation("UserPermissions")
@@ -128,19 +130,20 @@ model Group {
   chatLinkCodeExpiresAt DateTime? @map("chat_link_code_expires_at")
 
   // Relations
-  teacher          User?             @relation("TeacherGroups", fields: [teacherId], references: [id])
-  groupStudents    GroupStudent[]
-  groupNormatives  GroupNormative[]
-  submissions      Submission[]
-  rankingCache     RankingCache[]
-  monitoringCalls  MonitoringCall[]
-  feedbacks        StudentFeedback[]
-  liveQuizzes      LiveQuiz[]
-  examParticipants ExamParticipant[]
-  lessonSessions   LessonSession[]
-  events           GroupEvent[]
-  appeals          ParentAppeal[]
-  eventFeedbacks   EventFeedback[]
+  teacher             User?                @relation("TeacherGroups", fields: [teacherId], references: [id])
+  groupStudents       GroupStudent[]
+  groupNormatives     GroupNormative[]
+  submissions         Submission[]
+  rankingCache        RankingCache[]
+  monitoringCalls     MonitoringCall[]
+  feedbacks           StudentFeedback[]
+  liveQuizzes         LiveQuiz[]
+  examParticipants    ExamParticipant[]
+  lessonSessions      LessonSession[]
+  events              GroupEvent[]
+  appeals             ParentAppeal[]
+  eventFeedbacks      EventFeedback[]
+  homeworkAssignments HomeworkAssignment[]
 
   @@map("groups")
 }
@@ -792,7 +795,8 @@ model LessonItem {
   order     Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
 
-  folder LessonFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folder    LessonFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  homeworks Homework[]
 
   @@map("lesson_items")
 }
@@ -859,11 +863,12 @@ model LessonSession {
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  group            Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  teacher          User              @relation("LessonSessionTeacher", fields: [teacherId], references: [id])
-  unlockedBy       User?             @relation("LessonSessionUnlockedBy", fields: [unlockedById], references: [id])
+  group            Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  teacher          User                @relation("LessonSessionTeacher", fields: [teacherId], references: [id])
+  unlockedBy       User?               @relation("LessonSessionUnlockedBy", fields: [unlockedById], references: [id])
   grades           LessonGrade[]
   coinTransactions CoinTransaction[]
+  assignment       HomeworkAssignment?
 
   @@unique([groupId, date])
   @@map("lesson_sessions")
@@ -887,9 +892,14 @@ model LessonGrade {
   gradedAt         DateTime? @map("graded_at") // uy vazifasi baholangan payt
   activityGradedAt DateTime? @map("activity_graded_at")
 
+  // Baho AYNAN qaysi uy vazifasiga qo'yilgani. N-darsda baholanayotgan vazifa
+  // N-1 darsda berilgan bo'ladi. null — o'sha darsdan oldin vazifa berilmagan.
+  assignmentId String? @map("assignment_id") @db.Uuid
+
   // Relations
-  session LessonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student User          @relation("LessonGradeStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  session    LessonSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student    User                @relation("LessonGradeStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  assignment HomeworkAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
 
   @@unique([sessionId, studentId])
   @@map("lesson_grades")
@@ -1165,4 +1175,51 @@ model SupportBooking {
   @@unique([slotId, studentId])
   @@index([studentId])
   @@map("support_bookings")
+}
+
+// ============================================================
+//  UYGA VAZIFA
+//  Admin darslik materialiga vazifa biriktiradi (bank), o'qituvchi esa
+//  darsni o'tgach o'z guruhiga o'sha bankdan bittasini beradi.
+// ============================================================
+
+model Homework {
+  id           String   @id @default(uuid()) @db.Uuid
+  lessonItemId String   @map("lesson_item_id") @db.Uuid
+  title        String   @db.VarChar(200)
+  description  String?  @db.VarChar(1000) // ko'rsatma / tavsif
+  contentType  String   @default("text") @map("content_type") @db.VarChar(20) // link | text
+  content      String   @db.Text // havola yoki vazifa matni
+  order        Int      @default(0)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdById  String   @map("created_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  lessonItem  LessonItem           @relation(fields: [lessonItemId], references: [id], onDelete: Cascade)
+  createdBy   User                 @relation("HomeworkCreator", fields: [createdById], references: [id])
+  assignments HomeworkAssignment[]
+
+  @@index([lessonItemId])
+  @@map("homeworks")
+}
+
+model HomeworkAssignment {
+  id                  String   @id @default(uuid()) @db.Uuid
+  homeworkId          String   @map("homework_id") @db.Uuid
+  groupId             String   @map("group_id") @db.Uuid
+  assignedInSessionId String   @map("assigned_in_session_id") @db.Uuid
+  assignedById        String   @map("assigned_by_id") @db.Uuid
+  note                String?  @db.VarChar(500) // o'qituvchining qo'shimcha izohi
+  assignedAt          DateTime @default(now()) @map("assigned_at")
+
+  homework   Homework      @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  group      Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  session    LessonSession @relation(fields: [assignedInSessionId], references: [id], onDelete: Cascade)
+  assignedBy User          @relation("HomeworkAssigner", fields: [assignedById], references: [id])
+  grades     LessonGrade[]
+
+  // Bitta darsga bitta vazifa
+  @@unique([assignedInSessionId])
+  @@index([groupId])
+  @@map("homework_assignments")
 }

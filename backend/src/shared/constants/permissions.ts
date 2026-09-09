@@ -99,6 +99,13 @@ export const PERMISSIONS = {
     category: 'Gamifikatsiya',
     legacyRoles: ['kassir', 'moliya_rahbari'],
   },
+  homework_manage: {
+    label: "Uyga vazifa bankasini boshqarish",
+    description:
+      "Darsliklarga uyga vazifa yozish, tahrirlash va yashirish. O'qituvchi bankdan tanlab guruhiga beradi",
+    category: "Ta'lim",
+    legacyRoles: [], // faqat admin, kerak bo'lsa qo'lda beriladi
+  },
   support_oversight: {
     label: 'Assistent qabul soatlari nazorati',
     description:

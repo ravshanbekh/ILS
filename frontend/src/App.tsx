@@ -65,6 +65,8 @@ const SupportBookingPage = lazy(() => import('@/pages/student/SupportBookingPage
 const MySupportHoursPage = lazy(() => import('@/pages/shared/MySupportHoursPage'));
 const SupportOversightPage = lazy(() => import('@/pages/shared/SupportOversightPage'));
 const MyProfilePage = lazy(() => import('@/pages/shared/MyProfilePage'));
+const HomeworkBankPage = lazy(() => import('@/pages/admin/HomeworkBankPage'));
+const StudentHomeworkPage = lazy(() => import('@/pages/student/HomeworkPage'));
 const StudentShopPage = lazy(() => import('@/pages/student/ShopPage'));
 const PermissionsPage = lazy(() => import('@/pages/admin/PermissionsPage'));
 
@@ -224,6 +226,7 @@ export default function App() {
               <Route path="/admin/support-hours" element={<SupportOversightPage />} />
               <Route path="/admin/my-support-hours" element={<MySupportHoursPage />} />
               <Route path="/admin/profile" element={<MyProfilePage />} />
+              <Route path="/admin/homework-bank" element={<HomeworkBankPage />} />
               <Route path="/admin/appeals" element={<AppealsPage />} />
               <Route path="/admin/event-feedback" element={<EventFeedbackPage />} />
             </Route>
@@ -275,6 +278,7 @@ export default function App() {
               <Route path="/student/ranking" element={<StudentRankingPage />} />
               <Route path="/student/shop" element={<StudentShopPage />} />
               <Route path="/student/support-hours" element={<SupportBookingPage />} />
+              <Route path="/student/homework" element={<StudentHomeworkPage />} />
             </Route>
 
             {/* Viewer routes — all new roles */}
