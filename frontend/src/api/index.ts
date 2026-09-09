@@ -358,6 +358,18 @@ export const feedbackApi = {
 
 // ============ EXAM API ============
 export const examApi = {
+  // ── O'quvchi: o'z profilidan ──
+  /** Guruhiga biriktirilgan, hozir kirsa bo'ladigan imtihonlar */
+  getMyActive: () => api.get('/exam/my-active'),
+  /** O'z imtihon natijalari */
+  getMyResults: () => api.get('/exam/my-results'),
+  /** Profildan kirish — login/parol qayta kerak emas */
+  enter: (id: string) => api.post(`/exam/${id}/enter`),
+
+  // ── O'qituvchi: guruhga biriktirish ──
+  getGroups: (id: string) => api.get(`/exam/${id}/groups`),
+  setGroups: (id: string, groupIds: string[]) => api.patch(`/exam/${id}/groups`, { groupIds }),
+
   // Teacher
   create: (data: any) => api.post('/exam', data),
   getMyExams: () => api.get('/exam'),

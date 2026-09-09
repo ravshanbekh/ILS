@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { examApi, categoriesApi } from '../../api';
+import { examApi, categoriesApi, groupsApi } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { parseExcelQuestions } from '@/utils';
@@ -171,17 +171,63 @@ export default function ExamsPage() {
     setQuestions(res.data.data.questions || []);
   }
 
+  // Faollashtirishdan oldin guruh tanlash
+  const [activateFor, setActivateFor] = useState<Exam | null>(null);
+  const [myGroups, setMyGroups] = useState<{ id: string; name: string }[]>([]);
+  const [pickedGroups, setPickedGroups] = useState<string[]>([]);
+  const [groupsSaving, setGroupsSaving] = useState(false);
+  const [groupsError, setGroupsError] = useState('');
+
+  /**
+   * Faollashtirish endi ikki qadam: avval qaysi guruh(lar) topshirishi
+   * tanlanadi, keyin imtihon yoqiladi. Guruh biriktirilmasa o'quvchi
+   * profilida ko'rinmaydi.
+   */
   async function activate(exam: Exam) {
-    if (!confirm('Imtihonni faollashtirish. 2 soat vaqt beriladi. Tasdiqlansinmi?')) return;
+    setActivateFor(exam);
+    setGroupsError('');
+    setGroupsSaving(false);
     try {
-      await examApi.activate(exam.id);
+      const [gRes, curRes] = await Promise.all([
+        groupsApi.getAll(1, 200),
+        examApi.getGroups(exam.id),
+      ]);
+      const list = gRes.data.data || gRes.data.items || [];
+      setMyGroups(list.map((g: any) => ({ id: g.id, name: g.name })));
+      setPickedGroups((curRes.data.data || []).map((g: any) => g.groupId));
+    } catch {
+      setMyGroups([]);
+      setPickedGroups([]);
+    }
+  }
+
+  /** Guruhlar tanlangach: biriktirib, keyin faollashtiramiz */
+  async function confirmActivate() {
+    if (!activateFor) return;
+    if (pickedGroups.length === 0) {
+      setGroupsError('Kamida bitta guruh tanlang — aks holda imtihon hech kimga ko\'rinmaydi');
+      return;
+    }
+    setGroupsSaving(true);
+    setGroupsError('');
+    try {
+      await examApi.setGroups(activateFor.id, pickedGroups);
+      await examApi.activate(activateFor.id);
+      const id = activateFor.id;
+      setActivateFor(null);
       fetchExams();
-      if (selected?.id === exam.id) {
-        const res = await examApi.getById(exam.id);
+      if (selected?.id === id) {
+        const res = await examApi.getById(id);
         setSelected(res.data.data);
       }
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Imtihonni faollashtirishda xatolik yuz berdi');
+      setGroupsError(
+        error.response?.data?.error?.message ||
+          error.response?.data?.error ||
+          'Imtihonni faollashtirishda xatolik yuz berdi'
+      );
+    } finally {
+      setGroupsSaving(false);
     }
   }
 
@@ -1175,6 +1221,81 @@ export default function ExamsPage() {
       cancelText="Yo'q, bekor qilish"
       loading={deleteLoading}
     />
+
+      {/* Faollashtirishdan oldin: qaysi guruh(lar) topshiradi */}
+      {activateFor && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800">
+              <h2 className="text-white font-bold">Qaysi guruh topshiradi?</h2>
+              <p className="text-zinc-500 text-xs mt-1">{activateFor.title}</p>
+            </div>
+
+            <div className="p-5 overflow-y-auto flex-1 space-y-2">
+              {myGroups.length === 0 ? (
+                <p className="text-zinc-500 text-sm text-center py-6">Guruhingiz topilmadi</p>
+              ) : (
+                myGroups.map(g => {
+                  const on = pickedGroups.includes(g.id);
+                  return (
+                    <button
+                      key={g.id}
+                      onClick={() =>
+                        setPickedGroups(prev =>
+                          prev.includes(g.id) ? prev.filter(x => x !== g.id) : [...prev, g.id]
+                        )
+                      }
+                      className={`w-full text-left rounded-lg border px-3.5 py-2.5 text-sm font-medium transition-colors ${
+                        on
+                          ? 'bg-blue-600/15 border-blue-600 text-white'
+                          : 'bg-[#0f0f11] border-zinc-800 text-zinc-300 hover:border-blue-600'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span
+                          className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
+                            on ? 'bg-blue-600 border-blue-600 text-white' : 'border-zinc-600'
+                          }`}
+                        >
+                          {on ? '✓' : ''}
+                        </span>
+                        {g.name}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+
+              {groupsError && (
+                <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  {groupsError}
+                </p>
+              )}
+
+              <p className="text-zinc-600 text-[11px] pt-1">
+                Tanlangan guruh o'quvchilari imtihonni o'z profilida ko'radi va shu yerdan kiradi.
+                Faollashtirilgach {activateFor.durationHours || 2} soat vaqt beriladi.
+              </p>
+            </div>
+
+            <div className="px-5 py-4 border-t border-zinc-800 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setActivateFor(null)}
+                className="text-zinc-400 hover:text-white text-sm px-3 py-2"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={confirmActivate}
+                disabled={groupsSaving}
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-2 rounded-lg text-sm font-semibold"
+              >
+                {groupsSaving ? 'Faollashtirilmoqda...' : 'Faollashtirish'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1556,6 +1677,7 @@ function ExamResultsPanel({ exam, results }: { exam: Exam; results: any }) {
           filtered.map(p => renderCard(p))
         )
       )}
+
     </div>
   );
 }

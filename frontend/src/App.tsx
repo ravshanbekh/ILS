@@ -67,6 +67,7 @@ const SupportOversightPage = lazy(() => import('@/pages/shared/SupportOversightP
 const MyProfilePage = lazy(() => import('@/pages/shared/MyProfilePage'));
 const HomeworkBankPage = lazy(() => import('@/pages/admin/HomeworkBankPage'));
 const StudentHomeworkPage = lazy(() => import('@/pages/student/HomeworkPage'));
+const StudentResultsPage = lazy(() => import('@/pages/student/ResultsPage'));
 const StudentShopPage = lazy(() => import('@/pages/student/ShopPage'));
 const PermissionsPage = lazy(() => import('@/pages/admin/PermissionsPage'));
 
@@ -279,6 +280,7 @@ export default function App() {
               <Route path="/student/shop" element={<StudentShopPage />} />
               <Route path="/student/support-hours" element={<SupportBookingPage />} />
               <Route path="/student/homework" element={<StudentHomeworkPage />} />
+              <Route path="/student/results" element={<StudentResultsPage />} />
             </Route>
 
             {/* Viewer routes — all new roles */}

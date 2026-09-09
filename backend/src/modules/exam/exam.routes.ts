@@ -2,6 +2,7 @@ import { Router, json } from 'express';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 import { loginLimiter } from '../../shared/middleware/rateLimiter';
 import * as examController from './exam.controller';
+import * as examStudent from './exam.student.controller';
 import * as examGradeController from './exam.grade.controller';
 import multer from 'multer';
 import path from 'path';
@@ -38,6 +39,15 @@ router.get('/', authenticate, roleGuard('admin', 'teacher'), examController.getM
 
 // Global imtihonlar (Admin + Teachers)
 router.get('/global', authenticate, roleGuard('admin', 'teacher'), examController.getGlobalExams);
+
+// ── O'quvchi: o'z profilidan ko'radi va kiradi ──────────────────────────────
+router.get('/my-active', authenticate, roleGuard('student'), examStudent.getMyActiveExams);
+router.get('/my-results', authenticate, roleGuard('student'), examStudent.getMyExamResults);
+router.post('/:id/enter', authenticate, roleGuard('student'), examStudent.enterExamAsMe);
+
+// ── O'qituvchi: imtihonni guruhga biriktirish ───────────────────────────────
+router.get('/:id/groups', authenticate, roleGuard('admin', 'teacher'), examStudent.getExamGroups);
+router.patch('/:id/groups', authenticate, roleGuard('admin', 'teacher'), examStudent.setExamGroups);
 router.post('/global/:id/activate', authenticate, roleGuard('admin', 'teacher'), examController.activateGlobalExam);
 
 router.get('/results/all', authenticate, roleGuard('admin', 'teacher'), examController.getAllExamResults);

@@ -18,6 +18,7 @@ const studentLinks = [
   { to: '/student/ranking', icon: Trophy, label: 'Reyting' },
   { to: '/student/shop', icon: Gift, label: "Do'kon" },
   { to: '/student/homework', icon: BookOpen, label: 'Uyga vazifalar' },
+  { to: '/student/results', icon: Trophy, label: 'Natijalarim' },
   { to: '/student/support-hours', icon: CalendarClock, label: 'Yordamchi ustoz' },
 ];
 

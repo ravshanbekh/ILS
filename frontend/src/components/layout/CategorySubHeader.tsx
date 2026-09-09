@@ -154,6 +154,7 @@ export const STUDENT_GROUPS: NavCategoryGroup[] = [
       { to: '/student/ranking', label: 'Reyting', icon: Trophy },
       { to: '/student/shop', label: "Do'kon", icon: Gift },
       { to: '/student/homework', label: 'Uyga vazifalar', icon: BookOpen },
+      { to: '/student/results', label: 'Natijalarim', icon: Trophy },
       { to: '/student/support-hours', label: 'Yordamchi ustoz', icon: CalendarClock },
     ]
   }

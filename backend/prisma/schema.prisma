@@ -144,6 +144,7 @@ model Group {
   appeals             ParentAppeal[]
   eventFeedbacks      EventFeedback[]
   homeworkAssignments HomeworkAssignment[]
+  examGroups          ExamGroup[]
 
   @@map("groups")
 }
@@ -560,6 +561,7 @@ model Exam {
   sessions     Exam[]            @relation("ExamTemplate")
   questions    ExamQuestion[]
   participants ExamParticipant[]
+  examGroups   ExamGroup[]
 
   @@map("exams")
 }
@@ -1222,4 +1224,21 @@ model HomeworkAssignment {
   @@unique([assignedInSessionId])
   @@index([groupId])
   @@map("homework_assignments")
+}
+
+/// Imtihon qaysi guruhlarga biriktirilgani.
+/// Shusiz imtihon "kodni bilgan hammaga" ochiq edi va o'quvchi profilida
+/// ko'rinmasdi — endi o'qituvchi o'z guruhini tanlab boshlaydi.
+model ExamGroup {
+  id         String   @id @default(uuid()) @db.Uuid
+  examId     String   @map("exam_id") @db.Uuid
+  groupId    String   @map("group_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  exam  Exam  @relation(fields: [examId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, groupId])
+  @@index([groupId])
+  @@map("exam_groups")
 }
