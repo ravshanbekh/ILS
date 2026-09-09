@@ -645,9 +645,31 @@ export default function GroupDetailPage() {
                       <td className="px-6 py-4 font-mono text-blue-400 text-sm">{student.login}</td>
                       <td className="px-6 py-4">
                         {student.parentLinked ? (
-                          <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-medium" title={student.parentName || ''}>
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" /> Ulangan
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            {(student.parents?.length
+                              ? student.parents
+                              : [{ fullName: student.parentName, username: null }]
+                            ).map((p: any, i: number) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1.5 text-xs"
+                                title={p.username ? `@${p.username}` : ''}
+                              >
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                <span className="text-emerald-400 font-medium">
+                                  {p.fullName || 'Ismi yo\'q'}
+                                </span>
+                                {p.username && (
+                                  <span className="text-zinc-500">@{p.username}</span>
+                                )}
+                              </span>
+                            ))}
+                            {(student.parents?.length ?? 0) > 1 && (
+                              <span className="text-zinc-600 text-[10px] pl-3.5">
+                                {student.parents.length} ta ulangan
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 text-zinc-600 text-xs font-medium">
                             <span className="w-2 h-2 rounded-full bg-zinc-700" /> Ulanmagan

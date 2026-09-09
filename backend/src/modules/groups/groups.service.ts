@@ -137,10 +137,21 @@ class GroupsService {
     const parentLinks = studentIds.length
       ? await prisma.telegramLink.findMany({
           where: { studentId: { in: studentIds }, role: 'parent', isActive: true },
-          select: { studentId: true, fullName: true },
+          select: { studentId: true, fullName: true, username: true, lastActiveAt: true },
+          orderBy: { createdAt: 'asc' },
         })
       : [];
-    const parentLinkMap = new Map(parentLinks.map((l) => [l.studentId, l.fullName]));
+
+    // Bitta o'quvchiga bir nechta ota-ona ulanishi mumkin (ota va ona alohida
+    // akkauntdan). Ilgari bu yerda Map ishlatilardi va faqat OXIRGI ulangan
+    // ota-ona qolib, qolganlari ko'rinmasdi.
+    const parentsByStudent = new Map<string, { fullName: string | null; username: string | null; lastActiveAt: Date }[]>();
+    for (const link of parentLinks) {
+      const list = parentsByStudent.get(link.studentId);
+      const entry = { fullName: link.fullName, username: link.username, lastActiveAt: link.lastActiveAt };
+      if (list) list.push(entry);
+      else parentsByStudent.set(link.studentId, [entry]);
+    }
 
     return {
       ...group,
@@ -149,8 +160,15 @@ class GroupsService {
       students: group.groupStudents.map((gs) => ({
         ...gs.student,
         joinedAt: gs.joinedAt,
-        parentLinked: parentLinkMap.has(gs.studentId),
-        parentName: parentLinkMap.get(gs.studentId) || null,
+        parentLinked: parentsByStudent.has(gs.studentId),
+        // Eski maydon — boshqa joylarda ishlatilayotgan bo'lsa buzilmasin
+        parentName: parentsByStudent.get(gs.studentId)?.[0]?.fullName || null,
+        // Barcha ulangan ota-onalar (ota va ona alohida bo'lishi mumkin)
+        parents: (parentsByStudent.get(gs.studentId) || []).map((p) => ({
+          fullName: p.fullName,
+          username: p.username,
+          lastActiveAt: p.lastActiveAt,
+        })),
       })),
       normatives: groupNormatives.map((gn) => ({
         ...gn.normative,
