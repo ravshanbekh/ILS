@@ -5,6 +5,7 @@ import botService from './bot.service';
 import { broadcastToParents, getBotUsername, getBotLink, ensureBotUsername } from './bot.notifications';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 import rankingsService, { StudentCategory } from '../rankings/rankings.service';
+import { aiLimiter } from '../../shared/middleware/rateLimiter';
 
 const router = Router();
 
@@ -45,7 +46,7 @@ router.get('/parents', authenticate, roleGuard('admin'), async (req: Request, re
 });
 
 // POST /api/bot/parents/ai-polish — matnni AI bilan jilolash (yuborishdan oldin, ixtiyoriy)
-router.post('/parents/ai-polish', authenticate, roleGuard('admin'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/parents/ai-polish', authenticate, aiLimiter, roleGuard('admin'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { message } = req.body;
     if (!message || !message.trim()) {

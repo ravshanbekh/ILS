@@ -1,6 +1,33 @@
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Tashqi AI API ga so'rov qancha kutilishi mumkin.
+ * Ilgari timeout umuman yo'q edi: provayder sekinlashsa yoki osilib qolsa,
+ * har bir chaqiruv server ulanishini cheksiz band qilib turardi.
+ */
+export const AI_REQUEST_TIMEOUT_MS = 25_000;
+
+/** fetch, lekin belgilangan vaqtdan keyin uziladi */
+export async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number = AI_REQUEST_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      throw new Error('AI_TIMEOUT');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface AISettings {
   apiKey: string;
   model: string;
@@ -54,9 +81,14 @@ export async function generateText(
     throw new Error('API_KEY_NOT_SET');
   }
 
+  // Tashqi AI API osilib qolsa, so'rov cheksiz kutib turmasligi kerak edi —
+  // aks holda bir nechta osilgan chaqiruv server ulanishlarini band qilib
+  // qo'yadi (arzon so'rov -> qimmat kutish, DoS uchun qulay nishon).
+  const timeoutMs = AI_REQUEST_TIMEOUT_MS;
+
   if (provider === 'groq') {
     // Call Groq API
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -68,7 +100,7 @@ export async function generateText(
         max_tokens: Math.min(maxTokens, 8192), // Groq llama-3.3-70b-versatile limit is 8192
         temperature: temperature,
       }),
-    });
+    }, timeoutMs);
 
     if (!response.ok) {
       const errText = await response.text();
@@ -86,7 +118,7 @@ export async function generateText(
     return text.trim();
   } else {
     // Call Gemini API
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: 'POST',
@@ -98,7 +130,8 @@ export async function generateText(
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { temperature, maxOutputTokens: maxTokens },
         }),
-      }
+      },
+      timeoutMs
     );
 
     if (!response.ok) {

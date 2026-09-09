@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import monitoringController from './monitoring.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
+import { aiLimiter } from '../../shared/middleware/rateLimiter';
 
 const router = Router();
 router.use(authenticate);
@@ -21,11 +22,11 @@ router.get('/groups/:groupId/calls', roleGuard(...ALLOWED_ROLES), monitoringCont
 
 // ─── GURUH AI TAHLIL ────────────────────────────────────────
 // POST /api/monitoring/groups/:groupId/ai-analyze
-router.post('/groups/:groupId/ai-analyze', roleGuard(...ALLOWED_ROLES), monitoringController.analyzeGroup);
+router.post('/groups/:groupId/ai-analyze', aiLimiter, roleGuard(...ALLOWED_ROLES), monitoringController.analyzeGroup);
 
 // ─── O'QITUVCHI AI TAHLIL ───────────────────────────────────
 // POST /api/monitoring/teachers/:teacherId/ai-analyze
-router.post('/teachers/:teacherId/ai-analyze', roleGuard(...ALLOWED_ROLES), monitoringController.analyzeTeacher);
+router.post('/teachers/:teacherId/ai-analyze', aiLimiter, roleGuard(...ALLOWED_ROLES), monitoringController.analyzeTeacher);
 
 // ─── O'QUVCHI TIMELINE ──────────────────────────────────────
 // GET /api/monitoring/students/:studentId/timeline
@@ -33,7 +34,7 @@ router.get('/students/:studentId/timeline', roleGuard(...ALLOWED_ROLES), monitor
 
 // ─── O'QUVCHI SCRIPT ────────────────────────────────────────
 // POST /api/monitoring/students/:id/script
-router.post('/students/:id/script', roleGuard(...ALLOWED_ROLES), monitoringController.generateStudentScript);
+router.post('/students/:id/script', aiLimiter, roleGuard(...ALLOWED_ROLES), monitoringController.generateStudentScript);
 
 // ─── CALL CRUD ──────────────────────────────────────────────
 // POST /api/monitoring/calls

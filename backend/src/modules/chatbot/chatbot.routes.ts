@@ -3,6 +3,7 @@ import { authenticate } from '../../shared/middleware/auth.middleware';
 import fs from 'fs';
 import path from 'path';
 import { generateText, getAISettings } from '../../shared/utils/ai';
+import { aiLimiter } from '../../shared/middleware/rateLimiter';
 
 const router = Router();
 router.use(authenticate);
@@ -42,7 +43,7 @@ const ROLE_GUIDES: Record<string, string> = {
 };
 
 // POST /api/chatbot/ask
-router.post('/ask', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/ask', aiLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { message } = req.body;
     if (!message) {
