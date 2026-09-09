@@ -27,4 +27,13 @@ export default defineConfig({
       },
     },
   },
+  // "npm run preview" — build qilingan holatni productionga o'xshab sinash
+  // uchun. Proxy bo'lmasa API so'rovlari ishlamaydi va tekshirib bo'lmaydi.
+  preview: {
+    port: 5174,
+    proxy: {
+      '/api': { target: 'http://localhost:5000', changeOrigin: true },
+      '/uploads': { target: 'http://localhost:5000', changeOrigin: true },
+    },
+  },
 })
