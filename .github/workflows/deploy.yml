@@ -44,6 +44,20 @@ jobs:
             echo "--> git pull origin main"
             git pull origin main
 
+            # Qoldiq konteynerlarni tozalash.
+            # Docker konteynerni qayta yaratganda eskisini vaqtincha
+            # "<hash>_<nom>" ga qayta nomlaydi. Agar o'sha jarayon uzilib qolsa,
+            # qoldiq konteyner keyingi recreate'ni "name is already in use"
+            # xatosi bilan bloklaydi va servis ko'tarilmay qoladi.
+            echo "--> Qoldiq konteynerlarni tekshirish..."
+            STALE=$(docker ps -a --format '{{.Names}}' | grep -E '^[0-9a-f]{12}_tizim_' || true)
+            if [ -n "$STALE" ]; then
+              echo "[!] Qoldiq topildi, o'chirilmoqda: $STALE"
+              echo "$STALE" | xargs -r docker rm -f || true
+            else
+              echo "[OK] Qoldiq yo'q"
+            fi
+
             # O'zgargan fayllarni aniqlash
             CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
             echo "O'zgargan: $CHANGED"
@@ -87,15 +101,23 @@ jobs:
               echo "--> Frontend o'zgarmadi, skip."
             fi
 
-            # Compose holatini har doim moslashtiramiz. "up -d" (build'siz) faqat
-            # konfiguratsiyasi (masalan port bog'lanishi) compose fayldan farq
-            # qiladigan konteynerni qayta yaratadi, qolganiga tegmaydi (idempotent).
-            # Aks holda docker-compose.yml dagi port o'zgarishi o'sha papka kodi
-            # o'zgarmaguncha qo'llanmay qolardi (frontend 8050 shu sabab ochiq qolgandi).
+            # Compose holatini FAQAT docker-compose.yml o'zgarganda moslashtiramiz.
+            # Ilgari bu shartsiz ishlardi va backend'ni ikki marta (avval
+            # "up -d --build backend", keyin "up -d") qayta yaratishga urinib,
+            # qoldiq konteyner nomi to'qnashuvini keltirib chiqardi — natijada
+            # backend ko'tarilmay, sayt 502 bergan edi.
+            if echo "$CHANGED" | grep -qE "^docker-compose\.yml|^all"; then
+              echo ""
+              echo "--> docker-compose.yml o'zgardi, konteynerlar moslashtirilmoqda..."
+              docker-compose up -d
+              echo "[OK] Compose holati qo'llandi"
+            fi
+
+            # Har ehtimolga qarshi: konteynerlar tushib qolgan bo'lsa ko'taramiz
             echo ""
-            echo "--> Compose holati moslashtirilmoqda (docker-compose up -d)..."
-            docker-compose up -d
-            echo "[OK] Compose holati qo'llandi"
+            echo "--> Konteynerlar holati tekshirilmoqda..."
+            docker-compose up -d --no-recreate
+            docker-compose ps
 
             # Health check
             echo ""
