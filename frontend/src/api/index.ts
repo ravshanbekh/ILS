@@ -19,6 +19,23 @@ export const usersApi = {
   getAll: (page: number = 1, limit: number = 100, role?: string, search?: string, excludeRole?: string) =>
     api.get('/users', { params: { page, limit, role, search, excludeRole } }),
 
+  // ── O'z profili (kartochka ma'lumotlari) ──
+  /** Filiallar ro'yxati — backenddagi yagona manbadan */
+  getFilials: () => api.get('/users/filials'),
+
+  /** O'z profil rasmini yuklash */
+  uploadMyAvatar: (file: File) => {
+    const form = new FormData();
+    form.append('avatar', file);
+    return api.post('/users/me/avatar', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  /** O'z kartochka ma'lumotlari — qisqa ma'lumot va filial */
+  updateMyCardProfile: (data: { bio?: string | null; filial?: string | null }) =>
+    api.patch('/users/me/profile', data),
+
   // Guruhsiz o'quvchilar (bug fix - pagination chegarasiz)
   getUngrouped: (search?: string) =>
     api.get('/users/ungrouped', { params: { search } }),

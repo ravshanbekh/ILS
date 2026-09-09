@@ -1,10 +1,100 @@
 import { Request, Response, NextFunction } from 'express';
+import fs from 'fs';
+import path from 'path';
 import usersService from './users.service';
+import prisma from '../../config/database';
 import { createUserSchema, updateUserSchema } from './users.validation';
 import { getPagination } from '../../shared/utils/pagination';
 import { ApiError } from '../../shared/middleware/errorHandler';
+import { FILIALS, isValidFilial, filialLabel } from '../../shared/constants/filials';
 
 class UsersController {
+  /** GET /api/users/filials — tanlash uchun filiallar ro'yxati */
+  async getFilials(_req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json({ success: true, data: FILIALS });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/users/me/avatar — o'z profil rasmini yuklash.
+   * Assistent kartochkasi uchun kerak, lekin har qanday rol o'z rasmini qo'ya oladi.
+   */
+  async uploadMyAvatar(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) throw ApiError.badRequest('Rasm yuklanmadi');
+
+      const userId = req.user!.userId;
+      const url = `/uploads/avatars/${req.file.filename}`;
+
+      // Eski rasmni diskdan o'chiramiz — aks holda har yuklashda fayl yig'ilib boradi
+      const before = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatarUrl: true },
+      });
+      if (before?.avatarUrl?.startsWith('/uploads/avatars/')) {
+        const oldPath = path.join(process.cwd(), 'data', before.avatarUrl.replace('/uploads/', 'uploads/'));
+        fs.promises.unlink(oldPath).catch(() => {
+          /* fayl allaqachon yo'q bo'lsa — muammo emas */
+        });
+      }
+
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: { avatarUrl: url },
+        select: { id: true, fullName: true, avatarUrl: true },
+      });
+
+      res.json({ success: true, data: user });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * PATCH /api/users/me/profile — o'z kartochka ma'lumotlari (qisqa ma'lumot va filial).
+   * Login/parol bu yerda emas — ular /api/auth/profile da (joriy parol talab qilinadi).
+   */
+  async updateMyCardProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { bio, filial } = req.body;
+      const data: { bio?: string | null; filial?: string | null } = {};
+
+      if (bio !== undefined) {
+        if (bio !== null && typeof bio !== 'string') {
+          throw ApiError.badRequest("Ma'lumot matn bo'lishi kerak");
+        }
+        const trimmed = typeof bio === 'string' ? bio.trim() : '';
+        if (trimmed.length > 300) {
+          throw ApiError.badRequest("Ma'lumot 300 belgidan oshmasligi kerak");
+        }
+        data.bio = trimmed || null;
+      }
+
+      if (filial !== undefined) {
+        if (filial === null || filial === '') {
+          data.filial = null;
+        } else if (!isValidFilial(filial)) {
+          throw ApiError.badRequest("Bunday filial yo'q");
+        } else {
+          data.filial = filial;
+        }
+      }
+
+      const user = await prisma.user.update({
+        where: { id: req.user!.userId },
+        data,
+        select: { id: true, fullName: true, avatarUrl: true, bio: true, filial: true },
+      });
+
+      res.json({ success: true, data: { ...user, filialLabel: filialLabel(user.filial) } });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /**
    * GET /api/users/my-students — Teacher uchun o'z o'quvchilarini olish (tezkor)
    */

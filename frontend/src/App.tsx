@@ -64,6 +64,7 @@ const CoinOversightPage = lazy(() => import('@/pages/shared/CoinOversightPage'))
 const SupportBookingPage = lazy(() => import('@/pages/student/SupportBookingPage'));
 const MySupportHoursPage = lazy(() => import('@/pages/shared/MySupportHoursPage'));
 const SupportOversightPage = lazy(() => import('@/pages/shared/SupportOversightPage'));
+const MyProfilePage = lazy(() => import('@/pages/shared/MyProfilePage'));
 const StudentShopPage = lazy(() => import('@/pages/student/ShopPage'));
 const PermissionsPage = lazy(() => import('@/pages/admin/PermissionsPage'));
 
@@ -222,6 +223,7 @@ export default function App() {
               <Route path="/admin/coin-oversight" element={<CoinOversightPage />} />
               <Route path="/admin/support-hours" element={<SupportOversightPage />} />
               <Route path="/admin/my-support-hours" element={<MySupportHoursPage />} />
+              <Route path="/admin/profile" element={<MyProfilePage />} />
               <Route path="/admin/appeals" element={<AppealsPage />} />
               <Route path="/admin/event-feedback" element={<EventFeedbackPage />} />
             </Route>
@@ -235,6 +237,7 @@ export default function App() {
               }
             >
               <Route path="/teacher" element={<TeacherDashboard />} />
+              <Route path="/teacher/profile" element={<MyProfilePage />} />
               <Route path="/teacher/users" element={<UsersPage />} />
               <Route path="/teacher/groups" element={<GroupsPage />} />
               <Route path="/teacher/groups/:id" element={<GroupDetailPage />} />
@@ -297,6 +300,7 @@ export default function App() {
               <Route path="/viewer/:role/coin-oversight" element={<CoinOversightPage />} />
               <Route path="/viewer/:role/my-support-hours" element={<MySupportHoursPage />} />
               <Route path="/viewer/:role/support-hours" element={<SupportOversightPage />} />
+              <Route path="/viewer/:role/profile" element={<MyProfilePage />} />
             </Route>
 
             {/* Default redirect */}

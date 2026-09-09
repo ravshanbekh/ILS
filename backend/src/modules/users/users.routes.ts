@@ -1,4 +1,7 @@
 import { Router, json } from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import usersController from './users.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 import { permissionGuard } from '../../shared/middleware/permission.middleware';
@@ -7,6 +10,37 @@ const router = Router();
 
 // Barcha routelar authenticate talab qiladi
 router.use(authenticate);
+
+// ── Avatar yuklash ────────────────────────────────────────────────────────────
+// data/ ostida — docker-compose'da faqat shu papka persistent volume.
+// Tashqarisiga yozilsa, har deployda rasmlar o'chib ketardi (bu xato ilgari
+// quiz musiqasida bo'lgan).
+const avatarDir = path.join(process.cwd(), 'data', 'uploads', 'avatars');
+if (!fs.existsSync(avatarDir)) fs.mkdirSync(avatarDir, { recursive: true });
+
+const avatarUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, avatarDir),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `avatar-${req.user!.userId}-${Date.now()}${ext}`);
+    },
+  }),
+  fileFilter: (_req, file, cb) => {
+    if (/image\/(jpeg|jpg|png|webp)/.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Faqat JPG/PNG/WEBP rasm yuklanadi'));
+  },
+  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB — profil rasmi uchun yetarli
+});
+
+// POST /api/users/me/avatar — o'z rasmini yuklash
+router.post('/me/avatar', avatarUpload.single('avatar'), usersController.uploadMyAvatar);
+
+// PATCH /api/users/me/profile — o'z kartochka ma'lumotlari (bio, filial)
+router.patch('/me/profile', usersController.updateMyCardProfile);
+
+// GET /api/users/filials — filiallar ro'yxati (yagona manba: constants/filials.ts)
+router.get('/filials', usersController.getFilials);
 
 const VIEWER_ROLES = ['admin', 'administrator', 'sotuv_operatori', 'kassir', 'teacher', 'filial_rahbari', 'moliya_rahbari', 'assistant', 'nazoratchi', 'hr_rahbari', 'call_operatori'];
 

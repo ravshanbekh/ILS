@@ -83,6 +83,8 @@ class AuthController {
           login: true,
           role: true,
           avatarUrl: true,
+          bio: true,
+          filial: true,
           createdAt: true,
           groupStudents: {
             include: {

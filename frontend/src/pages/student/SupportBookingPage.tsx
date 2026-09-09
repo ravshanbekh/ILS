@@ -10,6 +10,7 @@ import {
   CalendarDays,
   Lock,
   AlertCircle,
+  Building2,
 } from 'lucide-react';
 
 interface SlotView {
@@ -18,6 +19,9 @@ interface SlotView {
   timeRange: string;
   assistantId: string;
   assistantName: string;
+  assistantAvatar: string | null;
+  assistantBio: string | null;
+  assistantFilial: string | null;
   capacity: number;
   booked: number;
   free: number;
@@ -25,6 +29,25 @@ interface SlotView {
   myBookingId: string | null;
   canBook: boolean;
   reason: string | null;
+}
+
+interface AssistantCard {
+  id: string;
+  name: string;
+  avatar: string | null;
+  bio: string | null;
+  filial: string | null;
+  slots: SlotView[];
+}
+
+/** Ism-familiyadan bosh harflar — rasm bo'lmasa o'rniga ko'rsatiladi */
+function initialsOf(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0] || '')
+    .join('')
+    .toUpperCase();
 }
 
 interface DayView {
@@ -135,12 +158,23 @@ export default function SupportBookingPage() {
   };
 
   // Assistentlar bo'yicha guruhlash
-  const byAssistant = new Map<string, { name: string; slots: SlotView[] }>();
+  const byAssistant = new Map<string, AssistantCard>();
   for (const slot of day?.slots || []) {
     const entry = byAssistant.get(slot.assistantId);
-    if (entry) entry.slots.push(slot);
-    else byAssistant.set(slot.assistantId, { name: slot.assistantName, slots: [slot] });
+    if (entry) {
+      entry.slots.push(slot);
+    } else {
+      byAssistant.set(slot.assistantId, {
+        id: slot.assistantId,
+        name: slot.assistantName,
+        avatar: slot.assistantAvatar,
+        bio: slot.assistantBio,
+        filial: slot.assistantFilial,
+        slots: [slot],
+      });
+    }
   }
+  const cards = [...byAssistant.values()];
 
   return (
     <div className="min-h-screen bg-[#09090b]">
@@ -149,7 +183,7 @@ export default function SupportBookingPage() {
         subtitle="Bo'sh soatga yozilib qo'shimcha yordam oling"
       />
 
-      <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-5">
+      <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-5">
         {/* Qoida */}
         <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 text-sm text-zinc-300 flex gap-3">
           <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
@@ -219,65 +253,111 @@ export default function SupportBookingPage() {
           <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
           </div>
-        ) : byAssistant.size === 0 ? (
+        ) : cards.length === 0 ? (
           <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-10 text-center">
             <CalendarDays className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
             <p className="text-zinc-400 text-sm">Bu kunga hali hech kim soat ochmagan</p>
             <p className="text-zinc-600 text-xs mt-1">Boshqa kunni tanlab ko'ring</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {[...byAssistant.entries()].map(([assistantId, group]) => (
-              <div key={assistantId} className="bg-[#18181b] border border-zinc-800 rounded-xl p-5">
-                <h3 className="text-white font-bold mb-3">{group.name}</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {group.slots
-                    .slice()
-                    .sort((a, b) => a.startHour - b.startHour)
-                    .map((slot) => {
-                      const base =
-                        'rounded-lg border px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed';
-                      const cls = slot.isMine
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                        : slot.canBook
-                        ? 'bg-[#0f0f11] border-zinc-800 text-zinc-200 hover:border-blue-600 hover:text-white'
-                        : 'bg-[#0f0f11] border-zinc-900 text-zinc-600';
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {cards.map((a) => {
+              const freeTotal = a.slots.reduce((s, x) => s + (x.canBook ? x.free : 0), 0);
+              return (
+                <div
+                  key={a.id}
+                  className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden flex flex-col"
+                >
+                  {/* Rasm */}
+                  {a.avatar ? (
+                    <img
+                      src={a.avatar}
+                      alt={a.name}
+                      loading="lazy"
+                      className="w-full aspect-square object-cover bg-[#0f0f11]"
+                    />
+                  ) : (
+                    <div className="w-full aspect-square bg-[#0f0f11] flex items-center justify-center text-4xl font-bold text-zinc-700">
+                      {initialsOf(a.name)}
+                    </div>
+                  )}
 
-                      return (
-                        <button
-                          key={slot.slotId}
-                          disabled={!slot.canBook}
-                          onClick={() => {
-                            setPicked(slot);
-                            setTopic('');
-                          }}
-                          className={`${base} ${cls}`}
-                        >
-                          <span className="flex items-center gap-1.5 text-sm font-semibold">
-                            <Clock className="w-3.5 h-3.5" />
-                            {slot.timeRange}
-                          </span>
-                          <span className="flex items-center gap-1 text-[11px] mt-1 opacity-80">
-                            {slot.isMine ? (
-                              <>
-                                <CheckCircle2 className="w-3 h-3" /> Siz yozilgansiz
-                              </>
-                            ) : slot.reason ? (
-                              <>
-                                <Lock className="w-3 h-3" /> {slot.reason}
-                              </>
-                            ) : (
-                              <>
-                                <Users className="w-3 h-3" /> {slot.free} joy bo'sh
-                              </>
-                            )}
-                          </span>
-                        </button>
-                      );
-                    })}
+                  {/* Ma'lumot */}
+                  <div className="p-4 flex flex-col gap-1.5 grow">
+                    <h3 className="text-white font-bold text-sm leading-tight">{a.name}</h3>
+
+                    {a.filial ? (
+                      <p className="text-zinc-400 text-xs flex items-center gap-1">
+                        <Building2 className="w-3 h-3 shrink-0" />
+                        {a.filial}
+                      </p>
+                    ) : (
+                      <p className="text-zinc-600 text-xs">Filial ko'rsatilmagan</p>
+                    )}
+
+                    {a.bio && <p className="text-zinc-400 text-xs leading-relaxed mt-1">{a.bio}</p>}
+
+                    <p className="text-[11px] mt-1.5">
+                      {freeTotal > 0 ? (
+                        <span className="text-emerald-400">{freeTotal} ta bo'sh joy</span>
+                      ) : (
+                        <span className="text-zinc-600">Bo'sh joy qolmagan</span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Soatlar */}
+                  <div className="px-4 pb-4 mt-auto">
+                    <div className="grid grid-cols-2 gap-2">
+                      {a.slots
+                        .slice()
+                        .sort((x, y) => x.startHour - y.startHour)
+                        .map((slot) => {
+                          const base =
+                            'rounded-lg border px-2.5 py-2 text-left transition-colors disabled:cursor-not-allowed';
+                          const cls = slot.isMine
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                            : slot.canBook
+                            ? 'bg-[#0f0f11] border-zinc-800 text-zinc-200 hover:border-blue-600 hover:text-white'
+                            : 'bg-[#0f0f11] border-zinc-900 text-zinc-600';
+
+                          return (
+                            <button
+                              key={slot.slotId}
+                              disabled={!slot.canBook}
+                              onClick={() => {
+                                setPicked(slot);
+                                setTopic('');
+                              }}
+                              className={`${base} ${cls}`}
+                            >
+                              <span className="flex items-center gap-1 text-xs font-semibold">
+                                <Clock className="w-3 h-3 shrink-0" />
+                                {slot.timeRange}
+                              </span>
+                              <span className="flex items-center gap-1 text-[10px] mt-0.5 opacity-80">
+                                {slot.isMine ? (
+                                  <>
+                                    <CheckCircle2 className="w-2.5 h-2.5" /> Yozildingiz
+                                  </>
+                                ) : slot.reason ? (
+                                  <>
+                                    <Lock className="w-2.5 h-2.5" /> {slot.reason}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Users className="w-2.5 h-2.5" /> {slot.free} joy
+                                  </>
+                                )}
+                              </span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

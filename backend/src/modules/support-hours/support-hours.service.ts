@@ -11,6 +11,7 @@ import {
   todayInCenter,
   toDateOnlyString,
 } from '../../shared/constants/supportHours';
+import { filialLabel } from '../../shared/constants/filials';
 
 const ASSISTANT_ROLES = ['assistant', 'robototexnika_ustoz'];
 
@@ -246,7 +247,7 @@ class SupportHoursService {
         where: { date },
         orderBy: [{ startHour: 'asc' }],
         include: {
-          assistant: { select: { id: true, fullName: true, avatarUrl: true } },
+          assistant: { select: { id: true, fullName: true, avatarUrl: true, bio: true, filial: true } },
           bookings: { select: { id: true, studentId: true, status: true } },
         },
       }),
@@ -273,6 +274,8 @@ class SupportHoursService {
         assistantId: slot.assistant.id,
         assistantName: slot.assistant.fullName,
         assistantAvatar: slot.assistant.avatarUrl,
+        assistantBio: slot.assistant.bio,
+        assistantFilial: filialLabel(slot.assistant.filial),
         capacity: slot.capacity,
         booked: active.length,
         free,

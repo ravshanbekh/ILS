@@ -18,6 +18,13 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+      // Yuklangan fayllar (avatar, do'kon rasmi, quiz musiqasi) backenddan keladi.
+      // Bu bo'lmasa dev rejimida barcha rasmlar siniq ko'rinadi — Vite ularga
+      // SPA'ning index.html ini qaytaradi. Productionda buni nginx qiladi.
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
   },
 })

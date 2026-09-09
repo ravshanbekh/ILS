@@ -50,8 +50,13 @@ model User {
   passwordHash String   @map("password_hash")
   role         UserRole
   avatarUrl    String?  @map("avatar_url")
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Assistent kartochkasi uchun — o'zi profilidan to'ldiradi
+  bio    String? @db.VarChar(300) // qisqa ma'lumot: nima bo'yicha yordam beradi
+  filial String? @db.VarChar(50) // shared/constants/filials.ts dagi kalit
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
   teacherGroups             Group[]               @relation("TeacherGroups")

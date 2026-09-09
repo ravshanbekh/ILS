@@ -7,7 +7,7 @@ import {
   PanelLeftClose, PanelLeftOpen,
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
   Gift, Package, Coins
-, CalendarClock} from 'lucide-react';
+, CalendarClock, UserCircle} from 'lucide-react';
 import { ADMIN_GROUPS, TEACHER_GROUPS, STUDENT_GROUPS } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
 
@@ -130,6 +130,10 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     // Assistent o'z qabul soatlarini boshqaradi
     ...(['assistant', 'robototexnika_ustoz'].includes(user!.role)
       ? [{ to: `/viewer/${user!.role}/my-support-hours`, icon: CalendarClock, label: 'Qabul soatlarim' }]
+      : []),
+    // Kartochkasi o'quvchiga ko'rinadigan rollar o'z profilini to'ldiradi
+    ...(['assistant', 'robototexnika_ustoz'].includes(user!.role)
+      ? [{ to: `/viewer/${user!.role}/profile`, icon: UserCircle, label: 'Mening profilim' }]
       : []),
     // Nazorat — qo'lda beriladigan ruxsat
     ...(canSupportOversight
