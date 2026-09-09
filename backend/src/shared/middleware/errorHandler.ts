@@ -24,11 +24,17 @@ export const errorHandler = (
     stack: err.stack,
   });
 
+  // Stack trace'ni mijozga faqat ATAY yoqilganda (DEBUG_ERRORS=true) chiqaramiz.
+  // Ilgari bu NODE_ENV === 'development' ga bog'liq edi; server esa xatolik bilan
+  // development rejimida ishlab turgani uchun stack trace'lar tashqariga oqib
+  // chiqardi. Endi NODE_ENV qanday bo'lishidan qat'i nazar, faqat ochiq flag kerak.
+  const exposeStack = process.env.DEBUG_ERRORS === 'true';
+
   res.status(statusCode).json({
     success: false,
     error: {
       message,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+      ...(exposeStack && { stack: err.stack }),
     },
   });
 };

@@ -134,6 +134,13 @@ class UsersController {
         if (validated.data.role && validated.data.role !== 'student') {
             throw ApiError.forbidden("O'quvchi rolini o'zgartirish mumkin emas");
         }
+        // IDOR himoyasi: o'quvchi shu o'qituvchining guruhida bo'lishi shart.
+        // Aks holda istalgan o'qituvchi begona o'quvchining login/parolini
+        // almashtirib, akkauntini egallab olishi mumkin edi.
+        const owns = await usersService.isStudentOfTeacher(req.params.id, req.user.userId);
+        if (!owns) {
+          throw ApiError.forbidden("Bu o'quvchi sizning guruhingizda emas");
+        }
       }
 
       const user = await usersService.update(

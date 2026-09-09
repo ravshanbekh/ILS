@@ -150,6 +150,19 @@ class UsersService {
   /**
    * Bitta foydalanuvchini ID bo'yicha olish
    */
+  /**
+   * O'quvchi shu o'qituvchining biror guruhida bormi?
+   * IDOR himoyasi: o'qituvchi faqat o'z guruhidagi o'quvchini tahrirlashi kerak,
+   * aks holda istalgan o'quvchining parolini almashtirib qo'yishi mumkin edi.
+   */
+  async isStudentOfTeacher(studentId: string, teacherId: string): Promise<boolean> {
+    const link = await prisma.groupStudent.findFirst({
+      where: { studentId, group: { teacherId } },
+      select: { id: true },
+    });
+    return !!link;
+  }
+
   async getById(id: string) {
     const user = await prisma.user.findUnique({
       where: { id },

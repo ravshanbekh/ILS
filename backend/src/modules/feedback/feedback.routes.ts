@@ -8,7 +8,7 @@ router.use(authenticate);
 // POST /api/feedback — O'quvchi feedback beradi
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = (req as any).user;
+    const user = req.user!;
     if (user.role !== 'student') {
       return res.status(403).json({ success: false, message: "Faqat o'quvchilar feedback bera oladi" });
     }
@@ -20,7 +20,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     // O'quvchining faol guruhini topish (o'qituvchisi bilan)
     const groupStudent = await prisma.groupStudent.findFirst({
-      where: { studentId: user.id },
+      where: { studentId: user.userId },
       include: { group: true },
     });
 
@@ -41,7 +41,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const feedback = await prisma.studentFeedback.create({
       data: {
-        studentId: user.id,
+        studentId: user.userId,
         teacherId: teacherId,
         groupId: groupId,
         rating: 5, // default qoniqarli baho
@@ -59,9 +59,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // GET /api/feedback/my — O'z feedbacklarini ko'rish
 router.get('/my', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = (req as any).user;
+    const user = req.user!;
     const feedbacks = await prisma.studentFeedback.findMany({
-      where: { studentId: user.id },
+      where: { studentId: user.userId },
       orderBy: { createdAt: 'desc' },
     });
     res.json({ success: true, data: feedbacks });
@@ -73,7 +73,7 @@ router.get('/my', async (req: Request, res: Response, next: NextFunction) => {
 // GET /api/feedback — Admin: barcha feedbacklar
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = (req as any).user;
+    const user = req.user!;
     if (user.role !== 'admin' && user.role !== 'teacher') {
       return res.status(403).json({ success: false, message: "Ruxsat yo'q" });
     }
@@ -95,7 +95,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // PATCH /api/feedback/:id/reply — Admin feedback'ga javob beradi (stub, schema mosligi uchun)
 router.patch('/:id/reply', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = (req as any).user;
+    const user = req.user!;
     if (user.role !== 'admin' && user.role !== 'teacher') {
       return res.status(403).json({ success: false, message: "Ruxsat yo'q" });
     }
@@ -110,13 +110,13 @@ router.patch('/:id/reply', async (req: Request, res: Response, next: NextFunctio
 // GET /api/feedback/ai-analysis — O'quvchining AI tahlilini ko'rish (o'zi uchun)
 router.get('/ai-analysis', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = (req as any).user;
+    const user = req.user!;
     if (user.role !== 'student') {
       return res.status(403).json({ success: false, message: "Faqat o'quvchilar uchun" });
     }
 
     const student = await prisma.user.findUnique({
-      where: { id: user.id },
+      where: { id: user.userId },
       include: {
         submissions: {
           where: { status: 'checked' },

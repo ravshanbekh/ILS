@@ -3,26 +3,51 @@ import coinsService from './coins.service';
 import settingsService from '../settings/settings.service';
 import prisma from '../../config/database';
 import { ApiError } from '../../shared/middleware/errorHandler';
+import { hasPermission } from '../../shared/middleware/permission.middleware';
+
+/**
+ * Bitta o'quvchining coin ma'lumotini kim ko'rishi mumkinligini tekshiradi.
+ *   - o'quvchi — faqat o'zini
+ *   - o'qituvchi — faqat o'z guruhidagini
+ *   - admin yoki coin_oversight ruxsati borlar — hammasini
+ *   - qolganlar (farrosh, call_operatori va h.k.) — yo'q
+ * Ilgari o'qituvchidan boshqa istalgan rol istalgan o'quvchining balans/tarixini
+ * ko'ra olardi.
+ */
+async function assertCanViewStudentCoins(
+  requester: { userId: string; role: string },
+  studentId: string
+) {
+  if (requester.role === 'student') {
+    if (requester.userId !== studentId) {
+      throw ApiError.forbidden("Faqat o'zingizning ma'lumotingizni ko'ra olasiz");
+    }
+    return;
+  }
+  if (requester.role === 'teacher') {
+    const owns = await prisma.groupStudent.findFirst({
+      where: { studentId, group: { teacherId: requester.userId } },
+      select: { id: true },
+    });
+    if (!owns) throw ApiError.forbidden("Bu o'quvchi sizning guruhingizda emas");
+    return;
+  }
+  // Admin va coin_oversight ruxsati borlar o'tadi, qolganlar yo'q
+  const allowed = await hasPermission(requester, 'coin_oversight');
+  if (!allowed) {
+    throw ApiError.forbidden("Sizda o'quvchi coin ma'lumotini ko'rish ruxsati yo'q");
+  }
+}
 
 class CoinsController {
   /**
    * GET /api/coins/balance/:studentId
-   * O'quvchi — o'zinikini, o'qituvchi — o'z guruhidagini, admin/kassir — hammasini ko'radi.
+   * O'quvchi — o'zinikini, o'qituvchi — o'z guruhidagini, admin/oversight — hammasini.
    */
   async getBalance(req: Request, res: Response, next: NextFunction) {
     try {
       const { studentId } = req.params;
-      const requester = req.user!;
-
-      if (requester.role === 'student' && requester.userId !== studentId) {
-        throw ApiError.forbidden("Faqat o'zingizning balansingizni ko'ra olasiz");
-      }
-      if (requester.role === 'teacher') {
-        const owns = await prisma.groupStudent.findFirst({
-          where: { studentId, group: { teacherId: requester.userId } },
-        });
-        if (!owns) throw ApiError.forbidden("Bu o'quvchi sizning guruhingizda emas");
-      }
+      await assertCanViewStudentCoins(req.user!, studentId);
 
       const balance = await coinsService.getBalance(studentId);
       res.json({ success: true, data: { balance } });
@@ -37,11 +62,7 @@ class CoinsController {
   async getHistory(req: Request, res: Response, next: NextFunction) {
     try {
       const { studentId } = req.params;
-      const requester = req.user!;
-
-      if (requester.role === 'student' && requester.userId !== studentId) {
-        throw ApiError.forbidden("Faqat o'zingizning tarixingizni ko'ra olasiz");
-      }
+      await assertCanViewStudentCoins(req.user!, studentId);
 
       const history = await coinsService.getHistory(studentId);
       res.json({ success: true, data: history });
