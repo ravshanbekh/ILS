@@ -87,6 +87,16 @@ jobs:
               echo "--> Frontend o'zgarmadi, skip."
             fi
 
+            # Compose holatini har doim moslashtiramiz. "up -d" (build'siz) faqat
+            # konfiguratsiyasi (masalan port bog'lanishi) compose fayldan farq
+            # qiladigan konteynerni qayta yaratadi, qolganiga tegmaydi (idempotent).
+            # Aks holda docker-compose.yml dagi port o'zgarishi o'sha papka kodi
+            # o'zgarmaguncha qo'llanmay qolardi (frontend 8050 shu sabab ochiq qolgandi).
+            echo ""
+            echo "--> Compose holati moslashtirilmoqda (docker-compose up -d)..."
+            docker-compose up -d
+            echo "[OK] Compose holati qo'llandi"
+
             # Health check
             echo ""
             echo "--> Health check..."
