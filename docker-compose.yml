@@ -22,7 +22,11 @@ services:
     env_file:
       - ./backend/.env
     ports:
-      - "5050:5000"
+      # Faqat localhost — tashqi internetdan yopiq. Trafik faqat nginx orqali
+      # (localhost:5050 -> konteyner). Ilgari "5050:5000" (0.0.0.0) edi va
+      # hujumchi nginx'ni, TLS'ni va xavfsizlik headerlarini chetlab o'tib
+      # to'g'ridan-to'g'ri Node'ga ura olardi.
+      - "127.0.0.1:5050:5000"
     depends_on:
       - db
     restart: unless-stopped
@@ -35,7 +39,8 @@ services:
       dockerfile: Dockerfile
     container_name: tizim_frontend
     ports:
-      - "8050:80"
+      # Faqat localhost — nginx localhost:8050 orqali proxy qiladi
+      - "127.0.0.1:8050:80"
     depends_on:
       - backend
     restart: unless-stopped

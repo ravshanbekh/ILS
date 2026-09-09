@@ -51,6 +51,16 @@ const app = express();
 app.set('trust proxy', 1); // nginx orqasida turgani uchun — rate limit va req.ip to'g'ri ishlashi uchun
 const httpServer = createServer(app);
 
+// ============ SLOWLORIS / SEKIN HUJUM HIMOYASI ============
+// Node standart holatda so'rovni cheksiz kutadi — hujumchi ulanishlarni ochib,
+// so'rovni juda sekin yuborib, barcha bo'sh ulanishlarni band qilib qo'yishi
+// (slowloris) va serverni "ishlamaydigan" holatga keltirishi mumkin edi.
+// Bu limitlar ochiq turgan sekin ulanishlarni majburan yopadi.
+httpServer.requestTimeout = 30_000;   // bitta so'rov to'liq kelib ulgurmasa — uzamiz
+httpServer.headersTimeout = 15_000;   // sarlavhalar sekin kelsa — uzamiz (slowloris)
+httpServer.keepAliveTimeout = 20_000; // bo'sh keep-alive ulanish shuncha kutadi
+httpServer.maxHeadersCount = 100;     // sarlavhalar bilan to'ldirib yuborishga qarshi
+
 // Initsializatsiya Socket.io (mavjud)
 const socketIoServer = initSocket(httpServer);
 // Live Quiz Socket.IO

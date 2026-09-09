@@ -12,6 +12,12 @@ export const initSocket = (server: HttpServer) => {
       methods: ['GET', 'POST'],
       credentials: true,
     },
+    // DDoS/flood himoyasi: bitta xabar hajmi cheklangan (katta payload bilan
+    // xotirani to'ldirishga qarshi) va o'lik ulanishlar tez tozalanadi.
+    maxHttpBufferSize: 1e6, // 1 MB — bundan katta xabar ulanishni uzadi
+    pingInterval: 25_000,
+    pingTimeout: 20_000,
+    connectTimeout: 10_000, // handshake shuncha vaqtda tugamasa — uzamiz
   });
 
   io.on('connection', (socket) => {
