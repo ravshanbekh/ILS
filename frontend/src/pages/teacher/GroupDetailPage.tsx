@@ -7,6 +7,7 @@ import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsA
 import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain, RefreshCw, Snowflake, LogOut, X, Sparkles, ClipboardCheck, ExternalLink, Copy, Check } from 'lucide-react';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import LessonGradingPanel from '@/components/shared/LessonGradingPanel';
+import HomeworkAssignCard from '@/components/shared/HomeworkAssignCard';
 import GroupEventsCard from '@/components/shared/GroupEventsCard';
 import { downloadBlob } from '@/utils';
 
@@ -596,6 +597,13 @@ export default function GroupDetailPage() {
             </div>
           )}
         </div>
+
+        {id && (
+          <HomeworkAssignCard
+            groupId={id}
+            onStartLesson={() => setShowGradingPanel(true)}
+          />
+        )}
 
         {id && <GroupEventsCard groupId={id} />}
 
