@@ -1,11 +1,10 @@
 # Docker-compose uchun maxfiy qiymatlar (DB_PASSWORD va h.k.)
 .env
 .env.local
-
 node_modules/
 dist/
 logs/
 *.log
-
 .DS_Store
 Thumbs.db
+graphify-out/

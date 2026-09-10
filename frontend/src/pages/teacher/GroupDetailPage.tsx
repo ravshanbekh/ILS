@@ -49,6 +49,8 @@ export default function GroupDetailPage() {
   const [actionTab, setActionTab] = useState<'transfer' | 'freeze' | 'remove'>('transfer');
   const [targetGroupId, setTargetGroupId] = useState<string>('');
   const [availableGroups, setAvailableGroups] = useState<any[]>([]);
+  // Guruhlar ko'p bo'lgani uchun avval o'qituvchi tanlanadi, keyin uning guruhi
+  const [targetTeacherId, setTargetTeacherId] = useState<string>('');
   const [actionLoading, setActionLoading] = useState(false);
 
   // Freeze form fields
@@ -286,21 +288,44 @@ export default function GroupDetailPage() {
     // Ruxsat berilgan birinchi bo'limni ochamiz (ruxsatsizlari umuman ko'rinmaydi)
     setActionTab(allowedActionTabs[0] || 'transfer');
     setTargetGroupId('');
+    setTargetTeacherId('');
     setFreezeReason('Kasal');
     setFreezePhone('');
     setFreezeNote('');
 
     try {
-      const res = await groupsApi.getAll(1, 100);
+      // Guruhlar 100 tadan oshishi mumkin — hammasini olamiz, aks holda
+      // ro'yxatdan ba'zi guruhlar tushib qolardi
+      const res = await groupsApi.getAll(1, 500);
       const otherGroups = (res.data.data || []).filter((g: any) => g.id !== id);
       setAvailableGroups(otherGroups);
-      if (otherGroups.length > 0) {
-        setTargetGroupId(otherGroups[0].id);
-      }
+      // Guruhni oldindan tanlab qo'ymaymiz — avval o'qituvchi tanlanadi
     } catch (err) {
       console.error(err);
     }
   };
+
+  /**
+   * O'tkazish oynasi uchun: mavjud guruhlardan o'qituvchilar ro'yxatini yig'amiz.
+   * O'qituvchisi biriktirilmagan guruhlar alohida "O'qituvchisiz" bandiga tushadi,
+   * aks holda ular ro'yxatdan butunlay yo'qolib qolardi.
+   */
+  const NO_TEACHER = '__no_teacher__';
+  const teacherOptions = (() => {
+    const map = new Map<string, { id: string; name: string; groupCount: number }>();
+    for (const g of availableGroups) {
+      const tid = g.teacher?.id || NO_TEACHER;
+      const name = g.teacher?.fullName || "O'qituvchisiz guruhlar";
+      const found = map.get(tid);
+      if (found) found.groupCount++;
+      else map.set(tid, { id: tid, name, groupCount: 1 });
+    }
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  })();
+
+  const groupsOfTeacher = targetTeacherId
+    ? availableGroups.filter((g: any) => (g.teacher?.id || NO_TEACHER) === targetTeacherId)
+    : [];
 
   const handleTransferStudent = async () => {
     if (!id || !actionStudent || !targetGroupId) return;
@@ -1074,28 +1099,58 @@ export default function GroupDetailPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                      Maqsadli guruhni tanlang:
-                    </label>
-                    {availableGroups.length === 0 ? (
-                      <p className="text-xs text-zinc-500 italic p-3 bg-[#09090b] rounded-xl border border-zinc-800">
-                        Boshqa aktiv guruhlar topilmadi.
-                      </p>
-                    ) : (
-                      <select
-                        value={targetGroupId}
-                        onChange={(e) => setTargetGroupId(e.target.value)}
-                        className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:outline-none"
-                      >
-                        {availableGroups.map((g: any) => (
-                          <option key={g.id} value={g.id}>
-                            {g.name} {g.teacher ? `(${g.teacher.fullName})` : ''} • {g.studentsCount || 0} o'quvchi
+                  {availableGroups.length === 0 ? (
+                    <p className="text-xs text-zinc-500 italic p-3 bg-[#09090b] rounded-xl border border-zinc-800">
+                      Boshqa aktiv guruhlar topilmadi.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* 1-qadam: o'qituvchi. Guruhlar ko'p bo'lgani uchun avval
+                          o'qituvchi tanlanadi, keyin faqat uning guruhlari chiqadi. */}
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                          1. O'qituvchini tanlang:
+                        </label>
+                        <select
+                          value={targetTeacherId}
+                          onChange={(e) => {
+                            setTargetTeacherId(e.target.value);
+                            setTargetGroupId('');
+                          }}
+                          className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:outline-none"
+                        >
+                          <option value="">— o'qituvchini tanlang —</option>
+                          {teacherOptions.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} • {t.groupCount} ta guruh
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* 2-qadam: shu o'qituvchining guruhlari */}
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                          2. Guruhni tanlang:
+                        </label>
+                        <select
+                          value={targetGroupId}
+                          onChange={(e) => setTargetGroupId(e.target.value)}
+                          disabled={!targetTeacherId}
+                          className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:outline-none disabled:opacity-40"
+                        >
+                          <option value="">
+                            {targetTeacherId ? "— guruhni tanlang —" : "avval o'qituvchini tanlang"}
                           </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
+                          {groupsOfTeacher.map((g: any) => (
+                            <option key={g.id} value={g.id}>
+                              {g.name} • {g.studentsCount || 0} o'quvchi
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     onClick={handleTransferStudent}
