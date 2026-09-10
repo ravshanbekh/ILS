@@ -9,6 +9,10 @@ import {
   X,
   AlertCircle,
   PlayCircle,
+  Search,
+  ChevronDown,
+  ChevronRight,
+  FolderOpen,
 } from 'lucide-react';
 
 /**
@@ -37,6 +41,13 @@ interface LessonGroup {
   items: HomeworkItem[];
 }
 
+interface Course {
+  id: string;
+  name: string;
+  count: number;
+  lessons: LessonGroup[];
+}
+
 interface AssignOptions {
   sessionId: string;
   groupName: string;
@@ -44,6 +55,8 @@ interface AssignOptions {
   topic: string | null;
   date: string;
   current: { assignmentId: string; homeworkId: string; title: string; note: string | null } | null;
+  /** Faqat o'qituvchiga dostup berilgan kurslar */
+  courses: Course[];
   lessons: LessonGroup[];
 }
 
@@ -62,6 +75,35 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [openCourse, setOpenCourse] = useState<string | null>(null);
+
+  /**
+   * Qidiruv bo'yicha filtr. Bo'sh bo'lsa hamma kurs qaytadi (yopiq holatda),
+   * matn kiritilsa faqat mos vazifalar qoladi va kurslar avtomatik ochiladi.
+   */
+  const visibleCourses = (() => {
+    const q = search.trim().toLowerCase();
+    if (!opts) return [];
+    if (!q) return opts.courses;
+
+    return opts.courses
+      .map((c) => ({
+        ...c,
+        lessons: c.lessons
+          .map((l) => ({
+            ...l,
+            items: l.items.filter(
+              (hw) =>
+                hw.title.toLowerCase().includes(q) ||
+                (hw.description || '').toLowerCase().includes(q) ||
+                l.itemTitle.toLowerCase().includes(q)
+            ),
+          }))
+          .filter((l) => l.items.length > 0),
+      }))
+      .filter((c) => c.lessons.length > 0);
+  })();
 
   const load = async () => {
     setLoading(true);
@@ -180,53 +222,101 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
           </div>
         </div>
       ) : picking ? (
-        /* Vazifa tanlash */
+        /* Vazifa tanlash — kurslar bo'yicha, qidiruv bilan */
         <div className="space-y-3">
-          {(opts?.lessons.length ?? 0) === 0 ? (
+          {(opts?.courses.length ?? 0) === 0 ? (
             <p className="text-amber-300/90 text-sm bg-amber-500/5 border border-amber-500/20 rounded-lg px-3 py-2.5">
-              Vazifa bankasi bo'sh — administrator darsliklarga uyga vazifa qo'shishi kerak.
+              Sizga dostup berilgan kurslarda uyga vazifa topilmadi. Administrator
+              darsliklarga vazifa qo'shishi yoki sizga kursga dostup berishi kerak.
             </p>
           ) : (
             <>
-              <div className="max-h-72 overflow-y-auto space-y-3 pr-1">
-                {opts!.lessons.map((lesson) => (
-                  <div key={lesson.itemId}>
-                    <p className="text-[11px] uppercase tracking-wide text-zinc-500 mb-1.5">
-                      {lesson.folderName} · {lesson.itemTitle}
-                    </p>
-                    <div className="space-y-1.5">
-                      {lesson.items.map((hw) => {
-                        const active = opts!.current?.homeworkId === hw.id;
-                        return (
-                          <button
-                            key={hw.id}
-                            disabled={busy}
-                            onClick={() => assign(hw.id)}
-                            className={`w-full text-left rounded-lg border px-3.5 py-2.5 transition-colors disabled:opacity-50 ${
-                              active
-                                ? 'bg-blue-600/15 border-blue-600 text-white'
-                                : 'bg-[#0f0f11] border-zinc-800 text-zinc-300 hover:border-blue-600'
-                            }`}
-                          >
-                            <span className="text-sm font-medium flex items-center gap-2">
-                              {hw.contentType === 'link' ? (
-                                <Link2 className="w-3.5 h-3.5 shrink-0 text-zinc-500" />
-                              ) : (
-                                <FileText className="w-3.5 h-3.5 shrink-0 text-zinc-500" />
-                              )}
-                              {hw.title}
-                            </span>
-                            {hw.description && (
-                              <span className="text-zinc-500 text-xs block mt-0.5 pl-5.5">
-                                {hw.description}
-                              </span>
+              {/* Qidiruv — 200+ vazifa orasidan tez topish uchun */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Vazifa yoki dars nomi bo'yicha qidirish..."
+                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white"
+                />
+              </div>
+
+              <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+                {visibleCourses.length === 0 ? (
+                  <p className="text-zinc-500 text-sm text-center py-6">
+                    "{search}" bo'yicha hech narsa topilmadi
+                  </p>
+                ) : (
+                  visibleCourses.map((course) => {
+                    const isOpen = search.trim() !== '' || openCourse === course.id;
+                    return (
+                      <div key={course.id} className="border border-zinc-800 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => setOpenCourse(isOpen && !search ? null : course.id)}
+                          className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 bg-[#0f0f11] hover:bg-white/[0.02] text-left"
+                        >
+                          <span className="flex items-center gap-2 min-w-0">
+                            {isOpen ? (
+                              <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />
                             )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                            <FolderOpen className="w-4 h-4 text-blue-400 shrink-0" />
+                            <span className="text-white text-sm font-semibold truncate">{course.name}</span>
+                          </span>
+                          <span className="text-zinc-500 text-xs shrink-0">
+                            {course.lessons.reduce((n, l) => n + l.items.length, 0)} ta vazifa
+                          </span>
+                        </button>
+
+                        {isOpen && (
+                          <div className="p-2.5 space-y-2.5 border-t border-zinc-800">
+                            {course.lessons.map((lesson) => (
+                              <div key={lesson.itemId}>
+                                <p className="text-[11px] uppercase tracking-wide text-zinc-500 mb-1.5">
+                                  {lesson.itemTitle}
+                                </p>
+                                <div className="space-y-1.5">
+                                  {lesson.items.map((hw) => {
+                                    const active = opts!.current?.homeworkId === hw.id;
+                                    return (
+                                      <button
+                                        key={hw.id}
+                                        disabled={busy}
+                                        onClick={() => assign(hw.id)}
+                                        className={`w-full text-left rounded-lg border px-3.5 py-2.5 transition-colors disabled:opacity-50 ${
+                                          active
+                                            ? 'bg-blue-600/15 border-blue-600 text-white'
+                                            : 'bg-[#0f0f11] border-zinc-800 text-zinc-300 hover:border-blue-600'
+                                        }`}
+                                      >
+                                        <span className="text-sm font-medium flex items-center gap-2">
+                                          {hw.contentType === 'link' ? (
+                                            <Link2 className="w-3.5 h-3.5 shrink-0 text-zinc-500" />
+                                          ) : (
+                                            <FileText className="w-3.5 h-3.5 shrink-0 text-zinc-500" />
+                                          )}
+                                          {hw.title}
+                                        </span>
+                                        {hw.description && (
+                                          <span className="text-zinc-500 text-xs block mt-0.5 ml-5.5">
+                                            {hw.description}
+                                          </span>
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
               <input

@@ -1,5 +1,6 @@
 import prisma from '../../config/database';
 import { ApiError } from '../../shared/middleware/errorHandler';
+import { getTeacherVisibility, rootFolderOf } from '../../shared/utils/lessonAccess';
 
 /**
  * Uyga vazifa tizimi.
@@ -178,36 +179,71 @@ class HomeworkService {
   async getAssignOptions(sessionId: string, user: { userId: string; role: string }) {
     const session = await this.loadSessionForTeacher(sessionId, user);
 
+    // O'qituvchiga FAQAT dostup berilgan kurslarning vazifalari ko'rinadi.
+    // Aks holda 3 ta kursning 200+ vazifasi bitta ro'yxatda chiqib, kerakligini
+    // topib bo'lmasdi. Admin — hammasini ko'radi.
+    const { inherited, parentMap } = await getTeacherVisibility(user.userId);
+    const isAdmin = user.role === 'admin';
+
     const homeworks = await prisma.homework.findMany({
-      where: { isActive: true },
-      orderBy: [{ lessonItem: { folder: { order: 'asc' } } }, { order: 'asc' }],
+      where: {
+        isActive: true,
+        ...(isAdmin ? {} : { lessonItem: { folderId: { in: [...inherited] } } }),
+      },
+      orderBy: [{ lessonItem: { order: 'asc' } }, { order: 'asc' }],
       include: {
         lessonItem: {
-          select: { id: true, title: true, folder: { select: { id: true, name: true } } },
+          select: { id: true, title: true, order: true, folder: { select: { id: true, name: true } } },
         },
       },
     });
 
-    // Darslik materiali bo'yicha guruhlaymiz — o'qituvchi mavzu bo'yicha topadi
-    const groups = new Map<string, { itemId: string; itemTitle: string; folderName: string; items: any[] }>();
+    // Barcha papkalar — kurs (eng yuqoridagi ajdod) nomini topish uchun
+    const folders = await prisma.lessonFolder.findMany({ select: { id: true, name: true, parentId: true } });
+    const folderNames = new Map(folders.map((f) => [f.id, f.name]));
+    const fullParentMap = new Map(folders.map((f) => [f.id, f.parentId]));
+    // Admin uchun parentMap alohida kelmaydi — to'liq ro'yxatdan yasaymiz
+    const pm = isAdmin ? fullParentMap : parentMap;
+
+    // Kurs -> darslik -> vazifalar
+    interface LessonNode { itemId: string; itemTitle: string; folderName: string; items: any[] }
+    interface CourseNode { id: string; name: string; lessons: LessonNode[]; count: number }
+    const courses = new Map<string, CourseNode>();
+
     for (const hw of homeworks) {
-      const key = hw.lessonItem.id;
-      if (!groups.has(key)) {
-        groups.set(key, {
+      const folderId = hw.lessonItem.folder?.id;
+      if (!folderId) continue;
+      const rootId = rootFolderOf(folderId, pm);
+      const courseName = folderNames.get(rootId) ?? '—';
+
+      let course = courses.get(rootId);
+      if (!course) {
+        course = { id: rootId, name: courseName, lessons: [], count: 0 };
+        courses.set(rootId, course);
+      }
+
+      let lesson = course.lessons.find((l) => l.itemId === hw.lessonItem.id);
+      if (!lesson) {
+        lesson = {
           itemId: hw.lessonItem.id,
           itemTitle: hw.lessonItem.title,
           folderName: hw.lessonItem.folder?.name ?? '—',
           items: [],
-        });
+        };
+        course.lessons.push(lesson);
       }
-      groups.get(key)!.items.push({
+
+      lesson.items.push({
         id: hw.id,
         title: hw.title,
         description: hw.description,
         contentType: hw.contentType,
         content: hw.content,
       });
+      course.count++;
     }
+
+    const courseList = [...courses.values()].sort((a, b) => a.name.localeCompare(b.name));
 
     const lessonNo = await this.lessonNumber(session.groupId, session.date);
 
@@ -226,7 +262,10 @@ class HomeworkService {
             note: session.assignment.note,
           }
         : null,
-      lessons: [...groups.values()],
+      /** Kurslar bo'yicha kategoriyalangan — faqat dostup berilganlari */
+      courses: courseList,
+      /** Eski tekis ro'yxat (moslik uchun) */
+      lessons: courseList.flatMap((c) => c.lessons),
     };
   }
 
