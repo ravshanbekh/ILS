@@ -56,6 +56,14 @@ export const usersApi = {
 
   /** Foydalanuvchini barcha qurilmalardan chiqarish (faqat admin) */
   forceLogout: (id: string) => api.post(`/users/${id}/force-logout`),
+
+  /**
+   * Hammasini birdan chiqarish (faqat admin).
+   * role: 'student' | 'non_student' | undefined (hammasi).
+   * Buyruq bergan admin o'zi chiqarilmaydi.
+   */
+  forceLogoutAll: (role?: 'student' | 'non_student') =>
+    api.post('/users/force-logout-all', { role }),
 };
 
 export const groupsApi = {

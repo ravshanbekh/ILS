@@ -170,6 +170,46 @@ export default function UsersPage() {
     }
   };
 
+  /**
+   * Hozirgi filtrdagi hammani barcha qurilmalardan chiqarish.
+   * Parolga tegmaydi — hamma o'sha eski paroli bilan qaytib kiradi.
+   * Bu ataylab: maqsad "hozirgi sessiyalarni uzish", "hisobni bloklash" emas.
+   */
+  const handleForceLogoutAll = async () => {
+    const scope =
+      roleFilter === 'student' ? 'student'
+      : roleFilter === 'non_student' ? 'non_student'
+      : undefined;
+    const label =
+      scope === 'student' ? "BARCHA O'QUVCHILAR"
+      : scope === 'non_student' ? 'BARCHA XODIMLAR'
+      : 'BARCHA FOYDALANUVCHILAR';
+
+    if (!window.confirm(
+      `${label} barcha qurilmalardan chiqarilsinmi?
+
+` +
+      `• Ochiq sessiyalari darhol tugaydi
+` +
+      `• Siz tizimda qolasiz
+` +
+      `• Ular O'SHA ESKI PAROLI bilan qaytib kira oladi — bu hisobni bloklamaydi
+
+` +
+      `Parol o'g'irlangan bo'lsa, parolni ham almashtirish kerak.`
+    )) return;
+
+    setForcingLogout('__all__');
+    try {
+      const res = await usersApi.forceLogoutAll(scope);
+      alert(res.data.message || 'Chiqarildi');
+    } catch (e: any) {
+      alert(e?.response?.data?.error?.message || e?.response?.data?.message || 'Xatolik');
+    } finally {
+      setForcingLogout(null);
+    }
+  };
+
   const handleDelete = async (id: string, name?: string) => {
     setDeleteUserObj({ id, name: name || "Foydalanuvchi" });
   };
@@ -220,6 +260,17 @@ export default function UsersPage() {
             <div className="flex gap-3">
               {!isTeacher && (
                 <>
+                  {isAdmin && (
+                    <button
+                      onClick={handleForceLogoutAll}
+                      disabled={forcingLogout === '__all__'}
+                      className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                      title="Hozirgi filtrdagi hammani barcha qurilmalardan chiqarish"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      {forcingLogout === '__all__' ? 'Chiqarilmoqda...' : 'Hammasini chiqarish'}
+                    </button>
+                  )}
                   <button
                     onClick={() => navigate(user?.role === 'admin' ? '/admin/trash' : `/viewer/${user?.role}/trash`)}
                     className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"

@@ -39,6 +39,11 @@ router.post('/me/avatar', avatarUpload.single('avatar'), usersController.uploadM
 // PATCH /api/users/me/profile — o'z kartochka ma'lumotlari (bio, filial)
 router.patch('/me/profile', usersController.updateMyCardProfile);
 
+// POST /api/users/force-logout-all — hammasini birdan chiqarish (faqat admin)
+// :id li yo'ldan OLDIN turishi kerak emas (yo'llar farq qiladi), lekin
+// o'qilishi uchun yonma-yon turadi.
+router.post('/force-logout-all', roleGuard('admin'), usersController.forceLogoutAll);
+
 // POST /api/users/:id/force-logout — barcha qurilmalardan chiqarish (faqat admin)
 router.post('/:id/force-logout', roleGuard('admin'), usersController.forceLogout);
 

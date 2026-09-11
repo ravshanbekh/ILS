@@ -49,6 +49,52 @@ class UsersController {
     }
   }
 
+  /**
+   * POST /api/users/force-logout-all — hammasini birdan chiqarish.
+   *
+   * `role` bilan cheklash mumkin: 'student' | 'non_student' | undefined (hammasi).
+   * Buyruqni bergan admin O'ZI chiqarilmaydi — aks holda u ham login oynasiga
+   * tushib, boshlagan ishini davom ettira olmasdi.
+   *
+   * DIQQAT: bu parolni o'zgartirmaydi. Foydalanuvchilar o'sha eski paroli bilan
+   * qaytib kiradi. Parol o'g'irlangan bo'lsa, parolni ham almashtirish shart.
+   */
+  async forceLogoutAll(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { role } = req.body as { role?: string };
+
+      const where: any = { id: { not: req.user!.userId }, isActive: true };
+      if (role === 'student') where.role = 'student';
+      else if (role === 'non_student') where.role = { not: 'student' };
+
+      const result = await prisma.user.updateMany({
+        where,
+        data: { tokenVersion: { increment: 1 } },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          userId: req.user!.userId,
+          action: 'FORCE_LOGOUT_ALL',
+          targetType: 'user',
+          targetId: req.user!.userId,
+          details: { scope: role || 'all', count: result.count },
+        },
+      });
+
+      const label =
+        role === 'student' ? "o'quvchi" : role === 'non_student' ? 'xodim' : 'foydalanuvchi';
+
+      res.json({
+        success: true,
+        data: { count: result.count },
+        message: `${result.count} ta ${label} barcha qurilmalardan chiqarildi`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /** GET /api/users/filials — tanlash uchun filiallar ro'yxati */
   async getFilials(_req: Request, res: Response, next: NextFunction) {
     try {
