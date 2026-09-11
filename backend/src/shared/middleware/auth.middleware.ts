@@ -8,6 +8,8 @@ export interface JwtPayload {
   userId: string;
   role: string;
   login: string;
+  /** Token versiyasi. Eski (bu maydonsiz) tokenlar 0 deb hisoblanadi. */
+  tv?: number;
 }
 
 declare global {
@@ -35,14 +37,23 @@ export const authenticate = async (
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 
-    // Foydalanuvchi hali ham active ekanligini tekshirish
+    // Foydalanuvchi hali ham active ekanligini va tokeni bekor qilinmaganini tekshirish
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { isActive: true },
+      select: { isActive: true, tokenVersion: true },
     });
 
     if (!user || !user.isActive) {
       throw ApiError.unauthorized('Foydalanuvchi faol emas');
+    }
+
+    // Token bekor qilinganmi? Parol o'zgarganda yoki "barcha qurilmalardan
+    // chiqarish" bosilganda tokenVersion oshadi va eski tokenlar shu yerda
+    // to'xtatiladi.
+    // Eski (tv maydonisiz) tokenlar 0 deb hisoblanadi — shuning uchun bu
+    // o'zgarish deploydan keyin hech kimni tizimdan chiqarib yubormaydi.
+    if ((decoded.tv ?? 0) !== user.tokenVersion) {
+      throw ApiError.unauthorized('Sessiya tugatilgan — qaytadan kiring');
     }
 
     req.user = decoded;

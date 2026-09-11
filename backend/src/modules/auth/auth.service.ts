@@ -29,11 +29,14 @@ class AuthService {
       throw ApiError.unauthorized('Login yoki parol noto\'g\'ri');
     }
 
-    // Token yaratish
+    // Token yaratish. tv — token versiyasi: parol o'zgarsa yoki admin
+    // "barcha qurilmalardan chiqarish" bossa, bu raqam oshadi va shu paytgacha
+    // chiqarilgan tokenlar ishlamay qoladi.
     const payload: JwtPayload = {
       userId: user.id,
       role: user.role,
       login: user.login,
+      tv: user.tokenVersion,
     };
 
     const accessToken = this.generateAccessToken(payload);
@@ -78,17 +81,24 @@ class AuthService {
       // Foydalanuvchi hali active ekanligini tekshirish
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        select: { id: true, role: true, login: true, isActive: true },
+        select: { id: true, role: true, login: true, isActive: true, tokenVersion: true },
       });
 
       if (!user || !user.isActive) {
         throw ApiError.unauthorized('Foydalanuvchi topilmadi yoki faol emas');
       }
 
+      // Bekor qilingan refresh token bilan yangi token olib bo'lmasin —
+      // aks holda o'g'irlangan token 7 kun davomida o'zini yangilab yuraverardi.
+      if ((decoded.tv ?? 0) !== user.tokenVersion) {
+        throw ApiError.unauthorized('Sessiya tugatilgan — qaytadan kiring');
+      }
+
       const payload: JwtPayload = {
         userId: user.id,
         role: user.role,
         login: user.login,
+        tv: user.tokenVersion,
       };
 
       const newAccessToken = this.generateAccessToken(payload);

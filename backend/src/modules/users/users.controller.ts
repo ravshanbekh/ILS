@@ -9,6 +9,46 @@ import { ApiError } from '../../shared/middleware/errorHandler';
 import { FILIALS, isValidFilial, filialLabel } from '../../shared/constants/filials';
 
 class UsersController {
+  /**
+   * POST /api/users/:id/force-logout — foydalanuvchini barcha qurilmalardan chiqarish.
+   *
+   * Hisob buzilgan deb gumon qilinsa kerak bo'ladi: parolni bilmasdan turib
+   * ham o'g'irlangan tokenni darhol o'ldiradi. Foydalanuvchi o'chirilmaydi —
+   * u shunchaki qaytadan login qiladi.
+   */
+  async forceLogout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const target = await prisma.user.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, fullName: true, login: true },
+      });
+      if (!target) throw ApiError.notFound('Foydalanuvchi topilmadi');
+
+      const updated = await prisma.user.update({
+        where: { id: target.id },
+        data: { tokenVersion: { increment: 1 } },
+        select: { tokenVersion: true },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          userId: req.user!.userId,
+          action: 'FORCE_LOGOUT',
+          targetType: 'user',
+          targetId: target.id,
+          details: { login: target.login, newTokenVersion: updated.tokenVersion },
+        },
+      });
+
+      res.json({
+        success: true,
+        message: `${target.fullName} barcha qurilmalardan chiqarildi`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /** GET /api/users/filials — tanlash uchun filiallar ro'yxati */
   async getFilials(_req: Request, res: Response, next: NextFunction) {
     try {

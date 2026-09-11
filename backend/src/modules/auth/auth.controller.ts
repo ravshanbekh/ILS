@@ -134,7 +134,13 @@ class AuthController {
 
       const updateData: any = {};
       if (login) updateData.login = login;
-      if (newPassword) updateData.passwordHash = await bcrypt.hash(newPassword, 10);
+      if (newPassword) {
+        updateData.passwordHash = await bcrypt.hash(newPassword, 10);
+        // Parol o'zgarganda barcha eski tokenlar bekor qilinadi.
+        // Ilgari parolni almashtirsangiz ham o'g'irlangan token 7 kun ishlayverardi —
+        // "parolni o'zgartiraman" degan odatiy himoya chorasi kuchga kiradi.
+        updateData.tokenVersion = { increment: 1 };
+      }
 
       const updated = await prisma.user.update({
         where: { id: req.user.userId },

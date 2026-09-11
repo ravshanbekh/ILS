@@ -321,6 +321,9 @@ class UsersService {
     // Parolni hash qilish (agar o'zgaryapti)
     if (data.password) {
       updateData.passwordHash = await bcrypt.hash(data.password, 12);
+      // Admin/o'qituvchi parolni almashtirsa, o'sha odamning barcha ochiq
+      // sessiyalari ham tugatiladi — aks holda eski token 7 kun ishlayverardi.
+      updateData.tokenVersion = { increment: 1 };
     }
 
     const user = await prisma.user.update({

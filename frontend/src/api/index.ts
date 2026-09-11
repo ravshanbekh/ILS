@@ -53,6 +53,9 @@ export const usersApi = {
   update: (id: string, data: any) => api.put(`/users/${id}`, data),
 
   delete: (id: string) => api.delete(`/users/${id}`),
+
+  /** Foydalanuvchini barcha qurilmalardan chiqarish (faqat admin) */
+  forceLogout: (id: string) => api.post(`/users/${id}/force-logout`),
 };
 
 export const groupsApi = {

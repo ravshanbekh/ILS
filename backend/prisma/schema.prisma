@@ -55,7 +55,13 @@ model User {
   bio    String? @db.VarChar(300) // qisqa ma'lumot: nima bo'yicha yordam beradi
   filial String? @db.VarChar(50) // shared/constants/filials.ts dagi kalit
 
-  isActive  Boolean  @default(true) @map("is_active")
+  isActive Boolean @default(true) @map("is_active")
+
+  // Token versiyasi — chiqarilgan tokenlarni bekor qilish uchun.
+  // Parol o'zgarganda yoki "barcha qurilmalardan chiqarish" bosilganda oshadi;
+  // eski tokenlardagi raqam mos kelmay qoladi va ular darrov ishlamaydi.
+  tokenVersion Int @default(0) @map("token_version")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations

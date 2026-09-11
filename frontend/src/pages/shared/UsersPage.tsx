@@ -5,7 +5,7 @@ import { usersApi, groupsApi } from '@/api';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import ConfirmModal from '@/components/shared/ConfirmModal';
-import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight, FolderOpen, ExternalLink, ShieldCheck } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, KeyRound, Copy, Check, Search, ChevronLeft, ChevronRight, FolderOpen, ExternalLink, ShieldCheck, LogOut } from 'lucide-react';
 import { formatDateTime } from '@/utils';
 
 export default function UsersPage() {
@@ -31,6 +31,7 @@ export default function UsersPage() {
   const [bulkData, setBulkData] = useState('');
   const [bulkLoading, setBulkLoading] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [forcingLogout, setForcingLogout] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     login: '',
     password: '',
@@ -142,6 +143,30 @@ export default function UsersPage() {
       console.error(error);
       const msg = error.response?.data?.message || 'Xatolik yuz berdi';
       alert(msg);
+    }
+  };
+
+  /**
+   * Foydalanuvchini barcha qurilmalardan chiqarish.
+   * Hisob buzilgan deb gumon qilinsa kerak: parolni bilmasdan turib ham
+   * o'g'irlangan tokenni darhol o'ldiradi. Hisob o'chirilmaydi.
+   */
+  const handleForceLogout = async (id: string, name?: string) => {
+    if (!window.confirm(
+      `${name || 'Foydalanuvchi'} barcha qurilmalardan chiqarilsinmi?
+
+` +
+      `Ochiq sessiyalari darhol tugatiladi. U qaytadan login qilishi mumkin.`
+    )) return;
+
+    setForcingLogout(id);
+    try {
+      const res = await usersApi.forceLogout(id);
+      alert(res.data.message || 'Chiqarildi');
+    } catch (e: any) {
+      alert(e?.response?.data?.error?.message || e?.response?.data?.message || 'Xatolik');
+    } finally {
+      setForcingLogout(null);
     }
   };
 
@@ -385,6 +410,16 @@ export default function UsersPage() {
                                   title="Ruxsatlarini sozlash"
                                 >
                                   <ShieldCheck className="w-4 h-4" />
+                                </button>
+                              )}
+                              {isAdmin && (
+                                <button
+                                  onClick={() => handleForceLogout(u.id, u.fullName)}
+                                  disabled={forcingLogout === u.id}
+                                  className="p-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors disabled:opacity-50"
+                                  title="Barcha qurilmalardan chiqarish — hisob buzilgan deb gumon qilsangiz"
+                                >
+                                  <LogOut className="w-4 h-4" />
                                 </button>
                               )}
                               <button

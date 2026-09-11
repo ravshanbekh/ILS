@@ -39,6 +39,9 @@ router.post('/me/avatar', avatarUpload.single('avatar'), usersController.uploadM
 // PATCH /api/users/me/profile — o'z kartochka ma'lumotlari (bio, filial)
 router.patch('/me/profile', usersController.updateMyCardProfile);
 
+// POST /api/users/:id/force-logout — barcha qurilmalardan chiqarish (faqat admin)
+router.post('/:id/force-logout', roleGuard('admin'), usersController.forceLogout);
+
 // GET /api/users/filials — filiallar ro'yxati (yagona manba: constants/filials.ts)
 router.get('/filials', usersController.getFilials);
 
