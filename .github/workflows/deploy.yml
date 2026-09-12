@@ -114,8 +114,8 @@ jobs:
             fi
 
             # ── HOST NGINX KONFIGURATSIYASI ──────────────────────────────
-            # nginx-server.conf repoda turadi, lekin host nginx uni
-            # /etc/nginx/sites-available/ dan o'qiydi. Ilgari uni QO'LDA
+            # nginx-itlivescore.conf repoda turadi, lekin host nginx uni
+            # /etc/nginx/conf.d/ dan o'qiydi. Ilgari uni QO'LDA
             # ko'chirish kerak edi va shu sababli repodagi yangilanishlar
             # (rate limiting, Cloudflare real-IP) serverga yetib bormasdi.
             #
@@ -123,16 +123,16 @@ jobs:
             # tekshiriladi. Test o'tmasa — eski konfiguratsiya QAYTARILADI va
             # nginx reload QILINMAYDI. Ya'ni buzuq konfiguratsiya saytni
             # to'xtata olmaydi.
-            NGINX_TARGET=/etc/nginx/sites-available/itlivescore
-            if [ -f nginx-server.conf ] && [ -f "$NGINX_TARGET" ]; then
-              if cmp -s nginx-server.conf "$NGINX_TARGET"; then
+            NGINX_TARGET=/etc/nginx/conf.d/itlivescore.conf
+            if [ -f nginx-itlivescore.conf ] && [ -f "$NGINX_TARGET" ]; then
+              if cmp -s nginx-itlivescore.conf "$NGINX_TARGET"; then
                 echo ""
                 echo "--> nginx konfiguratsiyasi o'zgarmagan, skip."
               else
                 echo ""
                 echo "--> nginx konfiguratsiyasi o'zgardi, qo'llanmoqda..."
                 cp "$NGINX_TARGET" /tmp/itlivescore.nginx.bak
-                cp nginx-server.conf "$NGINX_TARGET"
+                cp nginx-itlivescore.conf "$NGINX_TARGET"
 
                 if nginx -t 2>&1; then
                   systemctl reload nginx
@@ -141,7 +141,7 @@ jobs:
                   echo "[XATO] nginx -t o'tmadi — eski konfiguratsiya qaytarilmoqda"
                   cp /tmp/itlivescore.nginx.bak "$NGINX_TARGET"
                   nginx -t && echo "[OK] Eski konfiguratsiya tiklandi (sayt ishlashda davom etadi)"
-                  echo "[!] nginx-server.conf ni tekshiring — qo'llanmadi"
+                  echo "[!] nginx-itlivescore.conf ni tekshiring — qo'llanmadi"
                 fi
               fi
             else
