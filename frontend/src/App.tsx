@@ -22,6 +22,7 @@ import { useEffect, Suspense } from 'react';
  * faqat o'zi ochgan sahifani yuklaydi.
  */
 const AdminDashboard = lazyWithReload(() => import('@/pages/admin/DashboardPage'));
+const DesignPreviewPage = lazyWithReload(() => import('@/pages/dev/DesignPreviewPage'));
 const TeacherDashboard = lazyWithReload(() => import('@/pages/teacher/DashboardPage'));
 const TeacherPendingPage = lazyWithReload(() => import('@/pages/teacher/PendingPage'));
 const StudentDashboard = lazyWithReload(() => import('@/pages/student/DashboardPage'));
@@ -178,6 +179,13 @@ export default function App() {
           <Routes>
             {/* Auth */}
             <Route path="/login" element={<AuthRedirect />} />
+
+            {/* Dizayn qabul tekshiruvi uchun sahifa. FAQAT dev rejimida
+                mavjud — `import.meta.env.DEV` production bundlega kirmaydi.
+                Referens screenshotlar bilan yonma-yon solishtirish uchun. */}
+            {import.meta.env.DEV && (
+              <Route path="/__design" element={<DesignPreviewPage />} />
+            )}
 
             {/* Special Print Routes (Without Layout) */}
             <Route

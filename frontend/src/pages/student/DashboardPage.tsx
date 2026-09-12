@@ -92,13 +92,13 @@ export default function StudentDashboard() {
       <div className="p-8 space-y-8 max-w-7xl mx-auto">
         
         {/* Header Profile Info (Level & Progress) */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
           <div className="flex items-center gap-6 z-10">
             <div className="relative">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center text-3xl sm:text-4xl font-bold text-white border border-white/10 shadow-xl">
                 {user?.fullName?.charAt(0) || '?'}
               </div>
-              <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center border-2 border-[#18181b] shadow-lg transform rotate-12">
+              <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center border-2 border-zinc-900 shadow-lg transform rotate-12">
                 <span className="text-white font-bold text-sm">{stats?.level || 1}</span>
               </div>
             </div>
@@ -146,7 +146,7 @@ export default function StudentDashboard() {
 
         {/* Badges Section */}
         {stats?.badges && stats.badges.length > 0 && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 relative overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 relative overflow-hidden">
             <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2 relative z-10">
               <Star className="w-5 h-5 text-amber-500 fill-amber-500/20" />
               Mening yutuqlarim
@@ -189,7 +189,7 @@ export default function StudentDashboard() {
 
         {/* O'sish dinamikasi (Line Chart) */}
         {chartData.length > 0 && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
             <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-500" />
               O'sish dinamikasi
@@ -220,14 +220,14 @@ export default function StudentDashboard() {
 
         {/* Guruh reytinglari */}
         {stats?.groups && stats.groups.length > 0 && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
             <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-500" />
               Guruh o'rinlarim
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {stats.groups.map((g: any) => (
-                <div key={g.group.id} className="p-4 rounded-lg bg-[#09090b] border border-zinc-800">
+                <div key={g.group.id} className="p-4 rounded-lg bg-zinc-950 border border-zinc-800">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-white font-medium text-sm">{g.group.name} guruhi</p>
@@ -245,11 +245,11 @@ export default function StudentDashboard() {
 
         {/* So'nggi topshiriqlar */}
         {stats?.submissions && stats.submissions.length > 0 && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
             <h3 className="text-base font-semibold text-white mb-4">So'nggi topshiriqlar</h3>
             <div className="space-y-3">
               {stats.submissions.slice(0, 10).map((sub: any) => (
-                <div key={sub.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-[#09090b] border border-zinc-800 gap-3">
+                <div key={sub.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-zinc-950 border border-zinc-800 gap-3">
                   <div className="flex items-start sm:items-center gap-3">
                     <span className="text-xs font-mono text-zinc-500 mt-1 sm:mt-0 w-8">#{sub.normative.taskNumber}</span>
                     <div>
@@ -316,7 +316,7 @@ export default function StudentDashboard() {
         </div>
 
         {/* Feedback Form */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare className="w-5 h-5 text-blue-400" />
             <h3 className="text-white font-bold text-sm">O'qituvchiga Fikr-Mulohaza Yuborish</h3>

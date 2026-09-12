@@ -7,15 +7,26 @@
     <meta name="description" content="ILS — IT Live Score | O'quv markaz normativlarini boshqarish tizimi" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Hanken+Grotesk:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <script>
-      (function() {
-        const theme = localStorage.getItem('theme') || 'dark';
-        if (theme === 'light') {
-          document.documentElement.classList.add('light');
-        } else {
-          document.documentElement.classList.remove('light');
+      // Theme birinchi bo'yoqdan OLDIN qo'llanadi — aks holda dark rejimda
+      // sahifa bir lahza oq bo'lib "chaqnaydi".
+      // DOM shartnomasi: <html data-theme="light|dark">. src/theme/theme.ts
+      // bilan bir xil mantiq; ikkalasi ham 'system' ni qo'llab-quvvatlaydi.
+      (function () {
+        var pref = 'dark';
+        try {
+          var saved = localStorage.getItem('theme');
+          if (saved === 'light' || saved === 'dark' || saved === 'system') pref = saved;
+        } catch (e) {}
+        var resolved = pref;
+        if (pref === 'system') {
+          resolved = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+            ? 'light'
+            : 'dark';
         }
+        document.documentElement.setAttribute('data-theme', resolved);
+        document.documentElement.classList.remove('light');
       })();
     </script>
     <title>ILS — IT Live Score</title>

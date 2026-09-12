@@ -56,14 +56,14 @@ export default function TeacherDashboard() {
 
         {/* Guruhlar bo'yicha statistika */}
         {stats?.groupStats && stats.groupStats.length > 0 && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
             <h3 className="text-base font-semibold text-white mb-4">Guruhlar statistikasi</h3>
             <div className="space-y-3">
               {stats.groupStats.map((g: any) => (
                 <div
                   key={g.id}
                   onClick={() => navigate(`/teacher/groups/${g.id}`)}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-[#09090b] border border-zinc-800 hover:border-blue-500/30 cursor-pointer transition-all duration-200"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-blue-500/30 cursor-pointer transition-all duration-200"
                 >
                   <div className="flex items-center gap-4 mb-3 sm:mb-0">
                     <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 font-bold border border-blue-500/20">
@@ -94,7 +94,7 @@ export default function TeacherDashboard() {
           </div>
         )}
         {/* Kunlik Checklist (Mentor) */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="flex items-center gap-3 px-6 py-4 border-b border-zinc-800">
             <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
               <CheckSquare className="w-4 h-4 text-purple-400" />

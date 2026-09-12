@@ -110,7 +110,7 @@ export default function StudentCategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header
         title="Natija kategoriyalari"
         subtitle={isAdmin ? "Barcha o'quvchilar — past/o'rtacha/yuqori natija bo'yicha" : "Sizning o'quvchilaringiz — past/o'rtacha/yuqori natija bo'yicha"}
@@ -122,7 +122,7 @@ export default function StudentCategoriesPage() {
           <select
             value={groupFilter}
             onChange={(e) => setGroupFilter(e.target.value)}
-            className="bg-[#18181b] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+            className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
           >
             <option value="">{isAdmin ? 'Barcha guruhlar' : 'Guruhlarim (barchasi)'}</option>
             {groups.map((g: any) => (
@@ -142,7 +142,7 @@ export default function StudentCategoriesPage() {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(active ? 'all' : cat)}
-                className={`text-left bg-[#18181b] border rounded-xl p-5 flex items-center gap-4 transition-colors ${
+                className={`text-left bg-zinc-900 border rounded-xl p-5 flex items-center gap-4 transition-colors ${
                   active ? `${colors.border} ring-1 ring-inset ${colors.border}` : 'border-zinc-800 hover:border-zinc-700'
                 }`}
               >
@@ -160,7 +160,7 @@ export default function StudentCategoriesPage() {
 
         {/* Bir tugmali xabar — faqat admin */}
         {isAdmin && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
             <h3 className="text-white font-bold text-sm mb-4">Kategoriya bo'yicha bir tugmali xabar</h3>
 
             <div className="flex flex-wrap gap-2 mb-3">
@@ -220,7 +220,7 @@ export default function StudentCategoriesPage() {
         )}
 
         {/* Ro'yxat */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
             <h3 className="text-white font-bold text-sm">
               O'quvchilar {activeCategory !== 'all' && `— ${CATEGORY_META[activeCategory].label}`}

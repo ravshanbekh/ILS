@@ -137,7 +137,7 @@ export default function GroupsPage() {
                 placeholder="Guruh nomini qidiring..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-[#18181b] border border-zinc-800 rounded-xl text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
+                className="w-full pl-9 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-sm"
               />
             </div>
 
@@ -148,7 +148,7 @@ export default function GroupsPage() {
                 <select
                   value={selectedTeacherId}
                   onChange={(e) => setSelectedTeacherId(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-[#18181b] border border-zinc-800 rounded-xl text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none"
+                  className="w-full pl-9 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none"
                 >
                   <option value="">Barcha o'qituvchilar</option>
                   {teachers.map(t => (
@@ -161,7 +161,7 @@ export default function GroupsPage() {
             {['admin', 'administrator', 'filial_rahbari'].includes(user?.role || '') && (
               <button
                 onClick={() => navigate(user?.role === 'admin' ? '/admin/trash' : `/viewer/${user?.role}/trash`)}
-                className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap justify-center"
+                className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap justify-center"
                 title="O'chirilgan guruhlarni ko'rish va qaytarish"
               >
                 <Trash2 className="w-4 h-4 text-red-400" />
@@ -197,7 +197,7 @@ export default function GroupsPage() {
             <div className="col-span-full text-center py-8 text-zinc-500">Guruhlar mavjud emas</div>
           ) : (
             groups.map((g) => (
-              <Link to={user?.role === 'admin' ? `/admin/groups/${g.id}` : `/teacher/groups/${g.id}`} key={g.id} className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 transition-all hover:border-blue-500/30 block group cursor-pointer relative">
+              <Link to={user?.role === 'admin' ? `/admin/groups/${g.id}` : `/teacher/groups/${g.id}`} key={g.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 transition-all hover:border-blue-500/30 block group cursor-pointer relative">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
                     <span className="text-lg font-bold text-blue-500">{g.name.charAt(0)}</span>
@@ -241,7 +241,7 @@ export default function GroupsPage() {
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg bg-[#18181b] border border-zinc-800 text-zinc-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -262,7 +262,7 @@ export default function GroupsPage() {
                         className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${
                           currentPage === page
                             ? 'bg-blue-600 text-white'
-                            : 'bg-[#18181b] border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                            : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
                         }`}
                       >
                         {page}
@@ -281,7 +281,7 @@ export default function GroupsPage() {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg bg-[#18181b] border border-zinc-800 text-zinc-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -292,8 +292,8 @@ export default function GroupsPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-md p-6 shadow-2xl border border-zinc-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-zinc-800">
             <h2 className="text-xl font-bold text-white mb-6">
               {editingGroup ? 'Guruhni tahrirlash' : 'Yangi guruh'}
             </h2>
@@ -305,7 +305,7 @@ export default function GroupsPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   required
                   placeholder="Masalan: Frontend 101"
                 />
@@ -317,7 +317,7 @@ export default function GroupsPage() {
                   <select
                     value={formData.teacherId}
                     onChange={(e) => setFormData({...formData, teacherId: e.target.value})}
-                    className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="">Biriktirilmagan</option>
                     {teachers.map(t => (
@@ -331,7 +331,7 @@ export default function GroupsPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
+                  className="flex-1 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
                 >
                   Bekor qilish
                 </button>

@@ -138,7 +138,7 @@ export default function ResultsPage() {
       : null;
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Natijalarim" subtitle="Imtihon ballari va uyga vazifa baholari" />
 
       <div className="p-4 sm:p-8 max-w-3xl mx-auto space-y-6">
@@ -162,7 +162,7 @@ export default function ResultsPage() {
                 </h2>
                 <div className="space-y-3">
                   {active.map((ex) => (
-                    <div key={ex.id} className="bg-[#18181b] border border-emerald-500/30 rounded-xl p-5">
+                    <div key={ex.id} className="bg-zinc-900 border border-emerald-500/30 rounded-xl p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h3 className="text-white font-bold">{ex.title}</h3>
@@ -208,14 +208,14 @@ export default function ResultsPage() {
                 <Trophy className="w-3.5 h-3.5" /> Imtihon natijalari
               </h2>
               {exams.length === 0 ? (
-                <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-8 text-center">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
                   <FileText className="w-7 h-7 text-zinc-700 mx-auto mb-2" />
                   <p className="text-zinc-500 text-sm">Hali imtihon topshirmagansiz</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {exams.map((r) => (
-                    <div key={r.participantId} className="bg-[#18181b] border border-zinc-800 rounded-xl p-5">
+                    <div key={r.participantId} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
                       <div className="flex items-start justify-between gap-3 mb-4">
                         <div className="min-w-0">
                           <h3 className="text-white font-bold text-sm">{r.title}</h3>
@@ -278,12 +278,12 @@ export default function ResultsPage() {
               </div>
 
               {homework.length === 0 ? (
-                <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-8 text-center">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
                   <BookOpen className="w-7 h-7 text-zinc-700 mx-auto mb-2" />
                   <p className="text-zinc-500 text-sm">Hali uyga vazifa berilmagan</p>
                 </div>
               ) : (
-                <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden divide-y divide-zinc-900">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden divide-y divide-zinc-900">
                   {homework.map((h) => {
                     const st = hwStyle(h.grade);
                     return (

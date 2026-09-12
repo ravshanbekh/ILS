@@ -201,7 +201,7 @@ export default function HomeworkBankPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header
         title="Uyga vazifa bankasi"
         subtitle="Darsliklarga vazifa biriktiring — o'qituvchi shu ro'yxatdan tanlab guruhiga beradi"
@@ -224,7 +224,7 @@ export default function HomeworkBankPage() {
         ) : (
           <>
             {/* Tanlash */}
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5 grid sm:grid-cols-2 gap-4">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="flex items-center gap-2 text-xs font-semibold text-zinc-400 mb-2">
                   <FolderOpen className="w-3.5 h-3.5" /> Papka
@@ -265,7 +265,7 @@ export default function HomeworkBankPage() {
 
             {/* Vazifalar */}
             {itemId && (
-              <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800">
                   <h3 className="text-white font-bold text-sm">
                     Vazifalar {homeworks.length > 0 && <span className="text-zinc-500">({homeworks.length})</span>}
@@ -354,7 +354,7 @@ export default function HomeworkBankPage() {
       {/* Forma */}
       {showForm && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
               <h2 className="text-white font-bold">
                 {editing ? 'Vazifani tahrirlash' : 'Yangi uyga vazifa'}

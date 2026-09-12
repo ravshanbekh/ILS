@@ -140,7 +140,7 @@ export default function TrashPage() {
         {/* Top bar with tabs and empty trash button */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
           {/* Tabs */}
-          <div className="flex items-center gap-2 p-1.5 bg-[#18181b] border border-zinc-800 rounded-xl">
+          <div className="flex items-center gap-2 p-1.5 bg-zinc-900 border border-zinc-800 rounded-xl">
             <button
               onClick={() => setActiveTab('groups')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -190,16 +190,16 @@ export default function TrashPage() {
             placeholder={activeTab === 'groups' ? "Guruh nomi bo'yicha qidirish..." : "Ism yoki login bo'yicha qidirish..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#18181b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:outline-none placeholder:text-zinc-600"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:outline-none placeholder:text-zinc-600"
           />
         </div>
 
         {/* Content Table */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden shadow-xl">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             {activeTab === 'groups' ? (
               <table className="w-full text-left text-sm text-zinc-300">
-                <thead className="bg-[#09090b] text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
+                <thead className="bg-zinc-950 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
                   <tr>
                     <th className="px-6 py-4">Guruh nomi</th>
                     <th className="px-6 py-4">O'qituvchisi</th>
@@ -208,7 +208,7 @@ export default function TrashPage() {
                     <th className="px-6 py-4 text-right">Amallar</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/50 bg-[#09090b]">
+                <tbody className="divide-y divide-zinc-800/50 bg-zinc-950">
                   {loading ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
@@ -268,7 +268,7 @@ export default function TrashPage() {
               </table>
             ) : (
               <table className="w-full text-left text-sm text-zinc-300">
-                <thead className="bg-[#09090b] text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
+                <thead className="bg-zinc-950 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
                   <tr>
                     <th className="px-6 py-4">F.I.Sh.</th>
                     <th className="px-6 py-4">Login</th>
@@ -277,7 +277,7 @@ export default function TrashPage() {
                     <th className="px-6 py-4 text-right">Amallar</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/50 bg-[#09090b]">
+                <tbody className="divide-y divide-zinc-800/50 bg-zinc-950">
                   {loading ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">

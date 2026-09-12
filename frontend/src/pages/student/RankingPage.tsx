@@ -140,7 +140,7 @@ export default function StudentRankingPage() {
       <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-6">
 
         {/* Filter Section */}
-        <div className="bg-[#18181b] rounded-2xl overflow-hidden border border-zinc-800">
+        <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800">
           <div className="p-4 sm:p-5 border-b border-zinc-800/50">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
@@ -192,7 +192,7 @@ export default function StudentRankingPage() {
                     className="flex-1 min-w-0 px-4 py-2.5 rounded-xl bg-zinc-800/50 text-purple-400 border border-purple-500/30 text-sm font-medium focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 appearance-none cursor-pointer"
                   >
                     {groups.map(g => (
-                      <option key={g.id} value={g.id} className="bg-[#18181b] text-white">
+                      <option key={g.id} value={g.id} className="bg-zinc-900 text-white">
                         {g.name}
                       </option>
                     ))}
@@ -209,13 +209,13 @@ export default function StudentRankingPage() {
                 placeholder="O'quvchi ismi bo'yicha qidirish..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); }}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600 transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600 transition-colors"
               />
             </div>
           </div>
 
           {/* Stats Bar */}
-          <div className="px-5 py-3 bg-[#09090b]/50 flex items-center justify-between">
+          <div className="px-5 py-3 bg-zinc-950/50 flex items-center justify-between">
             <span className="text-xs text-zinc-500">
               Jami: <span className="text-zinc-300 font-semibold">{pagination.total}</span> o'quvchi
             </span>
@@ -245,8 +245,8 @@ export default function StudentRankingPage() {
         )}
 
         {/* Ranking List */}
-        <div className="bg-[#18181b] rounded-2xl overflow-hidden border border-zinc-800 shadow-sm">
-          <div className="p-5 border-b border-zinc-800 flex items-center gap-4 bg-[#18181b]">
+        <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 shadow-sm">
+          <div className="p-5 border-b border-zinc-800 flex items-center gap-4 bg-zinc-900">
             <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
               <Trophy className="w-5 h-5 text-amber-500" />
             </div>
@@ -278,7 +278,7 @@ export default function StudentRankingPage() {
             </div>
           ) : (
             <>
-              <div className="divide-y divide-zinc-800/50 bg-[#09090b]">
+              <div className="divide-y divide-zinc-800/50 bg-zinc-950">
                 {ranking.length === 0 ? (
                   <div className="p-12 text-center text-zinc-500 text-sm">
                     <Trophy className="w-10 h-10 mx-auto mb-3 text-zinc-700" />
@@ -297,7 +297,7 @@ export default function StudentRankingPage() {
                           isCurrentUser
                             ? 'bg-blue-500/5 border-l-2 border-l-blue-500'
                             : isTop3
-                              ? 'bg-[#18181b] hover:bg-zinc-800/30'
+                              ? 'bg-zinc-900 hover:bg-zinc-800/30'
                               : 'hover:bg-zinc-800/30'
                         }`}
                       >
@@ -373,7 +373,7 @@ export default function StudentRankingPage() {
                           <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border min-w-[90px] justify-center ${
                             isTop3
                               ? 'bg-amber-500/5 border-amber-500/20'
-                              : 'bg-[#09090b] border-zinc-800'
+                              : 'bg-zinc-950 border-zinc-800'
                           }`}>
                             <Star className={`w-3.5 h-3.5 ${isTop3 ? 'text-amber-500 fill-amber-500' : 'text-zinc-500'}`} />
                             <span className={`font-bold ${isTop3 ? 'text-amber-500 text-lg' : 'text-zinc-300 text-base'}`}>
@@ -389,7 +389,7 @@ export default function StudentRankingPage() {
 
               {/* Pagination */}
               {pagination.totalPages > 1 && (
-                <div className="p-4 border-t border-zinc-800 flex items-center justify-between bg-[#18181b]">
+                <div className="p-4 border-t border-zinc-800 flex items-center justify-between bg-zinc-900">
                   <p className="text-xs text-zinc-500 hidden sm:block">
                     {(pagination.page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(pagination.page * ITEMS_PER_PAGE, pagination.total)} / {pagination.total}
                   </p>

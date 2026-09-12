@@ -75,7 +75,7 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Do'kon" subtitle="Coiningizga sovg'a tanlang" />
 
       <div className="p-8 max-w-6xl mx-auto space-y-8">
@@ -108,7 +108,7 @@ export default function ShopPage() {
               const canAfford = (balance ?? 0) >= item.price;
               const outOfStock = item.stock !== null && item.stock <= 0;
               return (
-                <div key={item.id} className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden flex flex-col">
+                <div key={item.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col">
                   <div className="h-40 bg-zinc-900 flex items-center justify-center">
                     {item.imageUrl ? (
                       <img src={`${API_BASE}${item.imageUrl}`} alt={item.name} className="w-full h-full object-contain" />
@@ -140,7 +140,7 @@ export default function ShopPage() {
         )}
 
         {/* Mening buyurtmalarim */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="p-5 border-b border-zinc-800">
             <h3 className="text-white font-bold text-sm">Mening buyurtmalarim</h3>
           </div>

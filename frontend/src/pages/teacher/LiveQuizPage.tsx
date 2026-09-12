@@ -689,7 +689,7 @@ export default function LiveQuizPage() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* ═══ TO'LIQ EKRAN DOSKA — o'yin davomida butun ekranni egallaydi ═══ */}
       {boardFull && (questionPhaseView || leaderboardPhaseView) && (
-        <div className="fixed inset-0 z-[80] bg-gradient-to-b from-[#0c0c1e] via-[#0a0a14] to-[#09090b] overflow-y-auto">
+        <div className="fixed inset-0 z-[80] bg-gradient-to-b from-[#0c0c1e] via-[#0a0a14] to-zinc-950 overflow-y-auto">
           <div className="min-h-full w-full max-w-6xl mx-auto px-4 py-4 md:px-8 flex flex-col">
             {/* Doska sarlavhasi */}
             <div className="flex items-center justify-between mb-3 flex-shrink-0">

@@ -197,13 +197,13 @@ export default function ExamLobbyPage() {
   // ── Render stages ──────────────────────────────────────────────────────────
 
   if (loading && stage === 'lookup') return (
-    <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
       <div className="text-white text-lg animate-pulse">Imtihon qidirilmoqda...</div>
     </div>
   );
 
   if (stage === 'done') return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-950 via-[#09090b] to-blue-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-950 via-zinc-950 to-blue-950 flex items-center justify-center p-4">
       <div className="text-center max-w-md">
         <div className="text-7xl mb-6 animate-bounce">🎉</div>
         <h1 className="text-3xl font-bold text-white mb-2">Imtihon topshirildi!</h1>
@@ -237,7 +237,7 @@ export default function ExamLobbyPage() {
     const canSubmit = !submitting && !!s2Val.trim() && !!s3Val.trim();
 
     return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-950 via-[#09090b] to-[#09090b] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-950 via-zinc-950 to-zinc-950 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         {testResult && (
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6 text-center">
@@ -350,7 +350,7 @@ export default function ExamLobbyPage() {
     const timerPct = (timeLeft / (30 * 60)) * 100;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-[#0c0c1e] to-[#09090b] flex flex-col">
+      <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-[#0c0c1e] to-zinc-950 flex flex-col">
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-3 bg-black/30 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -439,7 +439,7 @@ export default function ExamLobbyPage() {
 
   // Login stage
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-[#09090b] to-[#09090b] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-zinc-950 to-zinc-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Exam card */}
         {examInfo && (

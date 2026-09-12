@@ -164,7 +164,7 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
   };
 
   return (
-    <div className="bg-[#18181b] border border-zinc-800 rounded-2xl p-6 mb-6">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">

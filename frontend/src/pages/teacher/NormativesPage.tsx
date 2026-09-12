@@ -118,7 +118,7 @@ export default function TeacherNormativesPage() {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Normativ qidirish..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#18181b] border border-zinc-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors placeholder:text-zinc-600"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors placeholder:text-zinc-600"
             />
           </div>
           <button
@@ -132,15 +132,15 @@ export default function TeacherNormativesPage() {
 
         {/* Table */}
         {filtered.length === 0 ? (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-12 text-center">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center">
             <BookOpen className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-white mb-2">Normativlar topilmadi</h3>
             <p className="text-zinc-400 text-sm">Qidiruv bo'yicha natija yo'q.</p>
           </div>
         ) : (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             {/* Table Header */}
-            <div className="grid grid-cols-[60px_60px_1fr_2fr_100px_80px_80px] items-center gap-4 px-5 py-3 border-b border-zinc-800 bg-[#111113]">
+            <div className="grid grid-cols-[60px_60px_1fr_2fr_100px_80px_80px] items-center gap-4 px-5 py-3 border-b border-zinc-800 bg-zinc-900">
               <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold text-center">N</span>
               <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold text-center">#</span>
               <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Qaysi funksiya</span>
@@ -166,7 +166,7 @@ export default function TeacherNormativesPage() {
 
                   {/* Task number badge */}
                   <div className="flex justify-center">
-                    <div className="w-9 h-9 rounded-lg bg-[#09090b] border border-zinc-800 flex items-center justify-center text-blue-500 font-bold text-xs">
+                    <div className="w-9 h-9 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-blue-500 font-bold text-xs">
                       {norm.taskNumber}
                     </div>
                   </div>
@@ -222,7 +222,7 @@ export default function TeacherNormativesPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-5 py-4 border-t border-zinc-800 bg-[#111113]">
+              <div className="flex items-center justify-between px-5 py-4 border-t border-zinc-800 bg-zinc-900">
                 <p className="text-xs text-zinc-500">
                   {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} / {filtered.length} ta
                 </p>
@@ -268,8 +268,8 @@ export default function TeacherNormativesPage() {
 
       {/* Assign Modal */}
       {showAssignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col max-h-[85vh]">
             <h2 className="text-xl font-bold text-white mb-2">Guruhga normativ biriktirish</h2>
             <p className="text-sm text-zinc-400 mb-4">Bir yoki bir nechta normativni tanlang</p>
 
@@ -288,7 +288,7 @@ export default function TeacherNormativesPage() {
               <select
                 value={selectedGroupId}
                 onChange={(e) => setSelectedGroupId(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">Tanlang...</option>
                 {groups.map(g => (
@@ -304,7 +304,7 @@ export default function TeacherNormativesPage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto mb-4 bg-[#09090b] rounded-xl border border-zinc-800 p-2 divide-y divide-zinc-800 max-h-60">
+            <div className="flex-1 overflow-y-auto mb-4 bg-zinc-950 rounded-xl border border-zinc-800 p-2 divide-y divide-zinc-800 max-h-60">
               {normatives.map(norm => (
                 <label key={norm.id} className="flex items-center justify-between p-2.5 hover:bg-zinc-800/30 cursor-pointer transition-colors rounded-lg">
                   <div className="flex items-center gap-2">
@@ -313,7 +313,7 @@ export default function TeacherNormativesPage() {
                   </div>
                   <input
                     type="checkbox"
-                    className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-600 bg-[#09090b]"
+                    className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-600 bg-zinc-950"
                     checked={selectedNormativeIds.includes(norm.id)}
                     onChange={() => toggleNormative(norm.id)}
                   />
@@ -324,7 +324,7 @@ export default function TeacherNormativesPage() {
             <div className="flex items-center gap-3 pt-4 border-t border-zinc-800">
               <button
                 onClick={() => setShowAssignModal(false)}
-                className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
+                className="flex-1 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
               >
                 Yopish
               </button>
@@ -342,8 +342,8 @@ export default function TeacherNormativesPage() {
       )}
       {/* Details Modal */}
       {viewingNormative && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in" onClick={() => setViewingNormative(null)}>
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in" onClick={() => setViewingNormative(null)}>
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
               <div className="flex items-center gap-3">
                 <span className="w-8 h-8 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-black text-sm">
@@ -367,7 +367,7 @@ export default function TeacherNormativesPage() {
 
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-1">Nima qila olsin (Tavsif)</span>
-                <div className="text-zinc-300 text-sm bg-[#09090b] border border-zinc-800/80 rounded-xl p-4 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto custom-scrollbar">
+                <div className="text-zinc-300 text-sm bg-zinc-950 border border-zinc-800/80 rounded-xl p-4 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto custom-scrollbar">
                   {viewingNormative.description || <span className="text-zinc-600 italic">Tavsif kiritilmagan</span>}
                 </div>
               </div>

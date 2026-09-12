@@ -97,7 +97,7 @@ export default function MyProfilePage() {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Mening profilim" subtitle="O'quvchilar sizni shu ma'lumotlar bilan ko'radi" />
 
       <div className="p-4 sm:p-8 max-w-2xl mx-auto space-y-5">
@@ -123,7 +123,7 @@ export default function MyProfilePage() {
         ) : (
           <>
             {/* Rasm */}
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
               <h3 className="text-white font-bold text-sm mb-4">Profil rasmi</h3>
               <div className="flex items-center gap-5">
                 <div className="relative shrink-0">
@@ -168,7 +168,7 @@ export default function MyProfilePage() {
             </div>
 
             {/* Ma'lumot va filial */}
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5 space-y-5">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-5">
               <div>
                 <label className="flex items-center gap-2 text-xs font-semibold text-zinc-400 mb-2">
                   <Building2 className="w-3.5 h-3.5" /> Filial
@@ -229,7 +229,7 @@ export default function MyProfilePage() {
               <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-wide mb-2">
                 O'quvchi shunday ko'radi
               </h3>
-              <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 max-w-[260px]">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 max-w-[260px]">
                 {src ? (
                   <img src={src} alt="" className="w-full aspect-square rounded-lg object-cover mb-3" />
                 ) : (

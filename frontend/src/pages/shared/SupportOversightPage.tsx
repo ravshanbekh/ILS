@@ -105,7 +105,7 @@ export default function SupportOversightPage() {
   const t = data?.totals;
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header
         title="Assistent qabul soatlari"
         subtitle="Kim qaysi soatni ochgan, kim yozilgan va kim kelgan"
@@ -125,7 +125,7 @@ export default function SupportOversightPage() {
               type="date"
               value={date}
               onChange={(e) => e.target.value && setDate(e.target.value)}
-              className="bg-[#18181b] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+              className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
             />
             <button
               onClick={() => setDate(shiftDate(date, 1))}
@@ -170,7 +170,7 @@ export default function SupportOversightPage() {
                 cls: t.idleAssistants > 0 ? 'text-amber-400' : 'text-zinc-500',
               },
             ].map((card) => (
-              <div key={card.label} className="bg-[#18181b] border border-zinc-800 rounded-xl p-4">
+              <div key={card.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
                 <p className="text-zinc-500 text-[11px] uppercase tracking-wide">{card.label}</p>
                 <p className={`text-xl font-bold mt-1 ${card.cls}`}>{card.value}</p>
               </div>
@@ -184,7 +184,7 @@ export default function SupportOversightPage() {
             <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
           </div>
         ) : (data?.assistants.length ?? 0) === 0 ? (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-10 text-center">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-10 text-center">
             <CalendarDays className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
             <p className="text-zinc-400 text-sm">Faol assistent topilmadi</p>
           </div>
@@ -197,7 +197,7 @@ export default function SupportOversightPage() {
               return (
                 <div
                   key={a.assistantId}
-                  className={`bg-[#18181b] border rounded-xl overflow-hidden ${
+                  className={`bg-zinc-900 border rounded-xl overflow-hidden ${
                     idle ? 'border-amber-500/20' : 'border-zinc-800'
                   }`}
                 >

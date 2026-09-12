@@ -417,7 +417,7 @@ export default function GroupDetailPage() {
 
       {/* Teacher badge */}
       <div className="px-8 pt-4 max-w-7xl mx-auto flex flex-wrap items-center gap-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181b] border border-zinc-800 text-sm">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm">
           <GraduationCap className="w-4 h-4 text-blue-400" />
           <span className="text-zinc-400">O'qituvchi:</span>
           {group?.teacher ? (
@@ -428,7 +428,7 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Dars kuni */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#18181b] border border-zinc-800 text-sm">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm">
           <span className="text-zinc-400">Dars kuni:</span>
           {(['juft', 'toq', 'har_kuni'] as const).map((t) => (
             <button
@@ -445,7 +445,7 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Telegram guruh chati */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181b] border border-zinc-800 text-sm">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm">
           {group?.telegramChatId ? (
             <>
               <span className="text-emerald-400 font-medium">✅ Chat ulangan{group.telegramChatTitle ? `: ${group.telegramChatTitle}` : ''}</span>
@@ -517,7 +517,7 @@ export default function GroupDetailPage() {
             </button>
             <button
               onClick={handleOpenNormativeModal}
-              className="bg-[#18181b] hover:bg-zinc-800 text-blue-500 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-blue-500/20"
+              className="bg-zinc-900 hover:bg-zinc-800 text-blue-500 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-blue-500/20"
             >
               <PlusCircle className="w-4 h-4" />
               Normativ
@@ -533,7 +533,7 @@ export default function GroupDetailPage() {
               <button
                 onClick={handleExport}
                 disabled={exporting}
-                className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-zinc-800"
+                className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-zinc-800"
               >
                 <Download className="w-4 h-4" />
                 {exporting ? 'Yuklanmoqda...' : 'Eksport'}
@@ -544,7 +544,7 @@ export default function GroupDetailPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
               <Users className="w-6 h-6 text-blue-500" />
             </div>
@@ -554,7 +554,7 @@ export default function GroupDetailPage() {
             </div>
           </div>
           
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
               <Target className="w-6 h-6 text-emerald-500" />
             </div>
@@ -564,7 +564,7 @@ export default function GroupDetailPage() {
             </div>
           </div>
           
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
               <Star className="w-6 h-6 text-amber-500" />
             </div>
@@ -576,8 +576,8 @@ export default function GroupDetailPage() {
         </div>
 
         {/* AI Group Analysis */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden mb-8">
-          <div className="p-5 border-b border-zinc-800 flex items-center justify-between bg-[#18181b]">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden mb-8">
+          <div className="p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900">
             <div className="flex items-center gap-3">
               <Brain className="w-5 h-5 text-violet-400" />
               <div>
@@ -615,7 +615,7 @@ export default function GroupDetailPage() {
 
           {aiResult && (
             <div 
-              className="p-6 text-zinc-300 text-xs leading-relaxed whitespace-pre-wrap bg-[#09090b]/40 divide-y divide-zinc-800"
+              className="p-6 text-zinc-300 text-xs leading-relaxed whitespace-pre-wrap bg-zinc-950/40 divide-y divide-zinc-800"
               style={{ maxHeight: '480px', overflowY: 'scroll' }}
             >
               {aiResult}
@@ -633,14 +633,14 @@ export default function GroupDetailPage() {
         {id && <GroupEventsCard groupId={id} />}
 
         {/* Students Table */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm mb-8">
-          <div className="p-5 border-b border-zinc-800 bg-[#18181b]">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm mb-8">
+          <div className="p-5 border-b border-zinc-800 bg-zinc-900">
             <h3 className="text-base font-bold text-white tracking-tight">O'quvchilar ro'yxati</h3>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-zinc-300">
-              <thead className="bg-[#09090b] text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
+              <thead className="bg-zinc-950 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
                 <tr>
                   <th className="px-6 py-4 w-16 text-center">N</th>
                   <th className="px-6 py-4">O'quvchi</th>
@@ -649,7 +649,7 @@ export default function GroupDetailPage() {
                   <th className="px-6 py-4 text-right">Amallar</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/50 bg-[#09090b]">
+              <tbody className="divide-y divide-zinc-800/50 bg-zinc-950">
                 {students.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
@@ -731,14 +731,14 @@ export default function GroupDetailPage() {
 
         {/* Ranking Table (if data available) */}
         {rankData && rankData.students && rankData.students.length > 0 && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
-            <div className="p-5 border-b border-zinc-800 bg-[#18181b]">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+            <div className="p-5 border-b border-zinc-800 bg-zinc-900">
               <h3 className="text-base font-bold text-white tracking-tight">O'quvchilar Reytingi</h3>
             </div>
             
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-zinc-300">
-                <thead className="bg-[#09090b] text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
+                <thead className="bg-zinc-950 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
                   <tr>
                     <th className="px-6 py-4 font-medium w-16 text-center">O'rin</th>
                     <th className="px-6 py-4 font-medium">O'quvchi</th>
@@ -748,7 +748,7 @@ export default function GroupDetailPage() {
                     <th className="px-6 py-4 font-medium text-center">Natijalar (Y / K / Q)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/50 bg-[#09090b]">
+                <tbody className="divide-y divide-zinc-800/50 bg-zinc-950">
                   {rankData.students.map((student: any, idx: number) => (
                     <tr key={student.student?.id || idx} className="hover:bg-zinc-800/30 transition-colors">
                       <td className="px-6 py-4 text-center">
@@ -801,8 +801,8 @@ export default function GroupDetailPage() {
 
       {/* Student Management Modal */}
       {showStudentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col max-h-[85vh]">
             <h2 className="text-xl font-bold text-white mb-2">
               Guruh o'quvchilari
             </h2>
@@ -816,11 +816,11 @@ export default function GroupDetailPage() {
                 placeholder="Ism yoki login bo'yicha qidirish..."
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto mb-6 bg-[#09090b] rounded-xl border border-zinc-800 p-2 divide-y divide-zinc-800">
+            <div className="flex-1 overflow-y-auto mb-6 bg-zinc-950 rounded-xl border border-zinc-800 p-2 divide-y divide-zinc-800">
               {(() => {
                 const searchLower = studentSearch.trim().toLowerCase();
                 
@@ -861,7 +861,7 @@ export default function GroupDetailPage() {
                             </div>
                             <input
                               type="checkbox"
-                              className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-600 bg-[#09090b]"
+                              className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-600 bg-zinc-950"
                               checked={selectedStudentIds.includes(student.id)}
                               onChange={(e) => {
                                 if (e.target.checked) setSelectedStudentIds([...selectedStudentIds, student.id]);
@@ -891,7 +891,7 @@ export default function GroupDetailPage() {
                             </div>
                             <input
                               type="checkbox"
-                              className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-600 bg-[#09090b]"
+                              className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-600 bg-zinc-950"
                               checked={selectedStudentIds.includes(student.id)}
                               onChange={(e) => {
                                 if (e.target.checked) setSelectedStudentIds([...selectedStudentIds, student.id]);
@@ -910,7 +910,7 @@ export default function GroupDetailPage() {
             <div className="flex items-center gap-3 pt-4 border-t border-zinc-800">
               <button
                 onClick={() => setShowStudentModal(false)}
-                className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
+                className="flex-1 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
               >
                 Bekor qilish
               </button>
@@ -928,8 +928,8 @@ export default function GroupDetailPage() {
 
       {/* Normative Management Modal */}
       {showNormativeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col max-h-[85vh]">
             <h2 className="text-xl font-bold text-white mb-2">
               Guruh normativlari
             </h2>
@@ -939,7 +939,7 @@ export default function GroupDetailPage() {
               <select
                 value={selectedCategoryId}
                 onChange={(e) => setSelectedCategoryId(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               >
                 <option value="all">Barcha kategoriyalar</option>
                 {categories.map(c => (
@@ -954,7 +954,7 @@ export default function GroupDetailPage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto mb-6 bg-[#09090b] rounded-xl border border-zinc-800 p-2 divide-y divide-zinc-800">
+            <div className="flex-1 overflow-y-auto mb-6 bg-zinc-950 rounded-xl border border-zinc-800 p-2 divide-y divide-zinc-800">
               {allNormatives.filter(norm => {
                 const isAssigned = (group?.normatives || []).some((n: any) => (n.normativeId || n.id) === norm.id);
                 const matchCategory = selectedCategoryId === 'all' || norm.categoryId === selectedCategoryId;
@@ -976,7 +976,7 @@ export default function GroupDetailPage() {
                       </div>
                       <input
                         type="checkbox"
-                        className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-600 bg-[#09090b]"
+                        className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-600 bg-zinc-950"
                         checked={selectedNormativeIds.includes(norm.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -994,7 +994,7 @@ export default function GroupDetailPage() {
             <div className="flex items-center gap-3 pt-4 border-t border-zinc-800">
               <button
                 onClick={() => setShowNormativeModal(false)}
-                className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
+                className="flex-1 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
               >
                 Yopish
               </button>
@@ -1013,9 +1013,9 @@ export default function GroupDetailPage() {
       {/* Student Action Modal (Transfer / Freeze / Remove) */}
       {actionStudent && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#18181b] border border-zinc-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-[#09090b]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-950">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center font-bold text-blue-400">
                   {actionStudent.fullName?.charAt(0)}
@@ -1040,7 +1040,7 @@ export default function GroupDetailPage() {
               </div>
             ) : (
             <div
-              className="grid gap-1 p-2 bg-[#09090b] border-b border-zinc-800 text-xs font-medium"
+              className="grid gap-1 p-2 bg-zinc-950 border-b border-zinc-800 text-xs font-medium"
               style={{ gridTemplateColumns: `repeat(${allowedActionTabs.length}, minmax(0, 1fr))` }}
             >
               {canTransfer && (
@@ -1100,7 +1100,7 @@ export default function GroupDetailPage() {
                   </div>
 
                   {availableGroups.length === 0 ? (
-                    <p className="text-xs text-zinc-500 italic p-3 bg-[#09090b] rounded-xl border border-zinc-800">
+                    <p className="text-xs text-zinc-500 italic p-3 bg-zinc-950 rounded-xl border border-zinc-800">
                       Boshqa aktiv guruhlar topilmadi.
                     </p>
                   ) : (
@@ -1117,7 +1117,7 @@ export default function GroupDetailPage() {
                             setTargetTeacherId(e.target.value);
                             setTargetGroupId('');
                           }}
-                          className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:outline-none"
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:outline-none"
                         >
                           <option value="">— o'qituvchini tanlang —</option>
                           {teacherOptions.map((t) => (
@@ -1137,7 +1137,7 @@ export default function GroupDetailPage() {
                           value={targetGroupId}
                           onChange={(e) => setTargetGroupId(e.target.value)}
                           disabled={!targetTeacherId}
-                          className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:outline-none disabled:opacity-40"
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:outline-none disabled:opacity-40"
                         >
                           <option value="">
                             {targetTeacherId ? "— guruhni tanlang —" : "avval o'qituvchini tanlang"}
@@ -1172,7 +1172,7 @@ export default function GroupDetailPage() {
                     <select
                       value={freezeReason}
                       onChange={(e) => setFreezeReason(e.target.value)}
-                      className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
                     >
                       <option value="Kasal">Kasal (Sog'liq sababli)</option>
                       <option value="Safar">Safar / Tatil</option>
@@ -1191,7 +1191,7 @@ export default function GroupDetailPage() {
                       placeholder="+998 90 123 45 67"
                       value={freezePhone}
                       onChange={(e) => setFreezePhone(e.target.value)}
-                      className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
                     />
                   </div>
 
@@ -1204,7 +1204,7 @@ export default function GroupDetailPage() {
                       placeholder="Muzlatish sababi haqida izoh..."
                       value={freezeNote}
                       onChange={(e) => setFreezeNote(e.target.value)}
-                      className="w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none resize-none"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none resize-none"
                     />
                   </div>
 

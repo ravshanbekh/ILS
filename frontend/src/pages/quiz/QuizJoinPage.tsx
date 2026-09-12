@@ -444,7 +444,7 @@ export default function QuizJoinPage() {
     const rankColors = ['', 'from-yellow-500 to-amber-400', 'from-zinc-400 to-zinc-300', 'from-amber-700 to-amber-600'];
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-violet-950 via-[#09090b] to-[#09090b] flex flex-col items-center justify-start p-4 pt-10">
+      <div className="min-h-screen bg-gradient-to-b from-violet-950 via-zinc-950 to-zinc-950 flex flex-col items-center justify-start p-4 pt-10">
         {isTop3 && <Confetti />}
 
         {/* My result hero */}
@@ -535,7 +535,7 @@ export default function QuizJoinPage() {
 
   // ── LEADERBOARD STAGE ───────────────────────────────────────────────────────
   if (stage === 'leaderboard') return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-[#09090b] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-zinc-950 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Previous question result */}
         {prevQuestion && (
@@ -608,7 +608,7 @@ export default function QuizJoinPage() {
   if (stage === 'waiting') {
     const chosenStyle = selected !== null && selected >= 0 ? OPTION_STYLES[selected] : null;
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-[#09090b] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-zinc-950 flex flex-col items-center justify-center p-6">
         <button onClick={requestLeave} title="O'yindan chiqish"
           className="fixed top-3 left-3 z-30 w-8 h-8 flex items-center justify-center rounded-lg bg-black/40 hover:bg-red-600/80 text-zinc-400 hover:text-white transition text-sm">
           🚪
@@ -648,7 +648,7 @@ export default function QuizJoinPage() {
   // ── ANSWER RESULT STAGE ──────────────────────────────────────────────────────
   if (stage === 'answer-result' && answerResult) return (
     <div className={`min-h-screen flex flex-col items-center justify-center p-6 transition-all
-      ${answerResult.isCorrect ? 'bg-gradient-to-b from-emerald-950 to-[#09090b]' : 'bg-gradient-to-b from-red-950 to-[#09090b]'}`}>
+      ${answerResult.isCorrect ? 'bg-gradient-to-b from-emerald-950 to-zinc-950' : 'bg-gradient-to-b from-red-950 to-zinc-950'}`}>
 
       <button onClick={requestLeave} title="O'yindan chiqish"
         className="fixed top-3 left-3 z-30 w-8 h-8 flex items-center justify-center rounded-lg bg-black/40 hover:bg-red-600/80 text-zinc-400 hover:text-white transition text-sm">
@@ -713,7 +713,7 @@ export default function QuizJoinPage() {
 
   // ── QUESTION STAGE ───────────────────────────────────────────────────────────
   if (stage === 'question' && currentQ) return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0c0c1e] to-[#09090b] flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-[#0c0c1e] to-zinc-950 flex flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/40 backdrop-blur-sm">
         <div className="flex items-center gap-2">
@@ -772,7 +772,7 @@ export default function QuizJoinPage() {
                   ${style.bg} ${!isRevealed ? style.hover : ''} text-white rounded-2xl p-4
                   flex items-center gap-3 font-semibold text-left transition-all duration-200
                   active:scale-95 shadow-lg min-h-[80px]
-                  ${isChosen ? 'ring-4 ring-white ring-offset-2 ring-offset-[#09090b] scale-[1.02]' : ''}
+                  ${isChosen ? 'ring-4 ring-white ring-offset-2 ring-offset-zinc-950 scale-[1.02]' : ''}
                   ${isRevealed && !isChosen ? 'opacity-40 scale-95' : ''}
                 `}
               >
@@ -788,7 +788,7 @@ export default function QuizJoinPage() {
 
   // ── LOBBY STAGE ──────────────────────────────────────────────────────────────
   if (stage === 'lobby') return (
-    <div className="min-h-screen bg-gradient-to-b from-violet-950 to-[#09090b] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-violet-950 to-zinc-950 flex items-center justify-center p-4">
       <div className="text-center max-w-sm w-full">
         <div className="w-20 h-20 bg-gradient-to-br from-violet-600 to-purple-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl shadow-xl shadow-violet-900/50">⚡</div>
         <h2 className="text-2xl font-black text-white mb-1">{quizInfo?.title}</h2>
@@ -833,7 +833,7 @@ export default function QuizJoinPage() {
 
   // ── ENTER NAME STAGE ─────────────────────────────────────────────────────────
   if (stage === 'enter-name') return (
-    <div className="min-h-screen bg-gradient-to-b from-violet-950 to-[#09090b] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-violet-950 to-zinc-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <div className="text-5xl mb-3">👤</div>
@@ -863,7 +863,7 @@ export default function QuizJoinPage() {
 
   // ── ENTER CODE STAGE ─────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-b from-violet-950 via-[#0c0c1e] to-[#09090b] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-violet-950 via-[#0c0c1e] to-zinc-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm text-center">
         <div className="text-7xl mb-4">⚡</div>
         <h1 className="text-4xl font-black text-white mb-2">Live Quiz</h1>

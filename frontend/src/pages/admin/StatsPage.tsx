@@ -83,7 +83,7 @@ export default function AdminStatsPage() {
       <div className="p-8 max-w-7xl mx-auto space-y-8">
         
         {/* Filter Section */}
-        <div className="flex items-center gap-4 bg-[#18181b] p-4 rounded-xl border border-zinc-800">
+        <div className="flex items-center gap-4 bg-zinc-900 p-4 rounded-xl border border-zinc-800">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-zinc-400" />
             <span className="text-sm font-medium text-zinc-300">O'qituvchi orqali filtr:</span>
@@ -91,7 +91,7 @@ export default function AdminStatsPage() {
           <select 
             value={selectedTeacherId}
             onChange={(e) => setSelectedTeacherId(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-64"
+            className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-64"
           >
             <option value="">Barcha o'qituvchilar (Umumiy markaz)</option>
             {teachers.map(t => (
@@ -155,7 +155,7 @@ export default function AdminStatsPage() {
         </div>
 
         {/* Result Distribution */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
           <h3 className="text-base font-bold text-white mb-6">Natijalar taqsimoti</h3>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">

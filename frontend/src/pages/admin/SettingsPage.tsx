@@ -23,7 +23,7 @@ interface AccordionProps {
 function AccordionSection({ id, icon, iconBg, title, subtitle, badge, openId, onToggle, children }: AccordionProps) {
   const isOpen = openId === id;
   return (
-    <div className={`bg-[#18181b] border rounded-2xl overflow-hidden transition-all duration-200 ${isOpen ? 'border-zinc-600' : 'border-zinc-800'}`}>
+    <div className={`bg-zinc-900 border rounded-2xl overflow-hidden transition-all duration-200 ${isOpen ? 'border-zinc-600' : 'border-zinc-800'}`}>
       <button
         onClick={() => onToggle(id)}
         className="w-full p-5 flex items-center gap-4 hover:bg-white/[0.02] transition-colors text-left"
@@ -63,7 +63,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls = (accent = 'blue') =>
-  `w-full bg-[#09090b] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-${accent}-500/50 focus:border-${accent}-500 transition-all duration-200`;
+  `w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-${accent}-500/50 focus:border-${accent}-500 transition-all duration-200`;
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function SettingsPage() {
@@ -265,7 +265,7 @@ export default function SettingsPage() {
             ))}
           </div>
 
-          <div className="px-5 py-4 border-t border-zinc-800 flex items-center justify-between bg-[#09090b]/40">
+          <div className="px-5 py-4 border-t border-zinc-800 flex items-center justify-between bg-zinc-950/40">
             <div>
               {saveStatus === 'success' && <span className="flex items-center gap-1.5 text-emerald-500 text-sm"><CheckCircle2 className="w-4 h-4" />Saqlandi!</span>}
               {saveStatus === 'error' && <span className="flex items-center gap-1.5 text-red-500 text-sm"><AlertCircle className="w-4 h-4" />Xatolik!</span>}
@@ -296,7 +296,7 @@ export default function SettingsPage() {
               </select>
             </Field>
 
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#09090b] border border-zinc-800">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-950 border border-zinc-800">
               <div className={`w-2.5 h-2.5 rounded-full ${isAiConnected ? 'bg-emerald-500' : 'bg-red-500'}`} />
               <span className="text-sm text-zinc-400">Holat:</span>
               <span className={`text-sm font-bold ${isAiConnected ? 'text-emerald-500' : 'text-red-500'}`}>
@@ -347,7 +347,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="px-5 py-4 border-t border-zinc-800 flex items-center justify-between bg-[#09090b]/40">
+          <div className="px-5 py-4 border-t border-zinc-800 flex items-center justify-between bg-zinc-950/40">
             <div className="flex items-center gap-3">
               {aiSaveStatus === 'success' && <span className="flex items-center gap-1.5 text-emerald-500 text-sm"><CheckCircle2 className="w-4 h-4" />Saqlandi!</span>}
               {aiSaveStatus === 'error' && <span className="flex items-center gap-1.5 text-red-500 text-sm"><AlertCircle className="w-4 h-4" />Xatolik!</span>}
@@ -374,7 +374,7 @@ export default function SettingsPage() {
           onToggle={toggleSection}
         >
           <div className="p-5 space-y-5">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#09090b] border border-zinc-800">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-950 border border-zinc-800">
               <User className="w-4 h-4 text-zinc-400" />
               <span className="text-sm text-zinc-400">Joriy login:</span>
               <span className="text-sm font-bold text-white font-mono">{user?.login}</span>
@@ -411,7 +411,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="px-5 py-4 border-t border-zinc-800 flex items-center justify-between bg-[#09090b]/40">
+          <div className="px-5 py-4 border-t border-zinc-800 flex items-center justify-between bg-zinc-950/40">
             <div>
               {profileStatus === 'success' && <span className="flex items-center gap-1.5 text-emerald-500 text-sm"><CheckCircle2 className="w-4 h-4" />Muvaffaqiyatli saqlandi!</span>}
             </div>
@@ -433,7 +433,7 @@ export default function SettingsPage() {
           onToggle={toggleSection}
         >
           <div className="p-5 space-y-4">
-            <div className="bg-[#09090b] border border-zinc-800 rounded-xl p-4 space-y-3">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3">
               <Field label="Telegram Bot Token (BotFather tokini)">
                 <input
                   type="password"
@@ -496,7 +496,7 @@ export default function SettingsPage() {
             )}
 
             {reportText && (
-              <div className="mt-4 bg-[#09090b] border border-zinc-700 rounded-xl p-4 space-y-2">
+              <div className="mt-4 bg-zinc-950 border border-zinc-700 rounded-xl p-4 space-y-2">
                 <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
                   <span className="text-white font-bold text-xs">📋 Yaratilgan AI Ta'lim Hisoboti:</span>
                   <button onClick={() => setReportText(null)} className="text-zinc-400 hover:text-white text-xs">Yopish ✕</button>

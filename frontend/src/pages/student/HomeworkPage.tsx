@@ -109,7 +109,7 @@ export default function HomeworkPage() {
   const past = history.filter((h) => h.assignmentId !== current?.assignmentId);
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Uyga vazifalar" subtitle="Joriy vazifa va barcha oldingi vazifalar baholari bilan" />
 
       <div className="p-4 sm:p-8 max-w-3xl mx-auto space-y-6">
@@ -124,7 +124,7 @@ export default function HomeworkPage() {
             <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
           </div>
         ) : history.length === 0 ? (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-10 text-center">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-10 text-center">
             <BookOpen className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
             <p className="text-zinc-400 text-sm">Hali uyga vazifa berilmagan</p>
             <p className="text-zinc-600 text-xs mt-1">
@@ -139,7 +139,7 @@ export default function HomeworkPage() {
                 <h2 className="text-zinc-400 text-xs font-semibold uppercase tracking-wide mb-2">
                   Bajarish kerak
                 </h2>
-                <div className="bg-[#18181b] border border-blue-500/30 rounded-xl p-5">
+                <div className="bg-zinc-900 border border-blue-500/30 rounded-xl p-5">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
                       <h3 className="text-white font-bold">{current.title}</h3>
@@ -180,7 +180,7 @@ export default function HomeworkPage() {
                 </h2>
                 <div className="space-y-3">
                   {past.map((row) => (
-                    <div key={row.assignmentId} className="bg-[#18181b] border border-zinc-800 rounded-xl p-4">
+                    <div key={row.assignmentId} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="min-w-0">
                           <h3 className="text-white font-semibold text-sm">{row.title}</h3>

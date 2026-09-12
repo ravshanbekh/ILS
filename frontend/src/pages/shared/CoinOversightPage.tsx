@@ -103,12 +103,12 @@ export default function CoinOversightPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Coin nazorati" subtitle="Kim qancha coin berayotgani va kim qancha to'plagani" />
 
       <div className="p-8 max-w-5xl mx-auto space-y-5">
         {canEditSettings && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5 flex flex-wrap items-end gap-3">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-wrap items-end gap-3">
             <div>
               <label className="block text-xs font-semibold text-zinc-400 mb-1">
                 <Settings className="w-3.5 h-3.5 inline mr-1" /> Kunlik chegara (bitta o'qituvchi uchun)
@@ -171,7 +171,7 @@ export default function CoinOversightPage() {
           </div>
         </div>
 
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
@@ -262,7 +262,7 @@ export default function CoinOversightPage() {
       {/* O'qituvchi tafsiloti */}
       {breakdownOf && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
               <div>
                 <h2 className="text-white font-bold">{breakdownOf.teacherName}</h2>

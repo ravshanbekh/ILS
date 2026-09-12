@@ -117,7 +117,7 @@ function FarroshChecklistModal({ onClose }: { onClose: () => void }) {
       style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(6px)' }}
       onClick={handleBackdrop}
     >
-      <div className="w-full max-w-lg max-h-[85vh] flex flex-col bg-[#111113] border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg max-h-[85vh] flex flex-col bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
@@ -215,7 +215,7 @@ function UserDetailModal({
       style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
       onClick={handleBackdrop}
     >
-      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-[#111113] border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
 
         {/* Loading */}
         {loading && (
@@ -304,7 +304,7 @@ function UserDetailModal({
                 {data.sections.map(section => (
                   <div key={section.name}>
                     {/* Section header */}
-                    <div className="flex items-center gap-2 mb-2 sticky top-0 bg-[#111113] py-1">
+                    <div className="flex items-center gap-2 mb-2 sticky top-0 bg-zinc-900 py-1">
                       <div className="h-px flex-1 bg-zinc-800" />
                       <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 shrink-0 px-2">
                         <ClipboardList className="w-3.5 h-3.5" />
@@ -505,7 +505,7 @@ export default function ChecklistStatsPage() {
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             {/* Sana tanlash */}
-            <div className="flex items-center gap-1 bg-[#18181b] border border-zinc-800 rounded-xl px-2 py-1">
+            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl px-2 py-1">
               <button
                 onClick={() => goDay(-1)}
                 className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
@@ -533,7 +533,7 @@ export default function ChecklistStatsPage() {
               </button>
             </div>
             {/* Davr filtri */}
-            <div className="flex bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+            <div className="flex bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
               {(['today', 'weekly', 'monthly'] as Period[]).map(p => (
                 <button key={p} onClick={() => setPeriod(p)}
                   className={`px-4 py-2 text-sm font-medium transition-colors ${period === p ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white'}`}>
@@ -542,7 +542,7 @@ export default function ChecklistStatsPage() {
               ))}
             </div>
             <button onClick={handleManualRefresh}
-              className={`p-2 rounded-xl bg-[#18181b] border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all ${silentLoading ? 'animate-spin' : ''}`}>
+              className={`p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all ${silentLoading ? 'animate-spin' : ''}`}>
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
@@ -579,7 +579,7 @@ export default function ChecklistStatsPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4 text-blue-400" />
               <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">UMUMIY ({selectedDate === toLocalDateStr(new Date()) ? 'BUGUN' : formatDisplayDate(selectedDate)})</span>
@@ -590,7 +590,7 @@ export default function ChecklistStatsPage() {
             </div>
           </div>
 
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <Users className="w-4 h-4 text-purple-400" />
               <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">Xodimlar</span>
@@ -599,7 +599,7 @@ export default function ChecklistStatsPage() {
             <p className="text-xs text-zinc-500">{summary.totalRoles} ta rol</p>
           </div>
 
-          <div className="bg-[#18181b] border border-emerald-500/20 rounded-2xl p-5">
+          <div className="bg-zinc-900 border border-emerald-500/20 rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <Award className="w-4 h-4 text-emerald-400" />
               <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">Eng yaxshi</span>
@@ -612,7 +612,7 @@ export default function ChecklistStatsPage() {
             ) : <p className="text-zinc-600 text-sm">Ma'lumot yo'q</p>}
           </div>
 
-          <div className="bg-[#18181b] border border-red-500/20 rounded-2xl p-5">
+          <div className="bg-zinc-900 border border-red-500/20 rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-red-400" />
               <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">Eng past</span>
@@ -632,7 +632,7 @@ export default function ChecklistStatsPage() {
             const c = getColor(role.avgTodayPercent);
             const isOpen = expanded[role.role];
             return (
-              <div key={role.role} className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden">
+              <div key={role.role} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
                 {/* Role header */}
                 <div
                   onClick={() => {

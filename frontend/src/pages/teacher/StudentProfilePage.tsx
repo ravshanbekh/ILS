@@ -147,13 +147,13 @@ export default function StudentProfilePage() {
         </button>
 
         {/* Top Info & Avatar */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
           <div className="flex items-center gap-6 z-10">
             <div className="relative">
               <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center text-4xl font-bold text-white border border-white/10 shadow-xl">
                 {student?.fullName?.charAt(0) || '?'}
               </div>
-              <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center border-2 border-[#18181b] shadow-lg transform rotate-12">
+              <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center border-2 border-zinc-900 shadow-lg transform rotate-12">
                 <span className="text-white font-bold text-sm">{level}</span>
               </div>
             </div>
@@ -245,7 +245,7 @@ export default function StudentProfilePage() {
           <div className="lg:col-span-1 space-y-6">
             {/* Badges Section */}
             {badges && badges.length > 0 && (
-              <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 relative overflow-hidden">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 relative overflow-hidden">
                 <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2 relative z-10">
                   <Star className="w-5 h-5 text-amber-500 fill-amber-500/20" />
                   Yutuqlar (Nishonlar)
@@ -265,7 +265,7 @@ export default function StudentProfilePage() {
               </div>
             )}
 
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
               <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-amber-500" />
                 Guruh reytinglari
@@ -274,7 +274,7 @@ export default function StudentProfilePage() {
               {groups && groups.length > 0 ? (
                 <div className="space-y-3">
                   {groups.map((g: any) => (
-                    <div key={g.group.id} className="p-4 rounded-xl bg-[#09090b] border border-zinc-800 flex justify-between items-center">
+                    <div key={g.group.id} className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex justify-between items-center">
                       <div>
                         <p className="text-sm font-medium text-white">{g.group.name}</p>
                         <p className="text-xs text-zinc-500 mt-0.5">{g.totalInGroup} nafar ichida</p>
@@ -296,7 +296,7 @@ export default function StudentProfilePage() {
             
             {/* O'sish dinamikasi (Line Chart) */}
             {chartData.length > 0 && (
-              <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
                 <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-blue-500" />
                   O'sish dinamikasi
@@ -325,13 +325,13 @@ export default function StudentProfilePage() {
               </div>
             )}
 
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
               <h3 className="text-base font-bold text-white mb-4">Topshiriqlar tarixi</h3>
               
               {submissions && submissions.length > 0 ? (
                 <div className="space-y-3">
                   {submissions.map((sub: any) => (
-                    <div key={sub.id} className="p-4 rounded-xl bg-[#09090b] border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors hover:border-zinc-700">
+                    <div key={sub.id} className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors hover:border-zinc-700">
                       <div className="flex items-start gap-4 flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0">
                           <span className="text-xs font-mono text-zinc-400">#{sub.normative?.taskNumber}</span>
@@ -460,7 +460,7 @@ export default function StudentProfilePage() {
       {/* Script Modal */}
       {showScript && scriptData && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#18181b] border border-zinc-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
             {/* Header */}
             <div className="flex items-center gap-3 px-6 py-4 border-b border-zinc-800 shrink-0">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">

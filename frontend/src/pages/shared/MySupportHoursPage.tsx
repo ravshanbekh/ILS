@@ -130,7 +130,7 @@ export default function MySupportHoursPage() {
       JSON.stringify(data.slots.filter((s) => s.isOpen).map((s) => s.startHour).sort((a, b) => a - b));
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Mening qabul soatlarim" subtitle="Bo'sh soatlaringizni belgilang — o'quvchilar shu vaqtga yoziladi" />
 
       <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-5">
@@ -161,7 +161,7 @@ export default function MySupportHoursPage() {
               className={`shrink-0 px-4 py-2.5 rounded-xl border text-left transition-colors ${
                 date === d.value
                   ? 'bg-blue-600 border-blue-600 text-white'
-                  : 'border-zinc-800 bg-[#18181b] text-zinc-400 hover:text-white'
+                  : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
               }`}
             >
               <span className="block text-sm font-bold">{d.label}</span>
@@ -177,7 +177,7 @@ export default function MySupportHoursPage() {
         ) : (
           <>
             {/* Soat tanlash */}
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5 space-y-4">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <h3 className="text-white font-bold text-sm">Bo'sh soatlarim</h3>
                 <div className="flex items-center gap-2">
@@ -247,7 +247,7 @@ export default function MySupportHoursPage() {
             </div>
 
             {/* Yozilganlar */}
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
               <h3 className="text-white font-bold px-5 py-3 border-b border-zinc-800 text-sm">
                 Kim yozilgan
               </h3>
@@ -292,7 +292,7 @@ export default function MySupportHoursPage() {
       {/* Soat tafsiloti + davomat */}
       {openSlot && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
               <div>
                 <h2 className="text-white font-bold">{openSlot.timeRange}</h2>

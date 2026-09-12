@@ -223,7 +223,7 @@ export default function ChecklistPage({ roleLabel, compact = false }: ChecklistP
       )}
 
       {/* ── Haftalik Strip ─────────────────────────────────────────── */}
-      <div className={`bg-[#18181b] border border-zinc-800 rounded-2xl p-4 ${compact ? 'mb-4' : 'mb-5'}`}>
+      <div className={`bg-zinc-900 border border-zinc-800 rounded-2xl p-4 ${compact ? 'mb-4' : 'mb-5'}`}>
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" /> Haftalik ko'rinish
@@ -284,7 +284,7 @@ export default function ChecklistPage({ roleLabel, compact = false }: ChecklistP
       )}
 
       {/* ── Progress ───────────────────────────────────────────────── */}
-      <div className={`bg-[#18181b] border border-zinc-800 rounded-2xl p-5 ${compact ? 'mb-4' : 'mb-5'}`}>
+      <div className={`bg-zinc-900 border border-zinc-800 rounded-2xl p-5 ${compact ? 'mb-4' : 'mb-5'}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-blue-400" />
@@ -356,7 +356,7 @@ export default function ChecklistPage({ roleLabel, compact = false }: ChecklistP
                     className={`group flex items-start gap-4 p-4 rounded-xl border transition-all duration-200 ${
                       item.isDone
                         ? 'bg-emerald-500/5 border-emerald-500/20'
-                        : 'bg-[#18181b] border-zinc-800'
+                        : 'bg-zinc-900 border-zinc-800'
                     } ${
                       isReadOnly
                         ? 'cursor-default'

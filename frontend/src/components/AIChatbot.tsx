@@ -118,7 +118,7 @@ export default function AIChatbot() {
           <MessageCircle className="w-6 h-6 text-white" />
         )}
         {!isOpen && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#09090b] animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-zinc-950 animate-pulse" />
         )}
       </button>
 
@@ -126,7 +126,7 @@ export default function AIChatbot() {
       {isOpen && (
         <div
           id="ai-chatbot-window"
-          className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] bg-[#18181b] border border-zinc-700 rounded-2xl shadow-2xl shadow-black/50 flex flex-col overflow-hidden"
+          className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl shadow-black/50 flex flex-col overflow-hidden"
           style={{ height: '480px' }}
         >
           {/* Header */}
@@ -150,7 +150,7 @@ export default function AIChatbot() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#09090b]">
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-zinc-950">
             {messages.map(msg => (
               <div
                 key={msg.id}
@@ -205,7 +205,7 @@ export default function AIChatbot() {
 
           {/* Quick questions — shown only when 1 message */}
           {messages.length <= 1 && !isLoading && (
-            <div className="px-4 py-2 flex flex-wrap gap-1.5 border-t border-zinc-800 bg-[#09090b] shrink-0">
+            <div className="px-4 py-2 flex flex-wrap gap-1.5 border-t border-zinc-800 bg-zinc-950 shrink-0">
               {QUICK_QUESTIONS.map(q => (
                 <button
                   key={q}
@@ -219,7 +219,7 @@ export default function AIChatbot() {
           )}
 
           {/* Input */}
-          <div className="px-3 py-3 border-t border-zinc-800 bg-[#18181b] flex items-center gap-2 shrink-0">
+          <div className="px-3 py-3 border-t border-zinc-800 bg-zinc-900 flex items-center gap-2 shrink-0">
             <input
               ref={inputRef}
               id="ai-chatbot-input"
