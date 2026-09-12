@@ -1248,7 +1248,7 @@ export default function ExamsPage() {
                       className={`w-full text-left rounded-lg border px-3.5 py-2.5 text-sm font-medium transition-colors ${
                         on
                           ? 'bg-blue-600/15 border-blue-600 text-white'
-                          : 'bg-[#0f0f11] border-zinc-800 text-zinc-300 hover:border-blue-600'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-blue-600'
                       }`}
                     >
                       <span className="flex items-center gap-2">

@@ -189,7 +189,7 @@ export default function StudentCategoriesPage() {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Xabar matnini yozing... {ism} — farzand ismi avtomatik qo'yiladi."
               rows={4}
-              className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 resize-none"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 resize-none"
             />
 
             <div className="flex items-center justify-between mt-3">
@@ -212,7 +212,7 @@ export default function StudentCategoriesPage() {
             </div>
 
             {sendResult && (
-              <div className="mt-3 text-sm text-zinc-300 bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2">
+              <div className="mt-3 text-sm text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
                 ✅ {sendResult.sent} ta yetkazildi{sendResult.failed > 0 ? ` · ❌ ${sendResult.failed} ta xato` : ''} (jami {sendResult.total} ta ulangan ota-ona)
               </div>
             )}

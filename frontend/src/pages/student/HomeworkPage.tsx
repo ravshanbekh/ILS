@@ -156,7 +156,7 @@ export default function HomeworkPage() {
                     <p className="text-zinc-400 text-sm mb-3">{current.description}</p>
                   )}
 
-                  <div className="bg-[#0f0f11] border border-zinc-800 rounded-lg p-3.5">
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3.5">
                     <HomeworkContent row={current} />
                   </div>
 
@@ -194,7 +194,7 @@ export default function HomeworkPage() {
                         <GradeBadge grade={row.grade} score={row.score} />
                       </div>
 
-                      <div className="bg-[#0f0f11] border border-zinc-800 rounded-lg p-3 mt-2">
+                      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 mt-2">
                         <HomeworkContent row={row} />
                       </div>
 

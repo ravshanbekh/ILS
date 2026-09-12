@@ -262,7 +262,7 @@ function UserDetailModal({
                   <div className={`col-span-1 rounded-2xl p-3 border flex flex-col items-center justify-center ${c.light}`}>
                     <div className="relative w-14 h-14">
                       <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-                        <circle cx="28" cy="28" r="22" fill="none" stroke="#27272a" strokeWidth="5" />
+                        <circle cx="28" cy="28" r="22" fill="none" stroke='var(--border)' strokeWidth="5" />
                         <circle cx="28" cy="28" r="22" fill="none" stroke={c.bar} strokeWidth="5"
                           strokeDasharray={`${2 * Math.PI * 22}`}
                           strokeDashoffset={`${2 * Math.PI * 22 * (1 - pct / 100)}`}

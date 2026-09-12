@@ -350,7 +350,7 @@ export default function ExamLobbyPage() {
     const timerPct = (timeLeft / (30 * 60)) * 100;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-[#0c0c1e] to-zinc-950 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-zinc-950 to-zinc-950 flex flex-col">
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-3 bg-black/30 backdrop-blur-sm">
           <div className="flex items-center gap-3">

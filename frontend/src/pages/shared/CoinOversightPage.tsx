@@ -119,7 +119,7 @@ export default function CoinOversightPage() {
                 placeholder={String(dailyLimit)}
                 value={limitDraft}
                 onChange={(e) => setLimitDraft(e.target.value)}
-                className="w-40 bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+                className="w-40 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
               />
             </div>
             <button

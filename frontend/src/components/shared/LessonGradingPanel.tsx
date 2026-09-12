@@ -383,7 +383,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                 {session.grades.map((g) => (
                   <div
                     key={g.id}
-                    className="flex items-center justify-between gap-3 bg-[#0f0f11] border border-zinc-800 rounded-xl px-4 py-3"
+                    className="flex items-center justify-between gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
                   >
                     <span className="text-white text-sm font-medium truncate">{g.student.fullName}</span>
 
@@ -521,7 +521,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                   )}
 
                   {!assignOpts.current && !showAssign && (
-                    <p className="text-zinc-500 text-xs bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5">
+                    <p className="text-zinc-500 text-xs bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5">
                       Hali vazifa tanlanmagan
                     </p>
                   )}
@@ -566,7 +566,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                                         className={`w-full text-left rounded-lg border px-3 py-2 transition-colors disabled:opacity-50 ${
                                           active
                                             ? 'bg-blue-600/15 border-blue-600 text-white'
-                                            : 'bg-[#0f0f11] border-zinc-800 text-zinc-300 hover:border-blue-600'
+                                            : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-blue-600'
                                         }`}
                                       >
                                         <span className="text-sm font-medium block">{hw.title}</span>
@@ -588,7 +588,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                             value={assignNote}
                             onChange={(e) => setAssignNote(e.target.value.slice(0, 500))}
                             placeholder="Qo'shimcha izoh (ixtiyoriy) — masalan: faqat 1-3 misollar"
-                            className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
                           />
                         </>
                       )}

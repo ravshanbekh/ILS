@@ -274,10 +274,10 @@ export default function SupportBookingPage() {
                       src={a.avatar}
                       alt={a.name}
                       loading="lazy"
-                      className="w-full aspect-square object-cover bg-[#0f0f11]"
+                      className="w-full aspect-square object-cover bg-zinc-900"
                     />
                   ) : (
-                    <div className="w-full aspect-square bg-[#0f0f11] flex items-center justify-center text-4xl font-bold text-zinc-700">
+                    <div className="w-full aspect-square bg-zinc-900 flex items-center justify-center text-4xl font-bold text-zinc-700">
                       {initialsOf(a.name)}
                     </div>
                   )}
@@ -318,8 +318,8 @@ export default function SupportBookingPage() {
                           const cls = slot.isMine
                             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
                             : slot.canBook
-                            ? 'bg-[#0f0f11] border-zinc-800 text-zinc-200 hover:border-blue-600 hover:text-white'
-                            : 'bg-[#0f0f11] border-zinc-900 text-zinc-600';
+                            ? 'bg-zinc-900 border-zinc-800 text-zinc-200 hover:border-blue-600 hover:text-white'
+                            : 'bg-zinc-900 border-zinc-900 text-zinc-600';
 
                           return (
                             <button
@@ -422,7 +422,7 @@ export default function SupportBookingPage() {
             </div>
 
             <div className="p-5 space-y-4">
-              <div className="bg-[#0f0f11] border border-zinc-800 rounded-lg p-3 text-sm">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm">
                 <p className="text-white font-semibold">{picked.timeRange}</p>
                 <p className="text-zinc-400 text-xs mt-0.5">
                   {picked.assistantName} · {date}
@@ -439,7 +439,7 @@ export default function SupportBookingPage() {
                   rows={3}
                   maxLength={300}
                   placeholder="Masalan: 12-normativdagi tsikl tushunarsiz"
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white resize-none"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white resize-none"
                 />
                 <p className="text-zinc-600 text-[11px] mt-1">
                   Ustoz oldindan tayyorlanib kelishi uchun yozib qo'ying

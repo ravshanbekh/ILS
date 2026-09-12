@@ -92,7 +92,7 @@ export default function GroupEventsCard({ groupId }: Props) {
       </div>
 
       {showForm && (
-        <div className="p-5 border-b border-zinc-800 bg-[#0f0f11] flex flex-wrap gap-2 items-end">
+        <div className="p-5 border-b border-zinc-800 bg-zinc-900 flex flex-wrap gap-2 items-end">
           <div>
             <label className="text-zinc-500 text-xs block mb-1">Nomi</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white w-40" />
@@ -125,7 +125,7 @@ export default function GroupEventsCard({ groupId }: Props) {
             {events.map((e) => {
               const s = summaries[e.id];
               return (
-                <div key={e.id} className="flex items-center justify-between bg-[#0f0f11] border border-zinc-800 rounded-lg px-4 py-3">
+                <div key={e.id} className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3">
                   <div>
                     <p className="text-white text-sm font-medium">{e.title}</p>
                     <p className="text-zinc-500 text-xs">

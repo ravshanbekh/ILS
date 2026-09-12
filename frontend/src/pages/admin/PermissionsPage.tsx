@@ -161,7 +161,7 @@ export default function PermissionsPage() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Ism yoki login..."
-                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#0f0f11] border border-zinc-800 text-sm text-white placeholder:text-zinc-600 focus:border-blue-500 outline-none"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-white placeholder:text-zinc-600 focus:border-blue-500 outline-none"
                   />
                 </div>
               </div>
@@ -241,7 +241,7 @@ export default function PermissionsPage() {
                                 className={`w-full flex items-start justify-between gap-4 text-left px-4 py-3 rounded-xl border transition-colors ${
                                   on
                                     ? 'bg-emerald-500/10 border-emerald-500/30'
-                                    : 'bg-[#0f0f11] border-zinc-800 hover:border-zinc-700'
+                                    : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
                                 }`}
                               >
                                 <div>

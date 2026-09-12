@@ -713,7 +713,7 @@ export default function QuizJoinPage() {
 
   // ── QUESTION STAGE ───────────────────────────────────────────────────────────
   if (stage === 'question' && currentQ) return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0c0c1e] to-zinc-950 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-zinc-950 flex flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/40 backdrop-blur-sm">
         <div className="flex items-center gap-2">
@@ -863,7 +863,7 @@ export default function QuizJoinPage() {
 
   // ── ENTER CODE STAGE ─────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-b from-violet-950 via-[#0c0c1e] to-zinc-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-violet-950 via-zinc-950 to-zinc-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm text-center">
         <div className="text-7xl mb-4">⚡</div>
         <h1 className="text-4xl font-black text-white mb-2">Live Quiz</h1>

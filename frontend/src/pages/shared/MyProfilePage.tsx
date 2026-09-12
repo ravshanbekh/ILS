@@ -134,7 +134,7 @@ export default function MyProfilePage() {
                       className="w-24 h-24 rounded-2xl object-cover border border-zinc-700"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-2xl bg-[#0f0f11] border border-zinc-800 flex items-center justify-center text-2xl font-bold text-zinc-600">
+                    <div className="w-24 h-24 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-2xl font-bold text-zinc-600">
                       {initials}
                     </div>
                   )}
@@ -176,7 +176,7 @@ export default function MyProfilePage() {
                 <select
                   value={filial}
                   onChange={(e) => setFilial(e.target.value)}
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
                 >
                   <option value="">— tanlanmagan —</option>
                   {filials.map((f) => (
@@ -199,7 +199,7 @@ export default function MyProfilePage() {
                   onChange={(e) => setBio(e.target.value.slice(0, 300))}
                   rows={4}
                   placeholder="Masalan: Python va algoritmlar bo'yicha yordam beraman. Normativlarni tushunmagan bo'lsangiz keling."
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white resize-none"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white resize-none"
                 />
                 <div className="flex items-center justify-between mt-1.5">
                   <p className="text-zinc-600 text-[11px]">Nima bo'yicha yordam berishingizni yozing</p>
@@ -233,7 +233,7 @@ export default function MyProfilePage() {
                 {src ? (
                   <img src={src} alt="" className="w-full aspect-square rounded-lg object-cover mb-3" />
                 ) : (
-                  <div className="w-full aspect-square rounded-lg bg-[#0f0f11] border border-zinc-800 flex items-center justify-center text-3xl font-bold text-zinc-700 mb-3">
+                  <div className="w-full aspect-square rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-3xl font-bold text-zinc-700 mb-3">
                     {initials}
                   </div>
                 )}

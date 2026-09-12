@@ -232,7 +232,7 @@ export default function HomeworkBankPage() {
                 <select
                   value={folderId}
                   onChange={(e) => setFolderId(e.target.value)}
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
                 >
                   <option value="">— tanlang —</option>
                   {folders.map((f) => (
@@ -251,7 +251,7 @@ export default function HomeworkBankPage() {
                   value={itemId}
                   onChange={(e) => setItemId(e.target.value)}
                   disabled={!folderId}
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white disabled:opacity-40"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white disabled:opacity-40"
                 >
                   <option value="">{folderId ? '— tanlang —' : 'avval papkani tanlang'}</option>
                   {items.map((i) => (
@@ -371,7 +371,7 @@ export default function HomeworkBankPage() {
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value.slice(0, 200) })}
                   placeholder="Masalan: 3-dars uyga vazifasi — tsikllar"
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
                 />
               </div>
 
@@ -383,7 +383,7 @@ export default function HomeworkBankPage() {
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, 1000) })}
                   placeholder="Qisqacha nima qilish kerakligi"
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
                 />
               </div>
 
@@ -397,7 +397,7 @@ export default function HomeworkBankPage() {
                       className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${
                         form.contentType === t
                           ? 'bg-blue-600/15 border-blue-600 text-white'
-                          : 'bg-[#0f0f11] border-zinc-800 text-zinc-400 hover:text-white'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
                       }`}
                     >
                       {t === 'text' ? <FileText className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
@@ -416,7 +416,7 @@ export default function HomeworkBankPage() {
                     value={form.content}
                     onChange={(e) => setForm({ ...form, content: e.target.value })}
                     placeholder="https://..."
-                    className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
                   />
                 ) : (
                   <textarea
@@ -424,7 +424,7 @@ export default function HomeworkBankPage() {
                     onChange={(e) => setForm({ ...form, content: e.target.value })}
                     rows={6}
                     placeholder="Vazifa matnini yozing..."
-                    className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white resize-none"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white resize-none"
                   />
                 )}
               </div>

@@ -84,7 +84,7 @@ function ScoreBar({ score, max, label }: { score: number | null; max: number; la
           {score ?? '—'} <span className="text-zinc-600">/ {max}</span>
         </span>
       </div>
-      <div className="h-1.5 bg-[#0f0f11] rounded-full overflow-hidden">
+      <div className="h-1.5 bg-zinc-900 rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
       </div>
     </div>

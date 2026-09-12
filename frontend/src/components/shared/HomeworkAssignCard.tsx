@@ -239,7 +239,7 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Vazifa yoki dars nomi bo'yicha qidirish..."
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white"
                 />
               </div>
 
@@ -255,7 +255,7 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
                       <div key={course.id} className="border border-zinc-800 rounded-lg overflow-hidden">
                         <button
                           onClick={() => setOpenCourse(isOpen && !search ? null : course.id)}
-                          className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 bg-[#0f0f11] hover:bg-white/[0.02] text-left"
+                          className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 bg-zinc-900 hover:bg-white/[0.02] text-left"
                         >
                           <span className="flex items-center gap-2 min-w-0">
                             {isOpen ? (
@@ -289,7 +289,7 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
                                         className={`w-full text-left rounded-lg border px-3.5 py-2.5 transition-colors disabled:opacity-50 ${
                                           active
                                             ? 'bg-blue-600/15 border-blue-600 text-white'
-                                            : 'bg-[#0f0f11] border-zinc-800 text-zinc-300 hover:border-blue-600'
+                                            : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-blue-600'
                                         }`}
                                       >
                                         <span className="text-sm font-medium flex items-center gap-2">
@@ -324,7 +324,7 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
                 value={note}
                 onChange={(e) => setNote(e.target.value.slice(0, 500))}
                 placeholder="Qo'shimcha izoh (ixtiyoriy) — masalan: faqat 1-5 misollar"
-                className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
               />
             </>
           )}
@@ -363,7 +363,7 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
         </div>
       ) : (
         /* Hali tanlanmagan */
-        <div className="bg-[#0f0f11] border border-zinc-800 rounded-xl p-4 flex items-center justify-between gap-3">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between gap-3">
           <p className="text-zinc-500 text-sm flex items-center gap-2">
             <X className="w-4 h-4 shrink-0" />
             Bugungi darsga hali vazifa biriktirilmagan

@@ -185,7 +185,7 @@ export default function MySupportHoursPage() {
                   <select
                     value={capacity}
                     onChange={(e) => setCapacity(Number(e.target.value))}
-                    className="bg-[#0f0f11] border border-zinc-800 rounded-lg px-2 py-1.5 text-sm text-white"
+                    className="bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-sm text-white"
                   >
                     {Array.from({ length: data?.maxCapacity ?? 10 }, (_, i) => i + 1).map((n) => (
                       <option key={n} value={n}>
@@ -209,7 +209,7 @@ export default function MySupportHoursPage() {
                       className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
                         active
                           ? 'bg-blue-600/15 border-blue-600 text-white'
-                          : 'bg-[#0f0f11] border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
                       }`}
                     >
                       <span className="flex items-center gap-1.5 text-sm font-semibold">
@@ -313,7 +313,7 @@ export default function MySupportHoursPage() {
                       <p className="text-white text-sm font-medium">{st.fullName}</p>
                       <p className="text-zinc-500 text-xs">{st.groupName || '—'}</p>
                       {st.topic && (
-                        <p className="text-zinc-400 text-xs mt-1 bg-[#0f0f11] rounded px-2 py-1 border border-zinc-800">
+                        <p className="text-zinc-400 text-xs mt-1 bg-zinc-900 rounded px-2 py-1 border border-zinc-800">
                           {st.topic}
                         </p>
                       )}

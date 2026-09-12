@@ -186,7 +186,7 @@ export default function AppealsPage() {
                 </div>
                 <p className="text-zinc-300 text-sm mb-2">{a.message}</p>
                 {a.adminReply ? (
-                  <div className="bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-emerald-300 flex items-start gap-2">
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-emerald-300 flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
                     {a.adminReply}
                   </div>
@@ -224,7 +224,7 @@ export default function AppealsPage() {
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               rows={4}
-              className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white resize-none"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white resize-none"
             />
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setSelected(null)} className="px-4 py-2 rounded-lg text-sm text-zinc-400 hover:text-white">
