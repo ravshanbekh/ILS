@@ -10,13 +10,13 @@ import { statsApi } from '@/api';
  *
  * Kompozitsiya: intro + o'ng banner → 4 ta KPI → 3 ta kengroq KPI.
  *
- * DIQQAT — trend va mini-grafik hozir BO'SH holatda chiqadi.
- * `/api/statistics/overview` faqat joriy jami sonlarni qaytaradi; oldingi
- * davr qiymati ham, vaqt qatori ham yo'q. Referens rasmdagi "+12%" kabi
- * foizlarni kodga yozib qo'yish qo'llanma bo'yicha TAQIQLANGAN (soxta
- * ma'lumot), shuning uchun TrendBadge "Taqqoslash mavjud emas" deydi.
- * Backend `previousValue` va `series` qaytara boshlagan zahoti kartalar
- * o'zgarishsiz to'liq ishlaydi.
+ * Trend foizlari va mini-grafik HAQIQIY ma'lumotdan quriladi:
+ * `/api/statistics/overview` `previous` (o'tgan oy oxiridagi holat) va
+ * `series` (so'nggi 10 haftalik kumulyativ qator) qaytaradi. Referensdagi
+ * "+12%" kabi sonlar hech qayerda kodga yozilmagan.
+ *
+ * Eski ma'lumot qaytaradigan backend bilan ham ishlaydi: `previous`/`series`
+ * bo'lmasa karta "Taqqoslash mavjud emas" va bo'sh grafik ko'rsatadi.
  */
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -35,15 +35,22 @@ export default function AdminDashboard() {
 
   useEffect(load, [load]);
 
+  /**
+   * @param key  API dagi maydon nomi — joriy qiymat, `previous` va `series`
+   *             uchayla shu kalit bilan olinadi, shuning uchun ular
+   *             bir-biriga mos kelishi kafolatlanadi.
+   */
   const card = (
     title: string,
-    value: number | undefined,
+    key: string,
     illustration: Parameters<typeof StatCard>[0]['illustration'],
     extra: Partial<Parameters<typeof StatCard>[0]> = {},
   ) => (
     <StatCard
       title={title}
-      value={value ?? null}
+      value={stats?.[key] ?? null}
+      previousValue={stats?.previous?.[key] ?? null}
+      series={stats?.series?.[key] ?? null}
       illustration={illustration}
       state={state}
       onRetry={load}
@@ -65,22 +72,22 @@ export default function AdminDashboard() {
 
         {/* 12 ustunli grid: birinchi qator 4×span-3, ikkinchi qator 3×span-4 */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-12">
-          <div className="xl:col-span-3">{card("O'quvchilar", stats?.totalStudents, 'student')}</div>
-          <div className="xl:col-span-3">{card("O'qituvchilar", stats?.totalTeachers, 'teacher')}</div>
-          <div className="xl:col-span-3">{card('Guruhlar', stats?.totalGroups, 'groups')}</div>
-          <div className="xl:col-span-3">{card('Normativlar', stats?.totalNormatives, 'standards')}</div>
+          <div className="xl:col-span-3">{card("O'quvchilar", 'totalStudents', 'student')}</div>
+          <div className="xl:col-span-3">{card("O'qituvchilar", 'totalTeachers', 'teacher')}</div>
+          <div className="xl:col-span-3">{card('Guruhlar', 'totalGroups', 'groups')}</div>
+          <div className="xl:col-span-3">{card('Normativlar', 'totalNormatives', 'standards')}</div>
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-12">
           <div className="xl:col-span-4">
-            {card('Jami topshiriqlar', stats?.totalSubmissions, 'assignments', { size: 'wide' })}
+            {card('Jami topshiriqlar', 'totalSubmissions', 'assignments', { size: 'wide' })}
           </div>
           <div className="xl:col-span-4">
-            {card('Tekshirilgan', stats?.checkedSubmissions, 'checked', { size: 'wide' })}
+            {card('Tekshirilgan', 'checkedSubmissions', 'checked', { size: 'wide' })}
           </div>
           <div className="xl:col-span-4">
             {/* Navbat qisqargani YAXSHI natija — shuning uchun lower-is-better */}
-            {card('Kutilmoqda', stats?.pendingSubmissions, 'pending', {
+            {card('Kutilmoqda', 'pendingSubmissions', 'pending', {
               size: 'wide',
               polarity: 'lower-is-better',
             })}

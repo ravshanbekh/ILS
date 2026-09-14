@@ -6,9 +6,27 @@ import { generateText, getAISettings } from '../../shared/utils/ai';
 
 class StatisticsService {
   /**
-   * Umumiy statistika (admin uchun)
+   * Umumiy statistika (admin uchun).
+   *
+   * Har bir ko'rsatkich uchun JORIY qiymat, OLDINGI OY oxiridagi qiymat va
+   * so'nggi 10 haftalik qator qaytariladi - dashboard trend badge va
+   * mini-grafigi shulardan quriladi.
+   *
+   * Taqqoslash mantiqi: "oldingi qiymat" = shu oy boshlanishidan OLDINGI
+   * holat. Ya'ni foiz "o'tgan oy oxiriga nisbatan qancha o'zgardi" degani.
+   *
+   * Cheklov: isActive filtri joriy holat bo'yicha ishlaydi. Shu oy ichida
+   * o'chirilgan o'quvchi oldingi qiymatga ham kirmaydi, shuning uchun
+   * o'sish biroz kamaytirilgan ko'rinishi mumkin. To'g'ri hisoblash uchun
+   * soft-delete sanasi kerak bo'lardi - hozir sxemada yo'q.
    */
   async getOverview() {
+    const now = new Date();
+    // Oy boshi UTC bo'yicha - server va taqqoslash bitta mintaqada bo'lsin
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    // Grafik uchun 10 hafta orqaga
+    const seriesFrom = new Date(now.getTime() - 10 * 7 * 24 * 60 * 60 * 1000);
+
     const [
       totalStudents,
       totalTeachers,
@@ -17,6 +35,14 @@ class StatisticsService {
       totalSubmissions,
       pendingSubmissions,
       checkedSubmissions,
+      // -- Oldingi oy oxiridagi holat --
+      prevStudents,
+      prevTeachers,
+      prevGroups,
+      prevNormatives,
+      prevSubmissions,
+      prevPending,
+      prevChecked,
     ] = await Promise.all([
       prisma.user.count({ where: { role: 'student', isActive: true } }),
       prisma.user.count({ where: { role: 'teacher', isActive: true } }),
@@ -25,6 +51,21 @@ class StatisticsService {
       prisma.submission.count(),
       prisma.submission.count({ where: { status: 'pending' } }),
       prisma.submission.count({ where: { status: 'checked' } }),
+
+      prisma.user.count({ where: { role: 'student', isActive: true, createdAt: { lt: monthStart } } }),
+      prisma.user.count({ where: { role: 'teacher', isActive: true, createdAt: { lt: monthStart } } }),
+      prisma.group.count({ where: { isActive: true, createdAt: { lt: monthStart } } }),
+      prisma.normative.count({ where: { isActive: true, createdAt: { lt: monthStart } } }),
+      prisma.submission.count({ where: { submittedAt: { lt: monthStart } } }),
+      // Oy boshida "kutilayotgan" bo'lganlar: o'shangacha yuborilgan va
+      // o'sha paytda hali tekshirilmagan topshiriqlar.
+      prisma.submission.count({
+        where: {
+          submittedAt: { lt: monthStart },
+          OR: [{ checkedAt: null }, { checkedAt: { gte: monthStart } }],
+        },
+      }),
+      prisma.submission.count({ where: { checkedAt: { lt: monthStart } } }),
     ]);
 
     // Natijalar taqsimoti
@@ -32,6 +73,15 @@ class StatisticsService {
       by: ['result'],
       where: { status: 'checked' },
       _count: true,
+    });
+
+    const series = await this.buildOverviewSeries(seriesFrom, {
+      totalStudents,
+      totalTeachers,
+      totalGroups,
+      totalNormatives,
+      totalSubmissions,
+      checkedSubmissions,
     });
 
     return {
@@ -42,11 +92,122 @@ class StatisticsService {
       totalSubmissions,
       pendingSubmissions,
       checkedSubmissions,
+
+      /** Oldingi oy oxiridagi qiymatlar - trend badge shundan hisoblanadi */
+      previous: {
+        totalStudents: prevStudents,
+        totalTeachers: prevTeachers,
+        totalGroups: prevGroups,
+        totalNormatives: prevNormatives,
+        totalSubmissions: prevSubmissions,
+        pendingSubmissions: prevPending,
+        checkedSubmissions: prevChecked,
+      },
+
+      /** So'nggi 10 haftalik kumulyativ qator (mini-grafik uchun) */
+      series,
+
       resultDistribution: resultDistribution.map((r) => ({
         result: r.result,
         count: r._count,
       })),
     };
+  }
+
+  /**
+   * KPI mini-grafiklari uchun haftalik kumulyativ qator.
+   *
+   * So'nggi 10 haftada QO'SHILGAN yozuvlar date_trunc bilan guruhlanadi,
+   * so'ng joriy jamidan orqaga qarab kumulyativ qiymat tiklanadi.
+   *
+   * Xato bo'lsa bo'sh obyekt qaytadi - dashboard bo'sh grafik ko'rsatadi,
+   * lekin 500 bermaydi. Grafik butun sahifani yiqitmasligi kerak.
+   */
+  private async buildOverviewSeries(
+    from: Date,
+    totals: Record<string, number>,
+  ): Promise<Record<string, { date: string; value: number }[]>> {
+    type Bucket = { wk: Date; c: number };
+
+    const weeklyToCumulative = (buckets: Bucket[], total: number) => {
+      if (buckets.length === 0) return [];
+      const added = buckets.reduce((sum, b) => sum + Number(b.c), 0);
+      let running = total - added; // 10 hafta oldingi boshlang'ich daraja
+      return buckets.map((b) => {
+        running += Number(b.c);
+        return { date: new Date(b.wk).toISOString().slice(0, 10), value: running };
+      });
+    };
+
+    try {
+      const [students, teachers, groups, normatives, submissions, checked] = await Promise.all([
+        prisma.$queryRaw<Bucket[]>`
+          SELECT date_trunc('week', created_at) AS wk, COUNT(*)::int AS c
+          FROM users WHERE role = 'student' AND is_active = true AND created_at >= ${from}
+          GROUP BY 1 ORDER BY 1`,
+        prisma.$queryRaw<Bucket[]>`
+          SELECT date_trunc('week', created_at) AS wk, COUNT(*)::int AS c
+          FROM users WHERE role = 'teacher' AND is_active = true AND created_at >= ${from}
+          GROUP BY 1 ORDER BY 1`,
+        prisma.$queryRaw<Bucket[]>`
+          SELECT date_trunc('week', created_at) AS wk, COUNT(*)::int AS c
+          FROM groups WHERE is_active = true AND created_at >= ${from}
+          GROUP BY 1 ORDER BY 1`,
+        prisma.$queryRaw<Bucket[]>`
+          SELECT date_trunc('week', created_at) AS wk, COUNT(*)::int AS c
+          FROM normatives WHERE is_active = true AND created_at >= ${from}
+          GROUP BY 1 ORDER BY 1`,
+        prisma.$queryRaw<Bucket[]>`
+          SELECT date_trunc('week', submitted_at) AS wk, COUNT(*)::int AS c
+          FROM submissions WHERE submitted_at >= ${from}
+          GROUP BY 1 ORDER BY 1`,
+        prisma.$queryRaw<Bucket[]>`
+          SELECT date_trunc('week', checked_at) AS wk, COUNT(*)::int AS c
+          FROM submissions WHERE checked_at >= ${from}
+          GROUP BY 1 ORDER BY 1`,
+      ]);
+
+      // "Kutilmoqda" kumulyativ emas - bu har haftadagi HOLAT (navbat
+      // uzunligi). Shuning uchun har bir hafta boshi uchun "o'shangacha
+      // yuborilgan va o'shanda hali tekshirilmagan" soni alohida olinadi.
+      //
+      // ALOHIDA try: bu generate_series li ichma-ich so'rov qolganlaridan
+      // murakkabroq. U yiqilsa faqat shu bitta grafik bo'sh qolsin,
+      // boshqa oltitasi yo'qolib ketmasin.
+      let pendingSeries: { date: string; value: number }[] = [];
+      try {
+        const pending = await prisma.$queryRaw<{ wk: Date; c: number }[]>`
+          SELECT g.wk AS wk,
+                 (SELECT COUNT(*)::int FROM submissions s
+                   WHERE s.submitted_at < g.wk
+                     AND (s.checked_at IS NULL OR s.checked_at >= g.wk)) AS c
+          FROM generate_series(
+                 date_trunc('week', ${from}::timestamptz),
+                 date_trunc('week', now()),
+                 interval '1 week'
+               ) AS g(wk)
+          ORDER BY 1`;
+        pendingSeries = pending.map((b) => ({
+          date: new Date(b.wk).toISOString().slice(0, 10),
+          value: Number(b.c),
+        }));
+      } catch (err) {
+        console.error('[statistics] kutilayotganlar qatori qurilmadi:', err);
+      }
+
+      return {
+        pendingSubmissions: pendingSeries,
+        totalStudents: weeklyToCumulative(students, totals.totalStudents),
+        totalTeachers: weeklyToCumulative(teachers, totals.totalTeachers),
+        totalGroups: weeklyToCumulative(groups, totals.totalGroups),
+        totalNormatives: weeklyToCumulative(normatives, totals.totalNormatives),
+        totalSubmissions: weeklyToCumulative(submissions, totals.totalSubmissions),
+        checkedSubmissions: weeklyToCumulative(checked, totals.checkedSubmissions),
+      };
+    } catch (err) {
+      console.error('[statistics] haftalik qator qurilmadi:', err);
+      return {};
+    }
   }
 
   /**
