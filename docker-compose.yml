@@ -21,6 +21,12 @@ services:
     container_name: tizim_backend
     env_file:
       - ./backend/.env
+    environment:
+      # env_file'dan USTUN turadi. Serverdagi .env da NODE_ENV=development
+      # qolib ketgan edi va production'da Prisma HAR BIR SQL so'rovni logga
+      # yozib turardi (tezlik + logda o'quvchilar ma'lumoti). Bu yerda
+      # majburlaymiz — serverdagi faylga qo'l tegizish shart emas.
+      NODE_ENV: production
     ports:
       # Faqat localhost — tashqi internetdan yopiq. Trafik faqat nginx orqali
       # (localhost:5050 -> konteyner). Ilgari "5050:5000" (0.0.0.0) edi va

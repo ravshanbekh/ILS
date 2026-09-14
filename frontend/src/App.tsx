@@ -135,7 +135,9 @@ function GlobalSocket() {
   useEffect(() => {
     if (isAuthenticated && user) {
       socket.connect();
-      socket.emit('join', user.id);
+      // ID yuborilmaydi — server uni tokendan oladi. Ilgari mijoz bergan ID
+      // ishlatilardi va istalgan odam boshqaning xonasiga kira olardi.
+      socket.emit('join');
     } else {
       socket.disconnect();
     }

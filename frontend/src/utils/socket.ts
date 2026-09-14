@@ -1,13 +1,14 @@
 import { io } from 'socket.io-client';
 
-// 'http://localhost:3000' is the backend server running address
-// But wait, the API_URL might be different in production. We can get the base URL from env or fallback to localhost:3000.
-// Let's use the current window location host for production, or localhost:3000 for development.
-const SOCKET_URL = (import.meta.env.VITE_API_URL 
-  ? import.meta.env.VITE_API_URL.replace('/api', '') 
+// Productionda sayt bilan bir xil origin; dev'da VITE_API_URL dan olinadi.
+const SOCKET_URL = (import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace('/api', '')
   : '') || window.location.origin;
 
 export const socket = io(SOCKET_URL, {
   autoConnect: false,
   withCredentials: true,
+  // Funksiya sifatida beriladi — har qayta ulanishda QAYTA o'qiladi.
+  // Obyekt bo'lsa birinchi ulanishdagi (eskirgan) token qotib qolardi.
+  auth: (cb) => cb({ token: localStorage.getItem('accessToken') || '' }),
 });
