@@ -75,7 +75,7 @@ export function EducationBanner() {
           </p>
         </div>
 
-        <Illustration name="hero-education" size={150} />
+        <Illustration name="hero-education" size={150} priority />
 
         <p
           className="hidden lg:block w-[136px] shrink-0 text-sm leading-5"

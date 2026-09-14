@@ -40,10 +40,16 @@ interface IllustrationProps {
    * qo'ymasligi uchun.
    */
   size?: number | string;
+  /**
+   * Birinchi ekranda ko'rinadigan rasm (KPI kartalari, banner).
+   * DESIGN-GUIDE 10-bo'lim: pastdagilarga lazy, birinchi ekrandagilarga
+   * odatiy yuklash. Lazy qo'yilganda kartalar bir lahza bo'sh turardi.
+   */
+  priority?: boolean;
   className?: string;
 }
 
-export default function Illustration({ name, size = 140, className = '' }: IllustrationProps) {
+export default function Illustration({ name, size = 140, priority = false, className = '' }: IllustrationProps) {
   const [failed, setFailed] = useState(false);
   const Icon = FALLBACK_ICON[name];
 
@@ -83,8 +89,9 @@ export default function Illustration({ name, size = 140, className = '' }: Illus
       style={box}
       className={`shrink-0 block object-contain ${className}`}
       onError={() => setFailed(true)}
-      loading="lazy"
-      decoding="async"
+      loading={priority ? 'eager' : 'lazy'}
+      fetchPriority={priority ? 'high' : 'auto'}
+      decoding={priority ? 'sync' : 'async'}
       /* Karta matni mazmunni to'liq takrorlaydi — DESIGN-GUIDE 10-bo'lim */
       alt=""
       aria-hidden="true"

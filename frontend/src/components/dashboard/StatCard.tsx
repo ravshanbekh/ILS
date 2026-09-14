@@ -122,7 +122,7 @@ export default function StatCard({
         </div>
 
         {/* Illustratsiya matnning o'ng tomonida; ustma-ust kelmaydi */}
-        <Illustration name={illustration} size={illustrationSize} className="mt-1" />
+        <Illustration name={illustration} size={illustrationSize} priority className="mt-1" />
       </div>
 
       {state === 'empty' ? (
