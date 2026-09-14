@@ -33,10 +33,10 @@ export default function StudentHistoryPage() {
       <Header title="Topshiriqlarim tarixi" subtitle="Barcha topshirilgan va tekshirilgan ishlar" />
 
       <div className="p-8 max-w-6xl mx-auto">
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-zinc-300">
-              <thead className="bg-[#09090b] text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
+              <thead className="bg-zinc-950 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
                 <tr>
                   <th className="px-6 py-4">Sana</th>
                   <th className="px-6 py-4">Normativ</th>
@@ -46,7 +46,7 @@ export default function StudentHistoryPage() {
                   <th className="px-6 py-4">Izoh</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/50 bg-[#09090b]">
+              <tbody className="divide-y divide-zinc-800/50 bg-zinc-950">
                 {submissions.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">
@@ -80,7 +80,7 @@ export default function StudentHistoryPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         {sub.status === 'checked' ? (
-                          <span className="font-bold text-white bg-[#18181b] border border-zinc-800 px-3 py-1 rounded-md">{sub.score}</span>
+                          <span className="font-bold text-white bg-zinc-900 border border-zinc-800 px-3 py-1 rounded-md">{sub.score}</span>
                         ) : (
                           <span className="text-zinc-500">-</span>
                         )}

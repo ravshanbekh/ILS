@@ -55,7 +55,7 @@ export default function AdminSubmissionsPage() {
               placeholder="O'quvchi, normativ yoki guruh nomi bo'yicha qidirish..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#18181b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ export default function AdminSubmissionsPage() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
                   filter === f
                     ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-[#18181b] border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                    : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
                 }`}
               >
                 {f === 'all' ? 'Barchasi' : f === 'pending' ? '⏳ Kutilmoqda' : '✅ Tekshirilgan'}
@@ -76,10 +76,10 @@ export default function AdminSubmissionsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-zinc-300">
-              <thead className="bg-[#09090b] text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
+              <thead className="bg-zinc-950 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
                 <tr>
                   <th className="px-6 py-4">Sana</th>
                   <th className="px-6 py-4">O'quvchi</th>
@@ -91,7 +91,7 @@ export default function AdminSubmissionsPage() {
                   <th className="px-6 py-4">Izoh</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/50 bg-[#09090b]">
+              <tbody className="divide-y divide-zinc-800/50 bg-zinc-950">
                 {loading ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
@@ -148,7 +148,7 @@ export default function AdminSubmissionsPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         {sub.status === 'checked' ? (
-                          <span className="font-bold text-white bg-[#18181b] border border-zinc-800 px-3 py-1 rounded-md">{sub.score}</span>
+                          <span className="font-bold text-white bg-zinc-900 border border-zinc-800 px-3 py-1 rounded-md">{sub.score}</span>
                         ) : (
                           <span className="text-zinc-500">—</span>
                         )}

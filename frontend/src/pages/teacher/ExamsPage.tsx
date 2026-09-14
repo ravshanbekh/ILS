@@ -1225,7 +1225,7 @@ export default function ExamsPage() {
       {/* Faollashtirishdan oldin: qaysi guruh(lar) topshiradi */}
       {activateFor && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden">
             <div className="px-5 py-4 border-b border-zinc-800">
               <h2 className="text-white font-bold">Qaysi guruh topshiradi?</h2>
               <p className="text-zinc-500 text-xs mt-1">{activateFor.title}</p>
@@ -1248,7 +1248,7 @@ export default function ExamsPage() {
                       className={`w-full text-left rounded-lg border px-3.5 py-2.5 text-sm font-medium transition-colors ${
                         on
                           ? 'bg-blue-600/15 border-blue-600 text-white'
-                          : 'bg-[#0f0f11] border-zinc-800 text-zinc-300 hover:border-blue-600'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-blue-600'
                       }`}
                     >
                       <span className="flex items-center gap-2">

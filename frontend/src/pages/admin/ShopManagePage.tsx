@@ -100,7 +100,7 @@ export default function ShopManagePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Do'kon boshqaruvi" subtitle="Sovg'a/tovarlarni qo'shish va tahrirlash" />
 
       <div className="p-8 max-w-6xl mx-auto space-y-6">
@@ -125,7 +125,7 @@ export default function ShopManagePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {items.map((item) => (
-              <div key={item.id} className={`bg-[#18181b] border rounded-xl overflow-hidden flex flex-col ${item.isActive ? 'border-zinc-800' : 'border-zinc-800 opacity-50'}`}>
+              <div key={item.id} className={`bg-zinc-900 border rounded-xl overflow-hidden flex flex-col ${item.isActive ? 'border-zinc-800' : 'border-zinc-800 opacity-50'}`}>
                 <div className="h-36 bg-zinc-900 flex items-center justify-center relative">
                   {item.imageUrl ? (
                     <img src={`${API_BASE}${item.imageUrl}`} alt={item.name} className="w-full h-full object-contain" />
@@ -166,7 +166,7 @@ export default function ShopManagePage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl w-full max-w-md p-6 space-y-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-white font-bold text-lg">{editing ? 'Tovarni tahrirlash' : 'Yangi tovar'}</h2>
               <button onClick={() => setShowModal(false)} className="text-zinc-400 hover:text-white">
@@ -180,7 +180,7 @@ export default function ShopManagePage() {
                 <input
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
                   placeholder="Masalan: Sirka ruchka"
                 />
               </div>
@@ -190,7 +190,7 @@ export default function ShopManagePage() {
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={2}
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white resize-none"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white resize-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -201,7 +201,7 @@ export default function ShopManagePage() {
                     min={1}
                     value={form.price}
                     onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                    className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
                   />
                 </div>
                 <div>
@@ -212,7 +212,7 @@ export default function ShopManagePage() {
                     value={form.stock}
                     onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
                     placeholder="Cheksiz"
-                    className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
                   />
                 </div>
               </div>

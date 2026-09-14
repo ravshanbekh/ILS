@@ -178,7 +178,7 @@ export default function NormativesPage() {
               placeholder="Normativlarni qidirish..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-[#18181b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -186,7 +186,7 @@ export default function NormativesPage() {
              <select
                value={selectedCategoryId}
                onChange={(e) => setSelectedCategoryId(e.target.value)}
-               className="w-full px-4 py-2 rounded-lg bg-[#18181b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+               className="w-full px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
              >
                <option value="all">Barcha kategoriyalar</option>
                {categories.map(c => (
@@ -214,10 +214,10 @@ export default function NormativesPage() {
           )}
         </div>
 
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-zinc-300">
-              <thead className="bg-[#09090b] text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
+              <thead className="bg-zinc-950 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
                 <tr>
                   <th className="px-6 py-4 w-16 text-center">N</th>
                   <th className="px-6 py-4">Qaysi funksiya</th>
@@ -242,7 +242,7 @@ export default function NormativesPage() {
                   filteredNormatives.sort((a, b) => a.taskNumber - b.taskNumber).map((n) => (
                     <tr key={n.id} className="hover:bg-zinc-800/30 transition-colors group">
                       <td className="px-6 py-4 font-bold text-white text-center">
-                        <div className="w-8 h-8 rounded bg-[#09090b] border border-zinc-800 flex items-center justify-center mx-auto text-blue-500">
+                        <div className="w-8 h-8 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center mx-auto text-blue-500">
                           {n.taskNumber}
                         </div>
                       </td>
@@ -307,8 +307,8 @@ export default function NormativesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-2xl p-6 shadow-2xl border border-zinc-800 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-2xl p-6 shadow-2xl border border-zinc-800 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">
                 {editingNormative ? 'Normativni tahrirlash' : 'Yangi normativ qoshish'}
@@ -323,7 +323,7 @@ export default function NormativesPage() {
                 <select
                   value={formData.categoryId}
                   onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   required
                 >
                   <option value="">Kategoriyani tanlang</option>
@@ -343,7 +343,7 @@ export default function NormativesPage() {
                     min="1"
                     value={formData.taskNumber}
                     onChange={(e) => setFormData({...formData, taskNumber: parseInt(e.target.value) || 1})}
-                    className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
+                    className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
                     required
                   />
                 </div>
@@ -357,7 +357,7 @@ export default function NormativesPage() {
                     min="1"
                     value={formData.maxScore}
                     onChange={(e) => setFormData({...formData, maxScore: parseInt(e.target.value) || 40})}
-                    className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
+                    className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
                     required
                   />
                 </div>
@@ -371,7 +371,7 @@ export default function NormativesPage() {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   required
                   placeholder="Masalan: Tez yozish"
                 />
@@ -384,7 +384,7 @@ export default function NormativesPage() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[100px] resize-y"
+                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[100px] resize-y"
                   placeholder="Masalan: Monkeytype saytiga kirib tilni ingliz tilida vaqtni 30 sekundlik intervalga qo'yib yozish..."
                 />
               </div>
@@ -400,7 +400,7 @@ export default function NormativesPage() {
                       min="1"
                       value={formData.timeLimit}
                       onChange={(e) => setFormData({...formData, timeLimit: e.target.value})}
-                      className="w-full pl-4 pr-12 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
+                      className="w-full pl-4 pr-12 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
                       placeholder="30"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-medium">sek</span>
@@ -415,7 +415,7 @@ export default function NormativesPage() {
                     type="url"
                     value={formData.url}
                     onChange={(e) => setFormData({...formData, url: e.target.value})}
-                    className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     placeholder="https://monkeytype.com"
                   />
                 </div>
@@ -425,7 +425,7 @@ export default function NormativesPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
+                  className="flex-1 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
                 >
                   Bekor qilish
                 </button>
@@ -443,8 +443,8 @@ export default function NormativesPage() {
 
       {/* Category Modal */}
       {showCategoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-md p-6 shadow-2xl border border-zinc-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-zinc-800">
             <h2 className="text-xl font-bold text-white mb-6">Yangi kategoriya qo'shish</h2>
             <form onSubmit={handleCreateCategory} className="space-y-4">
               <div>
@@ -455,7 +455,7 @@ export default function NormativesPage() {
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   placeholder="Masalan: Foundation, Frontend..."
                   required
                 />
@@ -464,7 +464,7 @@ export default function NormativesPage() {
                 <button
                   type="button"
                   onClick={() => setShowCategoryModal(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
+                  className="flex-1 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
                 >
                   Bekor qilish
                 </button>
@@ -482,8 +482,8 @@ export default function NormativesPage() {
 
       {/* View Details Modal */}
       {viewingNormative && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in" onClick={() => setViewingNormative(null)}>
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in" onClick={() => setViewingNormative(null)}>
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
               <div className="flex items-center gap-3">
                 <span className="w-8 h-8 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-black text-sm">
@@ -514,7 +514,7 @@ export default function NormativesPage() {
 
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-1">Nima qila olsin (Tavsif)</span>
-                <div className="text-zinc-300 text-sm bg-[#09090b] border border-zinc-800/80 rounded-xl p-4 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto custom-scrollbar">
+                <div className="text-zinc-300 text-sm bg-zinc-950 border border-zinc-800/80 rounded-xl p-4 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto custom-scrollbar">
                   {viewingNormative.description || <span className="text-zinc-600 italic">Tavsif kiritilmagan</span>}
                 </div>
               </div>

@@ -48,7 +48,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#09090b]">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-zinc-950">
       <div className="w-full max-w-[400px]">
         {/* Logo Section */}
         <div className="text-center mb-10">
@@ -61,7 +61,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form Section */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl">
           {error && (
             <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium text-center">
               {error}
@@ -76,7 +76,7 @@ export default function LoginPage() {
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
                 placeholder="Loginingizni kiriting"
-                className="w-full px-4 py-3 bg-[#09090b] border border-zinc-800 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                 required
               />
             </div>
@@ -89,7 +89,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-[#09090b] border border-zinc-800 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors pr-12"
+                  className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors pr-12"
                   required
                 />
                 <button

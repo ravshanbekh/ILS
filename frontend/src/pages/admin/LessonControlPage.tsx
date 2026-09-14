@@ -53,7 +53,7 @@ export default function LessonControlPage() {
   const hasProblems = report && (report.notOpened.length > 0 || report.notFinalized.length > 0);
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Dars nazorati" subtitle="Bugun qaysi guruhlar baholanmadi" />
 
       <div className="p-8 max-w-5xl mx-auto">
@@ -76,7 +76,7 @@ export default function LessonControlPage() {
                 </h3>
                 <div className="space-y-2">
                   {report.notOpened.map((g) => (
-                    <div key={g.groupId} className="flex items-center justify-between bg-[#18181b] border border-red-500/20 rounded-xl px-4 py-3">
+                    <div key={g.groupId} className="flex items-center justify-between bg-zinc-900 border border-red-500/20 rounded-xl px-4 py-3">
                       <div>
                         <p className="text-white font-medium text-sm">{g.groupName}</p>
                         <p className="text-zinc-500 text-xs">{g.teacherName}</p>
@@ -103,7 +103,7 @@ export default function LessonControlPage() {
                 </h3>
                 <div className="space-y-2">
                   {report.notFinalized.map((g) => (
-                    <div key={g.groupId} className="flex items-center justify-between bg-[#18181b] border border-amber-500/20 rounded-xl px-4 py-3">
+                    <div key={g.groupId} className="flex items-center justify-between bg-zinc-900 border border-amber-500/20 rounded-xl px-4 py-3">
                       <div>
                         <p className="text-white font-medium text-sm">{g.groupName}</p>
                         <p className="text-zinc-500 text-xs">{g.teacherName}</p>
@@ -130,7 +130,7 @@ export default function LessonControlPage() {
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {report.notConfigured.map((g) => (
-                    <span key={g.groupId} className="bg-[#18181b] border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-300">
+                    <span key={g.groupId} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-300">
                       {g.groupName}
                     </span>
                   ))}

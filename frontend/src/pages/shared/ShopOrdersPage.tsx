@@ -71,7 +71,7 @@ export default function ShopOrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Do'kon buyurtmalari" subtitle="O'quvchilar so'ragan sovg'alar" />
 
       <div className="p-8 max-w-6xl mx-auto space-y-6">
@@ -96,7 +96,7 @@ export default function ShopOrdersPage() {
           ))}
         </div>
 
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />

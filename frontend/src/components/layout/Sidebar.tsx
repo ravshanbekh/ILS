@@ -8,6 +8,7 @@ import {
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
   Gift, Package, Coins
 , CalendarClock, UserCircle} from 'lucide-react';
+import BrandLogo from '@/components/brand/BrandLogo';
 import { ADMIN_GROUPS, TEACHER_GROUPS, STUDENT_GROUPS } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
 
@@ -194,18 +195,22 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
         />
       )}
 
-      <aside className={`fixed left-0 top-0 h-screen bg-[#18181b] border-r border-zinc-800 flex flex-col z-50 shrink-0 transition-all duration-300 ease-in-out lg:translate-x-0 w-64 ${isCollapsed ? 'lg:w-16' : 'lg:w-64'} ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed left-0 top-0 h-screen bg-zinc-900 border-r border-zinc-800 flex flex-col z-50 shrink-0 transition-all duration-300 ease-in-out lg:translate-x-0 w-64 ${isCollapsed ? 'lg:w-16' : 'lg:w-64'} ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
         <div className={`h-16 flex items-center justify-between border-b border-zinc-800 shrink-0 ${isCollapsed ? 'lg:px-0 lg:justify-center px-6' : 'px-6'}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-md shadow-blue-900/30 shrink-0">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-            <div className={`flex flex-col ${isCollapsed ? 'lg:hidden' : ''}`}>
-              <h1 className="text-lg font-bold text-white tracking-tight leading-none mb-0.5">ILS</h1>
-              <p className="text-[10px] text-zinc-400 font-medium leading-none">IT Live Score</p>
-            </div>
-          </div>
+          {/* Logo lockup — DESIGN-GUIDE 3-bo'lim: wordmark, ostida "Score".
+              Yig'ilgan holatda faqat ixcham belgi qoladi. */}
+          {isCollapsed ? (
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base font-bold"
+              style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+              title="IT Live Score"
+            >
+              iT
+            </span>
+          ) : (
+            <BrandLogo width={128} />
+          )}
           {/* Yig'ish/yozish tugmasi — faqat desktopda */}
           {onToggleCollapse && (
             <button
@@ -289,7 +294,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
 
                     {/* Flyout */}
                     <div className="absolute left-full top-0 ml-2 z-50 hidden group-hover/flyout:block">
-                      <div className="min-w-[190px] bg-[#18181b] border border-zinc-700 rounded-xl shadow-2xl shadow-black/50 p-1.5">
+                      <div className="min-w-[190px] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl shadow-black/50 p-1.5">
                         <p className="px-2.5 py-1.5 text-[11px] font-semibold text-zinc-500 uppercase tracking-wide">
                           {group.label}
                         </p>

@@ -1,0 +1,181 @@
+/* IT Live Score v1.0. Primitives: PDF. Semantic values: screenshot-derived UI specification.
+   Import once. Apply data-theme="light|dark" to <html>. Do not maintain two DOM layouts. */
+:root {
+  --brand-red: #FF2B00;
+  --brand-gold: #FFB800;
+  --brand-navy: #0F1B2D;
+  --brand-coral: #FF8050;
+  --brand-cream: #F5F1EE;
+  --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
+  --radius-sm: 8px; --radius-control: 12px; --radius-panel: 16px;
+  --radius-card: 20px; --radius-modal: 24px; --radius-pill: 999px;
+  --sidebar-width: 260px; --header-height: 86px; --page-padding: 24px;
+  --content-max: 1920px; --grid-gap: 12px; --section-gap: 16px;
+  --font-page: 42px; --line-page: 50px;
+  --font-kpi: 52px; --line-kpi: 58px;
+  --font-card: 22px; --line-card: 28px;
+  --motion-fast: 120ms; --motion-normal: 180ms; --motion-drawer: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --z-content: 0; --z-table: 10; --z-header: 30; --z-sidebar: 40;
+  --z-dropdown: 50; --z-overlay: 80; --z-dialog: 90; --z-toast: 100;
+}
+:root, :root[data-theme="light"] {
+  color-scheme: light;
+  --background: #FFFFFF; --sidebar: #FFFFFF; --header: #FFFFFF;
+  --surface: #FFFFFF; --surface-soft: #FFF6F1; --surface-hover: #FFF0E9;
+  --surface-muted: #F4F4F5;
+  --foreground: #0B1020; --muted-foreground: #586981;
+  --border: #F0E7E2; --control-border: #7A8797;
+  --nav-active-bg: #FFF0EB; --nav-active-fg: #C92300;
+  --trend-up-bg: #FFF2C7; --trend-up-fg: #8A4B00;
+  --trend-down-bg: #FFE4DF; --trend-down-fg: #C92300;
+  --chart-up: #FFB800; --chart-up-soft: #FFD878;
+  --chart-down: #FF8050; --chart-down-soft: #FFC4A8;
+  --primary: #C92300; --primary-hover: #AD1E00; --on-primary: #FFFFFF;
+  --focus-ring: #C92300;
+  --success-bg: #E9F7EF; --success-fg: #166534;
+  --warning-bg: #FFF2C7; --warning-fg: #8A4B00;
+  --danger-bg: #FFE4DF; --danger-fg: #C92300;
+  --info-bg: #E8EEF5; --info-fg: #1E3A5C;
+  --card-fill: linear-gradient(135deg, #FFF8F4, #FFF4EE);
+  --banner-fill: linear-gradient(110deg, #FFF4EF, #FFF0E9);
+  --shadow-card: 0 8px 24px rgba(107, 70, 42, 0.04);
+  --shadow-popover: 0 12px 36px rgba(15, 27, 45, 0.14);
+  --shadow-dialog: 0 24px 80px rgba(15, 27, 45, 0.2);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --pattern-opacity: 0.06;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #091120; --sidebar: #0B1828; --header: #0D1525;
+  --surface: #101925; --surface-soft: #101925; --surface-hover: #172536;
+  --surface-muted: #172333;
+  --foreground: #F5F7FA; --muted-foreground: #AEC0D5;
+  --border: #243647; --control-border: #64768C;
+  --nav-active-bg: #3C2323; --nav-active-fg: #FF8066;
+  --trend-up-bg: #3D341B; --trend-up-fg: #FFD36A;
+  --trend-down-bg: #3E252B; --trend-down-fg: #FF8066;
+  --chart-up: #FFB800; --chart-up-soft: #FFD36A;
+  --chart-down: #FF6848; --chart-down-soft: #FFAD81;
+  --primary: #FF2B00; --primary-hover: #FF5733; --on-primary: #0B1020;
+  --focus-ring: #FFB800;
+  --success-bg: #143326; --success-fg: #8DE0B0;
+  --warning-bg: #3D341B; --warning-fg: #FFD36A;
+  --danger-bg: #3E252B; --danger-fg: #FF8066;
+  --info-bg: #182D43; --info-fg: #B8D7F4;
+  --card-fill: linear-gradient(135deg, #0F1825, #101925);
+  --banner-fill: linear-gradient(110deg, #0F1825, #101925);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.14);
+  --shadow-popover: 0 12px 36px rgba(0, 0, 0, 0.32);
+  --shadow-dialog: 0 24px 80px rgba(0, 0, 0, 0.44);
+  --overlay: rgba(0, 0, 0, 0.65);
+  --pattern-opacity: 0.10;
+}
+/* Optional scaffold. Scope to .ils-app to avoid overwriting unrelated project styles.
+   Requires the project's usual border-box reset. These are NOT complete components. */
+.ils-app { min-height: 100dvh; background: var(--background); color: var(--foreground); font-family: var(--font-sans); }
+.ils-app *, .ils-app *::before, .ils-app *::after { box-sizing: border-box; }
+.ils-app :is(button, input, select, textarea) { font: inherit; }
+.ils-app :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.ils-sidebar {
+  position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width);
+  overflow-y: auto; background: var(--sidebar); border-right: 1px solid var(--border);
+  z-index: var(--z-sidebar);
+}
+.ils-main { min-width: 0; margin-inline-start: var(--sidebar-width); }
+.ils-topbar {
+  position: sticky; top: 0; z-index: var(--z-header); height: var(--header-height);
+  display: flex; align-items: center; gap: 16px; padding-inline: var(--page-padding);
+  background: var(--header); border-bottom: 1px solid var(--border);
+}
+.ils-content { max-width: var(--content-max); padding: var(--page-padding); margin-inline: auto; }
+.ils-intro {
+  display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 16px; align-items: center; margin-block-end: var(--section-gap); min-height: 188px;
+}
+.ils-page-title { margin: 0; font-size: var(--font-page); line-height: var(--line-page); font-weight: 700; letter-spacing: -0.02em; }
+.ils-subtitle { margin: 8px 0 0; color: var(--muted-foreground); font-size: 18px; line-height: 25px; }
+.ils-banner {
+  min-width: 0; min-height: 188px; position: relative; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--radius-card);
+  background: var(--banner-fill); padding: 24px 32px;
+}
+.ils-stat-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--grid-gap); }
+.ils-stat-card {
+  grid-column: span 3; position: relative; min-width: 0; min-height: 264px;
+  padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-card);
+  background: var(--card-fill); box-shadow: var(--shadow-card);
+}
+.ils-stat-card[data-size="wide"] { grid-column: span 4; min-height: 284px; }
+.ils-stat-title { margin: 0; font-size: var(--font-card); line-height: var(--line-card); font-weight: 600; }
+.ils-stat-value { margin: 8px 0; font-size: var(--font-kpi); line-height: var(--line-kpi); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.ils-helper { color: var(--muted-foreground); font-size: 14px; line-height: 20px; }
+.ils-trend {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px;
+  border-radius: 12px; font-size: 18px; line-height: 24px; font-weight: 600;
+  background: var(--surface-muted); color: var(--muted-foreground);
+}
+.ils-trend[data-direction="up"] { background: var(--trend-up-bg); color: var(--trend-up-fg); }
+.ils-trend[data-direction="down"] { background: var(--trend-down-bg); color: var(--trend-down-fg); }
+.ils-nav-item {
+  display: flex; align-items: center; gap: 20px; min-height: 50px; padding: 12px 20px;
+  margin: 0 18px; border-radius: 12px; color: var(--muted-foreground); text-decoration: none;
+  transition: background-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+}
+.ils-nav-item:hover { background: var(--surface-hover); color: var(--foreground); }
+.ils-nav-item[aria-current="page"] { background: var(--nav-active-bg); color: var(--nav-active-fg); font-weight: 600; }
+.ils-surface { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+.ils-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 10px 16px; border: 1px solid transparent; border-radius: 12px;
+  background: var(--primary); color: var(--on-primary); font-weight: 600; cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+.ils-button:hover { background: var(--primary-hover); }
+.ils-button:active { box-shadow: inset 0 2px 4px rgba(0,0,0,0.15); }
+.ils-button[data-variant="secondary"] { background: var(--surface); color: var(--foreground); border-color: var(--control-border); }
+.ils-button[data-variant="secondary"]:hover { background: var(--surface-hover); }
+.ils-button[data-variant="ghost"] { background: transparent; color: var(--foreground); }
+.ils-button[data-variant="ghost"]:hover { background: var(--surface-hover); }
+.ils-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.ils-input { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--control-border); border-radius: 12px; background: var(--surface); color: var(--foreground); }
+.ils-input::placeholder { color: var(--muted-foreground); opacity: 1; }
+.ils-input[aria-invalid="true"] { border-color: var(--danger-fg); }
+.ils-search { max-width: 520px; height: 50px; border-radius: 999px; background: var(--surface-muted); }
+.ils-illustration { display: block; object-fit: contain; max-width: 100%; height: auto; }
+@media (max-width: 1279px) {
+  :root { --sidebar-width: 232px; --header-height: 76px; --page-padding: 20px; }
+  .ils-intro { grid-template-columns: minmax(0, 1fr); }
+  .ils-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ils-stat-card, .ils-stat-card[data-size="wide"] { grid-column: span 1; }
+  .ils-stat-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+@media (max-width: 1023px) {
+  :root { --sidebar-width: 0px; --header-height: 72px; }
+  .ils-sidebar { display: none; }
+  /* Mobile navigation must be rendered in a focus-managed drawer, not merely hidden.
+     This selector is used by that separate drawer component. */
+  .ils-sidebar[data-drawer-open="true"] { display: block; width: min(320px, 90vw); z-index: var(--z-dialog); }
+}
+@media (max-width: 767px) {
+  :root {
+    --header-height: 64px; --page-padding: 16px;
+    --font-page: 28px; --line-page: 34px;
+    --font-kpi: 40px; --line-kpi: 46px;
+    --font-card: 20px; --line-card: 26px;
+  }
+  .ils-stat-grid { grid-template-columns: minmax(0, 1fr); }
+  .ils-stat-card, .ils-stat-card[data-size="wide"] { grid-column: 1 / -1; }
+  .ils-subtitle { font-size: 16px; line-height: 24px; }
+  .ils-trend { font-size: 16px; line-height: 22px; }
+  .ils-banner { padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ils-app *, .ils-app *::before, .ils-app *::after {
+    animation: none !important; transition: none !important; scroll-behavior: auto !important;
+  }
+}
+

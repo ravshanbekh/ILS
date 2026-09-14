@@ -213,7 +213,7 @@ export default function TeacherRatingPage() {
 
       {/* KPI Details Modal */}
       {selectedKpiTeacher && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in" onClick={() => { setSelectedKpiTeacher(null); setKpiDetails(null); setExpandedStudentId(null); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in" onClick={() => { setSelectedKpiTeacher(null); setKpiDetails(null); setExpandedStudentId(null); }}>
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl flex flex-col max-h-[85vh] animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">

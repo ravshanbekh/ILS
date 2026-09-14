@@ -111,7 +111,7 @@ export default function TeacherPendingPage() {
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
               placeholder="O'quvchi ismi bo'yicha qidirish..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#18181b] border border-zinc-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
             />
           </div>
           <div className="relative">
@@ -119,7 +119,7 @@ export default function TeacherPendingPage() {
             <select
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
-              className="pl-10 pr-8 py-2.5 rounded-xl bg-[#18181b] border border-zinc-800 text-white text-sm focus:outline-none focus:border-blue-500 appearance-none min-w-[180px]"
+              className="pl-10 pr-8 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-blue-500 appearance-none min-w-[180px]"
             >
               <option value="">Barcha guruhlar</option>
               {groups.map(g => (
@@ -142,7 +142,7 @@ export default function TeacherPendingPage() {
             <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-12 text-center">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center">
             <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
               <Check className="w-8 h-8 text-emerald-500" />
             </div>
@@ -157,7 +157,7 @@ export default function TeacherPendingPage() {
           <>
             <div className="grid grid-cols-1 gap-6">
               {filtered.map((sub) => (
-                <div key={sub.id} className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden hover:border-blue-500/30 transition-all flex flex-col md:flex-row">
+                <div key={sub.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-blue-500/30 transition-all flex flex-col md:flex-row">
 
                   {/* Info section */}
                   <div className="p-6 flex-1 border-b md:border-b-0 md:border-r border-zinc-800">
@@ -172,7 +172,7 @@ export default function TeacherPendingPage() {
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-lg bg-[#09090b] border border-zinc-800 mb-4">
+                    <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-800 mb-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-mono font-bold text-blue-500 bg-blue-500/10 px-2 py-1 rounded">#{sub.normative.taskNumber}</span>
@@ -202,7 +202,7 @@ export default function TeacherPendingPage() {
                   </div>
 
                   {/* Grading section */}
-                  <div className="p-6 md:w-80 bg-[#09090b] flex flex-col justify-center">
+                  <div className="p-6 md:w-80 bg-zinc-950 flex flex-col justify-center">
                     {gradingSubId === sub.id ? (
                       <div className="space-y-4 animate-fade-in">
                         <div>
@@ -213,7 +213,7 @@ export default function TeacherPendingPage() {
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             placeholder="Xato va kamchiliklar haqida..."
-                            className="w-full px-3 py-2.5 rounded-lg bg-[#18181b] border border-zinc-800 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                            className="w-full px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                             rows={3}
                           />
                         </div>

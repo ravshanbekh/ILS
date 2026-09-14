@@ -177,7 +177,7 @@ export default function SupportBookingPage() {
   const cards = [...byAssistant.values()];
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header
         title="Yordamchi ustoz soatlari"
         subtitle="Bo'sh soatga yozilib qo'shimcha yordam oling"
@@ -214,7 +214,7 @@ export default function SupportBookingPage() {
               className={`shrink-0 px-4 py-2.5 rounded-xl border text-left transition-colors ${
                 date === d.value
                   ? 'bg-blue-600 border-blue-600 text-white'
-                  : 'border-zinc-800 bg-[#18181b] text-zinc-400 hover:text-white'
+                  : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
               }`}
             >
               <span className="block text-sm font-bold">{d.label}</span>
@@ -254,7 +254,7 @@ export default function SupportBookingPage() {
             <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
           </div>
         ) : cards.length === 0 ? (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-10 text-center">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-10 text-center">
             <CalendarDays className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
             <p className="text-zinc-400 text-sm">Bu kunga hali hech kim soat ochmagan</p>
             <p className="text-zinc-600 text-xs mt-1">Boshqa kunni tanlab ko'ring</p>
@@ -266,7 +266,7 @@ export default function SupportBookingPage() {
               return (
                 <div
                   key={a.id}
-                  className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden flex flex-col"
+                  className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col"
                 >
                   {/* Rasm */}
                   {a.avatar ? (
@@ -274,10 +274,10 @@ export default function SupportBookingPage() {
                       src={a.avatar}
                       alt={a.name}
                       loading="lazy"
-                      className="w-full aspect-square object-cover bg-[#0f0f11]"
+                      className="w-full aspect-square object-cover bg-zinc-900"
                     />
                   ) : (
-                    <div className="w-full aspect-square bg-[#0f0f11] flex items-center justify-center text-4xl font-bold text-zinc-700">
+                    <div className="w-full aspect-square bg-zinc-900 flex items-center justify-center text-4xl font-bold text-zinc-700">
                       {initialsOf(a.name)}
                     </div>
                   )}
@@ -318,8 +318,8 @@ export default function SupportBookingPage() {
                           const cls = slot.isMine
                             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
                             : slot.canBook
-                            ? 'bg-[#0f0f11] border-zinc-800 text-zinc-200 hover:border-blue-600 hover:text-white'
-                            : 'bg-[#0f0f11] border-zinc-900 text-zinc-600';
+                            ? 'bg-zinc-900 border-zinc-800 text-zinc-200 hover:border-blue-600 hover:text-white'
+                            : 'bg-zinc-900 border-zinc-900 text-zinc-600';
 
                           return (
                             <button
@@ -363,7 +363,7 @@ export default function SupportBookingPage() {
 
         {/* Tarix */}
         {mine.length > 0 && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
             <h3 className="text-white font-bold px-5 py-3 border-b border-zinc-800 text-sm">
               Mening yozuvlarim
             </h3>
@@ -413,7 +413,7 @@ export default function SupportBookingPage() {
       {/* Tasdiqlash oynasi */}
       {picked && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
               <h2 className="text-white font-bold">Yozilishni tasdiqlang</h2>
               <button onClick={() => setPicked(null)} className="text-zinc-400 hover:text-white p-1">
@@ -422,7 +422,7 @@ export default function SupportBookingPage() {
             </div>
 
             <div className="p-5 space-y-4">
-              <div className="bg-[#0f0f11] border border-zinc-800 rounded-lg p-3 text-sm">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm">
                 <p className="text-white font-semibold">{picked.timeRange}</p>
                 <p className="text-zinc-400 text-xs mt-0.5">
                   {picked.assistantName} · {date}
@@ -439,7 +439,7 @@ export default function SupportBookingPage() {
                   rows={3}
                   maxLength={300}
                   placeholder="Masalan: 12-normativdagi tsikl tushunarsiz"
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white resize-none"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white resize-none"
                 />
                 <p className="text-zinc-600 text-[11px] mt-1">
                   Ustoz oldindan tayyorlanib kelishi uchun yozib qo'ying

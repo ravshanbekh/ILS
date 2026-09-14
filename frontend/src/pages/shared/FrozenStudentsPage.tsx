@@ -590,7 +590,7 @@ export default function FrozenStudentsPage() {
                           <XAxis dataKey="teacher" tick={{ fill: '#71717a', fontSize: 11 }} />
                           <YAxis tick={{ fill: '#71717a', fontSize: 11 }} />
                           <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 8 }} />
-                          <Bar dataKey="count" fill="#3b82f6" radius={[4,4,0,0]} name="Ketgan" />
+                          <Bar dataKey="count" fill='var(--primary)' radius={[4,4,0,0]} name="Ketgan" />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -651,7 +651,7 @@ export default function FrozenStudentsPage() {
                           <XAxis type="number" tick={{ fill: '#71717a', fontSize: 11 }} />
                           <YAxis type="category" dataKey="reason" tick={{ fill: '#71717a', fontSize: 10 }} width={180} />
                           <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 8 }} />
-                          <Bar dataKey="count" fill="#10b981" radius={[0,4,4,0]} name="Soni" />
+                          <Bar dataKey="count" fill='var(--success-fg)' radius={[0,4,4,0]} name="Soni" />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -691,7 +691,7 @@ export default function FrozenStudentsPage() {
                           <XAxis dataKey="label" tick={{ fill: '#71717a', fontSize: 11 }} />
                           <YAxis tick={{ fill: '#71717a', fontSize: 11 }} />
                           <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 8 }} />
-                          <Bar dataKey="count" fill="#f59e0b" radius={[4,4,0,0]} name="O'quvchilar soni" />
+                          <Bar dataKey="count" fill='var(--chart-up)' radius={[4,4,0,0]} name="O'quvchilar soni" />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>

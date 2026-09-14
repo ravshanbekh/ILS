@@ -90,13 +90,13 @@ export default function ParentsPage() {
   const displayedRows = onlyUnlinked ? rows.filter((r) => !r.linked) : rows;
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Ota-onalar bazasi" subtitle="Kim ulangan, kim yo'q + ommaviy xabar" />
 
       <div className="p-8 max-w-6xl mx-auto space-y-8">
         {/* Coverage stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
               <Users className="w-6 h-6 text-blue-500" />
             </div>
@@ -105,7 +105,7 @@ export default function ParentsPage() {
               <p className="text-2xl font-bold text-white tracking-tight">{total}</p>
             </div>
           </div>
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
               <CheckCircle2 className="w-6 h-6 text-emerald-500" />
             </div>
@@ -114,7 +114,7 @@ export default function ParentsPage() {
               <p className="text-2xl font-bold text-white tracking-tight">{linkedCount}</p>
             </div>
           </div>
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
               <span className="text-amber-500 font-bold text-lg">%</span>
             </div>
@@ -126,14 +126,14 @@ export default function ParentsPage() {
         </div>
 
         {/* Broadcast */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
           <h3 className="text-white font-bold text-sm mb-4">Bir tugmali xabar</h3>
 
           <div className="flex flex-wrap gap-2 mb-3">
             <select
               value={groupFilter}
               onChange={(e) => setGroupFilter(e.target.value)}
-              className="bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+              className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
             >
               <option value="">Barcha guruhlar</option>
               {groups.map((g: any) => (
@@ -156,7 +156,7 @@ export default function ParentsPage() {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Xabar matnini yozing... {ism} — farzand ismi avtomatik qo'yiladi."
             rows={4}
-            className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 resize-none"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 resize-none"
           />
 
           <div className="flex items-center justify-between mt-3">
@@ -179,14 +179,14 @@ export default function ParentsPage() {
           </div>
 
           {sendResult && (
-            <div className="mt-3 text-sm text-zinc-300 bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2">
+            <div className="mt-3 text-sm text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
               ✅ {sendResult.sent} ta yetkazildi{sendResult.failed > 0 ? ` · ❌ ${sendResult.failed} ta xato` : ''} (jami {sendResult.total} ta ulangan ota-ona)
             </div>
           )}
         </div>
 
         {/* List */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
             <h3 className="text-white font-bold text-sm">O'quvchilar</h3>
             <label className="flex items-center gap-2 text-xs text-zinc-400">

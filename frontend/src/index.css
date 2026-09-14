@@ -1,35 +1,512 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+/* ============================================================================
+   IT LIVE SCORE — DIZAYN TIZIMI
+   Manba: design/it-live-score/DESIGN-GUIDE.md + tokens.css (v1.0)
+
+   ARXITEKTURA IZOHI
+   -----------------
+   Loyihada ~5000 ta joyda Tailwind rang utilitalari qattiq yozilgan
+   (bg-zinc-900, text-white, bg-blue-600 ...). Ularni bittalab almashtirish
+   66 ta faylga tegish va regressiya xavfi demakdir.
+
+   Shuning uchun ranglar KOMPONENTDA emas, SHU YERDA qayta bog'lanadi:
+   Tailwind v4 ning `@theme inline` mexanizmi orqali butun palitra ILS
+   tokenlariga ulanadi. Natijada bitta faylni o'zgartirib butun sayt
+   qayta ranglanadi va light/dark bitta DOM bilan ishlaydi.
+
+   Neytral (zinc) shkalasi light rejimda TESKARI bo'ladi:
+   dark'da zinc-950 = eng to'q fon, light'da zinc-950 = oq fon.
+   Shu sabab `text-zinc-50` dark'da oq, light'da to'q siyoh bo'ladi —
+   komponentga tegmasdan.
+   ========================================================================= */
+
+/* ── 1. Brend primitivlari va o'lchamlar (theme'ga bog'liq emas) ────────── */
+:root {
+  --brand-red: #ff2b00;
+  --brand-gold: #ffb800;
+  --brand-navy: #0f1b2d;
+  --brand-coral: #ff8050;
+  --brand-cream: #f5f1ee;
+
+  --sidebar-width: 260px;
+  --header-height: 86px;
+  --page-padding: 24px;
+  --content-max: 1920px;
+  --grid-gap: 12px;
+  --section-gap: 16px;
+
+  --font-page: 42px;
+  --line-page: 50px;
+  --font-kpi: 52px;
+  --line-kpi: 58px;
+  --font-card: 22px;
+  --line-card: 28px;
+
+  --motion-fast: 120ms;
+  --motion-normal: 180ms;
+  --motion-drawer: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --z-content: 0;
+  --z-table: 10;
+  --z-header: 30;
+  --z-sidebar: 40;
+  --z-dropdown: 50;
+  --z-overlay: 80;
+  --z-dialog: 90;
+  --z-toast: 100;
 }
 
-@layer base {
-  :root {
-    --background: #09090b;
-    --foreground: #fafafa;
-    --card: #18181b;
-    --card-foreground: #fafafa;
-    --popover: #18181b;
-    --popover-foreground: #fafafa;
-    --primary: #3b82f6;
-    --primary-foreground: #ffffff;
-    --secondary: #27272a;
-    --secondary-foreground: #fafafa;
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa;
-    --accent: #27272a;
-    --accent-foreground: #fafafa;
-    --destructive: #ef4444;
-    --destructive-foreground: #fafafa;
-    --border: #27272a;
-    --input: #27272a;
-    --ring: #3b82f6;
-    --radius: 0.75rem;
+/* ── 2. DARK (standart) — chuqur navy, sof qora emas ────────────────────── */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Neytral shkala: 50 = eng yorug' (matn) → 950 = eng to'q (fon) */
+  --n-50: #f5f7fa;
+  --n-100: #e4eaf2;
+  --n-200: #cbd6e4;
+  --n-300: #aec0d5;
+  --n-400: #8a9db5;
+  --n-500: #64768c;
+  --n-600: #3a4c60;
+  --n-700: #243647;
+  --n-800: #172536;
+  --n-900: #101925;
+  --n-950: #091120;
+
+  /* Brend qizil (primary) */
+  --p-300: #ffa894;
+  --p-400: #ff8066;
+  --p-500: #ff4a22;
+  --p-600: #ff2b00;
+  --p-700: #e02400;
+  --p-800: #7a2a1e;
+  --p-900: #3c2323;
+  --p-950: #2a1a1a;
+
+  /* Coral (ikkilamchi urg'u) */
+  --c-300: #ffc4a8;
+  --c-400: #ffad81;
+  --c-500: #ff8050;
+  --c-600: #ff6848;
+  --c-700: #d1502f;
+  --c-900: #3e2b25;
+  --c-950: #2c1e1a;
+
+  /* Oltin (grafik, mukofot) */
+  --g-300: #ffe19a;
+  --g-400: #ffd36a;
+  --g-500: #ffb800;
+  --g-600: #e0a200;
+  --g-700: #a87a00;
+  --g-900: #3d341b;
+  --g-950: #2a2413;
+
+  /* Muvaffaqiyat */
+  --s-300: #b6ecce;
+  --s-400: #8de0b0;
+  --s-500: #4bc47f;
+  --s-600: #2ea360;
+  --s-700: #1f7a47;
+  --s-900: #143326;
+  --s-950: #0e2419;
+
+  /* Xato */
+  --d-300: #ffb0a0;
+  --d-400: #ff8066;
+  --d-500: #f4553a;
+  --d-600: #e03c22;
+  --d-700: #b52d18;
+  --d-900: #3e252b;
+  --d-950: #2b191d;
+
+  /* Axborot */
+  --i-300: #d2e6f8;
+  --i-400: #b8d7f4;
+  --i-500: #7fb3e3;
+  --i-600: #5590c4;
+  --i-700: #3a6d99;
+  --i-900: #182d43;
+  --i-950: #111f2e;
+
+  /* Semantik sirtlar */
+  --background: var(--n-950);
+  --sidebar: #0b1828;
+  --header: #0d1525;
+  --surface: var(--n-900);
+  --surface-soft: var(--n-900);
+  --surface-hover: var(--n-800);
+  --surface-muted: #172333;
+  --foreground: var(--n-50);
+  --muted-foreground: var(--n-300);
+  --border: var(--n-700);
+  --control-border: var(--n-500);
+
+  --nav-active-bg: var(--p-900);
+  --nav-active-fg: var(--p-400);
+  --trend-up-bg: var(--g-900);
+  --trend-up-fg: var(--g-400);
+  --trend-down-bg: var(--d-900);
+  --trend-down-fg: var(--d-400);
+  --chart-up: var(--g-500);
+  --chart-up-soft: var(--g-400);
+  --chart-down: var(--c-600);
+  --chart-down-soft: var(--c-400);
+
+  --primary: var(--p-600);
+  --primary-hover: #ff5733;
+  --on-primary: #0b1020;
+  --focus-ring: var(--g-500);
+
+  --card-fill: linear-gradient(135deg, #0f1825, #101925);
+  --banner-fill: linear-gradient(110deg, #0f1825, #101925);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.14);
+  --shadow-popover: 0 12px 36px rgba(0, 0, 0, 0.32);
+  --shadow-dialog: 0 24px 80px rgba(0, 0, 0, 0.44);
+  --overlay: rgba(0, 0, 0, 0.65);
+  --pattern-opacity: 0.1;
+
+  /* text-white ning teskarilanadigan qiymati (pastdagi 5-bandga qarang) */
+  --ink: var(--n-50);
+}
+
+/* ── 3. LIGHT — oq kanvas, iliq shaftoli kartalar ───────────────────────── */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* TESKARI shkala: 50 = eng to'q siyoh → 950 = oq fon */
+  --n-50: #0b1020;
+  --n-100: #16203a;
+  --n-200: #2b3a54;
+  --n-300: #586981;
+  --n-400: #6c7c93;
+  --n-500: #7a8797;
+  --n-600: #b3bcc8;
+  --n-700: #e6ddd8;
+  --n-800: #f0e7e2;
+  --n-900: #fff6f1;
+  --n-950: #ffffff;
+
+  /* Brend qizil — kichik matn va oq yozuvli tugma uchun #C92300
+     (DESIGN-GUIDE 5-bo'lim: #FF2B00 oq bilan 3.75:1, yetarli emas) */
+  --p-300: #ffd4c9;
+  --p-400: #c92300;
+  --p-500: #c92300;
+  --p-600: #c92300;
+  --p-700: #ad1e00;
+  --p-800: #ffd9cf;
+  --p-900: #fff0eb;
+  --p-950: #fff6f1;
+
+  --c-300: #ffc4a8;
+  --c-400: #c2410c;
+  --c-500: #b83c0a;
+  --c-600: #9a3208;
+  --c-700: #7c2806;
+  --c-900: #fff0e9;
+  --c-950: #fff6f1;
+
+  --g-300: #ffd878;
+  --g-400: #8a4b00;
+  --g-500: #ffb800;
+  --g-600: #b06200;
+  --g-700: #8a4b00;
+  --g-900: #fff2c7;
+  --g-950: #fffaeb;
+
+  --s-300: #a7e3c0;
+  --s-400: #166534;
+  --s-500: #16a34a;
+  --s-600: #15803d;
+  --s-700: #166534;
+  --s-900: #e9f7ef;
+  --s-950: #f2fbf6;
+
+  --d-300: #ffb0a0;
+  --d-400: #c92300;
+  --d-500: #d22a05;
+  --d-600: #b81f00;
+  --d-700: #971a00;
+  --d-900: #ffe4df;
+  --d-950: #fff2f0;
+
+  --i-300: #b8d7f4;
+  --i-400: #1e3a5c;
+  --i-500: #2b5a8c;
+  --i-600: #1e3a5c;
+  --i-700: #17304c;
+  --i-900: #e8eef5;
+  --i-950: #f4f7fb;
+
+  --background: #ffffff;
+  --sidebar: #ffffff;
+  --header: #ffffff;
+  --surface: #ffffff;
+  --surface-soft: #fff6f1;
+  --surface-hover: #fff0e9;
+  --surface-muted: #f4f4f5;
+  --foreground: #0b1020;
+  --muted-foreground: #586981;
+  --border: #f0e7e2;
+  --control-border: #7a8797;
+
+  --nav-active-bg: #fff0eb;
+  --nav-active-fg: #c92300;
+  --trend-up-bg: #fff2c7;
+  --trend-up-fg: #8a4b00;
+  --trend-down-bg: #ffe4df;
+  --trend-down-fg: #c92300;
+  --chart-up: #ffb800;
+  --chart-up-soft: #ffd878;
+  --chart-down: #ff8050;
+  --chart-down-soft: #ffc4a8;
+
+  --primary: #c92300;
+  --primary-hover: #ad1e00;
+  --on-primary: #ffffff;
+  --focus-ring: #c92300;
+
+  --card-fill: linear-gradient(135deg, #fff8f4, #fff4ee);
+  --banner-fill: linear-gradient(110deg, #fff4ef, #fff0e9);
+  --shadow-card: 0 8px 24px rgba(107, 70, 42, 0.04);
+  --shadow-popover: 0 12px 36px rgba(15, 27, 45, 0.14);
+  --shadow-dialog: 0 24px 80px rgba(15, 27, 45, 0.2);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --pattern-opacity: 0.06;
+
+  --ink: #0b1020;
+}
+
+/* ── 4. Tailwind palitrasini ILS tokenlariga bog'lash ───────────────────── */
+/* `inline` — utilita to'g'ridan-to'g'ri var() ni yozadi, shuning uchun
+   data-theme almashganda barcha rang qayta hisoblanadi. */
+@theme inline {
+  --font-sans: "Roboto", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+
+  /* Neytral oila — zinc, slate, gray, neutral, stone bir manbadan */
+  --color-zinc-50: var(--n-50);
+  --color-zinc-100: var(--n-100);
+  --color-zinc-200: var(--n-200);
+  --color-zinc-300: var(--n-300);
+  --color-zinc-400: var(--n-400);
+  --color-zinc-500: var(--n-500);
+  --color-zinc-600: var(--n-600);
+  --color-zinc-700: var(--n-700);
+  --color-zinc-800: var(--n-800);
+  --color-zinc-900: var(--n-900);
+  --color-zinc-950: var(--n-950);
+
+  --color-slate-50: var(--n-50);
+  --color-slate-200: var(--n-200);
+  --color-slate-300: var(--n-300);
+  --color-slate-400: var(--n-400);
+  --color-slate-500: var(--n-500);
+  --color-slate-600: var(--n-600);
+  --color-slate-700: var(--n-700);
+  --color-slate-800: var(--n-800);
+  --color-slate-900: var(--n-900);
+  --color-slate-950: var(--n-950);
+
+  --color-gray-100: var(--n-100);
+  --color-gray-300: var(--n-300);
+  --color-gray-400: var(--n-400);
+  --color-gray-500: var(--n-500);
+  --color-gray-700: var(--n-700);
+  --color-gray-800: var(--n-800);
+  --color-gray-900: var(--n-900);
+  --color-gray-950: var(--n-950);
+
+  --color-neutral-400: var(--n-400);
+  --color-neutral-700: var(--n-700);
+  --color-neutral-800: var(--n-800);
+  --color-neutral-900: var(--n-900);
+  --color-stone-400: var(--n-400);
+  --color-stone-800: var(--n-800);
+  --color-stone-900: var(--n-900);
+
+  /* Primary — loyihada ko'k asosiy harakat rangi edi, endi brend qizili */
+  --color-blue-50: var(--p-950);
+  --color-blue-100: var(--p-900);
+  --color-blue-200: var(--p-800);
+  --color-blue-300: var(--p-300);
+  --color-blue-400: var(--p-400);
+  --color-blue-500: var(--p-500);
+  --color-blue-600: var(--p-600);
+  --color-blue-700: var(--p-700);
+  --color-blue-800: var(--p-800);
+  --color-blue-900: var(--p-900);
+  --color-blue-950: var(--p-950);
+
+  /* Coral — violet/purple/indigo dekorativ urg'ular shu oilaga o'tadi */
+  --color-violet-300: var(--c-300);
+  --color-violet-400: var(--c-400);
+  --color-violet-500: var(--c-500);
+  --color-violet-600: var(--c-600);
+  --color-violet-700: var(--c-700);
+  --color-violet-900: var(--c-900);
+  --color-violet-950: var(--c-950);
+
+  --color-purple-300: var(--c-300);
+  --color-purple-400: var(--c-400);
+  --color-purple-500: var(--c-500);
+  --color-purple-600: var(--c-600);
+  --color-purple-700: var(--c-700);
+  --color-purple-900: var(--c-900);
+  --color-purple-950: var(--c-950);
+
+  --color-indigo-300: var(--c-300);
+  --color-indigo-400: var(--c-400);
+  --color-indigo-500: var(--c-500);
+  --color-indigo-600: var(--c-600);
+  --color-indigo-700: var(--c-700);
+  --color-indigo-900: var(--c-900);
+
+  --color-fuchsia-400: var(--c-400);
+  --color-fuchsia-500: var(--c-500);
+  --color-pink-400: var(--c-400);
+  --color-pink-500: var(--c-500);
+  --color-pink-600: var(--c-600);
+
+  /* Muvaffaqiyat */
+  --color-emerald-300: var(--s-300);
+  --color-emerald-400: var(--s-400);
+  --color-emerald-500: var(--s-500);
+  --color-emerald-600: var(--s-600);
+  --color-emerald-700: var(--s-700);
+  --color-emerald-900: var(--s-900);
+  --color-emerald-950: var(--s-950);
+
+  --color-green-300: var(--s-300);
+  --color-green-400: var(--s-400);
+  --color-green-500: var(--s-500);
+  --color-green-600: var(--s-600);
+  --color-green-700: var(--s-700);
+  --color-green-900: var(--s-900);
+
+  --color-teal-300: var(--s-300);
+  --color-teal-400: var(--s-400);
+  --color-teal-500: var(--s-500);
+  --color-teal-600: var(--s-600);
+
+  /* Oltin */
+  --color-amber-300: var(--g-300);
+  --color-amber-400: var(--g-400);
+  --color-amber-500: var(--g-500);
+  --color-amber-600: var(--g-600);
+  --color-amber-700: var(--g-700);
+  --color-amber-900: var(--g-900);
+  --color-amber-950: var(--g-950);
+
+  --color-yellow-300: var(--g-300);
+  --color-yellow-400: var(--g-400);
+  --color-yellow-500: var(--g-500);
+  --color-yellow-600: var(--g-600);
+  --color-yellow-900: var(--g-900);
+
+  --color-orange-300: var(--c-300);
+  --color-orange-400: var(--c-400);
+  --color-orange-500: var(--c-500);
+  --color-orange-600: var(--c-600);
+
+  /* Xato */
+  --color-red-300: var(--d-300);
+  --color-red-400: var(--d-400);
+  --color-red-500: var(--d-500);
+  --color-red-600: var(--d-600);
+  --color-red-700: var(--d-700);
+  --color-red-900: var(--d-900);
+  --color-red-950: var(--d-950);
+
+  --color-rose-400: var(--d-400);
+  --color-rose-500: var(--d-500);
+  --color-rose-600: var(--d-600);
+
+  /* Axborot */
+  --color-cyan-300: var(--i-300);
+  --color-cyan-400: var(--i-400);
+  --color-cyan-500: var(--i-500);
+  --color-cyan-600: var(--i-600);
+  --color-sky-400: var(--i-400);
+  --color-sky-500: var(--i-500);
+  --color-sky-600: var(--i-600);
+}
+
+/* ── 5. `text-white` ni theme'ga moslashtirish ──────────────────────────── */
+/* Loyihada 897 ta `text-white` bor. Ulardan ~700 tasi SIRT ustidagi matn
+   (light rejimda to'q bo'lishi kerak), ~195 tasi esa to'yingan brend fonli
+   tugma ichida (oq bo'lib qolishi kerak).
+   Shu sabab: standart — teskarilanadi; to'yingan fon ustida — oq qoladi.
+   `:not([class*="-600/"])` — shaffof variant (bg-blue-600/10) yumshoq
+   badge bo'lgani uchun undan chiqarib tashlanadi. */
+/* `utilities` qatlamiga yozilishi SHART: Tailwind'ning o'z `.text-white`
+   utilitasi `base` qatlamidan kuchliroq, shuning uchun base'dagi override
+   ishlamaydi (birinchi urinishda aynan shu xato bo'lgan). */
+@layer utilities {
+  .text-white {
+    color: var(--ink);
   }
 
-  * {
-    border-color: var(--border);
+  /* Forma chegarasi — DESIGN-GUIDE 12-bo'lim: inputning tanib olinishi
+     chegaraga bog'liq, shuning uchun dekorativ `--border` (#F0E7E2) emas,
+     `--control-border` kerak. Komponentlardagi `border-zinc-800` utilitasi
+     `base` qatlamidagi qoidani yengib ketadi, shuning uchun qoida shu
+     yerda va spetsifikligi utilitadan yuqori (0,3,1 > 0,1,0). */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select:not([size]),
+  textarea:not([readonly]) {
+    border-color: var(--control-border);
+  }
+}
+
+/* Argument: to'yingan brend foni — o'zida yoki ota elementida */
+:is(
+    [class~="bg-blue-500"], [class~="bg-blue-600"], [class~="bg-blue-700"], [class~="bg-blue-800"],
+    [class~="bg-violet-500"], [class~="bg-violet-600"], [class~="bg-violet-700"],
+    [class~="bg-purple-500"], [class~="bg-purple-600"], [class~="bg-purple-700"],
+    [class~="bg-indigo-500"], [class~="bg-indigo-600"],
+    [class~="bg-emerald-500"], [class~="bg-emerald-600"], [class~="bg-emerald-700"],
+    [class~="bg-green-500"], [class~="bg-green-600"],
+    [class~="bg-red-500"], [class~="bg-red-600"], [class~="bg-red-700"],
+    [class~="bg-amber-500"], [class~="bg-amber-600"],
+    [class~="bg-orange-500"], [class~="bg-orange-600"],
+    [class~="bg-teal-500"], [class~="bg-teal-600"],
+    [class*="bg-gradient-to-"]
+  ),
+  :is(
+    [class~="bg-blue-500"], [class~="bg-blue-600"], [class~="bg-blue-700"], [class~="bg-blue-800"],
+    [class~="bg-violet-500"], [class~="bg-violet-600"], [class~="bg-violet-700"],
+    [class~="bg-purple-500"], [class~="bg-purple-600"], [class~="bg-purple-700"],
+    [class~="bg-indigo-500"], [class~="bg-indigo-600"],
+    [class~="bg-emerald-500"], [class~="bg-emerald-600"], [class~="bg-emerald-700"],
+    [class~="bg-green-500"], [class~="bg-green-600"],
+    [class~="bg-red-500"], [class~="bg-red-600"], [class~="bg-red-700"],
+    [class~="bg-amber-500"], [class~="bg-amber-600"],
+    [class~="bg-orange-500"], [class~="bg-orange-600"],
+    [class~="bg-teal-500"], [class~="bg-teal-600"],
+    [class*="bg-gradient-to-"]
+  ) :where(.text-white, .text-zinc-50, .text-zinc-100) {
+  color: #ffffff;
+}
+
+/* Oltin fon to'q yozuvni talab qiladi (oltin + oq = past kontrast) */
+:is([class~="bg-amber-500"], [class~="bg-yellow-500"]),
+:is([class~="bg-amber-500"], [class~="bg-yellow-500"]) :where(.text-white) {
+  color: #3d2a00;
+}
+
+/* ── 6. Asosiy sirt ───────────────────────────────────────────────────── */
+@layer base {
+  html {
+    background-color: var(--background);
   }
 
   body {
@@ -39,9 +516,43 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  * {
+    border-color: var(--border);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Formalarning asosiy holati. Chegara alohida — utilities qatlamida. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    background-color: var(--surface);
+    color: var(--foreground);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted-foreground);
+    opacity: 1;
+  }
+
+  /* Select'ning ochiladigan ro'yxati OS darajasida chiziladi — light
+     rejimda to'q matn ko'rinishi uchun option ham belgilanadi. */
+  option {
+    background-color: var(--surface);
+    color: var(--foreground);
+  }
 }
 
-/* Custom Scrollbar */
+/* ── 7. Scrollbar ─────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -50,605 +561,54 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: var(--n-600);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: var(--n-500);
 }
 
-/* Utilities */
+/* ── 8. Umumiy yordamchilar ───────────────────────────────────────────── */
 .glass-panel {
-  background-color: var(--card);
+  background-color: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-xl, 16px);
+  box-shadow: var(--shadow-card);
 }
 
 .text-gradient {
-  background: linear-gradient(to right, #60a5fa, #a855f7);
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-gold));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* ========================================================
-   LIGHT MODE — User Provided AI Design System
-   Fon: #F5F7FB
-   Kartalar: #FFFFFF
-   Asosiy matn: #0F172A
-   Ikkinchi matn: #64748B
-   Chegaralar: #E2E8F0
-   Asosiy ko‘k: #2563EB
-   Indigo: #4F46E5
-   Binafsha: #7C3AED
-   Yashil: #059669
-   Sariq: #D97706
-   Qizil: #E5484D
-   Yumshoq fonlar: #EFF6FF, #F3E8FF, #ECFDF5, #FFF7E0, #FFF1F2
-   ======================================================== */
-.light {
-  /* ─── Design Tokens ─── */
-  --background:          #F5F7FB;
-  --foreground:          #0F172A;
-  --card:                #FFFFFF;
-  --card-foreground:     #0F172A;
-  --popover:             #FFFFFF;
-  --popover-foreground:  #0F172A;
-  --primary:             #2563EB;
-  --primary-foreground:  #FFFFFF;
-  --secondary:           #4F46E5;
-  --secondary-foreground:#FFFFFF;
-  --muted:               #F8FAFC;
-  --muted-foreground:    #64748B;
-  --accent:              #EFF6FF;
-  --accent-foreground:   #2563EB;
-  --border:              #DCE3EE;
-  --input:               #FFFFFF;
-  --ring:                #2563EB;
-  --radius:              16px;
-  --font-sans:           "Inter", system-ui, sans-serif;
-
-  background-color: #F5F7FB !important;
-  color: #0F172A !important;
-  font-family: var(--font-sans) !important;
+/* KPI/banner sirtlari — DESIGN-GUIDE 4/5-bo'lim */
+.ils-card-fill {
+  background: var(--card-fill);
+}
+.ils-banner-fill {
+  background: var(--banner-fill);
 }
 
-.light body {
-  background-color: #F5F7FB !important;
-  color: #0F172A !important;
+/* Brend chevron naqshi — sidebar pastki dekori */
+.ils-pattern {
+  opacity: var(--pattern-opacity);
+  pointer-events: none;
 }
 
-/* Custom Scrollbar in Light Mode */
-.light ::-webkit-scrollbar-track { background: #F5F7FB; }
-.light ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
-.light ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
-
-/* ──────────────────────────────────────────────────────────
-   LAYOUT OVERRIDES — Transparent / Page Background
-────────────────────────────────────────────────────────── */
-.light .bg-\[\#09090b\],
-.light .bg-\[\#000000\],
-.light .bg-black,
-.light .bg-zinc-950,
-.light main {
-  background-color: #F5F7FB !important;
+/* Raqamlar bir xil kenglikda — KPI va jadvallar uchun */
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
-/* ──────────────────────────────────────────────────────────
-   SIDEBAR
-────────────────────────────────────────────────────────── */
-.light aside {
-  background-color: #FFFFFF !important;
-  border-right: 1px solid #E2E8F0 !important;
-  box-shadow: none !important;
-}
-.light aside * {
-  color: #64748B !important;
-}
-.light aside h1,
-.light aside .font-bold,
-.light aside .text-white {
-  color: #0F172A !important;
-}
-.light aside p {
-  color: #64748B !important;
-}
-
-/* Active nav link in Sidebar */
-.light aside a.bg-zinc-800,
-.light aside a.bg-blue-600,
-.light aside a.active,
-.light aside a[class*="bg-blue-600"],
-.light aside a[class*="from-blue-600"] {
-  background: linear-gradient(135deg, #2563EB 0%, #4F46E5 100%) !important;
-  color: #FFFFFF !important;
-  border: none !important;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25) !important;
-  border-radius: 12px !important;
-}
-.light aside a.bg-zinc-800 *,
-.light aside a.bg-blue-600 *,
-.light aside a.active * {
-  color: #FFFFFF !important;
-}
-.light aside a.bg-zinc-800 svg,
-.light aside a.bg-blue-600 svg {
-  color: #FFFFFF !important;
-}
-
-/* Inactive nav hover */
-.light aside a:not(.bg-zinc-800):not(.active):hover {
-  background-color: #F5F7FB !important;
-  border-radius: 12px !important;
-}
-.light aside a:not(.bg-zinc-800):not(.active):hover * {
-  color: #0F172A !important;
-}
-
-/* Sidebar footer borders */
-.light aside .border-zinc-800,
-.light aside .border-t {
-  border-color: #E2E8F0 !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   HEADER — Clean Light Topbar
-────────────────────────────────────────────────────────── */
-.light header {
-  background-color: #F5F7FB !important;
-  border-bottom: 1px solid #E2E8F0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-}
-.light header * {
-  color: #0F172A !important;
-}
-.light header .text-zinc-400,
-.light header .text-zinc-500,
-.light header p {
-  color: #64748B !important;
-}
-.light header h1,
-.light header .text-white {
-  color: #0F172A !important;
-}
-
-/* Header buttons */
-.light header button.bg-zinc-800,
-.light header button.bg-zinc-800\/50,
-.light header button.bg-zinc-800\/30,
-.light header button.bg-zinc-900 {
-  background-color: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  color: #0F172A !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
-}
-.light header button.bg-zinc-800:hover {
-  background-color: #F8FAFC !important;
-}
-.light header button svg {
-  color: #475569 !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   CATEGORY SUBHEADER (Subtabs)
-────────────────────────────────────────────────────────── */
-.light .bg-\[\#121215\],
-.light .bg-\[\#18181b\].border-b,
-.light .bg-\[\#18181b\]\/90,
-.light .border-b.border-zinc-800 {
-  background-color: #F5F7FB !important;
-  border-bottom: 1px solid #DCE3EE !important;
-}
-.light .bg-zinc-800\/60,
-.light .bg-zinc-800 {
-  background-color: #FFFFFF !important;
-  border: 1px solid #DCE3EE !important;
-  color: #64748B !important;
-}
-.light .bg-zinc-800\/60:hover {
-  background-color: #F8FAFC !important;
-  color: #0F172A !important;
-}
-.light .bg-blue-600\/20 {
-  background-color: #EFF6FF !important;
-  border: 1px solid #BFDBFE !important;
-  color: #2563EB !important;
-}
-.light .bg-blue-600\/20 * {
-  color: #2563EB !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   CARDS & PANELS
-────────────────────────────────────────────────────────── */
-.light .bg-\[\#18181b\],
-.light .bg-zinc-900,
-.light .bg-zinc-900\/50,
-.light .bg-\[\#18181b\]\/30,
-.light .bg-\[\#18181b\]\/90,
-.light .bg-\[\#18181b\]\/80,
-.light .glass-panel {
-  background-color: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
-  border-radius: 16px !important;
-  color: #0F172A !important;
-}
-
-.light .bg-\[\#18181b\]:hover,
-.light .bg-zinc-900:hover,
-.light .glass-panel:hover {
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
-}
-
-/* Text inside cards */
-.light .bg-\[\#18181b\] .text-white,
-.light .bg-\[\#18181b\] .text-zinc-50,
-.light .bg-\[\#18181b\] .text-zinc-100,
-.light .bg-\[\#18181b\] .text-zinc-200,
-.light .bg-zinc-900 .text-white,
-.light .glass-panel .text-white {
-  color: #0F172A !important;
-}
-
-.light .bg-\[\#18181b\] .text-zinc-300,
-.light .bg-\[\#18181b\] .text-zinc-400,
-.light .bg-\[\#18181b\] .text-zinc-500,
-.light .bg-zinc-900 .text-zinc-400,
-.light .glass-panel .text-zinc-400 {
-  color: #64748B !important;
-}
-
-/* Inner containers / sub-cards */
-.light .bg-\[\#111113\],
-.light .bg-\[\#09090b\]\/30,
-.light .bg-\[\#09090b\]\/40,
-.light .bg-\[\#09090b\],
-.light .bg-zinc-800,
-.light .bg-zinc-800\/50,
-.light .bg-zinc-800\/30,
-.light .bg-zinc-800\/40,
-.light .bg-zinc-900\/20,
-.light .bg-zinc-900\/10 {
-  background-color: #F8FAFC !important;
-  border-color: #E2E8F0 !important;
-  color: #0F172A !important;
-}
-
-.light .bg-zinc-800 .text-white,
-.light .bg-zinc-800\/50 .text-white,
-.light .bg-\[\#09090b\]\/30 .text-white {
-  color: #0F172A !important;
-}
-.light .bg-zinc-800 .text-zinc-400,
-.light .bg-zinc-800\/50 .text-zinc-400 {
-  color: #64748B !important;
-}
-
-/* Borders inside cards */
-.light .border-zinc-800,
-.light .border-zinc-700,
-.light .border-zinc-800\/50 {
-  border-color: #E2E8F0 !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   TABLES
-────────────────────────────────────────────────────────── */
-.light table {
-  background-color: #FFFFFF !important;
-  color: #0F172A !important;
-}
-.light thead {
-  background-color: #FFFFFF !important;
-}
-.light th {
-  color: #0F172A !important;
-  background-color: #FFFFFF !important;
-  border-bottom: 1px solid #DCE3EE !important;
-  font-weight: 700 !important;
-  font-size: 0.75rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-}
-.light td {
-  color: #0F172A !important;
-  border-bottom: 1px solid #DCE3EE !important;
-  font-weight: 500 !important;
-}
-.light tbody {
-  background-color: #FFFFFF !important;
-}
-.light tr:hover td {
-  background-color: #F8FAFC !important;
-}
-
-/* Table Action Buttons in Light Mode */
-.light table button.bg-zinc-800 {
-  background-color: #FFFFFF !important;
-  border: 1px solid #DCE3EE !important;
-  color: #64748B !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
-}
-.light table button.bg-zinc-800:hover {
-  background-color: #F8FAFC !important;
-  color: #0F172A !important;
-}
-
-.light table button.bg-red-500\/10 {
-  background-color: #FFFFFF !important;
-  border: 1px solid #DCE3EE !important;
-  color: #E5484D !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
-}
-.light table button.bg-red-500\/10:hover {
-  background-color: #FFF1F2 !important;
-  border-color: #FECDD3 !important;
-  color: #E5484D !important;
-}
-.light table button.bg-red-500\/10 svg {
-  color: #E5484D !important;
-  stroke: #E5484D !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   FORM INPUTS & SELECTS
-────────────────────────────────────────────────────────── */
-.light input,
-.light select,
-.light textarea {
-  background-color: #FFFFFF !important;
-  color: #0F172A !important;
-  border: 1px solid #E2E8F0 !important;
-}
-.light input::placeholder,
-.light textarea::placeholder {
-  color: #94A3B8 !important;
-}
-.light input:focus,
-.light select:focus,
-.light textarea:focus {
-  background-color: #FFFFFF !important;
-  border-color: #2563EB !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
-  outline: none !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   PASTEL SOFT BACKGROUND BADGES & ACCENTS
-   Blue:     bg: #EFF6FF, text/icon: #2563EB
-   Indigo:   bg: #EEF2FF, text/icon: #4F46E5
-   Purple:   bg: #F3E8FF, text/icon: #7C3AED
-   Green:    bg: #ECFDF5, text/icon: #059669
-   Yellow:   bg: #FFF7E0, text/icon: #D97706
-   Red:      bg: #FFF1F2, text/icon: #E5484D
-────────────────────────────────────────────────────────── */
-/* Blue */
-.light .bg-blue-500\/10, .light .bg-blue-600\/10, .light .bg-blue-500\/5 {
-  background-color: #EFF6FF !important;
-  color: #2563EB !important;
-  border-color: #BFDBFE !important;
-}
-.light .bg-blue-500\/10 svg, .light .bg-blue-600\/10 svg {
-  color: #2563EB !important;
-  stroke: #2563EB !important;
-}
-.light .text-blue-500, .light .text-blue-400, .light .text-blue-600 {
-  color: #2563EB !important;
-}
-.light .border-blue-500\/20, .light .border-blue-500\/30 {
-  border-color: #BFDBFE !important;
-}
-
-/* Indigo */
-.light .bg-indigo-500\/10, .light .bg-indigo-600\/10 {
-  background-color: #EEF2FF !important;
-  color: #4F46E5 !important;
-  border-color: #C7D2FE !important;
-}
-.light .text-indigo-500, .light .text-indigo-400, .light .text-indigo-600 {
-  color: #4F46E5 !important;
-}
-
-/* Purple */
-.light .bg-purple-500\/10, .light .bg-purple-600\/10 {
-  background-color: #F3E8FF !important;
-  color: #7C3AED !important;
-  border-color: #DDD6FE !important;
-}
-.light .bg-purple-500\/10 svg, .light .bg-purple-600\/10 svg {
-  color: #7C3AED !important;
-  stroke: #7C3AED !important;
-}
-.light .text-purple-500, .light .text-purple-400, .light .text-purple-600 {
-  color: #7C3AED !important;
-}
-
-/* Green / Emerald */
-.light .bg-emerald-500\/10, .light .bg-emerald-600\/10, .light .bg-green-500\/10, .light .bg-emerald-500\/5 {
-  background-color: #ECFDF5 !important;
-  color: #059669 !important;
-  border-color: #A7F3D0 !important;
-}
-.light .bg-emerald-500\/10 svg, .light .bg-emerald-600\/10 svg {
-  color: #059669 !important;
-  stroke: #059669 !important;
-}
-.light .text-emerald-500, .light .text-emerald-400, .light .text-green-500, .light .text-emerald-600 {
-  color: #059669 !important;
-}
-.light .border-emerald-500\/20, .light .border-emerald-500\/30 {
-  border-color: #A7F3D0 !important;
-}
-
-/* Yellow / Amber */
-.light .bg-amber-500\/10, .light .bg-amber-600\/10, .light .bg-yellow-500\/10, .light .bg-amber-500\/5 {
-  background-color: #FFF7E0 !important;
-  color: #D97706 !important;
-  border-color: #FDE68A !important;
-}
-.light .bg-amber-500\/10 svg, .light .bg-amber-600\/10 svg {
-  color: #D97706 !important;
-  stroke: #D97706 !important;
-}
-.light .text-amber-500, .light .text-amber-400, .light .text-yellow-500, .light .text-amber-600 {
-  color: #D97706 !important;
-}
-.light .border-amber-500\/20, .light .border-amber-500\/30 {
-  border-color: #FDE68A !important;
-}
-
-/* Red */
-.light .bg-red-500\/10, .light .bg-red-600\/10, .light .bg-red-500\/5 {
-  background-color: #FFF1F2 !important;
-  color: #E5484D !important;
-  border-color: #FECDD3 !important;
-}
-.light .bg-red-500\/10 svg, .light .bg-red-600\/10 svg {
-  color: #E5484D !important;
-  stroke: #E5484D !important;
-}
-.light .text-red-500, .light .text-red-400, .light .text-red-600 {
-  color: #E5484D !important;
-}
-.light .border-red-500\/20, .light .border-red-500\/30 {
-  border-color: #FECDD3 !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   BUTTONS
-────────────────────────────────────────────────────────── */
-.light button.bg-zinc-800,
-.light button.bg-zinc-700 {
-  background-color: #FFFFFF !important;
-  color: #0F172A !important;
-  border: 1px solid #DCE3EE !important;
-}
-.light button.bg-zinc-800:hover {
-  background-color: #F8FAFC !important;
-}
-
-/* Top Action Buttons in Light Mode */
-.light button.bg-emerald-600,
-.light button.border-emerald-500\/20,
-.light button.bg-emerald-600\/10 {
-  background-color: #FFFFFF !important;
-  border: 1px solid #059669 !important;
-  color: #059669 !important;
-  box-shadow: 0 1px 2px rgba(5, 150, 105, 0.05) !important;
-}
-.light button.bg-emerald-600:hover,
-.light button.border-emerald-500\/20:hover,
-.light button.bg-emerald-600\/10:hover {
-  background-color: #ECFDF5 !important;
-  color: #059669 !important;
-}
-.light button.bg-emerald-600 svg,
-.light button.border-emerald-500\/20 svg,
-.light button.bg-emerald-600\/10 svg {
-  color: #059669 !important;
-  stroke: #059669 !important;
-}
-
-.light button.bg-blue-600 {
-  background-color: #2563EB !important;
-  color: #FFFFFF !important;
-  border: none !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
-}
-.light button.bg-blue-600:hover {
-  background-color: #1D4ED8 !important;
-}
-.light button.bg-blue-600 * {
-  color: #FFFFFF !important;
-}
-
-/* EXAMS & FOLDERS SPECIFIC LIGHT STYLING */
-.light .w-12.h-12.bg-gradient-to-tr {
-  background: #FFF7E0 !important;
-  border: 1px solid #FDE68A !important;
-  color: #D97706 !important;
-  box-shadow: none !important;
-}
-
-.light .group .text-blue-400.bg-blue-500\/10,
-.light .group .bg-blue-500\/10 {
-  background-color: #FFFFFF !important;
-  border: 1px solid #BFDBFE !important;
-  color: #2563EB !important;
-}
-.light .group:hover .text-blue-400.bg-blue-500\/10,
-.light .group:hover .bg-blue-500\/10 {
-  background-color: #EFF6FF !important;
-  color: #2563EB !important;
-}
-
-.light .border-dashed {
-  background-color: #FFFFFF !important;
-  border: 1px dashed #DCE3EE !important;
-}
-.light .w-16.h-16.bg-zinc-800\/80 {
-  background-color: #F8FAFC !important;
-  border: 1px solid #DCE3EE !important;
-  color: #94A3B8 !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   TEXT OVERRIDES
-────────────────────────────────────────────────────────── */
-.light main h1, .light main h2, .light main h3, .light main h4 {
-  color: #0F172A !important;
-}
-.light main p {
-  color: #475569 !important;
-}
-.light main .text-white,
-.light main .text-zinc-50,
-.light main .text-zinc-100 {
-  color: #0F172A !important;
-}
-.light main .text-zinc-400,
-.light main .text-zinc-500 {
-  color: #64748B !important;
-}
-.light main .text-zinc-300 {
-  color: #334155 !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   CHARTS
-────────────────────────────────────────────────────────── */
-.light .recharts-cartesian-axis-tick-value {
-  fill: #64748B !important;
-}
-.light .recharts-cartesian-grid-horizontal line,
-.light .recharts-cartesian-grid-vertical line {
-  stroke: #E2E8F0 !important;
-}
-
-/* ──────────────────────────────────────────────────────────
-   MODALS / DIALOGS / DROPDOWNS
-────────────────────────────────────────────────────────── */
-.light [role="dialog"],
-.light [role="menu"],
-.light .dropdown-content {
-  background-color: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05) !important;
-  color: #0F172A !important;
-}
-
-/* Search Inputs */
-.light .search-bar,
-.light input[type="search"] {
-  background-color: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  color: #0F172A !important;
-}
-
-/* Text gradients */
-.light .text-gradient {
-  background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

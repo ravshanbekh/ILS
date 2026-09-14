@@ -105,7 +105,7 @@ export default function PredictionsPage() {
               { label: "O'rtacha xavf", value: dropoutData?.summary?.medium || 0, icon: TrendingDown, color: 'text-amber-400', bg: 'bg-amber-500/10' },
               { label: 'Past xavf', value: dropoutData?.summary?.low || 0, icon: BarChart3, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
             ].map(card => (
-              <div key={card.label} className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
+              <div key={card.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-lg ${card.bg} flex items-center justify-center shrink-0`}>
                   <card.icon className={`w-5 h-5 ${card.color}`} />
                 </div>
@@ -138,7 +138,7 @@ export default function PredictionsPage() {
           </div>
 
           {/* Student dropout risk list */}
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
             <div className="px-5 py-3 border-b border-zinc-800 flex items-center gap-2">
               <TrendingDown className="w-4 h-4 text-red-400" />
               <h2 className="text-white font-semibold text-sm">O'quvchi Ketish Xavfi Prognozi</h2>
@@ -224,7 +224,7 @@ export default function PredictionsPage() {
           <Loader2 className="w-5 h-5 animate-spin" /> Daromad prognozi yuklanmoqda...
         </div>
       ) : revenueData ? (
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-zinc-800 flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-emerald-400" />
             <h2 className="text-white font-semibold text-sm">Daromad Prognozi (3 Oy)</h2>

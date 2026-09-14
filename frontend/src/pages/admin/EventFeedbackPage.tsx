@@ -81,19 +81,19 @@ export default function EventFeedbackPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Demo Day fikrlari" subtitle="Tadbirdan keyin ota-onalardan yig'ilgan fikr-mulohaza" />
 
       <div className="p-8 max-w-6xl mx-auto space-y-6">
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} className="bg-[#18181b] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white">
+          <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white">
             <option value="">Barcha guruhlar</option>
             {groups.map((g: any) => (
               <option key={g.id} value={g.id}>{g.name}</option>
             ))}
           </select>
-          <select value={teacherFilter} onChange={(e) => setTeacherFilter(e.target.value)} className="bg-[#18181b] border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white">
+          <select value={teacherFilter} onChange={(e) => setTeacherFilter(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white">
             <option value="">Barcha o'qituvchilar</option>
             {teachers.map((t: any) => (
               <option key={t.id} value={t.id}>{t.fullName}</option>
@@ -103,7 +103,7 @@ export default function EventFeedbackPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
               <PartyPopper className="w-6 h-6 text-blue-500" />
             </div>
@@ -112,7 +112,7 @@ export default function EventFeedbackPage() {
               <p className="text-2xl font-bold text-white tracking-tight">{stats.total}</p>
             </div>
           </div>
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
               <Smile className="w-6 h-6 text-emerald-500" />
             </div>
@@ -121,7 +121,7 @@ export default function EventFeedbackPage() {
               <p className="text-2xl font-bold text-white tracking-tight">{stats.mamnun}</p>
             </div>
           </div>
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
               <Meh className="w-6 h-6 text-amber-500" />
             </div>
@@ -130,7 +130,7 @@ export default function EventFeedbackPage() {
               <p className="text-2xl font-bold text-white tracking-tight">{stats.oddiy}</p>
             </div>
           </div>
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
               <Frown className="w-6 h-6 text-red-500" />
             </div>
@@ -142,7 +142,7 @@ export default function EventFeedbackPage() {
         </div>
 
         {/* AI Analysis */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Sparkles className="w-5 h-5 text-violet-400" />
@@ -168,14 +168,14 @@ export default function EventFeedbackPage() {
             </div>
           )}
           {analysis && (
-            <div className="p-6 text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap bg-[#09090b]/40">
+            <div className="p-6 text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap bg-zinc-950/40">
               {analysis}
             </div>
           )}
         </div>
 
         {/* List */}
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="p-5 border-b border-zinc-800">
             <h3 className="text-white font-bold text-sm">Barcha fikrlar</h3>
           </div>

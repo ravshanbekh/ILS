@@ -353,7 +353,7 @@ export default function LessonsPage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 lg:p-6 min-h-screen bg-[#09090b]">
+    <div className="p-4 lg:p-6 min-h-screen bg-zinc-950">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>

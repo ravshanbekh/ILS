@@ -97,7 +97,7 @@ export default function MyProfilePage() {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Mening profilim" subtitle="O'quvchilar sizni shu ma'lumotlar bilan ko'radi" />
 
       <div className="p-4 sm:p-8 max-w-2xl mx-auto space-y-5">
@@ -123,7 +123,7 @@ export default function MyProfilePage() {
         ) : (
           <>
             {/* Rasm */}
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
               <h3 className="text-white font-bold text-sm mb-4">Profil rasmi</h3>
               <div className="flex items-center gap-5">
                 <div className="relative shrink-0">
@@ -134,7 +134,7 @@ export default function MyProfilePage() {
                       className="w-24 h-24 rounded-2xl object-cover border border-zinc-700"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-2xl bg-[#0f0f11] border border-zinc-800 flex items-center justify-center text-2xl font-bold text-zinc-600">
+                    <div className="w-24 h-24 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-2xl font-bold text-zinc-600">
                       {initials}
                     </div>
                   )}
@@ -168,7 +168,7 @@ export default function MyProfilePage() {
             </div>
 
             {/* Ma'lumot va filial */}
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5 space-y-5">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-5">
               <div>
                 <label className="flex items-center gap-2 text-xs font-semibold text-zinc-400 mb-2">
                   <Building2 className="w-3.5 h-3.5" /> Filial
@@ -176,7 +176,7 @@ export default function MyProfilePage() {
                 <select
                   value={filial}
                   onChange={(e) => setFilial(e.target.value)}
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
                 >
                   <option value="">— tanlanmagan —</option>
                   {filials.map((f) => (
@@ -199,7 +199,7 @@ export default function MyProfilePage() {
                   onChange={(e) => setBio(e.target.value.slice(0, 300))}
                   rows={4}
                   placeholder="Masalan: Python va algoritmlar bo'yicha yordam beraman. Normativlarni tushunmagan bo'lsangiz keling."
-                  className="w-full bg-[#0f0f11] border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white resize-none"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white resize-none"
                 />
                 <div className="flex items-center justify-between mt-1.5">
                   <p className="text-zinc-600 text-[11px]">Nima bo'yicha yordam berishingizni yozing</p>
@@ -229,11 +229,11 @@ export default function MyProfilePage() {
               <h3 className="text-zinc-400 text-xs font-semibold uppercase tracking-wide mb-2">
                 O'quvchi shunday ko'radi
               </h3>
-              <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 max-w-[260px]">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 max-w-[260px]">
                 {src ? (
                   <img src={src} alt="" className="w-full aspect-square rounded-lg object-cover mb-3" />
                 ) : (
-                  <div className="w-full aspect-square rounded-lg bg-[#0f0f11] border border-zinc-800 flex items-center justify-center text-3xl font-bold text-zinc-700 mb-3">
+                  <div className="w-full aspect-square rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-3xl font-bold text-zinc-700 mb-3">
                     {initials}
                   </div>
                 )}

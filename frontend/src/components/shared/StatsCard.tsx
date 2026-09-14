@@ -18,7 +18,7 @@ const colorStyles = {
 
 export default function StatsCard({ title, value, icon, trend, color = 'blue' }: StatsCardProps) {
   return (
-    <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5 shadow-sm transition-all hover:border-zinc-700">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm transition-all hover:border-zinc-700">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-zinc-400 mb-1">{title}</p>

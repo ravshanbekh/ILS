@@ -364,7 +364,7 @@ export default function ChecklistManagePage() {
             const isOpen = expandedRoles[role] !== false; // default open
             const totalItems = Object.values(sections).reduce((s, arr) => s + arr.length, 0);
             return (
-              <div key={role} className="bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden">
+              <div key={role} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
                 {/* Role header */}
                 <div
                   className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-zinc-800/40 transition-colors"
@@ -481,7 +481,7 @@ export default function ChecklistManagePage() {
           onClick={() => setConfirmDelete(null)}
         >
           <div
-            className="bg-[#111113] border border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-4">

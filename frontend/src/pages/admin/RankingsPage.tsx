@@ -71,7 +71,7 @@ export default function AdminRankingsPage() {
       <div className="p-4 sm:p-8 max-w-6xl mx-auto">
         {/* Filter + Search */}
         <div className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4 bg-[#18181b] p-4 rounded-xl border border-zinc-800">
+          <div className="flex flex-col sm:flex-row gap-4 bg-zinc-900 p-4 rounded-xl border border-zinc-800">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-zinc-400" />
               <span className="text-sm font-medium text-zinc-300">Filter:</span>
@@ -80,7 +80,7 @@ export default function AdminRankingsPage() {
             <select 
               value={filterType}
               onChange={(e) => handleFilterChange(e.target.value)}
-              className="px-3 py-2 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-w-[200px]"
+              className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-w-[200px]"
             >
               <option value="overall">O'quv markaz bo'yicha</option>
               <option value="teacher">O'qituvchi bo'yicha</option>
@@ -91,7 +91,7 @@ export default function AdminRankingsPage() {
               <select 
                 value={selectedTeacherId}
                 onChange={(e) => { setSelectedTeacherId(e.target.value); setCurrentPage(1); }}
-                className="px-3 py-2 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 flex-1"
+                className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 flex-1"
               >
                 <option value="">O'qituvchini tanlang...</option>
                 {teachers.map(t => (
@@ -104,7 +104,7 @@ export default function AdminRankingsPage() {
               <select 
                 value={selectedGroupId}
                 onChange={(e) => { setSelectedGroupId(e.target.value); setCurrentPage(1); }}
-                className="px-3 py-2 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 flex-1"
+                className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 flex-1"
               >
                 <option value="">Guruhni tanlang...</option>
                 {groups.map(g => (
@@ -121,16 +121,16 @@ export default function AdminRankingsPage() {
                 placeholder="Ism bo'yicha qidirish..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
+                className="w-full pl-10 pr-4 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-zinc-300">
-              <thead className="bg-[#09090b] text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
+              <thead className="bg-zinc-950 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
                 <tr>
                   <th className="px-6 py-4 w-16 text-center">O'rin</th>
                   <th className="px-6 py-4">O'quvchi</th>
@@ -140,7 +140,7 @@ export default function AdminRankingsPage() {
                   <th className="px-6 py-4 text-center">Natijalar (Y / K / Q)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/50 bg-[#09090b]">
+              <tbody className="divide-y divide-zinc-800/50 bg-zinc-950">
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">

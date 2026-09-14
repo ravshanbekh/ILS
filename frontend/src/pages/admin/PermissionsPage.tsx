@@ -134,7 +134,7 @@ export default function PermissionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-zinc-950">
       <Header title="Ruxsatlar" subtitle="Har bir xodimga alohida huquq berish va olib qo'yish" />
 
       <div className="p-8 max-w-6xl mx-auto">
@@ -153,7 +153,7 @@ export default function PermissionsPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5">
             {/* Chap: odamlar ro'yxati */}
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden flex flex-col max-h-[70vh]">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col max-h-[70vh]">
               <div className="p-3 border-b border-zinc-800">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
@@ -161,7 +161,7 @@ export default function PermissionsPage() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Ism yoki login..."
-                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#0f0f11] border border-zinc-800 text-sm text-white placeholder:text-zinc-600 focus:border-blue-500 outline-none"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-white placeholder:text-zinc-600 focus:border-blue-500 outline-none"
                   />
                 </div>
               </div>
@@ -193,7 +193,7 @@ export default function PermissionsPage() {
             </div>
 
             {/* O'ng: ruxsat tugmachalari */}
-            <div className="bg-[#18181b] border border-zinc-800 rounded-xl">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
               {!selected ? (
                 <div className="text-center py-20 text-zinc-500">
                   <UsersIcon className="w-10 h-10 mx-auto mb-3 opacity-40" />
@@ -241,7 +241,7 @@ export default function PermissionsPage() {
                                 className={`w-full flex items-start justify-between gap-4 text-left px-4 py-3 rounded-xl border transition-colors ${
                                   on
                                     ? 'bg-emerald-500/10 border-emerald-500/30'
-                                    : 'bg-[#0f0f11] border-zinc-800 hover:border-zinc-700'
+                                    : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
                                 }`}
                               >
                                 <div>

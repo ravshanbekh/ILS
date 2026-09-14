@@ -17,16 +17,16 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#09090b] text-zinc-50 w-full overflow-hidden">
+    <div className="flex min-h-screen bg-zinc-950 text-zinc-50 w-full overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         collapsed={collapsed}
         onToggleCollapse={toggleCollapsed}
       />
-      <main className={`flex-1 flex flex-col min-w-0 overflow-y-auto h-screen bg-[#09090b] transition-[margin] duration-300 ${collapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
+      <main className={`flex-1 flex flex-col min-w-0 overflow-y-auto h-screen bg-zinc-950 transition-[margin] duration-300 ${collapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         {/* Mobile top bar with hamburger */}
-        <div className="lg:hidden sticky top-0 z-30 bg-[#09090b]/95 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center gap-3">
+        <div className="lg:hidden sticky top-0 z-30 bg-zinc-950/95 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"

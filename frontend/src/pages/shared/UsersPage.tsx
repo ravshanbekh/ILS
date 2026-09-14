@@ -253,7 +253,7 @@ export default function UsersPage() {
               placeholder="Ism yoki login bo'yicha qidirish..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#18181b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
             />
           </div>
           {!isReadOnly && (
@@ -273,7 +273,7 @@ export default function UsersPage() {
                   )}
                   <button
                     onClick={() => navigate(user?.role === 'admin' ? '/admin/trash' : `/viewer/${user?.role}/trash`)}
-                    className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                     title="O'chirilgan foydalanuvchilarni ko'rish va qaytarish"
                   >
                     <Trash2 className="w-4 h-4 text-red-400" />
@@ -293,7 +293,7 @@ export default function UsersPage() {
               {isAdmin && (
                 <button
                   onClick={() => navigate('/admin/permissions')}
-                  className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                   title="Xodimlarga huquq berish / olib qo'yish"
                 >
                   <ShieldCheck className="w-4 h-4 text-blue-400" />
@@ -326,7 +326,7 @@ export default function UsersPage() {
                 className={`px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors ${
                   roleFilter === val
                     ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-[#18181b] border-zinc-800 text-zinc-400 hover:text-white'
+                    : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
                 }`}
               >
                 {label}
@@ -335,10 +335,10 @@ export default function UsersPage() {
           </div>
         )}
 
-        <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-zinc-300">
-              <thead className="bg-[#09090b] text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
+              <thead className="bg-zinc-950 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800 font-bold">
                 <tr>
                   <th className="px-6 py-4">F.I.Sh.</th>
                   <th className="px-6 py-4">Login</th>
@@ -545,8 +545,8 @@ export default function UsersPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-md p-6 shadow-2xl border border-zinc-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-zinc-800">
             <h2 className="text-xl font-bold text-white mb-6">
               {editingUser ? 'Foydalanuvchini tahrirlash' : 'Yangi foydalanuvchi'}
             </h2>
@@ -558,7 +558,7 @@ export default function UsersPage() {
                   type="text"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -569,7 +569,7 @@ export default function UsersPage() {
                   type="text"
                   value={formData.login}
                   onChange={(e) => setFormData({...formData, login: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
+                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
                   required
                 />
               </div>
@@ -582,7 +582,7 @@ export default function UsersPage() {
                   type="text"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
+                  className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
                   required={!editingUser}
                   placeholder={editingUser ? "O'zgartirish uchun kiriting..." : ""}
                 />
@@ -594,7 +594,7 @@ export default function UsersPage() {
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-4 py-2.5 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="student">O'quvchi (Student)</option>
                     <option value="teacher">O'qituvchi (Teacher)</option>
@@ -632,10 +632,10 @@ export default function UsersPage() {
                       placeholder="Guruh nomi bo'yicha qidirish..."
                       value={groupSearch}
                       onChange={(e) => setGroupSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 rounded-lg bg-[#09090b] border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
+                      className="w-full pl-9 pr-4 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-zinc-600"
                     />
                   </div>
-                  <div className="max-h-32 overflow-y-auto bg-[#09090b] rounded-lg border border-zinc-800 divide-y divide-zinc-800/50">
+                  <div className="max-h-32 overflow-y-auto bg-zinc-950 rounded-lg border border-zinc-800 divide-y divide-zinc-800/50">
                     <label className="flex items-center gap-3 px-3 py-2 hover:bg-zinc-800/30 cursor-pointer transition-colors">
                       <input
                         type="radio"
@@ -643,7 +643,7 @@ export default function UsersPage() {
                         value=""
                         checked={selectedGroupId === ''}
                         onChange={() => setSelectedGroupId('')}
-                        className="w-3.5 h-3.5 text-blue-600 bg-[#09090b] border-zinc-700"
+                        className="w-3.5 h-3.5 text-blue-600 bg-zinc-950 border-zinc-700"
                       />
                       <span className="text-sm text-zinc-400">Biriktirmasdan yaratish</span>
                     </label>
@@ -657,7 +657,7 @@ export default function UsersPage() {
                             value={g.id}
                             checked={selectedGroupId === g.id}
                             onChange={() => setSelectedGroupId(g.id)}
-                            className="w-3.5 h-3.5 text-blue-600 bg-[#09090b] border-zinc-700"
+                            className="w-3.5 h-3.5 text-blue-600 bg-zinc-950 border-zinc-700"
                           />
                           <span className="text-sm text-white">{g.name}</span>
                         </label>
@@ -671,7 +671,7 @@ export default function UsersPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
+                  className="flex-1 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
                 >
                   Bekor qilish
                 </button>
@@ -688,8 +688,8 @@ export default function UsersPage() {
       )}
       {/* Bulk Import Modal */}
       {showBulkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b]/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#18181b] rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-zinc-800 flex flex-col max-h-[90vh]">
             <h2 className="text-xl font-bold text-white mb-2">Excel dan yuklash</h2>
             <p className="text-xs text-zinc-400 mb-6">Exceldan F.I.Sh, Login va Parol ustunlarini nusxalab, quyidagi maydonga tashlang (paste).</p>
 
@@ -698,7 +698,7 @@ export default function UsersPage() {
                 value={bulkData}
                 onChange={(e) => setBulkData(e.target.value)}
                 placeholder={`Misol uchun:\nAlijon Valiyev\tali\tpass123\nEshmat Toshmatov\teshmat\tpass123`}
-                className="w-full flex-1 px-4 py-3 rounded-lg bg-[#09090b] border border-zinc-800 text-zinc-300 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono whitespace-pre resize-none"
+                className="w-full flex-1 px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono whitespace-pre resize-none"
               />
             </div>
 
@@ -709,7 +709,7 @@ export default function UsersPage() {
                   setShowBulkModal(false);
                   setBulkData('');
                 }}
-                className="flex-1 py-2.5 rounded-lg bg-[#09090b] hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
+                className="flex-1 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-zinc-300 font-medium text-sm transition-colors border border-zinc-800"
               >
                 Bekor qilish
               </button>

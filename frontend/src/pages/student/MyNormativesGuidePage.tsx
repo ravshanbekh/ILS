@@ -203,7 +203,7 @@ export default function MyNormativesGuidePage() {
 
         {/* Tips Section */}
         {hasAnyVideo && (
-          <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
             <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
               <Info className="w-4 h-4 text-blue-500" />
               Eslatmalar
@@ -261,9 +261,9 @@ function VideoCard({
   const thumbnail = getYouTubeThumbnail(youtubeUrl);
 
   return (
-    <div className="group bg-[#18181b] border border-zinc-800 rounded-2xl overflow-hidden transition-all duration-300 hover:border-zinc-700 hover:shadow-xl hover:shadow-black/20">
+    <div className="group bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden transition-all duration-300 hover:border-zinc-700 hover:shadow-xl hover:shadow-black/20">
       {/* Video Player / Thumbnail */}
-      <div className="relative aspect-video bg-[#09090b] overflow-hidden">
+      <div className="relative aspect-video bg-zinc-950 overflow-hidden">
         {isActive ? (
           <iframe
             src={embedUrl}
