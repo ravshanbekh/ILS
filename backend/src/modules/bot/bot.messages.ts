@@ -362,6 +362,33 @@ export function chatLinkInvalidMessage(): string {
 // ============ DARS BAHOLASH XABARLARI ============
 
 /** Ota-onaga — bugungi dars natijasi (yakunlanishdan 1 soat keyin) */
+/**
+ * Uy vazifasi bahosining ota-onaga ko'rinadigan matni.
+ *
+ * `kelmadi` ikki xil holatda qo'yiladi: o'quvchi darsga kelmagan bo'lsa YOKI
+ * o'sha darsga umuman vazifa berilmagan bo'lsa. Ota-onaga ikkalasini ham
+ * "Darsga kelmadi" deb ko'rsatish — noto'g'ri ayblash.
+ *
+ * `hasAssignment` bizga aniq aytadi: vazifa berilgan bo'lsa, 🚫 ning yagona
+ * sababi kelmaganlik. Berilmagan bo'lsa ajrata olmaymiz va shuni ochiq
+ * yozamiz — taxminni fakt sifatida ko'rsatgandan ko'ra halolroq.
+ */
+export function homeworkLabel(
+  homework: string | null | undefined,
+  hasAssignment?: boolean
+): string {
+  switch (homework) {
+    case 'toliq': return "✅ To'liq bajardi";
+    case 'qisman': return '🟡 Qisman bajardi';
+    case 'bajarmagan': return '❌ Bajarmadi';
+    case 'kelmadi':
+      return hasAssignment
+        ? '🚫 Darsga kelmadi'
+        : "🚫 Darsga kelmadi yoki o'qituvchi vazifa bermagan";
+    default: return '—';
+  }
+}
+
 export function lessonGradeParentMessage(data: {
   studentName: string;
   groupName: string;
@@ -371,13 +398,10 @@ export function lessonGradeParentMessage(data: {
   activityScore: number | null;
   weeklyAvgHomework?: number | null;
   teacherComment?: string | null;
+  /** Shu darsga umuman vazifa berilganmi (LessonGrade.assignmentId mavjudmi) */
+  hasAssignment?: boolean;
 }): string {
-  const hwLabel =
-    data.homework === 'toliq' ? '✅ To\'liq bajardi'
-    : data.homework === 'qisman' ? '🟡 Qisman bajardi'
-    : data.homework === 'bajarmagan' ? '❌ Bajarmadi'
-    : data.homework === 'kelmadi' ? '🚫 Darsga kelmadi'
-    : '—';
+  const hwLabel = homeworkLabel(data.homework, data.hasAssignment);
 
   return (
     `📚 *DARS NATIJASI*\n` +
@@ -438,13 +462,6 @@ export function adminUngradedReportMessage(report: {
 
 // ============ OTA-ONA BOTI: BUGUN / HAFTA / OY / IMTIHONLAR ============
 
-const HOMEWORK_LABEL: Record<string, string> = {
-  toliq: "✅ To'liq bajardi",
-  qisman: '🟡 Qisman bajardi',
-  bajarmagan: '❌ Bajarmadi',
-  kelmadi: '🚫 Darsga kelmadi',
-};
-
 /** "📅 Bugun" tugmasi */
 export function todayLessonMessage(
   grade: {
@@ -452,6 +469,7 @@ export function todayLessonMessage(
     homeworkScore: number | null;
     activityScore: number | null;
     comment: string | null;
+    assignmentId?: string | null;
     session: { date: Date; group: { name: string } };
   } | null
 ): string {
@@ -468,7 +486,7 @@ export function todayLessonMessage(
     `📅 *BUGUNGI DARS*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `📖 ${esc(grade.session.group.name)} | 🗓 ${date}\n\n` +
-    `📝 Uy vazifasi: ${grade.homework ? HOMEWORK_LABEL[grade.homework] : '—'}` +
+    `📝 Uy vazifasi: ${homeworkLabel(grade.homework, grade.assignmentId != null)}` +
     (grade.homeworkScore !== null ? ` — *${grade.homeworkScore} ball*` : '') +
     `\n` +
     (grade.activityScore !== null ? `⭐ Faollik: *${grade.activityScore}/5*\n` : '') +

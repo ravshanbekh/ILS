@@ -291,6 +291,7 @@ export async function notifyParentsLessonGrade(sessionId: string) {
       activityScore: grade.activityScore,
       weeklyAvgHomework: weeklyAvg,
       teacherComment: grade.comment,
+      hasAssignment: grade.assignmentId != null,
     });
 
     for (const chatId of chatIds) {
