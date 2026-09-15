@@ -56,6 +56,25 @@
   --z-overlay: 80;
   --z-dialog: 90;
   --z-toast: 100;
+
+  /* ── Holat ranglari ────────────────────────────────────────────────────
+     Bu yerda TURISHI muhim: qiymatlar shkala o'zgaruvchilariga havola
+     qiladi, shkalalar esa har bir theme blokida qayta aniqlanadi.
+     CSS custom property'lar ishlatilgan joyda hisoblangani uchun bu
+     yozuvlar avtomatik ravishda joriy themega moslashadi.
+
+     Ilgari bu tokenlar umuman aniqlanmagan edi: index.css ni qayta
+     yozganimda tokens.css dan ko'chirishni o'tkazib yuborganman.
+     Natijada `var(--danger-bg)` bo'shliqqa aylanib, "Natijalar taqsimoti"
+     kartalari fonsiz, chiqish tugmasi esa rangsiz chiqardi. */
+  --success-bg: var(--s-900);
+  --success-fg: var(--s-400);
+  --warning-bg: var(--g-900);
+  --warning-fg: var(--g-400);
+  --danger-bg: var(--d-900);
+  --danger-fg: var(--d-400);
+  --info-bg: var(--i-900);
+  --info-fg: var(--i-400);
 }
 
 /* ── 2. DARK (standart) — chuqur navy, sof qora emas ────────────────────── */

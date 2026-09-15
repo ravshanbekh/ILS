@@ -280,3 +280,125 @@ CO embossed in its centre
    kichik ko'rinmasin
 4. Yorug'lik yo'nalishi hammasida bir xil (chap yuqoridan)
 5. Light va dark fonda oq halo yo'qligini tekshiring
+
+---
+
+# 3-to'plam — Navigatsiya ikonkalari
+
+## ⚠️ Avval o'qing — tavsiya
+
+`DESIGN-GUIDE.md` 2-bo'limi menyuda **outline** ikonka ishlatishni aytadi,
+3D uslub esa KPI va bannerga tegishli. Yangi mockup bundan chetga chiqadi.
+Buni qilish mumkin, lekin uchta haqiqiy narx bor:
+
+1. **Og'irlik.** 45 ta ikonka × ~35KB ≈ **1.6MB**. Menyu HAR sahifada
+   turadi, ya'ni bu og'irlik doim yuklanadi. Qo'llanmadagi butun sahifa
+   uchun budjet ~1.5MB edi.
+2. **Detal yo'qoladi.** Menyuda ikonka 18–22px chiqadi. Mockupda ular
+   kattaroq ko'rsatilgan. Shu o'lchamda 3D yaltirashlar loyqaga aylanadi,
+   outline ikonka esa tiniq qoladi.
+3. **Xizmat ko'rsatish.** Menyuga yangi bo'lim qo'shilsa, har safar yangi
+   3D ikonka buyurtma qilish kerak bo'ladi.
+
+**Tavsiyam — bosqichma-bosqich:**
+
+| Bosqich | Nechta | Nima |
+|---|---|---|
+| **1** | **9 ta** | Dashboard + 8 ta bo'lim sarlavhasi |
+| **2** | 36 ta | Ichki havolalar |
+
+1-bosqich butun tashqi ko'rinishning katta qismini beradi (bo'lim
+sarlavhalari kattaroq va ko'zga tashlanadi), og'irligi esa ~350KB.
+Keyin qarab turasiz: yetarli bo'lsa 2-bosqich shart emas.
+
+**Kod ikkalasiga ham tayyor.** `NavIcon` har bir ikonkani alohida
+qidiradi va topmasa hozirgi outline ikonkani chizadi. Ya'ni **istalgan
+qismini** qo'ysangiz bo'ladi — hammasini birdan yaratish shart emas va
+yarim holatda ham menyu buzilmaydi.
+
+## Qayerga qo'yiladi
+
+```
+frontend/public/illustrations/nav/<nom>.webp     (128x128)
+```
+
+128px yetarli: ekranda 18–22px chiqadi, retina uchun zaxira bilan kifoya.
+512 qilib katta fayl yasash shart emas.
+
+## Umumiy qism — HAR BIR menyu ikonkasiga
+
+```
+3D icon, simple and bold, soft rounded bevels, glossy ceramic material,
+gentle highlight from upper left, minimal soft shadow, viewed straight
+on, palette limited to pure white, vivid red #FF2B00 and warm gold
+#FFB800, completely transparent background, single centred object,
+no text, readable at small size, chunky shapes and thick forms,
+128x128
+```
+
+`chunky shapes and thick forms` — bu juda muhim. Ingichka chiziqli ikonka
+20px da ko'rinmay ketadi.
+
+## 1-BOSQICH — 9 ta (tavsiya etilgan)
+
+| Fayl | Menyu bandi | Prompt qismi |
+|---|---|---|
+| `dashboard.webp` | Dashboard | four rounded squares arranged in a two by two grid, two of them red and two gold |
+| `group-users_groups.webp` | Jamoa | two overlapping person silhouettes shown from the shoulders up, the front one red and the back one white |
+| `group-education_exams.webp` | Ta'lim | an open book with white pages and a red cover, lying flat |
+| `group-normatives_results.webp` | Normativlar | a clipboard with a white sheet showing three short red lines and a gold clip at the top |
+| `group-monitoring_analysis.webp` | Monitoring | a round radar screen with a red sweep line and a small gold blip |
+| `group-checklist_system.webp` | Cheklistlar | a white sheet with three rows, each row marked with a gold checkmark |
+| `group-gamification.webp` | Gamifikatsiya | a game controller with a red body, white buttons and a gold directional pad |
+| `group-settings_backup.webp` | Sozlamalar | a thick cogwheel with wide teeth, red body and a gold centre hole |
+| `group-normatives_student.webp` | Normativlar (o'quvchi) | a clipboard with a white sheet and a gold star in its centre |
+
+## 2-BOSQICH — 36 ta ichki havola
+
+| Fayl | Menyu bandi | Prompt qismi |
+|---|---|---|
+| `users.webp` | Foydalanuvchilar | a single person silhouette from the shoulders up, white body with a red head |
+| `groups.webp` | Guruhlar | three small person silhouettes side by side in red, gold and white |
+| `permissions.webp` | Ruxsatlar | a shield with a white body, red border and a gold checkmark in the centre |
+| `trash.webp` | Korzinka (Savat) | a waste bin with a red body, white vertical stripes and a gold lid |
+| `lessons.webp` | Darsliklar | a stack of three closed books, red on top, gold and white beneath |
+| `exams.webp` | Imtihonlar | a white document sheet with red lines and a gold pencil lying across it |
+| `live-quiz.webp` | Live Quiz | a thick lightning bolt in gold with a red outline |
+| `homework-bank.webp` | Uyga vazifa bankasi | a simple house with a red roof and white walls, a gold door |
+| `normatives.webp` | Normativlar | a white sheet with a red numbered list of three items |
+| `submissions.webp` | Topshiriqlar | a white sheet with a large gold checkbox ticked in its centre |
+| `stats.webp` | Statistika | three vertical bars of increasing height in gold, red and gold |
+| `rankings.webp` | O'quvchilar reytingi | a gold trophy cup with two handles and a white star |
+| `student-categories.webp` | Natija kategoriyalari | four rounded squares in a grid, coloured green, gold, red and white |
+| `lesson-control.webp` | Dars nazorati | a round alarm clock with a red case, white face and two gold bells on top |
+| `parents.webp` | Ota-onalar bazasi | a plump rounded heart in bright red with a white highlight |
+| `appeals.webp` | Murojaatlar | a rounded speech bubble in white with a red outline and three gold dots inside |
+| `event-feedback.webp` | Demo Day fikrlari | a megaphone with a red cone and a white handle, gold sound lines |
+| `frozen-students.webp` | Muzlatilganlar | a six-pointed snowflake in white with pale blue edges |
+| `teacher-rating.webp` | O'qituvchi reytingi | a five-pointed star in bright red with a gold outline |
+| `monitoring.webp` | Monitoring | a red heartbeat pulse line with a sharp peak in the centre |
+| `predictions.webp` | AI Prognozlar | three rising bars in gold with a red arrow curving upward above them |
+| `support-hours.webp` | Assistent soatlari | a round clock face in white with a red rim and gold hands |
+| `checklist-stats.webp` | Cheklist Hisobot | a white sheet with a small gold bar chart drawn on it |
+| `checklist-manage.webp` | Cheklist Boshqaruv | a clipboard with a gold pencil writing on its white sheet |
+| `shop-items.webp` | Do'kon boshqaruvi | a small shop front with a red and white striped awning and a gold door |
+| `shop-orders.webp` | Buyurtmalar | a closed cardboard box in warm white with red tape across the top |
+| `coin-oversight.webp` | Coin nazorati | three gold coins stacked with one standing upright in front |
+| `export.webp` | Eksport / Zaxira | a gold downward arrow pointing into an open white tray |
+| `settings.webp` | Sozlamalar | a thick cogwheel with wide teeth in white with a red centre |
+| `history.webp` | Topshiriqlarim | a white sheet with a gold checkmark and a small red clock in the corner |
+| `homework.webp` | Uyga vazifalar | a red notebook with a gold pencil resting on it |
+| `results.webp` | Natijalarim | a gold medal with a red ribbon and a white star |
+| `ranking.webp` | Reyting | a podium with three steps, the tallest in gold and the others white and red |
+| `shop.webp` | Do'kon | a gift box in red with a gold ribbon and bow |
+| `my-normatives.webp` | Qoidalar va Ko'rsatmalar | an open book with a gold bookmark ribbon hanging from it |
+| `pending.webp` | Tekshirish | an hourglass with red caps and gold sand |
+
+⚠️ `pending.webp` KPI to'plamida ham bor, lekin u boshqa papkada
+(`illustrations/pending.webp`). Menyu varianti `illustrations/nav/`
+ichida turadi va kichikroq bo'ladi — ikkalasi to'qnashmaydi.
+
+## Tekshirish
+
+`/__design` sahifasini oching yoki shunchaki menyuga qarang: ikonka 3D
+chiqsa tayyor, outline qolsa hali qo'yilmagan. Yarim holat normal.

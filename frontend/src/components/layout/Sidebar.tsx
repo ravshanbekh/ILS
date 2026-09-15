@@ -9,6 +9,7 @@ import {
   Gift, Package, Coins
 , CalendarClock, UserCircle} from 'lucide-react';
 import BrandLogo from '@/components/brand/BrandLogo';
+import NavIcon from '@/components/brand/NavIcon';
 import { ADMIN_GROUPS, TEACHER_GROUPS, STUDENT_GROUPS } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
 
@@ -51,6 +52,17 @@ interface SidebarProps {
   /** Desktopda yig'ilgan (faqat ikonkalar) holat */
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+}
+
+/**
+ * Route'dan ikonka kalitini oladi: oxirgi bo'lak.
+ *   /admin/users            -> users
+ *   /viewer/kassir/users    -> users
+ * Bitta sahifa rolga qarab turli yo'lda bo'ladi, ikonka esa bitta.
+ */
+function iconKey(to: string): string {
+  const parts = to.split('?')[0].split('/').filter(Boolean);
+  return parts[parts.length - 1] || 'dashboard';
 }
 
 export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCollapse }: SidebarProps) {
@@ -244,7 +256,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
         {/* Navigation */}
         {/* Yig'ilganda overflow-visible — aks holda o'ng tomondagi flyout kesiladi
             (bu holatda faqat bo'lim ikonkalari bo'lgani uchun scroll kerak emas) */}
-        <nav className={`flex-1 py-4 space-y-1.5 custom-scrollbar ${
+        <nav className={`flex-1 py-4 space-y-2 custom-scrollbar ${
           isCollapsed ? 'px-2 overflow-visible' : 'px-3 overflow-y-auto'
         }`}>
           {/* Main Dashboard Link */}
@@ -254,16 +266,21 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
             onClick={handleNavClick}
             title={isCollapsed ? 'Dashboard' : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              `flex items-center gap-3 rounded-2xl border py-3 text-sm font-semibold transition-colors ${
                 isCollapsed ? 'justify-center px-2' : 'px-3'
-              } ${
-                isActive
-                  ? 'bg-blue-600 text-white font-semibold shadow-lg shadow-blue-900/30'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-              }`
+              } ${isActive ? '' : 'border-transparent'}`
+            }
+            style={({ isActive }) =>
+              isActive
+                ? {
+                    background: 'var(--nav-active-bg)',
+                    borderColor: 'var(--primary)',
+                    color: 'var(--nav-active-fg)',
+                  }
+                : { color: 'var(--muted-foreground)' }
             }
           >
-            <LayoutDashboard className="w-4 h-4 shrink-0" />
+            <NavIcon name="dashboard" fallback={LayoutDashboard} size={22} />
             {!isCollapsed && <span>Dashboard</span>}
           </NavLink>
 
@@ -312,7 +329,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
                                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
                               }`}
                             >
-                              <ItemIcon className="w-3.5 h-3.5 shrink-0" />
+                              <NavIcon name={iconKey(item.to)} fallback={ItemIcon} size={18} />
                               <span className="truncate">{item.label}</span>
                             </NavLink>
                           );
@@ -324,36 +341,40 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
               }
 
               return (
-                <div key={group.id} className="space-y-1 pt-1">
-                  {/* Group Header Button */}
+                /* Bo'lim — mockupdagidek alohida panel kartochka */
+                <div
+                  key={group.id}
+                  className="overflow-hidden rounded-2xl border"
+                  style={{ background: 'var(--surface-soft)', borderColor: 'var(--border)' }}
+                >
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 select-none ${
-                      isGroupActive
-                        ? 'text-blue-400 bg-blue-500/10 border border-blue-500/20'
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
-                    }`}
+                    aria-expanded={isExpanded}
+                    className="flex w-full select-none items-center justify-between gap-2 px-3 py-3 text-left text-sm font-semibold transition-colors"
+                    style={{ color: isGroupActive ? 'var(--nav-active-fg)' : 'var(--foreground)' }}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <GroupIcon className="w-4 h-4 shrink-0" />
+                    <span className="flex min-w-0 items-center gap-3">
+                      <NavIcon name={`group-${group.id}`} fallback={GroupIcon} size={22} />
                       <span className="truncate">{group.label}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400 font-mono">
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <span
+                        className="tabular rounded-full px-2 py-0.5 text-xs font-bold"
+                        style={{ background: 'var(--trend-up-bg)', color: 'var(--trend-up-fg)' }}
+                      >
                         {group.items.length}
                       </span>
                       {isExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                        <ChevronDown className="h-4 w-4" style={{ color: 'var(--muted-foreground)' }} />
                       ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                        <ChevronRight className="h-4 w-4" style={{ color: 'var(--muted-foreground)' }} />
                       )}
-                    </div>
+                    </span>
                   </button>
 
-                  {/* Sub-items */}
                   {isExpanded && (
-                    <div className="pl-3 space-y-0.5 border-l-2 border-zinc-800/80 ml-3.5 my-1">
+                    <div className="px-2 pb-2">
                       {group.items.map(item => {
                         const ItemIcon = item.icon;
                         const isSubActive = location.pathname.startsWith(item.to);
@@ -362,13 +383,15 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
                             key={item.to}
                             to={item.to}
                             onClick={handleNavClick}
-                            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                            aria-current={isSubActive ? 'page' : undefined}
+                            className="flex items-center gap-3 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors"
+                            style={
                               isSubActive
-                                ? 'bg-zinc-800 text-white font-semibold border-l-2 border-blue-500 -ml-[2px] pl-[10px]'
-                                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40'
-                            }`}
+                                ? { background: 'var(--nav-active-bg)', color: 'var(--nav-active-fg)', fontWeight: 600 }
+                                : { color: 'var(--muted-foreground)' }
+                            }
                           >
-                            <ItemIcon className="w-3.5 h-3.5 shrink-0" />
+                            <NavIcon name={iconKey(item.to)} fallback={ItemIcon} size={18} />
                             <span className="truncate">{item.label}</span>
                           </NavLink>
                         );
@@ -387,35 +410,44 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
                 onClick={handleNavClick}
                 title={isCollapsed ? link.label : undefined}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  `flex items-center gap-3 rounded-2xl border py-3 text-sm font-medium transition-colors ${
                     isCollapsed ? 'justify-center px-2' : 'px-3'
-                  } ${
-                    isActive
-                      ? 'bg-zinc-800 text-white font-semibold'
-                      : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-                  }`
+                  } ${isActive ? 'font-semibold' : 'border-transparent'}`
+                }
+                style={({ isActive }) =>
+                  isActive
+                    ? {
+                        background: 'var(--nav-active-bg)',
+                        borderColor: 'var(--primary)',
+                        color: 'var(--nav-active-fg)',
+                      }
+                    : { color: 'var(--muted-foreground)' }
                 }
               >
-                <link.icon className="w-4 h-4 shrink-0" />
+                <NavIcon name={iconKey(link.to)} fallback={link.icon} size={22} />
                 {!isCollapsed && <span>{link.label}</span>}
               </NavLink>
             ))
           )}
         </nav>
 
-        {/* User profile & Logout */}
-        <div className={`border-t border-zinc-800 shrink-0 ${isCollapsed ? 'p-2' : 'p-4'}`}>
-          <div className={`flex items-center gap-3 mb-4 ${isCollapsed ? 'justify-center' : 'px-2'}`}>
+        {/* Foydalanuvchi va chiqish */}
+        <div
+          className={`shrink-0 border-t ${isCollapsed ? 'p-2' : 'p-3'}`}
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <div className={`mb-3 flex items-center gap-3 ${isCollapsed ? 'justify-center' : 'px-1'}`}>
             <div
-              className="w-9 h-9 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center font-bold text-sm border border-blue-500/20 shrink-0"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+              style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
               title={isCollapsed ? user?.fullName : undefined}
             >
-              {user?.fullName?.charAt(0) || '?'}
+              {user?.fullName?.charAt(0)?.toUpperCase() || '?'}
             </div>
             {!isCollapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user?.fullName}</p>
-                <p className="text-xs text-zinc-500 capitalize">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{user?.fullName}</p>
+                <p className="truncate text-xs" style={{ color: 'var(--muted-foreground)' }}>
                   {isViewer && user?.role
                     ? VIEWER_ROLE_LABELS[user.role as ViewerRole]
                     : user?.role === 'admin' ? 'Admin'
@@ -425,14 +457,16 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
               </div>
             )}
           </div>
+
           <button
             onClick={handleLogout}
             title={isCollapsed ? 'Tizimdan chiqish' : undefined}
-            className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-medium text-zinc-400 hover:bg-red-500/10 hover:text-red-500 transition-all duration-200 border border-transparent hover:border-red-500/20 ${
+            className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition-opacity hover:opacity-80 ${
               isCollapsed ? 'px-2' : 'px-4'
             }`}
+            style={{ background: 'var(--danger-bg)', color: 'var(--danger-fg)' }}
           >
-            <LogOut className="w-4 h-4 shrink-0" />
+            <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
             {!isCollapsed && 'Tizimdan chiqish'}
           </button>
         </div>
