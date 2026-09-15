@@ -133,3 +133,150 @@ sifatida eksport qilish kerak:
 - Yoki dizaynerdan original SVG faylini so'rang
 
 Hozir vaqtinchalik tipografik lockup turibdi — u yakuniy emas.
+
+---
+
+# 2-to'plam — O'quvchi kabineti (15 ta asset)
+
+Bu qism o'quvchi paneli uchun. Mockupdagi ko'rinishga mos.
+
+## Qayerga qo'yiladi
+
+```
+frontend/public/illustrations/student-hero.webp    (800x600)
+frontend/public/illustrations/coins.webp           (512x512)
+frontend/public/illustrations/badges/<id>.webp     (512x512, 13 ta)
+```
+
+Tekshirish: `/__design` sahifasini oching — "Asset tekshiruvi" bo'limida
+har bir fayl o'z uyasida ko'rinadi. Uzuq-chiziqli kvadrat yoki emoji
+chiqsa, o'sha fayl hali qo'yilmagan.
+
+## Umumiy qism — YUTUQ ikonkalari uchun
+
+Har bir badge promptining oxiriga qo'shing:
+
+```
+3D icon, soft rounded bevels, glossy ceramic-plastic material, bright
+specular highlight, large softbox light from upper left, soft contact
+shadow to the lower right, viewed straight on with a slight tilt from
+about 10 degrees above, palette limited to pure white, vivid red #FF2B00
+and warm gold #FFB800, completely transparent background, single object
+centred in frame, no text, no background, playful and celebratory,
+high detail, 512x512
+```
+
+Istisno: ba'zi yutuqlarda yashil yoki ko'p rangli element bor — ular
+prompt ichida alohida aytilgan, umumiy qoidadan ustun turadi.
+
+## 13 ta yutuq ikonkasi
+
+### `badges/first_green.webp` — Ilk G'alaba
+```
+A single faceted emerald green gemstone, cut like a jewel with visible
+facets, glowing softly from within
+```
+(Yashil bu yerda ataylab — yutuq "yashil natija" haqida.)
+
+### `badges/perfect_10.webp` — A'lochi
+```
+A gold circular medal with a white five-pointed star in the centre,
+hanging from a short red and white striped ribbon
+```
+
+### `badges/century.webp` — Yuzlik
+```
+The numerals 100 in bold rounded red three-dimensional lettering with a
+short double underline beneath, styled like a celebratory score stamp
+```
+
+### `badges/double_century.webp` — 200 lik Klub
+```
+A gold two-handled trophy cup with a white star on its front bowl,
+standing on a short gold base
+```
+
+### `badges/triple_century.webp` — Spartalik
+```
+A gold five-point crown with three red teardrop gemstones set across
+the front band
+```
+
+### `badges/dragon.webp` — Ajdarho
+```
+A small friendly cartoon dragon in green with a pink-red belly and
+crest, curled in a compact S shape, big kind eyes
+```
+(Yashil-pushti — mockupdagi kabi, umumiy palitradan istisno.)
+
+### `badges/multitasker.webp` — Ko'p qirrali
+```
+A black graduation cap with a gold tassel hanging from its right corner,
+resting at a slight angle
+```
+
+### `badges/night_owl.webp` — Tungi boyo'g'li
+```
+A small round owl with white and warm grey feathers, large amber eyes,
+sitting upright, a tiny gold crescent moon beside it
+```
+
+### `badges/rainbow.webp` — Kamalak
+```
+A short arched rainbow with clearly separated glossy bands in red,
+gold, green and blue, a small white cloud at each end
+```
+(Ko'p rangli — bu yutuqning ma'nosi aynan uch xil natija haqida.)
+
+### `badges/sniper.webp` — Snayper
+```
+A red and white concentric target board seen slightly from the side with
+a single dart struck exactly in the gold centre ring
+```
+
+### `badges/comeback.webp` — O'likdan tirilgan
+```
+A white heart with a red pulse line running across it, and a small gold
+upward arrow rising from behind the heart
+```
+
+### `badges/rocket.webp` — Raketa
+```
+A white rocket with a red nose cone and red fins, tilted upward to the
+right, with a short gold flame at its base
+```
+
+### `badges/streak_5.webp` — Olovli
+```
+A stylised flame with a red outer layer and a gold inner core, rounded
+and glossy, leaning slightly to the right
+```
+
+## 2 ta katta asset
+
+### `student-hero.webp` — Profil hero (800x600)
+```
+A composition of two stacked hardcover books, the lower one gold and the
+upper one red with a small white iT monogram embossed on its cover, a
+black graduation cap with a gold tassel resting on top of them, and a
+white ceramic cup holding red and gold pencils standing to the right
+```
+Umumiy qismni qo'shing, lekin `512x512` o'rniga `800x600` yozing va
+`single object centred in frame` o'rniga `objects arranged as a desk
+still life` deb yozing.
+
+### `coins.webp` — Coin balansi (512x512)
+```
+A small pile of gold coins, three or four stacked flat and one large coin
+standing upright in front of them, the upright coin showing the letters
+CO embossed in its centre
+```
+
+## Sifat tekshiruvi
+
+1. `/__design` ni oching — "Asset tekshiruvi" bo'limi
+2. Hamma uyalar to'lganini ko'ring
+3. Yutuq ikonkalari **bir xil masshtabda** bo'lsin — biri katta, biri
+   kichik ko'rinmasin
+4. Yorug'lik yo'nalishi hammasida bir xil (chap yuqoridan)
+5. Light va dark fonda oq halo yo'qligini tekshiring

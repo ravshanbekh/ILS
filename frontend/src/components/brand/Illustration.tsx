@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   GraduationCap, Presentation, Users, Award, Files, ListChecks, Hourglass, BookOpen,
+  Coins, Star, Target,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -19,7 +20,9 @@ import type { LucideIcon } from 'lucide-react';
 
 export type IllustrationKey =
   | 'student' | 'teacher' | 'groups' | 'standards'
-  | 'assignments' | 'checked' | 'pending' | 'hero-education';
+  | 'assignments' | 'checked' | 'pending' | 'hero-education'
+  // O'quvchi kabineti
+  | 'student-hero' | 'coins' | 'my-score' | 'my-done' | 'my-pending';
 
 const FALLBACK_ICON: Record<IllustrationKey, LucideIcon> = {
   student: GraduationCap,
@@ -30,6 +33,11 @@ const FALLBACK_ICON: Record<IllustrationKey, LucideIcon> = {
   checked: ListChecks,
   pending: Hourglass,
   'hero-education': BookOpen,
+  'student-hero': BookOpen,
+  coins: Coins,
+  'my-score': Star,
+  'my-done': Target,
+  'my-pending': Hourglass,
 };
 
 interface IllustrationProps {

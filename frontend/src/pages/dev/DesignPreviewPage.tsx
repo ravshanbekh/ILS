@@ -2,6 +2,7 @@ import PageIntro, { EducationBanner } from '@/components/dashboard/PageIntro';
 import StatCard from '@/components/dashboard/StatCard';
 import BrandLogo from '@/components/brand/BrandLogo';
 import { applyTheme, resolveTheme } from '@/theme/theme';
+import AssetChecklist from './AssetChecklist';
 
 /**
  * DIZAYN QABUL SAHIFASI — faqat dev rejimida (App.tsx da `import.meta.env.DEV`
@@ -90,6 +91,8 @@ export default function DesignPreviewPage() {
             </div>
           ))}
         </div>
+
+        <AssetChecklist />
 
         {/* Holatlar matritsasi — DESIGN-GUIDE 8-bo'lim */}
         <h2 className="mt-8 mb-3 text-xl font-semibold">Karta holatlari</h2>

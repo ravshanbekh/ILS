@@ -5,7 +5,9 @@ import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import { statsApi, feedbackApi, coinsApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
-import { Trophy, Target, Clock, Star, Loader2, TrendingUp, Brain, Sparkles, MessageSquare, Send, CheckCircle2, Zap, Coins, Gift } from 'lucide-react';
+import { Trophy, Target, Clock, Star, Loader2, TrendingUp, Brain, Sparkles, MessageSquare, Send, CheckCircle2, Zap, Gift, ChevronRight } from 'lucide-react';
+import Illustration from '@/components/brand/Illustration';
+import BadgeIcon from '@/components/brand/BadgeIcon';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 export default function StudentDashboard() {
@@ -91,79 +93,175 @@ export default function StudentDashboard() {
 
       <div className="p-8 space-y-8 max-w-7xl mx-auto">
         
-        {/* Header Profile Info (Level & Progress) */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
-          <div className="flex items-center gap-6 z-10">
-            <div className="relative">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center text-3xl sm:text-4xl font-bold text-white border border-white/10 shadow-xl">
-                {user?.fullName?.charAt(0) || '?'}
+        {/* ── Profil hero — mockupdagi kompozitsiya ──────────────────────
+            Chapda avatar + daraja belgisi, o'rtada ism/login/progress,
+            o'ngda 3D illustratsiya. Fon dekori aria-hidden. */}
+        <section
+          className="relative overflow-hidden rounded-[20px] border p-5 sm:p-6"
+          style={{
+            background: 'var(--card-fill)',
+            borderColor: 'var(--border)',
+            boxShadow: 'var(--shadow-card)',
+          }}
+        >
+          {/* Dekorativ naqsh — juda xira, matn ustiga chiqmaydi */}
+          <div
+            className="ils-pattern pointer-events-none absolute inset-y-0 right-0 w-1/2"
+            aria-hidden="true"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle at 70% 30%, var(--brand-coral) 0 3px, transparent 3px)',
+              backgroundSize: '46px 46px',
+            }}
+          />
+
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-center">
+            {/* Avatar + daraja */}
+            <div className="relative shrink-0">
+              <div
+                className="flex h-20 w-20 items-center justify-center rounded-2xl text-4xl font-bold sm:h-24 sm:w-24"
+                style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+              >
+                {user?.fullName?.charAt(0)?.toUpperCase() || '?'}
               </div>
-              <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center border-2 border-zinc-900 shadow-lg transform rotate-12">
-                <span className="text-white font-bold text-sm">{stats?.level || 1}</span>
-              </div>
+              <span
+                className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
+                style={{
+                  background: 'var(--chart-up)',
+                  color: '#3d2a00',
+                  border: '3px solid var(--background)',
+                }}
+                title={`Daraja: ${stats?.level || 1}`}
+              >
+                {stats?.level || 1}
+              </span>
             </div>
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-1">{user?.fullName}</h2>
-              <p className="text-sm text-zinc-400 uppercase tracking-wider font-mono">{user?.login}</p>
-              
-              <div className="mt-4 flex items-center gap-3">
-                <div className="w-32 sm:w-48 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-1000"
-                    style={{ width: `${stats?.progressToNextLevel || 0}%` }}
+
+            {/* Ism, login, progress */}
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-2xl font-bold tracking-[-0.02em] sm:text-3xl">
+                {user?.fullName}
+              </h2>
+              <p
+                className="mt-1 font-mono text-sm uppercase tracking-wider"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                {user?.login}
+              </p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div
+                  className="h-2 w-40 overflow-hidden rounded-full sm:w-64"
+                  role="progressbar"
+                  aria-valuenow={stats?.progressToNextLevel || 0}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Keyingi darajaga qolgan yo'l"
+                  style={{ background: 'var(--surface-muted)' }}
+                >
+                  <div
+                    className="h-full rounded-full transition-[width] duration-700"
+                    style={{
+                      width: `${stats?.progressToNextLevel || 0}%`,
+                      background: 'linear-gradient(90deg, var(--brand-red), var(--brand-gold))',
+                    }}
                   />
                 </div>
-                <span className="text-xs font-bold text-amber-500">{stats?.progressToNextLevel || 0}%</span>
-                <span className="text-xs text-zinc-500 hidden sm:inline">Keyingi darajaga</span>
+                <span className="tabular text-sm font-bold" style={{ color: 'var(--chart-up)' }}>
+                  {stats?.progressToNextLevel || 0}%
+                </span>
+                <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                  Keyingi darajaga
+                </span>
               </div>
             </div>
+
+            <Illustration
+              name="student-hero"
+              size="clamp(120px, 18vw, 220px)"
+              priority
+              className="self-center md:self-auto"
+            />
           </div>
+        </section>
 
-          <div className="absolute right-0 top-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3"></div>
-        </div>
-
-        {/* Coin balansi + Do'kon */}
-        <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* ── Coin balansi + Do'kon ───────────────────────────────── */}
+        <section
+          className="flex flex-col gap-4 rounded-[20px] border p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+          style={{
+            background: 'var(--card-fill)',
+            borderColor: 'var(--border)',
+            boxShadow: 'var(--shadow-card)',
+          }}
+        >
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
-              <Coins className="w-7 h-7 text-amber-400" />
-            </div>
+            <Illustration name="coins" size={88} priority />
             <div>
-              <p className="text-sm text-zinc-400 font-medium mb-1">Mening coinlarim</p>
-              <p className="text-3xl font-bold text-amber-400 tracking-tight">
-                {coinBalance === null ? <Loader2 className="w-6 h-6 animate-spin" /> : coinBalance}
+              <p className="text-base font-medium" style={{ color: 'var(--muted-foreground)' }}>
+                Mening coinlarim
+              </p>
+              <p className="tabular mt-1 text-3xl font-bold tracking-[-0.02em]">
+                {coinBalance === null ? (
+                  <Loader2 className="h-6 w-6 animate-spin" aria-label="Yuklanmoqda" />
+                ) : (
+                  coinBalance
+                )}
               </p>
             </div>
           </div>
+
           <Link
             to="/student/shop"
-            className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-black px-5 py-3 rounded-xl font-semibold text-sm transition-colors"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 font-semibold transition-opacity hover:opacity-90"
+            style={{ background: 'var(--chart-up)', color: '#3d2a00' }}
           >
-            <Gift className="w-4 h-4" />
+            <Gift className="h-5 w-5" aria-hidden="true" />
             Do'konga o'tish
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </Link>
-        </div>
+        </section>
 
-        {/* Badges Section */}
+        {/* ── Mening yutuqlarim ──────────────────────────────────────
+            Kartochka markazlashgan: yuqorida 3D ikonka, ostida nom va izoh.
+            Backend nomni emoji bilan boshlaydi ("Ajdarho" oldida emoji) —
+            emoji ajratib olinadi va asset topilmasa fallback bo'ladi. */}
         {stats?.badges && stats.badges.length > 0 && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 relative overflow-hidden">
-            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2 relative z-10">
-              <Star className="w-5 h-5 text-amber-500 fill-amber-500/20" />
+          <section>
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-bold">
+              <Star className="h-5 w-5" style={{ color: 'var(--chart-up)' }} aria-hidden="true" />
               Mening yutuqlarim
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 relative z-10">
-              {stats.badges.map((badge: any) => (
-                <div key={badge.id} className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 flex items-start gap-3">
-                  <div className="text-3xl mt-0.5">{badge.name.split(' ')[0]}</div>
-                  <div>
-                    <p className="text-sm font-bold text-amber-500">{badge.name.split(' ').slice(1).join(' ')}</p>
-                    <p className="text-xs text-amber-500/70 mt-1 leading-snug">{badge.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
-          </div>
+
+            <ul className="grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {stats.badges.map((badge: any) => {
+                const parts = String(badge.name || '').split(' ');
+                const emoji = parts[0];
+                const label = parts.slice(1).join(' ');
+                return (
+                  <li
+                    key={badge.id}
+                    className="flex flex-col items-center rounded-[20px] border px-4 py-5 text-center"
+                    style={{
+                      background: 'var(--card-fill)',
+                      borderColor: 'var(--border)',
+                      boxShadow: 'var(--shadow-card)',
+                    }}
+                  >
+                    <BadgeIcon badgeId={badge.id} emoji={emoji} size={84} />
+                    <p className="mt-3 font-bold leading-tight">{label}</p>
+                    {badge.desc && (
+                      <p
+                        className="mt-1 text-sm leading-snug"
+                        style={{ color: 'var(--muted-foreground)' }}
+                      >
+                        {badge.desc}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

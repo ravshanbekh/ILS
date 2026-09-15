@@ -748,7 +748,7 @@ class StatisticsService {
 
     // Snayper (10 ta yashil va umuman qizil/ko'k yo'q - faqat a'lochi)
     if (greens.length >= 10 && blues.length === 0 && reds.length === 0) {
-      badges.push({ id: 'sniper', name: "🎯 Snayper", doc: "Faqat nishonga! Xatosiz ishlaydi" });
+      badges.push({ id: 'sniper', name: "🎯 Snayper", desc: "Faqat nishonga! Xatosiz ishlaydi" });
     }
 
     // Jonlantirish (So'nggi 3 ta Qizildan keyin Yashil olsa)
