@@ -4,6 +4,7 @@ import {
   Coins, Star, Target,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { versioned } from './assetVersion';
 
 /**
  * 3D illustratsiya uyasi — DESIGN-GUIDE 10-bo'lim.
@@ -91,7 +92,7 @@ export default function Illustration({ name, size = 140, priority = false, class
 
   return (
     <img
-      src={`/illustrations/${name}.webp`}
+      src={versioned(`/illustrations/${name}.webp`)}
       width={isNumeric ? (size as number) : undefined}
       height={isNumeric ? (size as number) : undefined}
       style={box}

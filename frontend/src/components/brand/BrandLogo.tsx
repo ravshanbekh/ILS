@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { versioned } from './assetVersion';
 
 /**
  * iTLive Score logotipi — DESIGN-GUIDE 3-bo'lim ("Logo shartnomasi").
@@ -48,7 +49,7 @@ export default function BrandLogo({ width = 128, showScore = true, className = '
         </span>
       ) : (
         <img
-          src="/brand/itlive-logo.svg"
+          src={versioned("/brand/itlive-logo.svg")}
           width={width}
           style={{ width }}
           className="block h-auto"

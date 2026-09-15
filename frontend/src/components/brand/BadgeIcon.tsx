@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { versioned } from './assetVersion';
 
 /**
  * Yutuq (badge) 3D ikonkasi.
@@ -37,7 +38,7 @@ export default function BadgeIcon({ badgeId, emoji, size = 72, className = '' }:
 
   return (
     <img
-      src={`/illustrations/badges/${badgeId}.webp`}
+      src={versioned(`/illustrations/badges/${badgeId}.webp`)}
       width={size}
       height={size}
       style={{ width: size, height: size }}

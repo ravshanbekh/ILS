@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { versioned } from './assetVersion';
 
 /**
  * Navigatsiya ikonkasi — 3D asset, topilmasa outline ikonka.
@@ -43,7 +44,7 @@ export default function NavIcon({ name, fallback: Fallback, size = 20, className
 
   return (
     <img
-      src={`/illustrations/nav/${name}.webp`}
+      src={versioned(`/illustrations/nav/${name}.webp`)}
       width={size}
       height={size}
       style={{ width: size, height: size }}
