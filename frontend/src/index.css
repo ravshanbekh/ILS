@@ -474,6 +474,17 @@
     color: var(--ink);
   }
 
+  /* Hover variantlari ham teskarilanishi SHART.
+     Loyihada 134 ta `hover:text-white` va 3 ta `group-hover:text-white` bor.
+     Ular qoldirib ketilganda light rejimda tugma ustiga sichqoncha
+     olib borilganda yozuv oq fonda oq bo'lib yo'qolib qolardi. */
+  .hover\:text-white:hover {
+    color: var(--ink);
+  }
+  .group:hover .group-hover\:text-white {
+    color: var(--ink);
+  }
+
   /* Forma chegarasi — DESIGN-GUIDE 12-bo'lim: inputning tanib olinishi
      chegaraga bog'liq, shuning uchun dekorativ `--border` (#F0E7E2) emas,
      `--control-border` kerak. Komponentlardagi `border-zinc-800` utilitasi
@@ -512,7 +523,10 @@
     [class~="bg-orange-500"], [class~="bg-orange-600"],
     [class~="bg-teal-500"], [class~="bg-teal-600"],
     [class*="bg-gradient-to-"]
-  ) :where(.text-white, .text-zinc-50, .text-zinc-100) {
+  ) :where(
+    .text-white, .text-zinc-50, .text-zinc-100,
+    .hover\:text-white, .group-hover\:text-white
+  ) {
   color: #ffffff;
 }
 

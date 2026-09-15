@@ -402,3 +402,15 @@ ichida turadi va kichikroq bo'ladi — ikkalasi to'qnashmaydi.
 
 `/__design` sahifasini oching yoki shunchaki menyuga qarang: ikonka 3D
 chiqsa tayyor, outline qolsa hali qo'yilmagan. Yarim holat normal.
+
+---
+
+> ## ⛔ 3-to'plam BEKOR QILINDI (2026-09-15)
+>
+> Ravshan: *"navbarga 3d ionlar kk emas"*. Menyu outline ikonkalarda
+> qoladi — bu `DESIGN-GUIDE.md` 2-bo'limiga ham mos (u dastlab ham
+> shuni aytgan edi).
+>
+> `NavIcon` komponenti va `public/illustrations/nav/` papkasi olib
+> tashlandi. Yuqoridagi 3-to'plam jadvali faqat qaror tarixi sifatida
+> saqlanmoqda — **bu fayllarni yaratish shart emas**.

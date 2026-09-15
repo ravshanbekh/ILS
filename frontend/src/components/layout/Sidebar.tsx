@@ -9,7 +9,6 @@ import {
   Gift, Package, Coins
 , CalendarClock, UserCircle} from 'lucide-react';
 import BrandLogo from '@/components/brand/BrandLogo';
-import NavIcon from '@/components/brand/NavIcon';
 import { ADMIN_GROUPS, TEACHER_GROUPS, STUDENT_GROUPS } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
 
@@ -52,17 +51,6 @@ interface SidebarProps {
   /** Desktopda yig'ilgan (faqat ikonkalar) holat */
   collapsed?: boolean;
   onToggleCollapse?: () => void;
-}
-
-/**
- * Route'dan ikonka kalitini oladi: oxirgi bo'lak.
- *   /admin/users            -> users
- *   /viewer/kassir/users    -> users
- * Bitta sahifa rolga qarab turli yo'lda bo'ladi, ikonka esa bitta.
- */
-function iconKey(to: string): string {
-  const parts = to.split('?')[0].split('/').filter(Boolean);
-  return parts[parts.length - 1] || 'dashboard';
 }
 
 export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCollapse }: SidebarProps) {
@@ -277,10 +265,10 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
                     borderColor: 'var(--primary)',
                     color: 'var(--nav-active-fg)',
                   }
-                : { color: 'var(--muted-foreground)' }
+                : { color: 'var(--foreground)' }
             }
           >
-            <NavIcon name="dashboard" fallback={LayoutDashboard} size={22} />
+            <LayoutDashboard className="h-[22px] w-[22px] shrink-0" strokeWidth={2.2} aria-hidden="true" />
             {!isCollapsed && <span>Dashboard</span>}
           </NavLink>
 
@@ -323,13 +311,13 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
                               key={item.to}
                               to={item.to}
                               onClick={handleNavClick}
-                              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-colors ${
                                 isSubActive
-                                  ? 'bg-zinc-800 text-white font-semibold'
-                                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+                                  ? 'bg-zinc-800 text-white'
+                                  : 'text-zinc-100 hover:bg-zinc-800/60'
                               }`}
                             >
-                              <NavIcon name={iconKey(item.to)} fallback={ItemIcon} size={18} />
+                              <ItemIcon className="h-[18px] w-[18px] shrink-0" strokeWidth={2.2} aria-hidden="true" />
                               <span className="truncate">{item.label}</span>
                             </NavLink>
                           );
@@ -351,11 +339,11 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
                     type="button"
                     onClick={() => toggleGroup(group.id)}
                     aria-expanded={isExpanded}
-                    className="flex w-full select-none items-center justify-between gap-2 px-3 py-3 text-left text-sm font-semibold transition-colors"
+                    className="flex w-full select-none items-center justify-between gap-2 px-3 py-3 text-left text-[15px] font-bold transition-colors"
                     style={{ color: isGroupActive ? 'var(--nav-active-fg)' : 'var(--foreground)' }}
                   >
                     <span className="flex min-w-0 items-center gap-3">
-                      <NavIcon name={`group-${group.id}`} fallback={GroupIcon} size={22} />
+                      <GroupIcon className="h-[22px] w-[22px] shrink-0" strokeWidth={2.2} aria-hidden="true" />
                       <span className="truncate">{group.label}</span>
                     </span>
                     <span className="flex shrink-0 items-center gap-1.5">
@@ -384,14 +372,14 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
                             to={item.to}
                             onClick={handleNavClick}
                             aria-current={isSubActive ? 'page' : undefined}
-                            className="flex items-center gap-3 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors"
+                            className="flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-sm font-semibold transition-colors"
                             style={
                               isSubActive
-                                ? { background: 'var(--nav-active-bg)', color: 'var(--nav-active-fg)', fontWeight: 600 }
-                                : { color: 'var(--muted-foreground)' }
+                                ? { background: 'var(--nav-active-bg)', color: 'var(--nav-active-fg)', fontWeight: 700 }
+                                : { color: 'var(--foreground)' }
                             }
                           >
-                            <NavIcon name={iconKey(item.to)} fallback={ItemIcon} size={18} />
+                            <ItemIcon className="h-[18px] w-[18px] shrink-0" strokeWidth={2.2} aria-hidden="true" />
                             <span className="truncate">{item.label}</span>
                           </NavLink>
                         );
@@ -421,10 +409,10 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
                         borderColor: 'var(--primary)',
                         color: 'var(--nav-active-fg)',
                       }
-                    : { color: 'var(--muted-foreground)' }
+                    : { color: 'var(--foreground)' }
                 }
               >
-                <NavIcon name={iconKey(link.to)} fallback={link.icon} size={22} />
+                <link.icon className="h-[22px] w-[22px] shrink-0" strokeWidth={2.2} aria-hidden="true" />
                 {!isCollapsed && <span>{link.label}</span>}
               </NavLink>
             ))
