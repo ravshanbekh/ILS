@@ -98,6 +98,7 @@ model User {
   // Demo Day va Murojaatlar
   createdGroupEvents        GroupEvent[]          @relation("GroupEventCreator")
   heldMilestones            GroupMilestone[]      @relation("MilestoneHeldBy")
+  graduatedGroups           Group[]               @relation("GroupGraduatedBy")
   appealsAsStudent          ParentAppeal[]        @relation("AppealStudent")
   appealsAsTeacher          ParentAppeal[]        @relation("AppealTeacher")
   appealsReplied            ParentAppeal[]        @relation("AppealRepliedBy")
@@ -129,6 +130,19 @@ model Group {
 
   // Dars kuni (jadval o'rniga — soatsiz, faqat juft/toq/har kuni)
   lessonDayType LessonDayType? @map("lesson_day_type")
+
+  // Guruh TAMOMLAGAN sana. null — hali o'qiyapti.
+  //
+  // Tamomlaganda isActive ham false ga o'tadi — shunda barcha mavjud
+  // so'rovlar (statistika, reyting, mentor ro'yxati, bosqichlar) uni
+  // avtomatik chetlab o'tadi va 23 ta joyni qo'lda tuzatish shart emas.
+  //
+  // MUHIM: shu sababli savat (trash) so'rovlari graduatedAt != null
+  // guruhlarni CHIQARIB TASHLASHI shart. Aks holda "Savatni bo'shatish"
+  // tamomlagan guruhlarni butun tarixi bilan o'chirib yuborardi
+  // (trash.service emptyTrash -> deleteMany, hard delete).
+  graduatedAt   DateTime? @map("graduated_at")
+  graduatedById String?   @map("graduated_by_id") @db.Uuid
 
   // Guruh QACHON boshlangani — qo'lda belgilanadi.
   // createdAt EMAS: guruh tizimga kech kiritilishi yoki oldindan ochib
@@ -163,6 +177,7 @@ model Group {
   homeworkAssignments HomeworkAssignment[]
   examGroups          ExamGroup[]
   milestones          GroupMilestone[]
+  graduatedBy         User?                @relation("GroupGraduatedBy", fields: [graduatedById], references: [id])
 
   @@map("groups")
 }

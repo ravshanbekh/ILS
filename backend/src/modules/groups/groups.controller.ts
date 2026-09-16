@@ -180,6 +180,42 @@ class GroupsController {
   }
 
   /**
+   * POST /api/groups/:id/graduate — guruhni tamomlangan deb belgilash
+   */
+  async graduate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const group = await groupsService.graduate(req.params.id, req.user?.userId);
+      res.json({ success: true, data: group });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/groups/:id/ungraduate — arxivdan qaytarish
+   */
+  async ungraduate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const group = await groupsService.ungraduate(req.params.id, req.user?.userId);
+      res.json({ success: true, data: group });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/groups/archived — tamomlagan guruhlar
+   */
+  async getArchived(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await groupsService.getArchived(req.query.search as string | undefined);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * POST /api/groups/:id/chat-code — Telegram guruh chatini ulash uchun kod
    */
   async generateChatCode(req: Request, res: Response, next: NextFunction) {

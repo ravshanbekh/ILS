@@ -197,10 +197,12 @@ export async function getOverview(filters: {
   status?: string;
   teacherId?: string;
 }) {
-  const where: any = {};
+  // isActive: true — tamomlagan va o'chirilgan guruhlar nazoratda
+  // ko'rinmasligi kerak, aks holda ular abadiy "kechikdi" bo'lib turardi.
+  const where: any = { group: { isActive: true } };
   if (filters.type) where.type = filters.type;
   if (filters.status) where.status = filters.status;
-  if (filters.teacherId) where.group = { teacherId: filters.teacherId };
+  if (filters.teacherId) where.group.teacherId = filters.teacherId;
 
   const rows = await prisma.groupMilestone.findMany({
     where,
@@ -221,8 +223,8 @@ export async function getOverview(filters: {
  * Admin — hammasi, o'qituvchi — faqat o'z guruhlari.
  */
 export async function getWarnings(opts: { teacherId?: string }) {
-  const where: any = { status: 'kechikdi' };
-  if (opts.teacherId) where.group = { teacherId: opts.teacherId };
+  const where: any = { status: 'kechikdi', group: { isActive: true } };
+  if (opts.teacherId) where.group.teacherId = opts.teacherId;
 
   const rows = await prisma.groupMilestone.findMany({
     where,
@@ -259,7 +261,7 @@ export async function getMonthlySummary(month: string) {
   const to = new Date(Date.UTC(y, m, 1));
 
   const rows = await prisma.groupMilestone.findMany({
-    where: { dueDate: { gte: from, lt: to } },
+    where: { dueDate: { gte: from, lt: to }, group: { isActive: true } },
     include: { group: { select: GROUP_SELECT } },
   });
 

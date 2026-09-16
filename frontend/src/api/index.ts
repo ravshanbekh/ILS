@@ -105,6 +105,15 @@ export const groupsApi = {
 
   delete: (id: string) => api.delete(`/groups/${id}`),
 
+  /** Bitiruv — o'chirish emas: guruh arxivga tushadi, tarixi saqlanadi */
+  graduate: (id: string) => api.post(`/groups/${id}/graduate`),
+
+  /** Arxivdan qaytarish */
+  ungraduate: (id: string) => api.post(`/groups/${id}/ungraduate`),
+
+  /** Tamomlagan guruhlar */
+  getArchived: (search?: string) => api.get('/groups/archived', { params: { search } }),
+
   addStudent: (groupId: string, studentId: string) =>
     api.post(`/groups/${groupId}/students`, { studentId }),
 

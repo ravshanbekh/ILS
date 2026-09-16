@@ -8,7 +8,10 @@ class TrashService {
    * O'chirilgan (soft-deleted) guruhlarni olish
    */
   async getTrashGroups(params: PaginationParams, search?: string) {
-    const where: any = { isActive: false };
+    // graduatedAt: null — TAMOMLAGAN guruhlar savatga TUSHMASLIGI kerak.
+    // Ular ham isActive:false bo'ladi (barcha ro'yxatlardan chiqishi uchun),
+    // lekin o'chirilgan emas — arxivda turadi.
+    const where: any = { isActive: false, graduatedAt: null };
     if (search) {
       where.name = { contains: search, mode: 'insensitive' };
     }
@@ -194,7 +197,10 @@ class TrashService {
    */
   async emptyTrash(deletedByUserId?: string) {
     const [deletedGroups, deletedUsers] = await Promise.all([
-      prisma.group.deleteMany({ where: { isActive: false } }),
+      // graduatedAt: null SHART — busiz "Savatni bo'shatish" tamomlagan
+      // guruhlarni butun tarixi (baholar, topshiriqlar, bosqichlar) bilan
+      // birga butunlay o'chirib yuborardi. Bu qaytarib bo'lmaydigan amal.
+      prisma.group.deleteMany({ where: { isActive: false, graduatedAt: null } }),
       prisma.user.deleteMany({ where: { isActive: false } }),
     ]);
 

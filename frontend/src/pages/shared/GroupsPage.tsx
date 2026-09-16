@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { groupsApi, usersApi } from '@/api';
 import Header from '@/components/layout/Header';
 import { Link, useNavigate } from 'react-router-dom';
-import { FolderPlus, Pencil, Trash2, Users, Search, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react';
+import { FolderPlus, Pencil, Trash2, Users, Search, ChevronLeft, ChevronRight, GraduationCap, Archive, RotateCcw } from 'lucide-react';
 
 export default function GroupsPage() {
   const { user } = useAuthStore();
@@ -24,6 +24,9 @@ export default function GroupsPage() {
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState<any>(null);
+  // Arxiv ko'rinishi — tamomlagan guruhlar alohida ro'yxatda
+  const [showArchive, setShowArchive] = useState(false);
+  const [archived, setArchived] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     teacherId: '',
@@ -141,6 +144,46 @@ export default function GroupsPage() {
     }
   };
 
+  const loadArchive = async () => {
+    try {
+      const res = await groupsApi.getArchived();
+      setArchived(res.data?.data ?? []);
+    } catch {
+      setArchived([]);
+    }
+  };
+
+  const handleGraduate = async (g: any) => {
+    if (
+      !confirm(
+        `"${g.name}" guruhi tamomlangan deb belgilansinmi?
+
+` +
+          `Guruh arxivga tushadi: statistikada, reytingda va o'qituvchi panelida ` +
+          `ko'rinmaydi. Tarixi saqlanadi va keyin qaytarish mumkin.`
+      )
+    )
+      return;
+    try {
+      await groupsApi.graduate(g.id);
+      fetchGroups();
+      if (showArchive) loadArchive();
+    } catch (e: any) {
+      alert(e?.response?.data?.error?.message || 'Xatolik yuz berdi');
+    }
+  };
+
+  const handleUngraduate = async (g: any) => {
+    if (!confirm(`"${g.name}" guruhi arxivdan qaytarilsinmi?`)) return;
+    try {
+      await groupsApi.ungraduate(g.id);
+      loadArchive();
+      fetchGroups();
+    } catch (e: any) {
+      alert(e?.response?.data?.error?.message || 'Xatolik yuz berdi');
+    }
+  };
+
   return (
     <div>
       <Header title="Guruhlar" subtitle="Guruhlarni boshqarish" />
@@ -194,6 +237,24 @@ export default function GroupsPage() {
               <FolderPlus className="w-4 h-4" />
               Yangi guruh
             </button>
+
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => {
+                  const next = !showArchive;
+                  setShowArchive(next);
+                  if (next) loadArchive();
+                }}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors border ${
+                  showArchive
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                    : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                }`}
+              >
+                <Archive className="w-4 h-4" />
+                {showArchive ? 'Faol guruhlar' : 'Arxiv'}
+              </button>
+            )}
           </div>
 
           {/* Active teacher filter badge */}
@@ -209,6 +270,52 @@ export default function GroupsPage() {
           )}
         </div>
 
+        {showArchive ? (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+            <div className="p-5 border-b border-zinc-800">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Archive className="w-4 h-4 text-emerald-500" />
+                Tamomlagan guruhlar ({archived.length})
+              </h3>
+              <p className="text-xs text-zinc-500 mt-1">
+                Bu guruhlar statistikada, reytingda va o'qituvchi panelida ko'rinmaydi.
+                Tarixi to'liq saqlanadi.
+              </p>
+            </div>
+
+            {archived.length === 0 ? (
+              <p className="p-8 text-center text-zinc-500 text-sm">Arxiv bo'sh</p>
+            ) : (
+              <ul className="divide-y divide-zinc-800">
+                {archived.map((g) => (
+                  <li key={g.id} className="px-5 py-3 flex items-center gap-3 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-white text-sm">{g.name}</p>
+                      <p className="text-xs text-zinc-500">
+                        {g.teacher?.fullName ?? 'biriktirilmagan'}
+                        {' · '}
+                        {g.studentsCount} o'quvchi
+                        {g.graduatedAt && (
+                          <>
+                            {' · tamomlagan: '}
+                            {new Date(g.graduatedAt).toLocaleDateString('uz-UZ')}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleUngraduate(g)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 hover:border-zinc-600 text-xs font-medium"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Qaytarish
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {loading ? (
             <div className="col-span-full text-center py-8 text-zinc-500">Yuklanmoqda...</div>
@@ -228,6 +335,15 @@ export default function GroupsPage() {
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
+                    {user?.role === 'admin' && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleGraduate(g); }}
+                        title="Tamomlandi — arxivga"
+                        className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 transition-colors z-10"
+                      >
+                        <Archive className="w-4 h-4" />
+                      </button>
+                    )}
                     {user?.role === 'admin' && (
                       <button 
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(g.id); }}
@@ -249,9 +365,10 @@ export default function GroupsPage() {
             ))
           )}
         </div>
+        )}
 
         {/* Pagination */}
-        {!loading && totalPages > 1 && (
+        {!showArchive && !loading && totalPages > 1 && (
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-zinc-800/50">
             <div className="text-sm text-zinc-400">
               Jami: <span className="text-white font-medium">{totalItems}</span> ta guruh

@@ -433,6 +433,104 @@ class GroupsService {
   }
 
   /**
+   * Guruhni TAMOMLANGAN deb belgilash (bitiruv).
+   *
+   * isActive ham false ga o'tadi — shunda barcha mavjud so'rovlar
+   * (statistika, reyting, mentor ro'yxati, demo day/imtihon nazorati) uni
+   * avtomatik chetlab o'tadi. Aks holda 23 ta so'rov joyini qo'lda
+   * tuzatish va bittasini unutib qo'yish xavfi bor edi.
+   *
+   * O'chirishdan FARQI: graduatedAt to'ldiriladi. Savat so'rovlari
+   * graduatedAt != null guruhlarni chiqarib tashlaydi, ya'ni tamomlagan
+   * guruh "Savatni bo'shatish" bilan o'chib ketmaydi.
+   */
+  async graduate(id: string, byUserId?: string) {
+    const existing = await prisma.group.findUnique({ where: { id } });
+    if (!existing) throw ApiError.notFound('Guruh topilmadi');
+    if (existing.graduatedAt) throw ApiError.badRequest('Guruh allaqachon tamomlangan');
+    if (!existing.isActive) {
+      throw ApiError.badRequest("O'chirilgan guruhni tamomlangan deb belgilab bo'lmaydi — avval savatdan tiklang");
+    }
+
+    const group = await prisma.group.update({
+      where: { id },
+      data: { graduatedAt: new Date(), graduatedById: byUserId ?? null, isActive: false },
+      include: { teacher: { select: { id: true, fullName: true } } },
+    });
+
+    if (byUserId) {
+      await prisma.auditLog.create({
+        data: {
+          userId: byUserId,
+          action: 'GRADUATE_GROUP',
+          targetType: 'group',
+          targetId: id,
+          details: { name: existing.name },
+        },
+      });
+    }
+
+    logger.info(`Group ${id} (${existing.name}) marked as graduated`);
+    return group;
+  }
+
+  /** Arxivdan qaytarish — guruh yana faol bo'ladi */
+  async ungraduate(id: string, byUserId?: string) {
+    const existing = await prisma.group.findUnique({ where: { id } });
+    if (!existing) throw ApiError.notFound('Guruh topilmadi');
+    if (!existing.graduatedAt) throw ApiError.badRequest('Guruh tamomlangan emas');
+
+    const group = await prisma.group.update({
+      where: { id },
+      data: { graduatedAt: null, graduatedById: null, isActive: true },
+      include: { teacher: { select: { id: true, fullName: true } } },
+    });
+
+    if (byUserId) {
+      await prisma.auditLog.create({
+        data: {
+          userId: byUserId,
+          action: 'UNGRADUATE_GROUP',
+          targetType: 'group',
+          targetId: id,
+          details: { name: existing.name },
+        },
+      });
+    }
+
+    logger.info(`Group ${id} (${existing.name}) restored from archive`);
+    return group;
+  }
+
+  /** Arxiv — tamomlagan guruhlar ro'yxati */
+  async getArchived(search?: string) {
+    const where: any = { graduatedAt: { not: null } };
+    if (search) where.name = { contains: search, mode: 'insensitive' };
+
+    const groups = await prisma.group.findMany({
+      where,
+      include: {
+        teacher: { select: { id: true, fullName: true } },
+        graduatedBy: { select: { id: true, fullName: true } },
+        _count: { select: { groupStudents: true } },
+      },
+      orderBy: { graduatedAt: 'desc' },
+      take: 500,
+    });
+
+    return groups.map((g: any) => ({
+      id: g.id,
+      name: g.name,
+      teacher: g.teacher,
+      graduatedAt: g.graduatedAt,
+      graduatedBy: g.graduatedBy,
+      startDate: g.startDate,
+      durationMonths: g.durationMonths,
+      studentsCount: g._count?.groupStudents || 0,
+    }));
+  }
+
+  /**
    * Guruhni o'chirish (soft delete)
    */
   async delete(id: string, deletedByUserId?: string) {

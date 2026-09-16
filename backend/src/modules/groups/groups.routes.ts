@@ -15,6 +15,10 @@ const VIEWER_ROLES = ['admin', 'teacher', 'student', 'kassir', 'administrator', 
 router.get('/', roleGuard('admin', 'teacher', 'kassir', 'administrator', 'sotuv_operatori', 'filial_rahbari', 'moliya_rahbari', 'assistant', 'nazoratchi', 'hr_rahbari', 'call_operatori'), groupsController.getAll);
 
 // GET /api/groups/:id — Bitta guruh
+// DIQQAT: '/:id' dan OLDIN turishi shart — aks holda Express "archived"
+// so'zini guruh id si deb qabul qiladi va 400/404 qaytaradi.
+router.get('/archived', roleGuard('admin', 'administrator', 'filial_rahbari', 'nazoratchi'), groupsController.getArchived);
+
 router.get('/:id', roleGuard('admin', 'teacher', 'student', 'kassir', 'administrator', 'sotuv_operatori', 'filial_rahbari', 'moliya_rahbari', 'assistant', 'nazoratchi', 'hr_rahbari', 'call_operatori'), groupsController.getById);
 
 // POST /api/groups — Guruh yaratish
@@ -25,6 +29,10 @@ router.put('/:id', roleGuard('admin', 'teacher'), permissionGuard('edit_group'),
 
 // DELETE /api/groups/:id — Guruhni o'chirish
 router.delete('/:id', roleGuard('admin'), groupsController.delete);
+
+// Bitiruv — o'chirish EMAS. Guruh arxivga tushadi, tarixi saqlanadi.
+router.post('/:id/graduate', roleGuard('admin'), groupsController.graduate);
+router.post('/:id/ungraduate', roleGuard('admin'), groupsController.ungraduate);
 
 // POST /api/groups/:id/students — O'quvchi qo'shish
 router.post('/:id/students', roleGuard('admin', 'teacher'), groupsController.addStudent);
