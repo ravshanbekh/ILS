@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { uzDayMonth } from '@/utils/uzDate';
 import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
@@ -120,7 +121,7 @@ export default function StudentProfilePage() {
     .reduce((acc: any[], s: any) => {
       const prevTotal = acc.length > 0 ? acc[acc.length - 1].total : 0;
       acc.push({
-        date: new Date(s.submittedAt).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' }),
+        date: uzDayMonth(s.submittedAt),
         ball: s.score,
         total: prevTotal + s.score,
         task: `#${s.normative?.taskNumber || ''}`

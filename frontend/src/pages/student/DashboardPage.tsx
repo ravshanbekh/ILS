@@ -1,14 +1,15 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import { statsApi, feedbackApi, coinsApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
-import { Trophy, Target, Clock, Star, Loader2, TrendingUp, Brain, Sparkles, MessageSquare, Send, CheckCircle2, Zap, Gift, ChevronRight } from 'lucide-react';
+import { uzDayMonth } from '@/utils/uzDate';
+import { Trophy, Target, Clock, Star, Loader2, TrendingUp, Brain, Sparkles, MessageSquare, Send, CheckCircle2, Gift, ChevronRight } from 'lucide-react';
 import Illustration from '@/components/brand/Illustration';
 import BadgeIcon from '@/components/brand/BadgeIcon';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
@@ -71,7 +72,7 @@ export default function StudentDashboard() {
     .reduce((acc: any[], s: any) => {
       const prevTotal = acc.length > 0 ? acc[acc.length - 1].total : 0;
       acc.push({
-        date: new Date(s.submittedAt).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' }),
+        date: uzDayMonth(s.submittedAt),
         ball: s.score,
         total: prevTotal + s.score,
         task: `#${s.normative?.taskNumber || ''}`
@@ -285,35 +286,80 @@ export default function StudentDashboard() {
           />
         </div>
 
-        {/* O'sish dinamikasi (Line Chart) */}
+        {/* ── O'sish dinamikasi ────────────────────────────────────────
+            `type="natural"` — `monotone` dan yumshoqroq egri chiziq beradi.
+            Ball kumulyativ o'sgani uchun chiziq deyarli tekis chiqardi.
+
+            X o'qi: sana takrorlanadigan yozuvlarni ko'rsatmaydi. Bir kunda
+            bir necha topshiriq bo'lsa, ilgari "15-may" o'n marta yozilardi. */}
         {chartData.length > 0 && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-500" />
+          <section
+            className="rounded-[20px] border p-5 sm:p-6"
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+              boxShadow: 'var(--shadow-card)',
+            }}
+          >
+            <h3 className="mb-5 flex items-center gap-2 text-lg font-bold">
+              <TrendingUp className="h-5 w-5" style={{ color: 'var(--primary)' }} aria-hidden="true" />
               O'sish dinamikasi
             </h3>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 12, left: -18, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor='var(--primary)' stopOpacity={0.3} />
-                      <stop offset="95%" stopColor='var(--primary)' stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke='var(--border)' vertical={false} />
-                  <XAxis dataKey="date" stroke='var(--muted-foreground)' fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke='var(--muted-foreground)' fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '0.5rem', color: '#fff' }}
-                    itemStyle={{ color: '#3b82f6', fontWeight: 'bold' }}
-                    labelStyle={{ color: '#a1a1aa', marginBottom: '0.25rem' }}
+                  <CartesianGrid strokeDasharray="4 6" stroke="var(--border)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="var(--muted-foreground)"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={28}
+                    tickFormatter={(value, index) =>
+                      index > 0 && chartData[index - 1]?.date === value ? '' : value
+                    }
                   />
-                  <Area type="monotone" dataKey="total" name="Umumiy ball" stroke='var(--primary)' strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+                  <YAxis
+                    stroke="var(--muted-foreground)"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    width={48}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: 'var(--primary)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                    contentStyle={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 12,
+                      boxShadow: 'var(--shadow-popover)',
+                      color: 'var(--foreground)',
+                    }}
+                    itemStyle={{ color: 'var(--primary)', fontWeight: 700 }}
+                    labelStyle={{ color: 'var(--muted-foreground)', marginBottom: 4 }}
+                  />
+                  <Area
+                    type="natural"
+                    dataKey="total"
+                    name="Umumiy ball"
+                    stroke="var(--primary)"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorTotal)"
+                    dot={false}
+                    activeDot={{ r: 5, strokeWidth: 2, stroke: 'var(--surface)' }}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </section>
         )}
 
         {/* Guruh reytinglari */}

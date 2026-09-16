@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { usePermissionStore } from '@/stores/permissionStore';
 import {
-  LayoutDashboard, GraduationCap, LogOut, X, ChevronDown, ChevronRight,
+  LayoutDashboard, GraduationCap, X, ChevronDown, ChevronRight,
   PanelLeftClose, PanelLeftOpen,
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
   Gift, Package, Coins
@@ -31,19 +31,6 @@ const VIEWER_ROLES = [
 
 type ViewerRole = typeof VIEWER_ROLES[number];
 
-const VIEWER_ROLE_LABELS: Record<ViewerRole, string> = {
-  filial_rahbari: 'Filial Rahbari',
-  assistant: 'Assistant',
-  moliya_rahbari: 'Moliya Rahbari',
-  kassir: 'Kassir',
-  administrator: 'Administrator',
-  nazoratchi: 'Nazoratchi (Inspektor)',
-  hr_rahbari: 'HR Menejeri',
-  sotuv_operatori: 'Sotuv Menejeri',
-  farrosh: 'Farrosh',
-  robototexnika_ustoz: 'Robototexnika Ustoz',
-  call_operatori: 'Call Operatori',
-};
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -54,7 +41,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCollapse }: SidebarProps) {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -174,11 +161,6 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
 
   const toggleGroup = (groupId: string) => {
     setOpenGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
   };
 
   const handleNavClick = () => {
@@ -419,45 +401,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
           )}
         </nav>
 
-        {/* Foydalanuvchi va chiqish */}
-        <div
-          className={`shrink-0 border-t ${isCollapsed ? 'p-2' : 'p-3'}`}
-          style={{ borderColor: 'var(--border)' }}
-        >
-          <div className={`mb-3 flex items-center gap-3 ${isCollapsed ? 'justify-center' : 'px-1'}`}>
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-              style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
-              title={isCollapsed ? user?.fullName : undefined}
-            >
-              {user?.fullName?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-            {!isCollapsed && (
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{user?.fullName}</p>
-                <p className="truncate text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                  {isViewer && user?.role
-                    ? VIEWER_ROLE_LABELS[user.role as ViewerRole]
-                    : user?.role === 'admin' ? 'Admin'
-                    : user?.role === 'teacher' ? "O'qituvchi"
-                    : "O'quvchi"}
-                </p>
-              </div>
-            )}
-          </div>
 
-          <button
-            onClick={handleLogout}
-            title={isCollapsed ? 'Tizimdan chiqish' : undefined}
-            className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition-opacity hover:opacity-80 ${
-              isCollapsed ? 'px-2' : 'px-4'
-            }`}
-            style={{ background: 'var(--danger-bg)', color: 'var(--danger-fg)' }}
-          >
-            <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {!isCollapsed && 'Tizimdan chiqish'}
-          </button>
-        </div>
       </aside>
     </>
   );

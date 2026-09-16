@@ -1,28 +1,10 @@
 import { Bell, Sun, Moon, X, Info, Clock, AlertTriangle, Brain, TrendingDown, Search } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
+import UserMenu from './UserMenu';
 import { useState, useEffect } from 'react';
 import { notificationsApi } from '@/api';
 import { socket } from '@/utils/socket';
 import { applyTheme, resolveTheme, setPreference, watchSystemTheme } from '@/theme/theme';
 import type { ResolvedTheme } from '@/theme/theme';
-
-/** Avatar yonida ko'rsatiladigan rol nomlari. */
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrator',
-  teacher: "O'qituvchi",
-  student: "O'quvchi",
-  filial_rahbari: 'Filial rahbari',
-  moliya_rahbari: 'Moliya rahbari',
-  hr_rahbari: 'HR menejeri',
-  sotuv_operatori: 'Sotuv menejeri',
-  call_operatori: 'Call operatori',
-  kassir: 'Kassir',
-  administrator: 'Administrator',
-  nazoratchi: 'Nazoratchi',
-  assistant: 'Assistent',
-  robototexnika_ustoz: 'Robototexnika ustozi',
-  farrosh: 'Farrosh',
-};
 
 interface HeaderProps {
   /** Sahifa nomi. Dashboardda berilmaydi — u yerda sarlavha PageIntro ichida. */
@@ -40,7 +22,6 @@ interface HeaderProps {
 }
 
 export default function Header({ title, subtitle, showSearch, searchValue, onSearch }: HeaderProps) {
-  const { user } = useAuthStore();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -232,22 +213,7 @@ export default function Header({ title, subtitle, showSearch, searchValue, onSea
           )}
         </div>
 
-        <div className="flex items-center gap-3 border-l pl-4 sm:pl-5" style={{ borderColor: 'var(--border)' }}>
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-semibold leading-tight">{user?.fullName}</p>
-            {user?.role && (
-              <p className="text-xs leading-tight" style={{ color: 'var(--muted-foreground)' }}>
-                {ROLE_LABELS[user.role] ?? user.role}
-              </p>
-            )}
-          </div>
-          <div
-            className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold lg:h-12 lg:w-12"
-            style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
-          >
-            {user?.fullName?.charAt(0)?.toUpperCase() || '?'}
-          </div>
-        </div>
+        <UserMenu />
       </div>
 
       {/* Notification Detail Modal */}
