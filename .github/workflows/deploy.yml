@@ -80,11 +80,6 @@ jobs:
               echo ""
               echo "--> Backend o'zgardi, rebuild qilinmoqda..."
 
-              # Prisma schema yangilanishlarini qo'llash
-              echo "--> Prisma db push..."
-              docker exec tizim_backend npx prisma db push --schema=prisma/schema.prisma || \
-                echo "[WARN] Prisma push ishlamadi (container hali o'zi yangilanadi)"
-
               docker-compose up -d --build backend
               echo "[OK] Backend yangilandi"
             else
@@ -156,11 +151,39 @@ jobs:
             docker-compose up -d --no-recreate
             docker-compose ps
 
+            # ── PRISMA DB PUSH ───────────────────────────────────────────
+            # SHART: rebuild'dan KEYIN turishi kerak.
+            #
+            # Ilgari bu rebuild'dan OLDIN, "backend o'zgardi" blokining
+            # ichida edi. Repo konteynerga volume qilib ulanmagan (faqat
+            # data/), ya'ni konteyner ichidagi schema.prisma — ESKI image'ga
+            # pishirilgan nusxa. Natijada `docker exec ... db push` har safar
+            # ESKI sxemani yuborardi va yangi jadval/ustunlar bazaga faqat
+            # KEYINGI deployda yetib borardi.
+            #
+            # Endi yangi konteyner ko'tarilgandan keyin ishlaydi. Shartsiz:
+            # sxema o'zgarmagan bo'lsa bu baribir no-op.
+            echo ""
+            echo "--> Prisma db push..."
+            if docker exec tizim_backend npx prisma db push --schema=prisma/schema.prisma; then
+              echo "[OK] Sxema bazaga qo'llandi"
+            else
+              echo "[XATO] Prisma push ishlamadi — sxemani tekshiring"
+            fi
+
             # Health check
             echo ""
             echo "--> Health check..."
-            sleep 10
-            curl -sf http://127.0.0.1:5050/api/health && echo "[OK] Backend ishlayapti" || echo "[!] Backend javob bermayapti"
+            # 10 soniya yetmasdi — rebuild'dan keyin backend sekinroq
+            # ko'tariladi va CI bekordan-bekorga "javob bermayapti" derdi.
+            for i in 1 2 3 4 5 6; do
+              sleep 5
+              if curl -sf http://127.0.0.1:5050/api/health >/dev/null; then
+                echo "[OK] Backend ishlayapti ($((i*5))s)"
+                break
+              fi
+              [ "$i" = "6" ] && echo "[!] Backend 30s ichida javob bermadi"
+            done
 
             echo ""
             echo "======================================"
