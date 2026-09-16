@@ -66,6 +66,33 @@ export const usersApi = {
     api.post('/users/force-logout-all', { role }),
 };
 
+export const milestonesApi = {
+  /** Guruhning demo day / imtihon bosqichlari */
+  getByGroup: (groupId: string) => api.get(`/milestones/group/${groupId}`),
+
+  /** Jadvalni qayta qurish (admin) */
+  sync: (groupId: string) => api.post(`/milestones/group/${groupId}/sync`),
+
+  /** O'qituvchi taklif qilingan kunlardan birini tanlaydi */
+  pickDate: (id: string, date: string) => api.patch(`/milestones/${id}/date`, { date }),
+
+  /** Demo day o'tkazildi (imtihon avtomatik aniqlanadi) */
+  markHeld: (id: string) => api.post(`/milestones/${id}/held`),
+
+  /** Ekran tepasidagi banner — javob rolga qarab filtrlanadi */
+  warnings: () => api.get('/milestones/warnings'),
+
+  /** Nazorat paneli ro'yxati */
+  overview: (params?: { type?: string; status?: string; teacherId?: string }) =>
+    api.get('/milestones/overview', { params }),
+
+  /** Oylik statistika, masalan "2026-10" */
+  summary: (month?: string) => api.get('/milestones/summary', { params: { month } }),
+
+  /** Boshlanish sanasi / kurs uzunligi belgilanmagan guruhlar */
+  unconfigured: () => api.get('/milestones/unconfigured'),
+};
+
 export const groupsApi = {
   getAll: (page: number = 1, limit: number = 100, search?: string, teacherId?: string) =>
     api.get('/groups', { params: { page, limit, search, teacherId } }),

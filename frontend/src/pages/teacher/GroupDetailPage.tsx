@@ -8,6 +8,7 @@ import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Tra
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import LessonGradingPanel from '@/components/shared/LessonGradingPanel';
 import HomeworkAssignCard from '@/components/shared/HomeworkAssignCard';
+import GroupMilestonesCard from '@/components/shared/GroupMilestonesCard';
 import GroupEventsCard from '@/components/shared/GroupEventsCard';
 import { downloadBlob } from '@/utils';
 
@@ -628,6 +629,12 @@ export default function GroupDetailPage() {
             groupId={id}
             onStartLesson={() => setShowGradingPanel(true)}
           />
+        )}
+
+        {id && (
+          <div className="mb-8">
+            <GroupMilestonesCard groupId={id} />
+          </div>
         )}
 
         {id && <GroupEventsCard groupId={id} />}

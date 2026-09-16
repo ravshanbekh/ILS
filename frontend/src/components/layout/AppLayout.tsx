@@ -2,9 +2,12 @@ import { Outlet } from 'react-router-dom';
 import { useState } from 'react';
 import Sidebar from './Sidebar';
 import CategorySubHeader from './CategorySubHeader';
+import MilestoneWarningBanner from '../shared/MilestoneWarningBanner';
+import { useAuthStore } from '../../stores/authStore';
 import { Menu } from 'lucide-react';
 
 export default function AppLayout() {
+  const role = useAuthStore((st) => st.user?.role);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Yig'ilgan holat brauzerda eslab qolinadi
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
@@ -38,6 +41,14 @@ export default function AppLayout() {
 
         {/* Sub Navigation Bar for Category Switching */}
         <CategorySubHeader />
+
+        {/* Kechikkan demo day / imtihon ogohlantirishi.
+            Faqat nazorat qiladigan va bosqichga javobgar rollarga —
+            o'quvchiga ko'rsatilsa ham bo'sh chiqardi, lekin har sahifada
+            keraksiz so'rov yuborilardi. */}
+        {role && ['admin', 'administrator', 'teacher', 'filial_rahbari', 'nazoratchi'].includes(role) && (
+          <MilestoneWarningBanner />
+        )}
 
         <div className="flex-1 w-full max-w-7xl mx-auto">
           <Outlet />

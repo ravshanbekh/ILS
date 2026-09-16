@@ -24,7 +24,14 @@ export default function GroupsPage() {
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', teacherId: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    teacherId: '',
+    // Demo day va imtihon jadvali shu uchtasidan hisoblanadi
+    startDate: '',
+    durationMonths: '',
+    lessonDayType: '',
+  });
 
   const fetchGroups = useCallback(async () => {
     setLoading(true);
@@ -84,10 +91,16 @@ export default function GroupsPage() {
   const handleOpenModal = (groupToEdit: any = null) => {
     if (groupToEdit) {
       setEditingGroup(groupToEdit);
-      setFormData({ name: groupToEdit.name, teacherId: groupToEdit.teacherId || '' });
+      setFormData({
+        name: groupToEdit.name,
+        teacherId: groupToEdit.teacherId || '',
+        startDate: groupToEdit.startDate ? String(groupToEdit.startDate).slice(0, 10) : '',
+        durationMonths: groupToEdit.durationMonths ? String(groupToEdit.durationMonths) : '',
+        lessonDayType: groupToEdit.lessonDayType || '',
+      });
     } else {
       setEditingGroup(null);
-      setFormData({ name: '', teacherId: '' });
+      setFormData({ name: '', teacherId: '', startDate: '', durationMonths: '', lessonDayType: '' });
     }
     setShowModal(true);
   };
@@ -97,6 +110,12 @@ export default function GroupsPage() {
     try {
       const payload: any = { ...formData };
       if (!payload.teacherId) delete payload.teacherId;
+
+      // Bo'sh matn o'rniga null yuboramiz: backend zod sxemasi raqam yoki
+      // null kutadi, bo'sh satrni rad etardi.
+      payload.startDate = payload.startDate || null;
+      payload.lessonDayType = payload.lessonDayType || null;
+      payload.durationMonths = payload.durationMonths ? Number(payload.durationMonths) : null;
 
       if (editingGroup) {
         await groupsApi.update(editingGroup.id, payload);
@@ -326,6 +345,83 @@ export default function GroupsPage() {
                   </select>
                 </div>
               )}
+
+              {/* ── Demo day va imtihon jadvali uchun ───────────────────────
+                  Uchalasi to'ldirilganda tizim bosqichlarni avtomatik quradi.
+                  To'liq bo'lmasa guruh "sozlanmagan" ro'yxatida turadi. */}
+              <div className="pt-4 mt-2 border-t border-zinc-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-sky-400 mb-1">
+                  Dars jadvali
+                </p>
+                <p className="text-[11px] text-zinc-500 mb-3">
+                  Demo day va imtihon muddatlari shu ma'lumotdan hisoblanadi
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">
+                      Boshlanish sanasi
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">
+                      Kurs (oy)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={36}
+                      value={formData.durationMonths}
+                      onChange={(e) => setFormData({ ...formData, durationMonths: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                      placeholder="6"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">
+                    Dars kunlari
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { v: 'juft', t: 'Juft kunlar' },
+                      { v: 'toq', t: 'Toq kunlar' },
+                      { v: 'har_kuni', t: 'Har kuni' },
+                    ].map((o) => (
+                      <button
+                        key={o.v}
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            lessonDayType: formData.lessonDayType === o.v ? '' : o.v,
+                          })
+                        }
+                        className={`py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+                          formData.lessonDayType === o.v
+                            ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
+                            : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                        }`}
+                      >
+                        {o.t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {(!formData.startDate || !formData.durationMonths || !formData.lessonDayType) && (
+                  <p className="text-[11px] text-amber-500/80 mt-3">
+                    Uchalasi to'ldirilmaguncha demo day va imtihon jadvali qurilmaydi
+                  </p>
+                )}
+              </div>
 
               <div className="flex items-center gap-3 mt-6 pt-4 border-t border-zinc-800">
                 <button
