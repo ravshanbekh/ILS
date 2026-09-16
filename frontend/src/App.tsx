@@ -45,6 +45,7 @@ const MonthlyReportPrintPage = lazyWithReload(() => import('@/pages/admin/Monthl
 const ViewerDashboardPage = lazyWithReload(() => import('@/pages/viewer/DashboardPage'));
 const FrozenStudentsPage = lazyWithReload(() => import('@/pages/shared/FrozenStudentsPage'));
 const MonitoringPage = lazyWithReload(() => import('@/pages/shared/MonitoringPage'));
+const MilestonesControlPage = lazyWithReload(() => import('@/pages/admin/MilestonesControlPage'));
 const TeacherRatingPage = lazyWithReload(() => import('@/pages/admin/TeacherRatingPage'));
 const ChecklistStatsPage = lazyWithReload(() => import('@/pages/admin/ChecklistStatsPage'));
 const ChecklistManagePage = lazyWithReload(() => import('@/pages/admin/ChecklistManagePage'));
@@ -218,6 +219,7 @@ export default function App() {
               <Route path="/admin/rankings" element={<AdminRankingsPage />} />
               <Route path="/admin/frozen-students" element={<FrozenStudentsPage />} />
               <Route path="/admin/monitoring" element={<MonitoringPage />} />
+              <Route path="/admin/milestones" element={<MilestonesControlPage />} />
               <Route path="/admin/teacher-rating" element={<TeacherRatingPage />} />
               <Route path="/admin/export" element={<ExportPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
