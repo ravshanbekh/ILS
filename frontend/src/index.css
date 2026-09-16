@@ -353,6 +353,11 @@
   --color-stone-900: var(--n-900);
 
   /* Primary — loyihada ko'k asosiy harakat rangi edi, endi brend qizili */
+  /* DIQQAT: blue-* = BRENDING RANGI (primary), ya'ni qizg'ish-to'q sariq.
+     Agar sizga HAQIQIY ko'k kerak bo'lsa (masalan normativ natijasidagi
+     "Yaxshi (Ko'k)" kategoriyasi) — sky-* yoki cyan-* ishlating, ular info
+     tokeniga (--i-*) ulangan. Ilgari natijalar ustunida "ko'k" ham "qizil"
+     ham qizil bo'lib ko'ringan, chunki blue-500 primary'ga tushib qolgan. */
   --color-blue-50: var(--p-950);
   --color-blue-100: var(--p-900);
   --color-blue-200: var(--p-800);

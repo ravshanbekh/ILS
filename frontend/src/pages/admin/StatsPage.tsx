@@ -164,9 +164,9 @@ export default function AdminStatsPage() {
               <p className="text-sm font-medium text-emerald-500/80">A'lo (Yashil)</p>
               <p className="text-xs text-zinc-500 mt-1">{totalChecked > 0 ? Math.round(greenCount / totalChecked * 100) : 0}%</p>
             </div>
-            <div className="rounded-xl p-6 text-center border bg-blue-500/5 border-blue-500/20">
-              <p className="text-4xl font-bold text-blue-500 mb-2">{blueCount}</p>
-              <p className="text-sm font-medium text-blue-500/80">Yaxshi (Ko'k)</p>
+            <div className="rounded-xl p-6 text-center border bg-sky-500/5 border-sky-500/20">
+              <p className="text-4xl font-bold text-sky-400 mb-2">{blueCount}</p>
+              <p className="text-sm font-medium text-sky-400/80">Yaxshi (Ko'k)</p>
               <p className="text-xs text-zinc-500 mt-1">{totalChecked > 0 ? Math.round(blueCount / totalChecked * 100) : 0}%</p>
             </div>
             <div className="rounded-xl p-6 text-center border bg-red-500/5 border-red-500/20">

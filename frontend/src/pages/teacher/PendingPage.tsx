@@ -234,9 +234,9 @@ export default function TeacherPendingPage() {
                             <span className="font-semibold text-sm">A'lo (Yashil)</span>
                             <span className="text-xs font-bold bg-emerald-500/20 px-2 py-1 rounded">{sub.normative.maxScore} ball</span>
                           </button>
-                          <button onClick={() => handleGrade(sub.id, 'blue')} className="flex items-center justify-between px-4 py-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 transition-all">
+                          <button onClick={() => handleGrade(sub.id, 'blue')} className="flex items-center justify-between px-4 py-3 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 transition-all">
                             <span className="font-semibold text-sm">Yaxshi (Ko'k)</span>
-                            <span className="text-xs font-bold bg-blue-500/20 px-2 py-1 rounded">{Math.round(sub.normative.maxScore / 2)} ball</span>
+                            <span className="text-xs font-bold bg-sky-500/20 px-2 py-1 rounded">{Math.round(sub.normative.maxScore / 2)} ball</span>
                           </button>
                           <div className="flex gap-2.5 mt-1">
                             <button onClick={() => handleGrade(sub.id, 'red')} className="flex-1 flex items-center justify-center px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-all">

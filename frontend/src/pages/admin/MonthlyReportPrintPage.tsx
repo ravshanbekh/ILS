@@ -72,7 +72,7 @@ export default function MonthlyReportPrintPage() {
                   </td>
                   <td className="p-3 text-center font-bold text-zinc-800">{teacher.checkedCount}</td>
                   <td className="p-3 text-center text-emerald-600 font-bold">{teacher.green}</td>
-                  <td className="p-3 text-center text-blue-600 font-bold">{teacher.blue}</td>
+                  <td className="p-3 text-center text-sky-600 font-bold">{teacher.blue}</td>
                   <td className="p-3 text-center text-red-600 font-bold">{teacher.red}</td>
                   <td className="p-3 text-center">
                     <div className="inline-flex items-center justify-center bg-blue-50 text-blue-700 font-black px-3 py-1 rounded-md border border-blue-200">

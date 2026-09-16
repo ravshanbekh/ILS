@@ -187,7 +187,7 @@ export default function AdminRankingsPage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-1.5 font-medium">
                             <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px]">{student.results?.green || 0}</span>
-                            <span className="bg-blue-500/10 text-blue-500 border border-blue-500/20 px-2 py-0.5 rounded text-[10px]">{student.results?.blue || 0}</span>
+                            <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded text-[10px]">{student.results?.blue || 0}</span>
                             <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded text-[10px]">{student.results?.red || 0}</span>
                           </div>
                         </td>
