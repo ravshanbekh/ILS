@@ -19,7 +19,7 @@
  *
  * QOIDA: assetlar yangilanganda shu raqamni oshiring.
  */
-export const ASSET_VERSION = 3;
+export const ASSET_VERSION = 4;
 
 /** Asset yo'liga versiya qo'shadi: /illustrations/x.webp -> ...?v=2 */
 export function versioned(path: string): string {
