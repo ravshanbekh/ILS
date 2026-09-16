@@ -41,12 +41,14 @@ import { startLessonSessionsScheduler } from './modules/lesson-sessions/lesson-s
 import groupEventsRoutes from './modules/group-events/group-events.routes';
 import appealsRoutes from './modules/appeals/appeals.routes';
 import { startGroupEventsScheduler } from './modules/group-events/group-events.scheduler';
+import { startMilestonesScheduler } from './modules/milestones/milestones.scheduler';
 import eventFeedbackRoutes from './modules/event-feedback/event-feedback.routes';
 import coinsRoutes from './modules/coins/coins.routes';
 import shopRoutes from './modules/shop/shop.routes';
 import permissionsRoutes from './modules/permissions/permissions.routes';
 import supportHoursRoutes from './modules/support-hours/support-hours.routes';
 import homeworkRoutes from './modules/homework/homework.routes';
+import milestonesRoutes from './modules/milestones/milestones.routes';
 
 const app = express();
 app.set('trust proxy', 1); // nginx orqasida turgani uchun — rate limit va req.ip to'g'ri ishlashi uchun
@@ -145,6 +147,7 @@ app.use('/api/shop', shopRoutes);
 app.use('/api/permissions', permissionsRoutes);
 app.use('/api/support-hours', supportHoursRoutes);
 app.use('/api/homework', homeworkRoutes);
+app.use('/api/milestones', milestonesRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -224,6 +227,7 @@ const startServer = async () => {
 
     // Demo Day: taklifnoma va eslatmalar
     startGroupEventsScheduler();
+    startMilestonesScheduler();
   } catch (error) {
     logger.error('❌ Server ishga tushmadi:', error);
     process.exit(1);

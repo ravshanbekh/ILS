@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../config/database';
 import { ApiError } from '../../shared/middleware/errorHandler';
+import milestonesService from '../milestones/milestones.service';
 import { CreateGroupInput, UpdateGroupInput } from './groups.validation';
 import { PaginationParams, createPaginatedResult } from '../../shared/utils/pagination';
 import logger from '../../shared/utils/logger';
@@ -196,6 +197,9 @@ class GroupsService {
       data: {
         name: data.name,
         teacherId: data.teacherId,
+        startDate: data.startDate ? new Date(`${data.startDate}T00:00:00.000Z`) : null,
+        durationMonths: data.durationMonths ?? null,
+        lessonDayType: data.lessonDayType ?? null,
       },
       include: {
         teacher: {
@@ -203,6 +207,10 @@ class GroupsService {
         },
       },
     });
+
+    // Uchala maydon to'liq bo'lsa — demo day va imtihon jadvalini darrov
+    // quramiz. To'liq bo'lmasa sync o'zi "sozlanmagan" deb qaytadi.
+    await milestonesService.syncGroupSchedule(group.id);
 
     // Audit log
     if (createdByUserId) {
@@ -230,15 +238,27 @@ class GroupsService {
       throw ApiError.notFound('Guruh topilmadi');
     }
 
+    // startDate matn ko'rinishida keladi — Date ga aylantiramiz
+    const { startDate, ...rest } = data;
     const group = await prisma.group.update({
       where: { id },
-      data,
+      data: {
+        ...rest,
+        ...(startDate !== undefined
+          ? { startDate: startDate ? new Date(`${startDate}T00:00:00.000Z`) : null }
+          : {}),
+      },
       include: {
         teacher: {
           select: { id: true, fullName: true },
         },
       },
     });
+
+    // Jadval sozlamalari o'zgargan bo'lishi mumkin. syncGroupSchedule
+    // IDEMPOTENT: mavjud bosqichlarning tanlangan sanasi va "o'tkazildi"
+    // belgisi saqlanadi, faqat yetishmayotganlari qo'shiladi.
+    await milestonesService.syncGroupSchedule(id);
 
     if (updatedByUserId) {
       await prisma.auditLog.create({

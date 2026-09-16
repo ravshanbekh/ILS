@@ -97,6 +97,7 @@ model User {
   lessonGrades              LessonGrade[]         @relation("LessonGradeStudent")
   // Demo Day va Murojaatlar
   createdGroupEvents        GroupEvent[]          @relation("GroupEventCreator")
+  heldMilestones            GroupMilestone[]      @relation("MilestoneHeldBy")
   appealsAsStudent          ParentAppeal[]        @relation("AppealStudent")
   appealsAsTeacher          ParentAppeal[]        @relation("AppealTeacher")
   appealsReplied            ParentAppeal[]        @relation("AppealRepliedBy")
@@ -129,6 +130,16 @@ model Group {
   // Dars kuni (jadval o'rniga — soatsiz, faqat juft/toq/har kuni)
   lessonDayType LessonDayType? @map("lesson_day_type")
 
+  // Guruh QACHON boshlangani — qo'lda belgilanadi.
+  // createdAt EMAS: guruh tizimga kech kiritilishi yoki oldindan ochib
+  // qo'yilishi mumkin, demo day va imtihon jadvali esa haqiqiy boshlanish
+  // sanasidan hisoblanadi.
+  startDate      DateTime? @map("start_date") @db.Date
+  // Kurs necha oy davom etadi — jadval shu muddat ichida quriladi.
+  // Kategoriyada emas, guruhda: Group->Category bog'lanishi yo'q va bir xil
+  // kurs turli guruhlarda turlicha cho'zilishi mumkin.
+  durationMonths Int?      @map("duration_months")
+
   // Telegram guruh chati (ota-onalar uchun 20:00 yig'ma xabar)
   telegramChatId        BigInt?   @map("telegram_chat_id")
   telegramChatTitle     String?   @map("telegram_chat_title") @db.VarChar(200)
@@ -151,6 +162,7 @@ model Group {
   eventFeedbacks      EventFeedback[]
   homeworkAssignments HomeworkAssignment[]
   examGroups          ExamGroup[]
+  milestones          GroupMilestone[]
 
   @@map("groups")
 }
@@ -832,6 +844,61 @@ enum LessonDayType {
   juft // Oyning juft kunlari
   toq // Oyning toq kunlari
   har_kuni // Har kuni dars bo'ladi
+}
+
+enum MilestoneType {
+  demo_day
+  imtihon
+}
+
+enum MilestoneStatus {
+  kutilmoqda // Muddat kelmagan, o'qituvchi hali sana tanlamagan
+  sana_tanlandi // O'qituvchi nomzodlardan birini tanladi
+  bajarildi // Muddat ichida o'tkazildi
+  kechikdi // Muddat o'tdi, hali o'tkazilmagan
+  kechikib_bajarildi // Muddatdan keyin, lekin o'tkazildi
+}
+
+/// Guruhning demo day va imtihon bosqichlari.
+///
+/// Guruh boshlanish sanasi va kurs uzunligidan avtomatik quriladi
+/// (milestones.schedule.ts). O'qituvchi taklif qilingan 3 ta dars kunidan
+/// birini tanlaydi; oxirgisi — muddat.
+model GroupMilestone {
+  id      String        @id @default(uuid()) @db.Uuid
+  groupId String        @map("group_id") @db.Uuid
+  type    MilestoneType
+  /// Nechanchi demo day / imtihon (1 dan boshlanadi)
+  seq     Int
+
+  /// Taklif qilingan dars kunlari (odatda 3 ta), jadval qurilganda yoziladi
+  candidates DateTime[] @db.Date
+  /// Oxirgi nomzod — undan keyin "kechikdi"
+  dueDate    DateTime   @map("due_date") @db.Date
+
+  /// O'qituvchi tanlagan sana
+  plannedDate DateTime? @map("planned_date") @db.Date
+  /// Haqiqatda o'tkazilgan payt
+  heldAt      DateTime? @map("held_at")
+  heldById    String?   @map("held_by_id") @db.Uuid
+
+  status MilestoneStatus @default(kutilmoqda)
+
+  /// Imtihon bo'lsa — qaysi imtihonga bog'langani (avtomatik aniqlash uchun)
+  examId  String? @map("exam_id") @db.Uuid
+  /// Demo day bo'lsa — GroupEvent (taklif, eslatma, RSVP mavjud tizimdan)
+  eventId String? @map("event_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  group  Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  heldBy User? @relation("MilestoneHeldBy", fields: [heldById], references: [id])
+
+  @@unique([groupId, type, seq])
+  @@index([status, dueDate])
+  @@index([groupId])
+  @@map("group_milestones")
 }
 
 enum LessonSessionStatus {
