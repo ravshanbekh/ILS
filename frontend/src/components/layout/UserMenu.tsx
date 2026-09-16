@@ -35,12 +35,23 @@ const ROLE_LABELS: Record<string, string> = {
   farrosh: 'Farrosh',
 };
 
-/** Rolga qarab profil sahifasining yo'li. Student uchun sahifa yo'q. */
+/**
+ * Rolga qarab profil sahifasining yo'li.
+ *
+ * Bu sahifa — ASSISTENT KARTOCHKASI: rasm, filial va qisqa ma'lumot
+ * o'quvchining "yozilish" sahifasida ko'rinadi. Shuning uchun u faqat
+ * o'quvchiga ko'rinadigan rollar uchun mantiqli.
+ *
+ * Admin va student uchun YO'Q:
+ *   - admin hech qachon o'quvchiga kartochka bo'lib chiqmaydi
+ *     (avval xato ravishda ko'rinib turgan edi);
+ *   - student uchun bunday sahifa umuman mavjud emas.
+ */
+const CARD_ROLES = ['teacher', 'assistant', 'robototexnika_ustoz'];
+
 function profileRoute(role?: string): string | null {
-  if (!role) return null;
-  if (role === 'admin') return '/admin/profile';
+  if (!role || !CARD_ROLES.includes(role)) return null;
   if (role === 'teacher') return '/teacher/profile';
-  if (role === 'student') return null;
   return `/viewer/${role}/profile`;
 }
 

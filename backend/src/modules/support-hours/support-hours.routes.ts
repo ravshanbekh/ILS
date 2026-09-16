@@ -10,7 +10,7 @@ router.use(authenticate);
 router.get('/rules', supportHoursController.getRules);
 
 // ── Assistent o'z soatlarini boshqaradi ──────────────────────────────────
-const SLOT_OWNERS = roleGuard('assistant', 'robototexnika_ustoz', 'admin');
+const SLOT_OWNERS = roleGuard('assistant', 'robototexnika_ustoz', 'teacher', 'admin');
 
 router.get('/my-day', SLOT_OWNERS, supportHoursController.getMyDay);
 router.get('/my-week', SLOT_OWNERS, supportHoursController.getMyWeek);

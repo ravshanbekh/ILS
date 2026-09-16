@@ -255,6 +255,8 @@ export default function App() {
             >
               <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/teacher/profile" element={<MyProfilePage />} />
+              {/* O'qituvchi bo'sh vaqtida assistentlik qilishi uchun */}
+              <Route path="/teacher/my-support-hours" element={<MySupportHoursPage />} />
               <Route path="/teacher/users" element={<UsersPage />} />
               <Route path="/teacher/groups" element={<GroupsPage />} />
               <Route path="/teacher/groups/:id" element={<GroupDetailPage />} />

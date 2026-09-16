@@ -4,7 +4,7 @@ import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
   Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid,
-  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck
+  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -139,6 +139,10 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
     icon: Settings,
     items: [
       { to: '/teacher/export', label: 'Eksport', icon: Download },
+      // O'qituvchi bo'sh vaqtida assistentlik qilishi mumkin: qabul
+      // soatlarini ochadi va o'quvchiga ko'rinadigan kartochkasini to'ldiradi.
+      { to: '/teacher/my-support-hours', label: 'Qabul soatlarim', icon: CalendarClock },
+      { to: '/teacher/profile', label: 'Mening profilim', icon: UserCircle },
     ]
   }
 ];

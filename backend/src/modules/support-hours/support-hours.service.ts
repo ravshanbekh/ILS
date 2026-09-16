@@ -13,7 +13,39 @@ import {
 } from '../../shared/constants/supportHours';
 import { filialLabel } from '../../shared/constants/filials';
 
-const ASSISTANT_ROLES = ['assistant', 'robototexnika_ustoz'];
+
+/**
+ * Assistentlik ASOSIY ishi bo'lgan rollar. Ular nazorat sahifasida soat
+ * ochmagan bo'lsa ham ko'rinadi — "kim umuman soat ochmayapti?" degan
+ * savol aynan shular haqida.
+ *
+ * O'qituvchi bu ro'yxatda YO'Q: u assistentlikni bo'sh vaqtida, ixtiyoriy
+ * qiladi. Shuning uchun nazoratda faqat haqiqatan soat ochgan o'qituvchi
+ * ko'rinadi — aks holda ro'yxat o'nlab bo'sh qator bilan to'lib ketardi
+ * va asosiy signal yo'qolardi.
+ */
+const CORE_ASSISTANT_ROLES = ['assistant', 'robototexnika_ustoz'];
+
+/** Hech bo'lmasa bir marta soat ochgan foydalanuvchilar id si. */
+async function idsWithAnySlot(): Promise<string[]> {
+  const rows = await prisma.supportSlot.findMany({
+    distinct: ['assistantId'],
+    select: { assistantId: true },
+  });
+  return rows.map((r) => r.assistantId);
+}
+
+/** Nazorat ro'yxati uchun filtr: asosiy rollar + faol o'qituvchilar. */
+async function oversightWhere() {
+  const active = await idsWithAnySlot();
+  return {
+    isActive: true,
+    OR: [
+      { role: { in: CORE_ASSISTANT_ROLES as any } },
+      { role: 'teacher' as any, id: { in: active } },
+    ],
+  };
+}
 
 interface SlotRow {
   id: string;
@@ -465,7 +497,7 @@ class SupportHoursService {
 
     const [assistants, slots] = await Promise.all([
       prisma.user.findMany({
-        where: { role: { in: ASSISTANT_ROLES as any }, isActive: true },
+        where: await oversightWhere(),
         select: { id: true, fullName: true, avatarUrl: true },
         orderBy: { fullName: 'asc' },
       }),
@@ -551,7 +583,7 @@ class SupportHoursService {
   /** Assistentlar ro'yxati (admin bir assistent nomidan soat ochishi uchun) */
   async listAssistants() {
     return prisma.user.findMany({
-      where: { role: { in: ASSISTANT_ROLES as any }, isActive: true },
+      where: await oversightWhere(),
       select: { id: true, fullName: true, role: true },
       orderBy: { fullName: 'asc' },
     });
