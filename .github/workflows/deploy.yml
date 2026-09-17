@@ -145,6 +145,39 @@ jobs:
               echo "    Birinchi marta qo'lda o'rnatish kerak, keyin avtomatik yangilanadi."
             fi
 
+            # ── KUNLIK ZAXIRA (cron) ─────────────────────────────────────
+            # scripts/backup-db.sh repo bilan birga keladi. Bu yerda faqat
+            # ishga tushirish huquqi beriladi va cron yozuvi bir marta
+            # o'rnatiladi. Har deployda takror qo'shilmasligi uchun avval
+            # mavjudligi tekshiriladi.
+            #
+            # Vaqt 03:30 — dars ham, hisobot ham yo'q payt.
+            if [ -f scripts/backup-db.sh ]; then
+              chmod +x scripts/backup-db.sh scripts/restore-db.sh 2>/dev/null || true
+
+              CRON_LINE="30 3 * * * /bin/bash /root/ILS/scripts/backup-db.sh >> /var/log/ils-backup.log 2>&1"
+              if crontab -l 2>/dev/null | grep -q "backup-db.sh"; then
+                echo "--> Zaxira cron allaqachon o'rnatilgan"
+              else
+                ( crontab -l 2>/dev/null; echo "$CRON_LINE" ) | crontab -
+                echo "[OK] Kunlik zaxira croni o'rnatildi (har kuni 03:30)"
+              fi
+
+              # Birinchi marta: darhol bitta nusxa olamiz, shunda tizim
+              # ishlayotgani deploy paytidayoq ma'lum bo'ladi.
+              if [ ! -d /root/ils-backups/daily ] || [ -z "$(ls -A /root/ils-backups/daily 2>/dev/null)" ]; then
+                echo "--> Birinchi zaxira olinmoqda..."
+                /bin/bash scripts/backup-db.sh || echo "[!] Birinchi zaxira olinmadi — logni tekshiring"
+              fi
+
+              if [ -f /root/ILS/.backup.env ]; then
+                echo "--> Tashqi nusxa sozlangan (.backup.env mavjud)"
+              else
+                echo "[!] /root/ILS/.backup.env yo'q — zaxira FAQAT shu serverda saqlanadi."
+                echo "    Server yo'qolsa zaxira ham yo'qoladi. Sozlash uchun README-BACKUP.md ga qarang."
+              fi
+            fi
+
             # Har ehtimolga qarshi: konteynerlar tushib qolgan bo'lsa ko'taramiz
             echo ""
             echo "--> Konteynerlar holati tekshirilmoqda..."
