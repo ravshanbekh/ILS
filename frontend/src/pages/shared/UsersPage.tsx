@@ -231,7 +231,10 @@ export default function UsersPage() {
 
 
   const copyCredentials = (login: string) => {
-    navigator.clipboard.writeText(`Login: ${login}`);
+    // FAQAT loginning o'zi nusxalanadi.
+    // Ilgari "Login: student7881" ko'chirilardi va uni tizimga kiritishdan
+    // oldin har safar qo'lda tozalash kerak bo'lardi.
+    navigator.clipboard.writeText(login);
     setCopiedId(login);
     setTimeout(() => setCopiedId(null), 2000);
   };
