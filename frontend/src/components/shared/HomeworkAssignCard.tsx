@@ -54,7 +54,19 @@ interface AssignOptions {
   lessonNumber: number;
   topic: string | null;
   date: string;
-  current: { assignmentId: string; homeworkId: string; title: string; note: string | null } | null;
+  current: {
+    assignmentId: string;
+    homeworkId: string;
+    title: string;
+    lessonItemTitle?: string;
+    /** Vazifa shartlari — o'qituvchi skrinshot qilishi uchun */
+    description?: string | null;
+    contentType?: string;
+    content?: string;
+    note: string | null;
+    /** O'qituvchi qo'shgan qo'shimcha havola */
+    extraLink?: string | null;
+  } | null;
   /** Faqat o'qituvchiga dostup berilgan kurslar */
   courses: Course[];
   lessons: LessonGroup[];
@@ -73,6 +85,9 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
   const [opts, setOpts] = useState<AssignOptions | null>(null);
   const [picking, setPicking] = useState(false);
   const [note, setNote] = useState('');
+  const [extraLink, setExtraLink] = useState('');
+  // Qo'shimcha material tahriri — biriktirilgan vazifa ustidan ochiladi
+  const [editingExtra, setEditingExtra] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -122,6 +137,7 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
       const res = await homeworkApi.getAssignOptions(session.id);
       setOpts(res.data.data);
       setNote(res.data.data?.current?.note || '');
+      setExtraLink(res.data.data?.current?.extraLink || '');
     } catch (e: any) {
       setError(e?.response?.data?.error?.message || e?.response?.data?.message || 'Xatolik');
     } finally {
@@ -139,7 +155,7 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
     setBusy(true);
     setError('');
     try {
-      await homeworkApi.assign(opts.sessionId, homeworkId, note.trim() || undefined);
+      await homeworkApi.assign(opts.sessionId, homeworkId, note.trim() || undefined, extraLink.trim() || undefined);
       setPicking(false);
       await load();
     } catch (e: any) {
@@ -319,13 +335,25 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
                 )}
               </div>
 
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value.slice(0, 500))}
-                placeholder="Qo'shimcha izoh (ixtiyoriy) — masalan: faqat 1-5 misollar"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
-              />
+              {/* Qo'shimcha material — IXTIYORIY.
+                  Bank vazifasi yetarli bo'lmasa mentor o'zidan qo'shadi,
+                  vazifaning o'zini o'zgartirmasdan. */}
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value.slice(0, 500))}
+                  placeholder="Qo'shimcha izoh (ixtiyoriy) — masalan: faqat 1-5 misollar"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
+                />
+                <input
+                  type="url"
+                  value={extraLink}
+                  onChange={(e) => setExtraLink(e.target.value.slice(0, 500))}
+                  placeholder="Qo'shimcha havola (ixtiyoriy) — https://..."
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white"
+                />
+              </div>
             </>
           )}
 
@@ -348,16 +376,132 @@ export default function HomeworkAssignCard({ groupId, onStartLesson }: Props) {
           </div>
         </div>
       ) : opts?.current ? (
-        /* Biriktirilgan vazifa */
+        /* Biriktirilgan vazifa — SHARTLARI BILAN.
+           Ilgari faqat nom ko'rinardi va o'qituvchi vazifa shartlarini
+           ko'rolmasdi. Endi to'liq matn chiqadi: skrinshot qilib guruh
+           chatiga tashlash uchun. */
         <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
-          <p className="text-emerald-300 font-medium flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0" />
-            {opts.current.title}
-          </p>
-          {opts.current.note && (
-            <p className="text-zinc-400 text-sm mt-1.5 pl-6">Izoh: {opts.current.note}</p>
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-emerald-300 font-medium flex items-center gap-2 min-w-0">
+              <Check className="w-4 h-4 shrink-0" />
+              <span className="truncate">{opts.current.title}</span>
+            </p>
+            {/* Olib tashlash — kartochkaning O'ZIDA.
+                Ilgari bu tugma faqat "O'zgartirish" ochilganda ko'rinardi va
+                topilmasdi: vazifani almashtirish mumkin edi, olib tashlash
+                mumkin emasdek tuyulardi. */}
+            <button
+              onClick={unassign}
+              disabled={busy}
+              className="text-red-400 hover:text-red-300 text-xs shrink-0 disabled:opacity-50"
+            >
+              Olib tashlash
+            </button>
+          </div>
+
+          {opts.current.lessonItemTitle && (
+            <p className="text-zinc-500 text-xs mt-1 pl-6">{opts.current.lessonItemTitle}</p>
           )}
-          <p className="text-zinc-500 text-xs mt-2 pl-6">
+
+          {opts.current.description && (
+            <p className="text-zinc-300 text-sm mt-2.5 pl-6 whitespace-pre-wrap">
+              {opts.current.description}
+            </p>
+          )}
+
+          {opts.current.content && (
+            <div className="mt-2.5 pl-6">
+              {opts.current.contentType === 'link' ? (
+                <a
+                  href={opts.current.content}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sky-400 hover:text-sky-300 text-sm underline underline-offset-2 break-all"
+                >
+                  {opts.current.content}
+                </a>
+              ) : (
+                <p className="text-zinc-300 text-sm whitespace-pre-wrap bg-zinc-950/50 border border-zinc-800 rounded-lg p-3">
+                  {opts.current.content}
+                </p>
+              )}
+            </div>
+          )}
+
+          {opts.current.note && (
+            <p className="text-zinc-400 text-sm mt-2.5 pl-6">
+              <span className="text-zinc-500">Izoh:</span> {opts.current.note}
+            </p>
+          )}
+
+          {opts.current.extraLink && (
+            <p className="mt-1.5 pl-6">
+              <span className="text-zinc-500 text-sm">Qo'shimcha: </span>
+              <a
+                href={opts.current.extraLink}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sky-400 hover:text-sky-300 text-sm underline underline-offset-2 break-all"
+              >
+                {opts.current.extraLink}
+              </a>
+            </p>
+          )}
+
+          {/* Qo'shimcha material qo'shish — vazifani almashtirmasdan */}
+          {editingExtra ? (
+            <div className="mt-3 pl-6 space-y-2">
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value.slice(0, 500))}
+                placeholder="Qo'shimcha izoh (ixtiyoriy)"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+              />
+              <input
+                type="url"
+                value={extraLink}
+                onChange={(e) => setExtraLink(e.target.value.slice(0, 500))}
+                placeholder="Qo'shimcha havola (ixtiyoriy) — https://..."
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
+              />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    // Xuddi shu vazifani qayta biriktiramiz — faqat izoh va
+                    // havola yangilanadi, vazifaning o'zi o'zgarmaydi.
+                    await assign(opts!.current!.homeworkId);
+                    setEditingExtra(false);
+                  }}
+                  disabled={busy}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium disabled:opacity-50"
+                >
+                  Saqlash
+                </button>
+                <button
+                  onClick={() => {
+                    setNote(opts!.current!.note || '');
+                    setExtraLink(opts!.current!.extraLink || '');
+                    setEditingExtra(false);
+                  }}
+                  className="text-zinc-400 hover:text-white text-xs"
+                >
+                  Bekor qilish
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setEditingExtra(true)}
+              className="mt-3 ml-6 text-sky-400 hover:text-sky-300 text-xs"
+            >
+              {opts.current.note || opts.current.extraLink
+                ? "Qo'shimchani tahrirlash"
+                : "+ Qo'shimcha material qo'shish"}
+            </button>
+          )}
+
+          <p className="text-zinc-500 text-xs mt-3 pl-6">
             O'quvchilar buni profilidagi "Uyga vazifalar" bo'limida ko'radi
           </p>
         </div>

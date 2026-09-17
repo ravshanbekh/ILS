@@ -81,12 +81,16 @@ class HomeworkController {
   /** POST /api/homework/session/:sessionId/assign */
   async assign(req: Request, res: Response, next: NextFunction) {
     try {
-      const { homeworkId, note } = req.body;
+      const { homeworkId, note, extraLink } = req.body;
       if (!homeworkId) throw ApiError.badRequest('homeworkId talab qilinadi');
+      if (typeof extraLink === 'string' && extraLink.trim().length > 500) {
+        throw ApiError.badRequest('Havola 500 ta belgidan oshmasin');
+      }
       const data = await homeworkService.assign(
         req.params.sessionId,
         homeworkId,
         typeof note === 'string' ? note : null,
+        typeof extraLink === 'string' ? extraLink : null,
         req.user!
       );
       res.json({ success: true, data });

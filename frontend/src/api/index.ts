@@ -548,10 +548,12 @@ export const lessonSessionsApi = {
 
   getById: (id: string) => api.get(`/lesson-sessions/${id}`),
 
-  gradeHomework: (sessionId: string, studentId: string, homework: 'toliq' | 'qisman' | 'bajarmagan' | 'kelmadi', comment?: string) =>
+  /** homework = null -> adashib qo'yilgan bahoni bekor qilish */
+  gradeHomework: (sessionId: string, studentId: string, homework: 'toliq' | 'qisman' | 'bajarmagan' | 'kelmadi' | null, comment?: string) =>
     api.patch(`/lesson-sessions/${sessionId}/homework`, { studentId, homework, comment }),
 
-  gradeActivity: (sessionId: string, studentId: string, activityScore: number) =>
+  /** activityScore = null -> bahoni bekor qilish */
+  gradeActivity: (sessionId: string, studentId: string, activityScore: number | null) =>
     api.patch(`/lesson-sessions/${sessionId}/activity`, { studentId, activityScore }),
 
   // delta: musbat son = qo'shish, manfiy son (masalan -5) = ayirish
@@ -735,8 +737,9 @@ export const homeworkApi = {
 
   // O'qituvchi: darsga vazifa biriktirish
   getAssignOptions: (sessionId: string) => api.get(`/homework/session/${sessionId}/options`),
-  assign: (sessionId: string, homeworkId: string, note?: string) =>
-    api.post(`/homework/session/${sessionId}/assign`, { homeworkId, note }),
+  /** extraLink — mentor o'zidan qo'shadigan qo'shimcha havola (ixtiyoriy) */
+  assign: (sessionId: string, homeworkId: string, note?: string, extraLink?: string) =>
+    api.post(`/homework/session/${sessionId}/assign`, { homeworkId, note, extraLink }),
   unassign: (sessionId: string) => api.delete(`/homework/session/${sessionId}/assign`),
   /** Shu darsda qaysi vazifa baholanayotgani (oldingi darsda berilgani) */
   getToGrade: (sessionId: string) => api.get(`/homework/session/${sessionId}/to-grade`),

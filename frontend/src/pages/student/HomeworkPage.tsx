@@ -21,6 +21,8 @@ interface HomeworkRow {
   content: string;
   lessonItemTitle: string;
   note: string | null;
+  /** O'qituvchi qo'shgan qo'shimcha havola (ixtiyoriy) */
+  extraLink?: string | null;
   groupName: string;
   lessonNumber: number | null;
   topic: string | null;
@@ -165,6 +167,23 @@ export default function HomeworkPage() {
                       <MessageSquare className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>
                         <span className="font-semibold">O'qituvchi izohi:</span> {current.note}
+                      </span>
+                    </div>
+                  )}
+
+                  {current.extraLink && (
+                    <div className="mt-2 flex gap-2 text-xs text-sky-300/90 bg-sky-500/5 border border-sky-500/20 rounded-lg px-3 py-2">
+                      <MessageSquare className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <span className="min-w-0">
+                        <span className="font-semibold">Qo'shimcha material: </span>
+                        <a
+                          href={current.extraLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline underline-offset-2 break-all hover:text-sky-200"
+                        >
+                          {current.extraLink}
+                        </a>
                       </span>
                     </div>
                   )}

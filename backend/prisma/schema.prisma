@@ -1300,6 +1300,10 @@ model HomeworkAssignment {
   assignedInSessionId String   @map("assigned_in_session_id") @db.Uuid
   assignedById        String   @map("assigned_by_id") @db.Uuid
   note                String?  @db.VarChar(500) // o'qituvchining qo'shimcha izohi
+  // O'qituvchi qo'shadigan qo'shimcha havola (ixtiyoriy).
+  // Bank vazifasi yetarli bo'lmasa mentor o'zidan material qo'shadi —
+  // vazifaning o'zini o'zgartirmasdan.
+  extraLink           String?  @map("extra_link") @db.VarChar(500)
   assignedAt          DateTime @default(now()) @map("assigned_at")
 
   homework   Homework      @relation(fields: [homeworkId], references: [id], onDelete: Cascade)

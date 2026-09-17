@@ -142,13 +142,26 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
     );
   };
 
+  /**
+   * Bahoni qo'yish yoki BEKOR QILISH.
+   *
+   * Xuddi o'sha tugma qayta bosilsa baho olinadi (null yuboriladi). Ilgari
+   * adashib bosilgan bahoni qaytarib olishning iloji yo'q edi — o'qituvchi
+   * majburan to'rttadan bittasini tanlab qolardi.
+   */
   const handleHomework = async (studentId: string, homework: HomeworkGrade) => {
     if (!session || busyRef.current.has(studentId)) return;
     busyRef.current.add(studentId);
+    const current = session.grades.find((g) => g.studentId === studentId)?.homework;
+    const next: HomeworkGrade | null = current === homework ? null : homework;
+
     const scoreMap: Record<HomeworkGrade, number | null> = { toliq: 5, qisman: 3, bajarmagan: 0, kelmadi: null };
-    setLocalGrade(studentId, { homework, homeworkScore: scoreMap[homework] });
+    setLocalGrade(studentId, {
+      homework: next,
+      homeworkScore: next === null ? null : scoreMap[next],
+    });
     try {
-      await lessonSessionsApi.gradeHomework(session.id, studentId, homework);
+      await lessonSessionsApi.gradeHomework(session.id, studentId, next);
     } catch (e: any) {
       setError(e?.response?.data?.error?.message || "Baholashda xatolik — qayta urinib ko'ring");
       load();
@@ -157,12 +170,16 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
     }
   };
 
+  /** Faollik — xuddi shu raqam qayta bosilsa baho bekor qilinadi */
   const handleActivity = async (studentId: string, activityScore: number) => {
     if (!session || busyRef.current.has(studentId)) return;
     busyRef.current.add(studentId);
-    setLocalGrade(studentId, { activityScore });
+    const current = session.grades.find((g) => g.studentId === studentId)?.activityScore;
+    const next = current === activityScore ? null : activityScore;
+
+    setLocalGrade(studentId, { activityScore: next });
     try {
-      await lessonSessionsApi.gradeActivity(session.id, studentId, activityScore);
+      await lessonSessionsApi.gradeActivity(session.id, studentId, next);
     } catch (e: any) {
       setError(e?.response?.data?.error?.message || "Baholashda xatolik — qayta urinib ko'ring");
       load();
@@ -441,6 +458,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
                             key={n}
                             disabled={session.status !== 'ochiq'}
                             onClick={() => handleActivity(g.studentId, n)}
+                            title={g.activityScore === n ? 'Bekor qilish uchun qayta bosing' : `${n} ball`}
                             className={`w-8 h-8 rounded-lg text-xs font-bold border transition-colors disabled:opacity-40 ${
                               g.activityScore === n
                                 ? 'bg-blue-600 border-blue-600 text-white'

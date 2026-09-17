@@ -149,7 +149,7 @@ class LessonSessionsService {
     }
   }
 
-  async gradeHomework(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, homework: HomeworkGrade, comment?: string) {
+  async gradeHomework(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, homework: HomeworkGrade | null, comment?: string) {
     const session = await prisma.lessonSession.findUnique({ where: { id: sessionId } });
     if (!session) throw ApiError.notFound('Sessiya topilmadi');
     this.assertOwnerAndOpen(session, teacherId, isAdmin);
@@ -168,18 +168,21 @@ class LessonSessionsService {
       where: { id: grade.id },
       data: {
         homework,
-        homeworkScore: HOMEWORK_SCORE[homework],
+        // null = baho bekor qilindi (adashib bosilgan). Ball ham, belgilangan
+        // vaqt ham, bog'langan vazifa ham tozalanadi — aks holda o'quvchi
+        // "baholangan" deb hisoblanib qolardi va ota-onaga xabar ketardi.
+        homeworkScore: homework === null ? null : HOMEWORK_SCORE[homework],
         autoZero: false,
         comment: comment ?? grade.comment,
-        gradedAt: new Date(),
-        assignmentId: toGrade?.assignmentId ?? null,
+        gradedAt: homework === null ? null : new Date(),
+        assignmentId: homework === null ? null : toGrade?.assignmentId ?? null,
       },
     });
 
     return this.getById(sessionId);
   }
 
-  async gradeActivity(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, activityScore: number) {
+  async gradeActivity(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, activityScore: number | null) {
     const session = await prisma.lessonSession.findUnique({ where: { id: sessionId } });
     if (!session) throw ApiError.notFound('Sessiya topilmadi');
     this.assertOwnerAndOpen(session, teacherId, isAdmin);
@@ -191,7 +194,9 @@ class LessonSessionsService {
 
     await prisma.lessonGrade.update({
       where: { id: grade.id },
-      data: { activityScore, activityGradedAt: new Date() },
+      // null bo'lsa baho bekor qilinadi — belgilangan vaqt ham tozalanadi,
+      // aks holda "baholangan" deb hisoblanib qolardi.
+      data: { activityScore, activityGradedAt: activityScore === null ? null : new Date() },
     });
 
     return this.getById(sessionId);

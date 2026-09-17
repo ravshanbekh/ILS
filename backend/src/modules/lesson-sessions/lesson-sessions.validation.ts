@@ -7,15 +7,21 @@ export const startSessionSchema = z.object({
 
 export const gradeHomeworkSchema = z.object({
   studentId: z.string().uuid('Noto\'g\'ri o\'quvchi ID'),
-  homework: z.enum(['toliq', 'qisman', 'bajarmagan', 'kelmadi'], {
-    errorMap: () => ({ message: "homework: toliq, qisman, bajarmagan yoki kelmadi bo'lishi kerak" }),
-  }),
+  // nullable — adashib bosilgan bahoni QAYTARIB OLISH uchun.
+  // Ilgari faqat to'rt qiymatdan biri qabul qilinardi va o'qituvchi xato
+  // bossa majburan bittasini tanlab qolishga majbur edi.
+  homework: z
+    .enum(['toliq', 'qisman', 'bajarmagan', 'kelmadi'], {
+      errorMap: () => ({ message: "homework: toliq, qisman, bajarmagan yoki kelmadi bo'lishi kerak" }),
+    })
+    .nullable(),
   comment: z.string().max(500).optional(),
 });
 
 export const gradeActivitySchema = z.object({
   studentId: z.string().uuid('Noto\'g\'ri o\'quvchi ID'),
-  activityScore: z.number().int().min(1).max(5),
+  // nullable — xato bosilgan faollik bahosini bekor qilish uchun
+  activityScore: z.number().int().min(1).max(5).nullable(),
 });
 
 export const gradeCoinSchema = z.object({

@@ -259,7 +259,14 @@ class HomeworkService {
             homeworkId: session.assignment.homeworkId,
             title: session.assignment.homework.title,
             lessonItemTitle: session.assignment.homework.lessonItem.title,
+            // Mazmun va havola — o'qituvchi vazifa shartlarini ko'rib,
+            // skrinshot qilib guruh chatiga tashlaydi. Ilgari faqat nom
+            // qaytarilardi va shartlarni ko'rishning iloji yo'q edi.
+            description: session.assignment.homework.description,
+            contentType: session.assignment.homework.contentType,
+            content: session.assignment.homework.content,
             note: session.assignment.note,
+            extraLink: session.assignment.extraLink,
           }
         : null,
       /** Kurslar bo'yicha kategoriyalangan — faqat dostup berilganlari */
@@ -274,6 +281,7 @@ class HomeworkService {
     sessionId: string,
     homeworkId: string,
     note: string | null,
+    extraLink: string | null,
     user: { userId: string; role: string }
   ) {
     const session = await this.loadSessionForTeacher(sessionId, user);
@@ -290,10 +298,12 @@ class HomeworkService {
         assignedInSessionId: sessionId,
         assignedById: user.userId,
         note: note?.trim() || null,
+        extraLink: extraLink?.trim() || null,
       },
       update: {
         homeworkId,
         note: note?.trim() || null,
+        extraLink: extraLink?.trim() || null,
         assignedById: user.userId,
         assignedAt: new Date(),
       },
@@ -302,9 +312,16 @@ class HomeworkService {
 
     return {
       assignmentId: assignment.id,
+      homeworkId: assignment.homeworkId,
       title: assignment.homework.title,
       lessonItemTitle: assignment.homework.lessonItem.title,
+      // Vazifa MAZMUNI ham qaytariladi: o'qituvchi uni ekranda ko'rib,
+      // skrinshot qilib guruh chatiga tashlashi kerak.
+      description: assignment.homework.description,
+      contentType: assignment.homework.contentType,
+      content: assignment.homework.content,
       note: assignment.note,
+      extraLink: assignment.extraLink,
     };
   }
 
@@ -420,6 +437,8 @@ class HomeworkService {
         content: a.homework.content,
         lessonItemTitle: a.homework.lessonItem.title,
         note: a.note,
+        // O'qituvchi qo'shgan qo'shimcha havola — o'quvchiga ham ko'rinadi
+        extraLink: a.extraLink,
         groupName: a.group.name,
         lessonNumber: numberMaps.get(a.groupId)?.get(a.session.date.toISOString()) ?? null,
         topic: a.session.topic,
