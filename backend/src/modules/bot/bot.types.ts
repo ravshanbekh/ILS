@@ -4,6 +4,8 @@ export interface BotUserState {
   step?: string;           // 'await_login' | 'await_password' | 'await_feedback' | 'await_ai_query' | 'admin_await_login' | 'admin_await_password' | 'await_appeal_message' | 'await_event_feedback_comment'
   pendingLogin?: string;   // Vaqtincha saqlanadigan login
   pendingAdminLogin?: string;
+  /** Login yozilgan xabar id si — parol to'g'ri chiqsa uni ham o'chiramiz */
+  pendingLoginMessageId?: number;
   pendingAppealType?: 'shikoyat' | 'taklif' | 'etiroz' | 'minnatdorchilik';
   pendingFeedbackEventId?: string;
 }
@@ -74,6 +76,10 @@ export interface NotifyCheckPayload {
   normativeTitle: string;
   result: 'green' | 'blue' | 'red';
   score: number;
+  /** Normativning maksimal bali — "20 ball" o'rniga "20/40 ball" yozish uchun */
+  maxScore?: number | null;
+  /** O'quvchi ismi — yakuniy iliq qatorda ishlatiladi */
+  studentName?: string | null;
   comment?: string | null;
   totalScore?: number;
 }

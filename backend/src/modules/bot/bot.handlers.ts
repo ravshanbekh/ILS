@@ -61,6 +61,26 @@ function getState(chatId: number): BotUserState {
   return userStates.get(chatId) || {};
 }
 
+/**
+ * Foydalanuvchi yozgan xabarni chatdan o'chirish.
+ *
+ * Login va parol Telegram tarixida abadiy qolib ketardi — telefonni boshqa
+ * kimdir ochsa yoki hisob o'g'irlansa, o'quvchi hisobiga kirish ma'lumotlari
+ * ochiq turardi.
+ *
+ * Xatolik JIM yutiladi: o'chirish huquqi bo'lmasligi yoki xabar allaqachon
+ * o'chirilgan bo'lishi mumkin. Bu sababli ulanish jarayoni to'xtamasligi
+ * kerak — xavfsizlik yaxshilanishi asosiy oqimni buzmasin.
+ */
+async function deleteSilently(bot: BotInstance, chatId: number, messageId?: number) {
+  if (!messageId) return;
+  try {
+    await bot.deleteMessage(chatId, messageId);
+  } catch {
+    /* huquq yo'q yoki xabar yo'q — ahamiyatsiz */
+  }
+}
+
 function setState(chatId: number, state: Partial<BotUserState>) {
   userStates.set(chatId, { ...getState(chatId), ...state });
 }
@@ -195,7 +215,13 @@ export function registerHandlers(bot: BotInstance) {
 
     // ── Login oqimi: login kutilmoqda ──
     if (state.step === 'await_login') {
-      setState(chatId, { step: 'await_password', pendingLogin: text });
+      // Login xabarining id si saqlanadi — parol to'g'ri chiqsa ikkalasi
+      // birga o'chiriladi.
+      setState(chatId, {
+        step: 'await_password',
+        pendingLogin: text,
+        pendingLoginMessageId: msg.message_id,
+      });
       await bot.sendMessage(chatId, askPasswordMessage(text), {
         parse_mode: 'Markdown',
         reply_markup: cancelKeyboard(),
@@ -205,6 +231,11 @@ export function registerHandlers(bot: BotInstance) {
 
     // ── Login oqimi: parol kutilmoqda ──
     if (state.step === 'await_password' && state.pendingLogin) {
+      // Parol HAR DOIM o'chiriladi — noto'g'ri bo'lsa ham. Noto'g'ri parol
+      // odatda haqiqiysining xato terilgan varianti bo'ladi, ya'ni baribir
+      // maxfiy ma'lumot.
+      await deleteSilently(bot, chatId, msg.message_id);
+
       await bot.sendMessage(chatId, '⏳ Tekshirilmoqda...');
       const result = await botService.linkParent({
         telegramId,
@@ -214,9 +245,14 @@ export function registerHandlers(bot: BotInstance) {
         fullName: msg.from!.first_name + (msg.from!.last_name ? ' ' + msg.from!.last_name : ''),
         username: msg.from!.username,
       });
+      const loginMessageId = state.pendingLoginMessageId;
       clearState(chatId);
 
       if (result.success) {
+        // Login faqat to'g'ri bo'lganda o'chiriladi: xato bo'lsa ota-ona
+        // nima yozganini ko'rib tuzatishi kerak.
+        await deleteSilently(bot, chatId, loginMessageId);
+
         await bot.sendMessage(
           chatId,
           linkedSuccessMessage(result.studentName!, result.groupName, result.parentCount),
@@ -236,7 +272,11 @@ export function registerHandlers(bot: BotInstance) {
 
     // ── Admin login oqimi ──
     if (state.step === 'admin_await_login') {
-      setState(chatId, { step: 'admin_await_password', pendingAdminLogin: text });
+      setState(chatId, {
+        step: 'admin_await_password',
+        pendingAdminLogin: text,
+        pendingLoginMessageId: msg.message_id,
+      });
       await bot.sendMessage(chatId, adminAskPasswordMessage(text), {
         parse_mode: 'Markdown',
         reply_markup: cancelKeyboard(),
@@ -245,6 +285,9 @@ export function registerHandlers(bot: BotInstance) {
     }
 
     if (state.step === 'admin_await_password' && state.pendingAdminLogin) {
+      // Admin paroli ham chatda qolmasin
+      await deleteSilently(bot, chatId, msg.message_id);
+
       await bot.sendMessage(chatId, '⏳ Tekshirilmoqda...');
       const result = await botService.linkAdmin({
         telegramId,

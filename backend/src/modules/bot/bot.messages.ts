@@ -1,4 +1,13 @@
 import { StudentStats, NotifyCheckPayload } from './bot.types';
+import {
+  lessonVerdict,
+  lessonAdvice,
+  lessonClosing,
+  trendSuffix,
+  normativeVerdict,
+  normativeClosing,
+  type LessonContext,
+} from './bot.tone';
 
 // Helper to escape Markdown special characters
 export function esc(text: string | null | undefined): string {
@@ -67,43 +76,54 @@ export function notStudentMessage(): string {
 
 /** O'quvchi natijalari xabari */
 export function studentResultsMessage(stats: StudentStats): string {
-  const { student, totalScore, completed, pending, groups, submissions } = stats;
+  const { student, totalScore, pending, groups, submissions } = stats;
 
   const groupInfo = groups[0];
-  const groupLine = groupInfo
-    ? `📚 Guruh: *${esc(groupInfo.group.name)}* | O'rin: *#${groupInfo.rank}/${groupInfo.totalInGroup}*`
-    : '';
-
-  // Normativlarni holat bo'yicha ajratish
   const checkedSubs = submissions.filter((s) => s.status === 'checked');
-  const pendingSubs = submissions.filter((s) => s.status === 'pending');
-  
-  // Oxirgi 10 ta natija
-  const lastResults = checkedSubs.slice(0, 10).map((s) => {
-    const icon = s.result === 'green' ? '✅' : s.result === 'blue' ? '☑️' : '❌';
-    return `${icon} *#${s.normative.taskNumber}* ${esc(s.normative.title)} — ${s.score} ball`;
-  });
 
   const greenCount = checkedSubs.filter((s) => s.result === 'green').length;
   const blueCount = checkedSubs.filter((s) => s.result === 'blue').length;
   const redCount = checkedSubs.filter((s) => s.result === 'red').length;
 
+  // Oxirgi 3 ta — ilgari 10 ta edi va telefon ekranida raqamlar devori
+  // bo'lib ko'rinardi. Qolganini "To'liq ma'lumot" tugmasi beradi.
+  const lastResults = checkedSubs.slice(0, 3).map((s) => {
+    const icon = s.result === 'green' ? '✅' : s.result === 'blue' ? '☑️' : '❌';
+    const max = (s.normative as { maxScore?: number }).maxScore;
+    const score = max != null ? `${s.score}/${max}` : `${s.score}`;
+    return `${icon} *#${s.normative.taskNumber}* ${esc(s.normative.title)} — ${score} ball`;
+  });
+
+  // Umumiy holatga bitta izoh: ota-ona raqamlardan o'zi xulosa chiqarishi
+  // shart emas.
+  const total = greenCount + blueCount + redCount;
+  let verdict = "📋 Hozircha tekshirilgan natija yo'q";
+  if (total > 0) {
+    const greenShare = greenCount / total;
+    const okShare = (greenCount + blueCount) / total;
+    if (greenShare >= 0.7) verdict = "🌟 Natijalar a'lo darajada";
+    else if (okShare >= 0.7) verdict = '👍 Natijalar yaxshi';
+    else if (redCount > greenCount + blueCount) verdict = '❗️ Natijalarni yaxshilash kerak';
+    else verdict = "🟡 Natijalar o'rtacha — yaxshilash imkoni bor";
+  }
+
   return (
-    `📊 *O'QUVCHI NATIJALARI*\n` +
+    `📊 *NATIJALAR*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
+    `*${verdict}*\n\n` +
     `👤 *${esc(student.fullName)}*\n` +
-    `${groupLine}\n` +
-    `🏆 Jami ball: *${totalScore}* | Daraja: ⭐${stats.level}\n` +
+    (groupInfo
+      ? `📚 ${esc(groupInfo.group.name)} | *${groupInfo.rank}-o'rin* (${groupInfo.totalInGroup} o'quvchidan)\n`
+      : '') +
+    `🏆 Jami ball: *${totalScore}*\n` +
     `\n` +
-    `📈 *Natijalar taqsimoti:*\n` +
-    `✅ Yashil: ${greenCount} ta\n` +
-    `☑️ Ko'k: ${blueCount} ta\n` +
-    `❌ Qizil: ${redCount} ta\n` +
-    `⏳ Tekshirilmoqda: ${pending} ta\n` +
+    `✅ A'lo: ${greenCount} · ☑️ Yaxshi: ${blueCount} · ❌ Qayta ishlash: ${redCount}` +
+    (pending > 0 ? ` · ⏳ Tekshiruvda: ${pending}` : '') +
     `\n` +
-    `📋 *So'nggi natijalar:*\n` +
-    (lastResults.length > 0 ? lastResults.join('\n') : '_Hozircha natija yo\'q_') +
-    (checkedSubs.length > 10 ? `\n\n_...va yana ${checkedSubs.length - 10} ta_` : '')
+    (lastResults.length > 0 ? `\n📋 *So'nggi natijalar:*\n` + lastResults.join('\n') : '') +
+    (checkedSubs.length > 3
+      ? `\n\n_Barchasini ko'rish uchun "📋 To'liq ma'lumot" tugmasini bosing_`
+      : '')
   );
 }
 
@@ -112,28 +132,35 @@ export function rankingMessage(stats: StudentStats): string {
   const { student, totalScore, completed, groups } = stats;
 
   const groupLines = groups
-    .map((g) => `📚 *${esc(g.group.name)}*: #${g.rank} (${g.totalInGroup} ta o'quvchi ichida)`)
+    .map((g) => `📚 *${esc(g.group.name)}*: ${g.rank}-o'rin (${g.totalInGroup} o'quvchidan)`)
     .join('\n');
 
-  // Progress bar
-  const maxBall = 500;
-  const progress = Math.min(Math.round((totalScore / maxBall) * 10), 10);
-  const progressBar = '█'.repeat(progress) + '░'.repeat(10 - progress);
+  // Progress bar OLIB TASHLANDI.
+  //
+  // Ilgari `const maxBall = 500` qo'lda yozilgan edi va bar shunga nisbatan
+  // chizilardi. 500 hech qayerdan olinmagan son — ya'ni ota-ona SOXTA
+  // maqsadni ko'rardi ("76% bajardi" degan taassurot). Haqiqiy maksimal
+  // o'quvchiga biriktirilgan normativlarga bog'liq va bu yerda mavjud emas.
+  // Yo'q maqsad — soxta maqsaddan yaxshiroq.
+  const best = groups.length > 0 ? groups.reduce((a, b) => (a.rank <= b.rank ? a : b)) : null;
+  let verdict = "📋 Guruh ma'lumoti yo'q";
+  if (best) {
+    if (best.rank === 1) verdict = "🥇 Guruhda birinchi o'rinda";
+    else if (best.rank <= 3) verdict = '🏅 Guruhda oldingi uchlikda';
+    else if (best.rank <= Math.ceil(best.totalInGroup / 2)) verdict = "👍 Guruhning yuqori yarmida";
+    else verdict = "💪 Yuqoriga ko'tarilish imkoni bor";
+  }
 
   return (
-    `📈 *REYTING MA'LUMOTI*\n` +
+    `📈 *REYTING*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
+    `*${verdict}*\n\n` +
     `👤 *${esc(student.fullName)}*\n` +
     `🏆 Jami ball: *${totalScore}*\n` +
-    `⭐ Daraja: *${stats.level}* (${stats.level * 50} → ${(stats.level + 1) * 50})\n` +
+    `📌 Bajarilgan normativlar: *${completed}* ta\n` +
     `\n` +
-    `📊 Progress:\n` +
-    `[${progressBar}] ${totalScore} ball\n` +
-    `\n` +
-    `🎯 *Guruhlar bo'yicha o'rin:*\n` +
-    (groupLines || '_Guruhga biriktirilmagan_') +
-    `\n\n` +
-    `📌 Bajarilgan: *${completed}* ta normativ`
+    `🎯 *Guruhdagi o'rni:*\n` +
+    (groupLines || '_Guruhga biriktirilmagan_')
   );
 }
 
@@ -144,22 +171,20 @@ export function fullInfoMessage(stats: StudentStats): string {
   const groupInfo = stats.groups[0];
   const badgeLines = badges.map((b) => b.name).join(' | ');
 
+  // LOGIN OLIB TASHLANDI: o'quvchi hisobining logini Telegram tarixida
+  // abadiy qolib ketardi. Ota-onaga u kerak emas — natija kerak.
   return (
     `📋 *TO'LIQ MA'LUMOT*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `👤 *${esc(student.fullName)}*\n` +
-    `🔑 Login: \`${esc(student.login)}\`\n` +
     (groupInfo
-      ? `📚 Guruh: *${esc(groupInfo.group.name)}* | O'rin: #${groupInfo.rank}/${groupInfo.totalInGroup}\n`
+      ? `📚 ${esc(groupInfo.group.name)} | *${groupInfo.rank}-o'rin* (${groupInfo.totalInGroup} o'quvchidan)\n`
       : '') +
     `\n` +
-    `🏆 *Ball:* ${totalScore}\n` +
-    `⭐ *Daraja:* ${stats.level}\n` +
-    `✅ *Bajarilgan:* ${completed} ta\n` +
-    `⏳ *Tekshirilmoqda:* ${pending} ta\n` +
-    `\n` +
-    (badgeLines ? `🎖 *Badgelar:*\n${esc(badgeLines)}\n` : '') +
-    `\n_Barcha ma'lumotlar real vaqtda yangilanadi_`
+    `🏆 Jami ball: *${totalScore}*\n` +
+    `✅ Bajarilgan: *${completed}* ta normativ\n` +
+    (pending > 0 ? `⏳ Tekshiruvda: *${pending}* ta\n` : '') +
+    (badgeLines ? `\n🎖 *Yutuqlar:*\n${esc(badgeLines)}\n` : '')
   );
 }
 
@@ -229,16 +254,28 @@ export function childSwitchedMessage(studentName: string): string {
 
 /** Topshiriq tekshirilganda ota-onaga */
 export function checkNotificationMessage(payload: NotifyCheckPayload): string {
-  const icon = payload.result === 'green' ? '✅' : payload.result === 'blue' ? '☑️' : '❌';
-  const resultText = payload.result === 'green' ? 'Yashil' : payload.result === 'blue' ? "Ko'k" : 'Qizil';
+  const resultText =
+    payload.result === 'green' ? 'Yashil' : payload.result === 'blue' ? "Ko'k" : 'Qizil';
+
+  // Shkala: ilgari faqat "20 ball" edi va nechtadan ekani ma'lum emasdi.
+  const scoreText =
+    payload.maxScore != null
+      ? `*${payload.score}/${payload.maxScore} ball*`
+      : `*${payload.score} ball*`;
+
+  const closing = payload.studentName
+    ? normativeClosing(payload.result, payload.studentName)
+    : '';
 
   return (
-    `📬 *Yangi natija keldi!*\n` +
+    `📬 *Yangi natija keldi*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
+    `*${normativeVerdict(payload.result)}*\n\n` +
     `📋 #${payload.normativeTaskNumber}: ${esc(payload.normativeTitle)}\n` +
-    `${icon} Natija: *${resultText}* — ${payload.score} ball\n` +
-    (payload.comment ? `💬 Izoh: ${esc(payload.comment)}\n` : '') +
-    (payload.totalScore !== undefined ? `\n🏆 Umumiy ball: *${payload.totalScore}*` : '')
+    `📊 ${resultText} — ${scoreText}\n` +
+    (payload.comment ? `\n💬 O'qituvchi izohi: ${esc(payload.comment)}\n` : '') +
+    (payload.totalScore !== undefined ? `\n🏆 Jami to'plangan ball: *${payload.totalScore}*` : '') +
+    (closing ? `\n\n_${closing}_` : '')
   );
 }
 
@@ -400,18 +437,57 @@ export function lessonGradeParentMessage(data: {
   teacherComment?: string | null;
   /** Shu darsga umuman vazifa berilganmi (LessonGrade.assignmentId mavjudmi) */
   hasAssignment?: boolean;
+  /** Qaysi vazifaga baho qo'yilgani — ota-ona buni so'ragan edi */
+  homeworkTitle?: string | null;
+  /** Dars mavzusi (LessonSession.topic) */
+  topic?: string | null;
+  /** Trend uchun — o'tgan hafta o'rtachasi */
+  prevWeekAvgHomework?: number | null;
+  /** Ketma-ket muammoni aniqlash uchun — oldingi dars bahosi */
+  prevHomework?: 'toliq' | 'qisman' | 'bajarmagan' | 'kelmadi' | null;
+  prevActivityScore?: number | null;
 }): string {
+  const ctx: LessonContext = {
+    homework: data.homework,
+    activityScore: data.activityScore,
+    hasAssignment: data.hasAssignment,
+    prevHomework: data.prevHomework,
+    prevActivityScore: data.prevActivityScore,
+  };
+
   const hwLabel = homeworkLabel(data.homework, data.hasAssignment);
+  const advice = lessonAdvice(ctx);
+
+  // Mavzu: ilgari ota-ona "5 ball" ni ko'rardi-yu, qaysi vazifa uchun
+  // ekanini bilmasdi.
+  const topicLine =
+    (data.homeworkTitle ? `📖 Vazifa: ${esc(data.homeworkTitle)}\n` : '') +
+    (data.topic ? `📘 Mavzu: ${esc(data.topic)}\n` : '');
 
   return (
     `📚 *DARS NATIJASI*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
+    // MA'NO tepada, raqamlar pastda: ota-ona telefonda birinchi ikki
+    // qatorni o'qiydi, raqamlar devorini emas.
+    `*${lessonVerdict(ctx)}*\n\n` +
     `👤 *${esc(data.studentName)}*\n` +
-    `📆 ${data.date} | 📖 ${esc(data.groupName)}\n\n` +
-    `📝 Uy vazifasi: ${hwLabel}` + (data.homeworkScore !== null ? ` — *${data.homeworkScore} ball*` : '') + `\n` +
+    `📆 ${data.date} | 📚 ${esc(data.groupName)}\n` +
+    topicLine +
+    `\n` +
+    // Ballga SHKALA qo'shildi: ilgari "5 ball" edi va nechtadan ekani
+    // hech qayerda aytilmasdi.
+    `📝 Uy vazifasi: ${hwLabel}` +
+    (data.homeworkScore !== null ? ` — *${data.homeworkScore}/5 ball*` : '') +
+    `\n` +
     (data.activityScore !== null ? `⭐ Faollik: *${data.activityScore}/5*\n` : '') +
-    (data.weeklyAvgHomework != null ? `\n📊 Haftalik o'rtacha: *${data.weeklyAvgHomework.toFixed(1)} ball*\n` : '') +
-    (data.teacherComment ? `\n💬 O'qituvchi izohi: ${esc(data.teacherComment)}` : '')
+    (data.weeklyAvgHomework != null
+      ? `📊 Haftalik o'rtacha: *${data.weeklyAvgHomework.toFixed(1)}/5*` +
+        trendSuffix(data.weeklyAvgHomework, data.prevWeekAvgHomework ?? null) +
+        `\n`
+      : '') +
+    (data.teacherComment ? `\n💬 O'qituvchi izohi: ${esc(data.teacherComment)}\n` : '') +
+    (advice ? `\n💡 ${advice}\n` : '') +
+    `\n_${lessonClosing(ctx, data.studentName)}_`
   );
 }
 
@@ -482,12 +558,19 @@ export function todayLessonMessage(
     );
   }
   const date = new Date(grade.session.date).toLocaleDateString('uz-UZ');
+  const ctx: LessonContext = {
+    homework: grade.homework as LessonContext['homework'],
+    activityScore: grade.activityScore,
+    hasAssignment: grade.assignmentId != null,
+  };
+
   return (
     `📅 *BUGUNGI DARS*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `📖 ${esc(grade.session.group.name)} | 🗓 ${date}\n\n` +
+    `*${lessonVerdict(ctx)}*\n\n` +
+    `📚 ${esc(grade.session.group.name)} | 🗓 ${date}\n\n` +
     `📝 Uy vazifasi: ${homeworkLabel(grade.homework, grade.assignmentId != null)}` +
-    (grade.homeworkScore !== null ? ` — *${grade.homeworkScore} ball*` : '') +
+    (grade.homeworkScore !== null ? ` — *${grade.homeworkScore}/5 ball*` : '') +
     `\n` +
     (grade.activityScore !== null ? `⭐ Faollik: *${grade.activityScore}/5*\n` : '') +
     (grade.comment ? `\n💬 O'qituvchi izohi: ${esc(grade.comment)}` : '')
@@ -510,19 +593,35 @@ export function lessonPeriodSummaryMessage(
   extra?: { studentName?: string; aiSummary?: string }
 ): string {
   const title = period === 'hafta' ? 'HAFTALIK HISOBOT' : 'OYLIK HISOBOT';
+
+  // Bitta jumlalik xulosa — raqamlardan OLDIN.
+  // Ilgari yagona izoh AI tahlili edi va u eng pastda, 14 ta raqamdan
+  // keyin turardi. Ota-ona uni ko'rmasdan xabarni yopardi.
+  const done = lesson.full + lesson.partial + lesson.none + lesson.absent;
+  let verdict = "📋 Bu davrda baholangan dars yo'q";
+  if (done > 0) {
+    const fullShare = lesson.full / done;
+    if (fullShare >= 0.8) verdict = "🌟 Davr a'lo o'tdi";
+    else if (fullShare >= 0.5) verdict = "👍 Davr yaxshi o'tdi";
+    else if (lesson.none + lesson.absent > lesson.full) verdict = "❗️ Uy vazifalariga e'tibor kerak";
+    else verdict = "🟡 O'rtacha — yaxshilash imkoni bor";
+  }
+
   return (
     `📊 *${title}*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    (extra?.studentName ? `👤 *${esc(extra.studentName)}*\n\n` : '') +
-    `*Darslar:* ${lesson.totalSessions} ta baholangan\n` +
+    `*${verdict}*\n` +
+    (extra?.studentName ? `👤 *${esc(extra.studentName)}*\n` : '') +
+    // AI tahlili TEPADA — raqamlardan oldin
+    (extra?.aiSummary ? `\n🤖 ${esc(extra.aiSummary)}\n` : '') +
+    `\n*Darslar:* ${lesson.totalSessions} ta baholangan\n` +
     `✅ To'liq: ${lesson.full} · 🟡 Qisman: ${lesson.partial} · ❌ Bajarmagan: ${lesson.none} · 🚫 Kelmagan: ${lesson.absent}\n` +
-    (lesson.avgHomework !== null ? `📝 Uy vazifasi o'rtachasi: *${lesson.avgHomework.toFixed(1)} ball*\n` : '') +
+    (lesson.avgHomework !== null ? `📝 Uy vazifasi o'rtachasi: *${lesson.avgHomework.toFixed(1)}/5*\n` : '') +
     (lesson.avgActivity !== null ? `⭐ Faollik o'rtachasi: *${lesson.avgActivity.toFixed(1)}/5*\n` : '') +
     `\n*Normativlar:*\n` +
     `📤 Topshirilgan: *${normative.newSubmissions}* ta\n` +
-    `✅ Yashil: ${normative.greenCount} · ☑️ Ko'k: ${normative.blueCount} · ❌ Qizil: ${normative.redCount}\n` +
-    `🏆 Qo'shilgan ball: *+${normative.gainedScore}*` +
-    (extra?.aiSummary ? `\n\n🤖 *AI Tahlil:*\n${esc(extra.aiSummary)}` : '')
+    `✅ A'lo: ${normative.greenCount} · ☑️ Yaxshi: ${normative.blueCount} · ❌ Qayta ishlash: ${normative.redCount}\n` +
+    `🏆 Qo'shilgan ball: *+${normative.gainedScore}*`
   );
 }
 
@@ -533,12 +632,20 @@ export function examResultsMessage(
   if (results.length === 0) {
     return `🏅 *IMTIHON NATIJALARI*\n━━━━━━━━━━━━━━━━━━━━\n_Hozircha rasmiy imtihon natijalari yo'q._`;
   }
-  const lines = results.map((r) =>
-    r.graded
-      ? `📋 *${esc(r.title)}* — ${r.totalScore}/${r.maxScore} ball`
-      : `📋 *${esc(r.title)}* — _tekshirilmoqda_`
+  const rows = results.map((r) => {
+    if (!r.graded || r.totalScore === null) {
+      return `📋 *${esc(r.title)}* — _tekshirilmoqda_`;
+    }
+    // Foiz qo'shildi: "20/40" ni ota-ona o'zi baholay olishi uchun
+    const pct = r.maxScore > 0 ? Math.round((r.totalScore / r.maxScore) * 100) : 0;
+    const mark = pct >= 85 ? '🌟' : pct >= 60 ? '👍' : '❗️';
+    return `${mark} *${esc(r.title)}* — ${r.totalScore}/${r.maxScore} ball (${pct}%)`;
+  });
+  return (
+    `🏅 *IMTIHON NATIJALARI*\n━━━━━━━━━━━━━━━━━━━━\n` +
+    rows.join('\n') +
+    `\n\n_85% dan yuqori — a'lo, 60% dan yuqori — yaxshi._`
   );
-  return `🏅 *IMTIHON NATIJALARI*\n━━━━━━━━━━━━━━━━━━━━\n${lines.join('\n')}`;
 }
 
 // ============ DEMO DAY ============

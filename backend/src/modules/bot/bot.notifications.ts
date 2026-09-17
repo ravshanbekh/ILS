@@ -102,12 +102,20 @@ export async function notifyParentsOnCheck(studentId: string, submission: {
   });
   const totalScore = allChecked.reduce((sum, s) => sum + s.score, 0);
 
+  // Ism yakuniy iliq qator uchun kerak ("Umidjonni tabriklang")
+  const student = await prisma.user.findUnique({
+    where: { id: studentId },
+    select: { fullName: true },
+  });
+
   const payload: NotifyCheckPayload = {
     studentId,
     normativeTaskNumber: submission.normative.taskNumber,
     normativeTitle: submission.normative.title,
     result: submission.result as 'green' | 'blue' | 'red',
     score: submission.score,
+    maxScore: submission.normative.maxScore,
+    studentName: student?.fullName ?? null,
     comment: submission.comment,
     totalScore,
   };
@@ -281,7 +289,14 @@ export async function notifyParentsLessonGrade(sessionId: string) {
     const chatIds = await botService.getParentChatIds(grade.studentId, 'notifyOnCheck');
     if (chatIds.length === 0) continue;
 
-    const weeklyAvg = await lessonSessionsService.getStudentWeeklyHomeworkAvg(grade.studentId);
+    // Kontekst: trend (o'tgan hafta) va oldingi dars bahosi.
+    // Busiz xabar faqat raqam berardi — ota-ona esa "yaxshilanyaptimi?"
+    // degan savolga javob qidiradi.
+    const ctx = await lessonSessionsService.getStudentLessonContext(
+      grade.studentId,
+      session.date
+    );
+
     const message = lessonGradeParentMessage({
       studentName: grade.student.fullName,
       groupName: session.group.name,
@@ -289,9 +304,14 @@ export async function notifyParentsLessonGrade(sessionId: string) {
       homework: grade.homework,
       homeworkScore: grade.homeworkScore,
       activityScore: grade.activityScore,
-      weeklyAvgHomework: weeklyAvg,
+      weeklyAvgHomework: ctx.thisWeekAvg,
+      prevWeekAvgHomework: ctx.prevWeekAvg,
+      prevHomework: ctx.prevHomework,
+      prevActivityScore: ctx.prevActivityScore,
       teacherComment: grade.comment,
       hasAssignment: grade.assignmentId != null,
+      homeworkTitle: (grade as any).assignment?.homework?.title ?? null,
+      topic: (session as any).topic ?? null,
     });
 
     for (const chatId of chatIds) {

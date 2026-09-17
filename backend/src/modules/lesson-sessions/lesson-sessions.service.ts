@@ -112,7 +112,13 @@ class LessonSessionsService {
       include: {
         group: { select: { id: true, name: true, teacherId: true } },
         grades: {
-          include: { student: { select: { id: true, fullName: true, avatarUrl: true } } },
+          include: {
+            student: { select: { id: true, fullName: true, avatarUrl: true } },
+            // Ota-onaga "qaysi vazifaga baho qo'yildi" ni ko'rsatish uchun.
+            // Ilgari xabar faqat "5 ball" derdi va ota-ona qaysi vazifa
+            // ekanini bilmasdi.
+            assignment: { select: { homework: { select: { title: true } } } },
+          },
         },
       },
     });
@@ -414,6 +420,65 @@ class LessonSessionsService {
     if (grades.length === 0) return null;
     const sum = grades.reduce((s, g) => s + (g.homeworkScore || 0), 0);
     return sum / grades.length;
+  }
+
+  /**
+   * Ota-onaga ketadigan xabar uchun KONTEKST.
+   *
+   * Yolg'iz "4.2 o'rtacha" ota-onaga hech narsa demaydi — u "bolam
+   * yaxshilanyaptimi?" degan savolga javob qidiradi. Shuning uchun o'tgan
+   * hafta o'rtachasi va oldingi darsdagi baho ham qaytariladi:
+   *   - trend ko'rsatish uchun (o'smoqda / pasaymoqda)
+   *   - ketma-ket muammoni aniqlash uchun ("ikki darsdan beri...")
+   *
+   * @param beforeDate shu sessiyaning sanasi — "oldingi dars" shundan
+   *                   OLDINGI yakunlangan dars hisoblanadi
+   */
+  async getStudentLessonContext(studentId: string, beforeDate: Date) {
+    const DAY = 24 * 60 * 60 * 1000;
+    const weekAgo = tashkentDateOnly(new Date(Date.now() - 7 * DAY));
+    const twoWeeksAgo = tashkentDateOnly(new Date(Date.now() - 14 * DAY));
+
+    const DONE = ['yakunlandi', 'avto_yopildi'] as const;
+
+    const [thisWeek, prevWeek, prevGrade] = await Promise.all([
+      prisma.lessonGrade.findMany({
+        where: {
+          studentId,
+          homeworkScore: { not: null },
+          session: { date: { gte: weekAgo }, status: { in: [...DONE] } },
+        },
+        select: { homeworkScore: true },
+      }),
+      prisma.lessonGrade.findMany({
+        where: {
+          studentId,
+          homeworkScore: { not: null },
+          session: { date: { gte: twoWeeksAgo, lt: weekAgo }, status: { in: [...DONE] } },
+        },
+        select: { homeworkScore: true },
+      }),
+      prisma.lessonGrade.findFirst({
+        where: {
+          studentId,
+          session: { date: { lt: beforeDate }, status: { in: [...DONE] } },
+        },
+        orderBy: { session: { date: 'desc' } },
+        select: { homework: true, activityScore: true },
+      }),
+    ]);
+
+    const avg = (rows: Array<{ homeworkScore: number | null }>) =>
+      rows.length === 0
+        ? null
+        : rows.reduce((sum, r) => sum + (r.homeworkScore || 0), 0) / rows.length;
+
+    return {
+      thisWeekAvg: avg(thisWeek),
+      prevWeekAvg: avg(prevWeek),
+      prevHomework: prevGrade?.homework ?? null,
+      prevActivityScore: prevGrade?.activityScore ?? null,
+    };
   }
 
   /** Bugun yakunlangan va Telegram chati ulangan guruhlar — 20:00 xulosa yuborish uchun */
