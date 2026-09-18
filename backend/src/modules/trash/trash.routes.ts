@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import trashController from './trash.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
+import { permissionGuard } from '../../shared/middleware/permission.middleware';
 
 const router = Router();
 router.use(authenticate);
@@ -14,18 +15,18 @@ router.get('/groups', roleGuard(...ALLOWED_ROLES), trashController.getTrashGroup
 router.get('/users', roleGuard(...ALLOWED_ROLES), trashController.getTrashUsers);
 
 // POST /api/trash/groups/:id/restore
-router.post('/groups/:id/restore', roleGuard(...ALLOWED_ROLES), trashController.restoreGroup);
+router.post('/groups/:id/restore', roleGuard(...ALLOWED_ROLES), permissionGuard('restore_trash'), trashController.restoreGroup);
 
 // POST /api/trash/users/:id/restore
-router.post('/users/:id/restore', roleGuard(...ALLOWED_ROLES), trashController.restoreUser);
+router.post('/users/:id/restore', roleGuard(...ALLOWED_ROLES), permissionGuard('restore_trash'), trashController.restoreUser);
 
 // DELETE /api/trash/groups/:id/permanent
-router.delete('/groups/:id/permanent', roleGuard('admin'), trashController.permanentlyDeleteGroup);
+router.delete('/groups/:id/permanent', roleGuard('admin'), permissionGuard('restore_trash'), trashController.permanentlyDeleteGroup);
 
 // DELETE /api/trash/users/:id/permanent
-router.delete('/users/:id/permanent', roleGuard('admin'), trashController.permanentlyDeleteUser);
+router.delete('/users/:id/permanent', roleGuard('admin'), permissionGuard('restore_trash'), trashController.permanentlyDeleteUser);
 
 // DELETE /api/trash/empty
-router.delete('/empty', roleGuard('admin'), trashController.emptyTrash);
+router.delete('/empty', roleGuard('admin'), permissionGuard('restore_trash'), trashController.emptyTrash);
 
 export default router;

@@ -378,13 +378,47 @@ class GroupsService {
   /**
    * O'quvchini bir guruhdan boshqa guruhga o'tkazish (transfer)
    */
-  async transferStudent(fromGroupId: string, toGroupId: string, studentId: string, transferredByUserId?: string) {
+  async transferStudent(
+    fromGroupId: string,
+    toGroupId: string,
+    studentId: string,
+    transferredByUserId?: string,
+    /**
+     * O'tkazuvchining roli va begona guruhga aralashish ruxsati.
+     * Berilmasa (eski chaqiruvlar) tekshiruv o'tkazilmaydi.
+     */
+    actor?: { role: string; canCrossTeacher: boolean }
+  ) {
     if (fromGroupId === toGroupId) {
-      throw ApiError.badRequest('Bir xil guruhga o\'tkaza olmaysiz');
+      throw ApiError.badRequest("Bir xil guruhga o'tkaza olmaysiz");
     }
 
     const targetGroup = await prisma.group.findUnique({ where: { id: toGroupId } });
     if (!targetGroup) throw ApiError.notFound('Maqsadli guruh topilmadi');
+
+    // ── EGALIK TEKSHIRUVI ────────────────────────────────────────────────
+    // Ilgari bu yerda HECH QANDAY tekshiruv yo'q edi: transfer_student
+    // ruxsati bor har qanday o'qituvchi istalgan guruhdan istalgan
+    // o'quvchini istalgan guruhga ko'chira olardi — boshqa o'qituvchinikini
+    // ham.
+    //
+    // Tekshiruv FAQAT o'qituvchilarga tegishli: administrator va sotuv
+    // operatori guruh egasi emas, ular uchun guruhlar orasida ko'chirish —
+    // kundalik ishi. Ularga egalik talab qilsak ish butunlay to'xtardi.
+    if (actor && actor.role === 'teacher' && !actor.canCrossTeacher) {
+      const sourceGroup = await prisma.group.findUnique({
+        where: { id: fromGroupId },
+        select: { teacherId: true },
+      });
+      const mine = (g: { teacherId: string | null } | null) =>
+        !!g && g.teacherId === transferredByUserId;
+
+      if (!mine(sourceGroup) || !mine(targetGroup)) {
+        throw ApiError.forbidden(
+          "Faqat o'z guruhlaringiz orasida o'tkaza olasiz — boshqa o'qituvchi guruhi uchun alohida ruxsat kerak"
+        );
+      }
+    }
 
     // 1. Eski guruhdan chiqarish
     await prisma.groupStudent.deleteMany({

@@ -133,10 +133,23 @@ class LessonSessionsService {
     }
   }
 
-  private assertOwnerAndOpen(session: { teacherId: string; status: LessonSessionStatus; deadlineAt: Date }, teacherId: string, isAdmin: boolean) {
+  /**
+   * Egalik + vaqt tekshiruvi.
+   *
+   * `canAfterDeadline` — "Muddat o'tgach baholash" ruxsati. Egalik baribir
+   * tekshiriladi: ruxsat vaqt cheklovini ochadi, begona guruhga kirishni
+   * emas. Adashib bosilgan bahoni admindan so'ramasdan tuzatish uchun.
+   */
+  private assertOwnerAndOpen(
+    session: { teacherId: string; status: LessonSessionStatus; deadlineAt: Date },
+    teacherId: string,
+    isAdmin: boolean,
+    canAfterDeadline = false
+  ) {
     if (!isAdmin && session.teacherId !== teacherId) {
       throw ApiError.forbidden('Bu sessiya sizga tegishli emas');
     }
+    if (canAfterDeadline) return;
     if (session.status !== 'ochiq') {
       throw ApiError.badRequest(
         session.status === 'yakunlandi'
@@ -149,10 +162,10 @@ class LessonSessionsService {
     }
   }
 
-  async gradeHomework(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, homework: HomeworkGrade | null, comment?: string) {
+  async gradeHomework(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, homework: HomeworkGrade | null, comment?: string, canAfterDeadline = false) {
     const session = await prisma.lessonSession.findUnique({ where: { id: sessionId } });
     if (!session) throw ApiError.notFound('Sessiya topilmadi');
-    this.assertOwnerAndOpen(session, teacherId, isAdmin);
+    this.assertOwnerAndOpen(session, teacherId, isAdmin, canAfterDeadline);
 
     const grade = await prisma.lessonGrade.findUnique({
       where: { sessionId_studentId: { sessionId, studentId } },
@@ -182,10 +195,10 @@ class LessonSessionsService {
     return this.getById(sessionId);
   }
 
-  async gradeActivity(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, activityScore: number | null) {
+  async gradeActivity(sessionId: string, teacherId: string, isAdmin: boolean, studentId: string, activityScore: number | null, canAfterDeadline = false) {
     const session = await prisma.lessonSession.findUnique({ where: { id: sessionId } });
     if (!session) throw ApiError.notFound('Sessiya topilmadi');
-    this.assertOwnerAndOpen(session, teacherId, isAdmin);
+    this.assertOwnerAndOpen(session, teacherId, isAdmin, canAfterDeadline);
 
     const grade = await prisma.lessonGrade.findUnique({
       where: { sessionId_studentId: { sessionId, studentId } },
@@ -228,6 +241,8 @@ class LessonSessionsService {
       include: { grades: true },
     });
     if (!session) throw ApiError.notFound('Sessiya topilmadi');
+    // finalize ATAYLAB bypass qilinmaydi: baholashni tuzatish boshqa,
+    // yopilgan darsni qayta yakunlash boshqa narsa.
     this.assertOwnerAndOpen(session, teacherId, isAdmin);
 
     const now = new Date();

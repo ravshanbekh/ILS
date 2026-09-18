@@ -119,6 +119,84 @@ export const PERMISSIONS = {
     category: 'Gamifikatsiya',
     legacyRoles: [], // faqat admin, kerak bo'lsa qo'lda beriladi
   },
+
+  // ── Guruh: begona guruhga aralashish ──
+  transfer_cross_teacher: {
+    label: "Boshqa o'qituvchi guruhiga o'tkazish",
+    description:
+      "O'quvchini BOSHQA o'qituvchining guruhidan olish yoki unga berish. Bunsiz o'tkazish faqat o'z guruhlari orasida ishlaydi",
+    category: 'Guruh',
+    // Ilgari transferStudent da egalik tekshiruvi UMUMAN yo'q edi — ya'ni
+    // transfer_student ruxsati bor har kim istalgan guruhga aralasha olardi.
+    // Endi bu alohida ruxsat; legacyRoles bo'sh, ya'ni faqat qo'lda beriladi.
+    legacyRoles: [],
+  },
+  delete_group: {
+    label: "Guruhni o'chirish",
+    description: "Guruhni savatga yuborish. O'quvchilar guruhsiz qoladi",
+    category: 'Guruh',
+    legacyRoles: [], // ilgari faqat admin
+  },
+
+  // ── Ko'rish huquqlari ──
+  view_student_profile: {
+    label: "O'quvchi profili va statistikasini ko'rish",
+    description:
+      "Istalgan o'quvchining to'liq natijalari, tahlili va tarixini ochish. Bunsiz faqat o'z guruhlaridagi o'quvchilar ko'rinadi",
+    category: 'Hisobot',
+    // Bu yo'l ilgari HIMOYASIZ edi: tizimga kirgan har kim, jumladan
+    // o'quvchining o'zi, boshqa o'quvchi statistikasini o'qiy olardi.
+    // Hozir kirish huquqi bor rollar ro'yxati — hech kimning ishi buzilmasin.
+    legacyRoles: ['administrator', 'filial_rahbari', 'nazoratchi', 'hr_rahbari', 'sotuv_operatori'],
+  },
+  view_rankings: {
+    label: "Barcha guruhlar reytingini ko'rish",
+    description: "O'z guruhlaridan tashqari guruhlarning reytingini ham ko'rish",
+    category: 'Hisobot',
+    legacyRoles: [
+      'administrator',
+      'filial_rahbari',
+      'nazoratchi',
+      'hr_rahbari',
+      'sotuv_operatori',
+      'kassir',
+      'moliya_rahbari',
+    ],
+  },
+
+  // ── Dars va baholash ──
+  grade_after_deadline: {
+    label: "Muddat o'tgach baholash",
+    description:
+      "Dars yakunlangandan yoki 2 soatlik muddat tugagandan keyin ham bahoni qo'yish va tuzatish. Adashib bosilgan bahoni admindan so'ramasdan tuzatish uchun",
+    category: "Ta'lim",
+    legacyRoles: [], // ilgari faqat admin unlock qila olardi
+  },
+
+  // ── Nazorat ──
+  milestone_oversight: {
+    label: 'Demo day va imtihon nazorati',
+    description:
+      "Qaysi guruh demo day va imtihonni o'tkazdi, kim kechikdi — nazorat paneli va oylik statistika",
+    category: 'Nazorat',
+    legacyRoles: ['administrator', 'filial_rahbari', 'nazoratchi'],
+  },
+
+  // ── Xavfli amallar ──
+  restore_trash: {
+    label: 'Savatni boshqarish',
+    description:
+      "O'chirilgan guruh va foydalanuvchilarni tiklash yoki butunlay o'chirish. Butunlay o'chirish QAYTARIB BO'LMAYDI",
+    category: 'Xavfli',
+    legacyRoles: ['administrator', 'filial_rahbari'],
+  },
+  force_logout: {
+    label: 'Barcha qurilmalardan chiqarish',
+    description:
+      "Foydalanuvchining barcha ochiq sessiyalarini bekor qilish. Paroli o'g'irlangan deb gumon qilinganda ishlatiladi",
+    category: 'Xavfli',
+    legacyRoles: [], // ilgari faqat admin
+  },
 } as const satisfies Record<string, PermissionMeta>;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

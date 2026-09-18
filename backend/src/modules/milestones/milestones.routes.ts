@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import milestonesController from './milestones.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
+import { permissionGuard } from '../../shared/middleware/permission.middleware';
 
 const router = Router();
 
@@ -12,9 +13,9 @@ const OVERSIGHT = ['admin', 'administrator', 'filial_rahbari', 'nazoratchi'];
 const OWNERS = ['admin', 'administrator', 'teacher'];
 
 // ── Nazorat ─────────────────────────────────────────────────────────────────
-router.get('/overview', roleGuard(...OVERSIGHT), milestonesController.overview);
-router.get('/summary', roleGuard(...OVERSIGHT), milestonesController.summary);
-router.get('/unconfigured', roleGuard(...OVERSIGHT), milestonesController.unconfigured);
+router.get('/overview', roleGuard(...OVERSIGHT), permissionGuard('milestone_oversight'), milestonesController.overview);
+router.get('/summary', roleGuard(...OVERSIGHT), permissionGuard('milestone_oversight'), milestonesController.summary);
+router.get('/unconfigured', roleGuard(...OVERSIGHT), permissionGuard('milestone_oversight'), milestonesController.unconfigured);
 
 // Ogohlantirish banneri — HAMMA kira oladi, lekin javob rolga qarab
 // filtrlanadi: o'qituvchi faqat o'z guruhlarini ko'radi (controllerda).

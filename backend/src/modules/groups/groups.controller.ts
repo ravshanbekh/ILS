@@ -3,6 +3,7 @@ import groupsService from './groups.service';
 import { createGroupSchema, updateGroupSchema, addStudentSchema, addStudentsSchema } from './groups.validation';
 import { getPagination } from '../../shared/utils/pagination';
 import { ApiError } from '../../shared/middleware/errorHandler';
+import { hasPermission } from '../../shared/middleware/permission.middleware';
 
 class GroupsController {
   /**
@@ -155,11 +156,15 @@ class GroupsController {
         throw ApiError.badRequest('fromGroupId, toGroupId va studentId talab qilinadi');
       }
 
+      // O'qituvchi begona guruhga aralasha oladimi — alohida ruxsat
+      const canCrossTeacher = await hasPermission(req.user, 'transfer_cross_teacher');
+
       const result = await groupsService.transferStudent(
         fromGroupId,
         toGroupId,
         studentId,
-        req.user?.userId
+        req.user?.userId,
+        { role: req.user?.role ?? '', canCrossTeacher }
       );
       res.json({ success: true, ...result });
     } catch (error) {

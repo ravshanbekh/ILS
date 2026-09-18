@@ -42,10 +42,10 @@ router.patch('/me/profile', usersController.updateMyCardProfile);
 // POST /api/users/force-logout-all — hammasini birdan chiqarish (faqat admin)
 // :id li yo'ldan OLDIN turishi kerak emas (yo'llar farq qiladi), lekin
 // o'qilishi uchun yonma-yon turadi.
-router.post('/force-logout-all', roleGuard('admin'), usersController.forceLogoutAll);
+router.post('/force-logout-all', roleGuard('admin'), permissionGuard('force_logout'), usersController.forceLogoutAll);
 
 // POST /api/users/:id/force-logout — barcha qurilmalardan chiqarish (faqat admin)
-router.post('/:id/force-logout', roleGuard('admin'), usersController.forceLogout);
+router.post('/:id/force-logout', roleGuard('admin', 'administrator', 'filial_rahbari'), permissionGuard('force_logout'), usersController.forceLogout);
 
 // GET /api/users/filials — filiallar ro'yxati (yagona manba: constants/filials.ts)
 router.get('/filials', usersController.getFilials);

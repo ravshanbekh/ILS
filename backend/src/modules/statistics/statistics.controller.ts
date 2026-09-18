@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import statisticsService from './statistics.service';
 import { ApiError } from '../../shared/middleware/errorHandler';
+import { hasPermission } from '../../shared/middleware/permission.middleware';
+import usersService from '../users/users.service';
 
 class StatisticsController {
   /**
@@ -66,6 +68,25 @@ class StatisticsController {
       const studentId = req.user.role === 'student'
         ? req.user.userId
         : req.params.id;
+
+      // ── KIRISH TEKSHIRUVI ────────────────────────────────────────────
+      // Bu yo'lda roleGuard YO'Q edi: tizimga kirgan har qanday odam
+      // istalgan o'quvchining to'liq statistikasini o'qiy olardi.
+      //
+      // Ruxsatsiz o'tadiganlar: o'quvchining o'zi, admin, va o'sha
+      // o'quvchi guruhining o'qituvchisi. Qolganlarga qo'lda beriladigan
+      // "O'quvchi profilini ko'rish" ruxsati kerak.
+      if (req.user.role !== 'student' && req.user.role !== 'admin') {
+        const ownsStudent =
+          req.user.role === 'teacher' &&
+          (await usersService.isStudentOfTeacher(studentId, req.user.userId));
+
+        if (!ownsStudent && !(await hasPermission(req.user, 'view_student_profile'))) {
+          throw ApiError.forbidden(
+            "Bu o'quvchi sizga biriktirilmagan — \"O'quvchi profilini ko'rish\" ruxsati kerak"
+          );
+        }
+      }
 
       const stats = await statisticsService.getStudentStats(studentId);
       res.json({ success: true, data: stats });

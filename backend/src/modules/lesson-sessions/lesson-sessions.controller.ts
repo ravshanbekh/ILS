@@ -8,6 +8,7 @@ import {
   adminUnlockSchema,
 } from './lesson-sessions.validation';
 import { ApiError } from '../../shared/middleware/errorHandler';
+import { hasPermission } from '../../shared/middleware/permission.middleware';
 
 function isAdminRole(role?: string) {
   return role === 'admin' || role === 'administrator';
@@ -68,7 +69,8 @@ class LessonSessionsController {
         isAdminRole(req.user?.role),
         validated.data.studentId,
         validated.data.homework,
-        validated.data.comment
+        validated.data.comment,
+        await hasPermission(req.user, 'grade_after_deadline')
       );
       res.json({ success: true, data: session });
     } catch (error) {
@@ -88,7 +90,8 @@ class LessonSessionsController {
         req.user!.userId,
         isAdminRole(req.user?.role),
         validated.data.studentId,
-        validated.data.activityScore
+        validated.data.activityScore,
+        await hasPermission(req.user, 'grade_after_deadline')
       );
       res.json({ success: true, data: session });
     } catch (error) {

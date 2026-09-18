@@ -28,7 +28,7 @@ router.post('/', roleGuard('admin', 'teacher'), permissionGuard('create_group'),
 router.put('/:id', roleGuard('admin', 'teacher'), permissionGuard('edit_group'), groupsController.update);
 
 // DELETE /api/groups/:id — Guruhni o'chirish
-router.delete('/:id', roleGuard('admin'), groupsController.delete);
+router.delete('/:id', roleGuard('admin', 'teacher', 'administrator'), permissionGuard('delete_group'), groupsController.delete);
 
 // Bitiruv — o'chirish EMAS. Guruh arxivga tushadi, tarixi saqlanadi.
 router.post('/:id/graduate', roleGuard('admin'), groupsController.graduate);
