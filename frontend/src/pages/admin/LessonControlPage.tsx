@@ -1,13 +1,26 @@
 import { useEffect, useState } from 'react';
 import Header from '@/components/layout/Header';
 import { lessonSessionsApi } from '@/api';
-import { AlarmClock, Loader2, Unlock, CheckCircle2, AlertTriangle, HelpCircle } from 'lucide-react';
+import { AlarmClock, Loader2, Unlock, CheckCircle2, AlertTriangle, HelpCircle, History } from 'lucide-react';
+import { uzDayMonth } from '@/utils/uzDate';
 
 interface UngradedItem {
   groupId: string;
   groupName: string;
   teacherId?: string;
   teacherName?: string;
+}
+
+/** So'nggi kunlarda avtomatik yopilib qolgan dars */
+interface ClosedSession {
+  sessionId: string;
+  groupId: string;
+  groupName: string;
+  teacherName: string | null;
+  date: string;
+  studentCount: number;
+  unlockedAt: string | null;
+  unlockNote: string | null;
 }
 
 interface Report {
@@ -19,14 +32,21 @@ interface Report {
 
 export default function LessonControlPage() {
   const [report, setReport] = useState<Report | null>(null);
+  const [closed, setClosed] = useState<ClosedSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await lessonSessionsApi.adminUngraded();
+      // Ikkalasi birga: bugungi holat va so'nggi kunlarda yopilib qolganlar.
+      // Ikkinchisi bo'lmasa, kechagi darsni qayta ochish imkoni yo'q edi.
+      const [res, closedRes] = await Promise.all([
+        lessonSessionsApi.adminUngraded(),
+        lessonSessionsApi.adminClosed(7).catch(() => null),
+      ]);
       setReport(res.data.data);
+      setClosed(closedRes?.data?.data ?? []);
     } finally {
       setLoading(false);
     }
@@ -36,12 +56,18 @@ export default function LessonControlPage() {
     load();
   }, []);
 
-  const handleUnlock = async (groupId: string, groupName: string) => {
-    const note = window.prompt(`"${groupName}" guruhiga ruxsat berish sababi (majburiy):`);
+  /**
+   * @param date  ISO sana. Berilmasa bugungi kun ochiladi. O'tgan kunni
+   *              ochish uchun aynan shu parametr kerak — backend uni
+   *              allaqachon qo'llab-quvvatlardi, lekin UI yubormasdi.
+   */
+  const handleUnlock = async (groupId: string, groupName: string, date?: string) => {
+    const when = date ? ` (${uzDayMonth(date)})` : '';
+    const note = window.prompt(`"${groupName}"${when} guruhiga ruxsat berish sababi (majburiy):`);
     if (!note || !note.trim()) return;
-    setUnlockingId(groupId);
+    setUnlockingId(groupId + (date ?? ''));
     try {
-      await lessonSessionsApi.adminUnlock(groupId, note.trim());
+      await lessonSessionsApi.adminUnlock(groupId, note.trim(), date);
       await load();
     } catch (e: any) {
       alert(e?.response?.data?.error?.message || e?.response?.data?.message || 'Xatolik yuz berdi');
@@ -118,6 +144,51 @@ export default function LessonControlPage() {
                       </button>
                     </div>
                   ))}
+                </div>
+              </section>
+            )}
+
+            {/* So'nggi kunlarda yopilib qolgan darslar — o'tgan kunni ham ochish mumkin */}
+            {closed.length > 0 && (
+              <section>
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-zinc-400">
+                  <History className="h-4 w-4" />
+                  So'nggi 7 kunda yopilib qolgan darslar ({closed.length})
+                </h3>
+                <div className="space-y-2">
+                  {closed.map((c) => {
+                    const busy = unlockingId === c.groupId + c.date;
+                    return (
+                      <div
+                        key={c.sessionId}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3"
+                        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">
+                            {c.groupName}
+                            <span className="ml-2 text-sm font-normal" style={{ color: 'var(--muted-foreground)' }}>
+                              {uzDayMonth(c.date)}
+                            </span>
+                          </p>
+                          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                            {c.teacherName ?? "o'qituvchi yo'q"} · {c.studentCount} o'quvchi
+                            {c.unlockNote ? ` · avval ochilgan: ${c.unlockNote}` : ''}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleUnlock(c.groupId, c.groupName, c.date)}
+                          disabled={busy}
+                          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+                          style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+                        >
+                          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4" />}
+                          {busy ? 'Ochilmoqda...' : 'Qayta ochish'}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}

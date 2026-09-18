@@ -402,6 +402,43 @@ class LessonSessionsService {
     return { date: today, notOpened, notFinalized, notConfigured };
   }
 
+  /**
+   * So'nggi kunlarda AVTOMATIK YOPILGAN, ya'ni baholanmay qolgan darslar.
+   *
+   * `getUngradedGroupsToday` faqat BUGUNGI kunni ko'radi va faqat dars kuni
+   * bo'lgan guruhlarni tekshiradi. Shuning uchun kechagi yopilgan darsni
+   * admin hech qayerdan qayta ocholmasdi — garchi `adminUnlock` sana
+   * parametrini qabul qilsa ham. Bu metod aynan o'sha bo'shliqni yopadi.
+   */
+  async getClosedSessions(days = 7) {
+    const today = tashkentDateOnly();
+    const from = new Date(today);
+    from.setDate(from.getDate() - Math.max(1, Math.min(days, 60)));
+
+    const sessions = await prisma.lessonSession.findMany({
+      where: { status: 'avto_yopildi', date: { gte: from, lte: today } },
+      orderBy: [{ date: 'desc' }],
+      include: {
+        group: { select: { id: true, name: true } },
+        teacher: { select: { id: true, fullName: true } },
+        _count: { select: { grades: true } },
+      },
+    });
+
+    return sessions.map((s) => ({
+      sessionId: s.id,
+      groupId: s.group.id,
+      groupName: s.group.name,
+      teacherName: s.teacher?.fullName ?? null,
+      date: s.date,
+      startedAt: s.startedAt,
+      studentCount: s._count.grades,
+      /** Ilgari ochilgan bo'lsa — kim va nega ochgani */
+      unlockedAt: s.unlockedAt,
+      unlockNote: s.unlockNote,
+    }));
+  }
+
   // ============ OTA-ONA XABARI VA GURUH XULOSASI UCHUN MA'LUMOT ============
 
   /** finalizedAt + 1 soatdan keyin ota-onaga xabar yuborish uchun tayyor sessiyalar */

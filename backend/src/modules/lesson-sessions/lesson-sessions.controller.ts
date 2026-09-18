@@ -152,6 +152,17 @@ class LessonSessionsController {
     }
   }
 
+  /** GET /api/lesson-sessions/admin/closed?days=7 — yopilgan darslar ro'yxati */
+  async adminClosed(req: Request, res: Response, next: NextFunction) {
+    try {
+      const days = Number(req.query.days) || 7;
+      const result = await lessonSessionsService.getClosedSessions(days);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /** GET /api/lesson-sessions/admin/ungraded — faqat admin, bugungi nazorat hisoboti */
   async adminUngraded(_req: Request, res: Response, next: NextFunction) {
     try {

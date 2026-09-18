@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Play, CheckCircle2, Clock, Users, Lock, AlertTriangle, Coins, Link2, BookOpen, Check } from 'lucide-react';
+import { X, Play, CheckCircle2, Clock, Users, Lock, AlertTriangle, Coins, Link2, BookOpen, Check, Unlock, Loader2 } from 'lucide-react';
 import { lessonSessionsApi, homeworkApi } from '@/api';
+import { useAuthStore } from '@/stores/authStore';
 
 type HomeworkGrade = 'toliq' | 'qisman' | 'bajarmagan' | 'kelmadi';
 
@@ -64,6 +65,16 @@ function formatCountdown(ms: number): string {
 export default function LessonGradingPanel({ groupId, groupName, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
+
+  // Admin yopilgan darsni shu yerdayoq qayta ocha oladi.
+  // Ilgari backendda `POST /lesson-sessions/admin/unlock` bor edi, lekin
+  // unga faqat "Dars nazorati" sahifasidan kirish mumkin edi — ya'ni admin
+  // baholash oynasida turib "administratordan so'rang" yozuvini o'qirdi va
+  // boshqa sahifaga o'tishi kerak edi. Endi tugma shu yerda.
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
   const [isLessonDay, setIsLessonDay] = useState(true);
   const [lessonDayType, setLessonDayType] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -80,6 +91,36 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
   const [showAssign, setShowAssign] = useState(false);
   const [assignNote, setAssignNote] = useState('');
   const [assigning, setAssigning] = useState(false);
+
+  /**
+   * Yopilgan darsni qayta ochish (faqat admin).
+   *
+   * Backend avtomatik qo'yilgan 0 baholarni ham tozalaydi va yangi 2 soatlik
+   * muddat beradi. Izoh MAJBURIY — kim, qachon va nega ochgani yozilib
+   * qoladi (unlockedById / unlockedAt / unlockNote).
+   */
+  const handleUnlock = async () => {
+    const note = window.prompt(
+      "Nega qayta ochilyapti? (izoh yozib qolinadi)",
+      "Baholash vaqti yetmadi",
+    );
+    if (note === null) return;
+    if (!note.trim()) {
+      setUnlockError('Izoh majburiy');
+      return;
+    }
+
+    setUnlocking(true);
+    setUnlockError(null);
+    try {
+      const res = await lessonSessionsApi.adminUnlock(groupId, note.trim());
+      setSession(res.data.data);
+    } catch (e: any) {
+      setUnlockError(e?.response?.data?.error?.message || e?.response?.data?.message || "Qayta ochilmadi");
+    } finally {
+      setUnlocking(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -297,12 +338,43 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
           ) : (
             <>
               {session.status === 'avto_yopildi' && (
-                <div className="mb-4 flex items-start gap-2.5 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">
-                  <Lock className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span>
-                    Uy vazifasi va faollik baholash vaqti (2:00) tugab, avtomatik yopilgan — qayta ochish uchun administratordan so'rang.
-                    <br />🪙 Coin berish bundan mustasno, istalgan vaqt ishlaydi.
-                  </span>
+                <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">
+                  <div className="flex items-start gap-2.5">
+                    <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      Uy vazifasi va faollik baholash vaqti (2:00) tugab, avtomatik yopilgan
+                      {isAdmin ? '.' : " — qayta ochish uchun administratordan so'rang."}
+                      <br />🪙 Coin berish bundan mustasno, istalgan vaqt ishlaydi.
+                    </span>
+                  </div>
+
+                  {isAdmin && (
+                    <div className="mt-3 border-t border-red-500/20 pt-3">
+                      <button
+                        type="button"
+                        onClick={handleUnlock}
+                        disabled={unlocking}
+                        className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+                        style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+                      >
+                        {unlocking ? (
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Unlock className="h-4 w-4" aria-hidden="true" />
+                        )}
+                        {unlocking ? 'Ochilmoqda...' : 'Qayta ochish'}
+                      </button>
+                      <p className="mt-2 text-xs opacity-80">
+                        Yangi 2 soatlik muddat beriladi va avtomatik qo'yilgan 0 baholar
+                        tozalanadi. Izoh yozib qolinadi.
+                      </p>
+                      {unlockError && (
+                        <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--danger-fg)' }}>
+                          {unlockError}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -567,6 +567,8 @@ export const lessonSessionsApi = {
     api.post('/lesson-sessions/admin/unlock', { groupId, note, date }),
 
   adminUngraded: () => api.get('/lesson-sessions/admin/ungraded'),
+  /** So'nggi kunlarda avtomatik yopilgan darslar (o'tgan kunni ochish uchun) */
+  adminClosed: (days = 7) => api.get('/lesson-sessions/admin/closed', { params: { days } }),
 };
 
 export const groupEventsApi = {

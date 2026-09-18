@@ -17,5 +17,7 @@ router.post('/:id/finalize', roleGuard('admin', 'teacher'), lessonSessionsContro
 // Faqat admin (Ravshan) — nazorat va ruxsat berish
 router.post('/admin/unlock', roleGuard('admin'), lessonSessionsController.adminUnlock);
 router.get('/admin/ungraded', roleGuard('admin'), lessonSessionsController.adminUngraded);
+// So'nggi kunlarda yopilib qolgan darslar — o'tgan kunni ham qayta ochish uchun
+router.get('/admin/closed', roleGuard('admin'), lessonSessionsController.adminClosed);
 
 export default router;
