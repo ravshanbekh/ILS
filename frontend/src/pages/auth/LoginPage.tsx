@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { authApi } from '@/api';
-import { GraduationCap, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import BrandMark from '@/components/brand/BrandMark';
 
 export default function LoginPage() {
   const [login, setLogin] = useState('');
@@ -50,14 +51,18 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-zinc-950">
       <div className="w-full max-w-[400px]">
-        {/* Logo Section */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 mb-5 shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)]">
-            <GraduationCap className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-1">ILS</h1>
-          <h2 className="text-sm text-zinc-300 font-medium tracking-wide mb-2 uppercase">IT Live Score</h2>
-          <p className="text-sm text-zinc-400">O'quv markaz platformasiga kirish</p>
+        {/* Logo — menyudagi bilan bir xil vektor (BrandMark).
+            Ilgari bu yerda ko'k quti + bitiruv shapkasi ikonkasi va "ILS"
+            matni turardi, ya'ni login sahifasi brenddan butunlay boshqacha
+            ko'rinardi. */}
+        <div className="mb-10 flex flex-col items-center text-center">
+          <BrandMark width={184} />
+          <p className="mt-2 text-lg font-normal leading-none" style={{ color: 'var(--foreground)' }}>
+            Score
+          </p>
+          <p className="mt-4 text-sm" style={{ color: 'var(--muted-foreground)' }}>
+            O'quv markaz platformasiga kirish
+          </p>
         </div>
 
         {/* Form Section */}
