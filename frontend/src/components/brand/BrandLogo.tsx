@@ -1,23 +1,15 @@
-import { useState } from 'react';
-import { versioned } from './assetVersion';
+import BrandMark from './BrandMark';
 
 /**
  * iTLive Score logotipi — DESIGN-GUIDE 3-bo'lim ("Logo shartnomasi").
  *
- * ⚠️ OCHIQ MASALA
- * Qo'llanma logoni fontdan qayta terishni TAQIQLAYDI va original SVG'dan
- * foydalanishni talab qiladi. Ammo repoda iTLive wordmark'ining toza SVG
- * fayli YO'Q:
- *   - public/icon.svg  — logo emas, boshqa grafik
- *   - public/favicon.svg — binafsha rangli begona belgi
- * Original faqat design/it-live-score/references/IT-identity.pdf ichida.
- *
- * Shu sabab bu komponent avval haqiqiy faylni yuklashga uradi, topilmasa
- * VAQTINCHALIK tipografik lockup chizadi. PDF'dan SVG eksport qilib
- * `public/brand/itlive-logo-light.svg` va `...-dark.svg` nomi bilan
- * qo'yilsa, kodga tegmasdan haqiqiy logo chiqadi.
+ * Ilgari bu yerda vaqtinchalik tipografik lockup turardi, chunki repoda
+ * original wordmark yo'q edi. Endi Ravshan bergan haqiqiy vektor
+ * ishlatiladi (`BrandMark`), ya'ni logo fontdan qayta terilmaydi —
+ * qo'llanma aynan buni talab qilgan edi.
  *
  * "Score" — wordmark ostidagi MUSTAQIL matn, logotipning ichki qismi emas.
+ * Shuning uchun u alohida element va o'z rangini theme'dan oladi.
  */
 
 interface BrandLogoProps {
@@ -29,34 +21,9 @@ interface BrandLogoProps {
 }
 
 export default function BrandLogo({ width = 128, showScore = true, className = '' }: BrandLogoProps) {
-  const [failed, setFailed] = useState(false);
-
   return (
     <span className={`inline-flex flex-col items-start ${className}`}>
-      {failed ? (
-        // ── Vaqtinchalik lockup (original SVG kelguncha) ──
-        <span
-          className="font-bold leading-none tracking-[-0.02em]"
-          style={{ fontSize: width * 0.28 }}
-          aria-hidden="true"
-        >
-          <span style={{ color: 'var(--brand-red)' }}>iT</span>
-          <span style={{ color: 'var(--foreground)' }}>Live</span>
-          <span
-            className="ml-[2px] inline-block align-super rounded-[2px]"
-            style={{ width: width * 0.045, height: width * 0.045, background: 'var(--brand-red)' }}
-          />
-        </span>
-      ) : (
-        <img
-          src={versioned("/brand/itlive-logo.svg")}
-          width={width}
-          style={{ width }}
-          className="block h-auto"
-          onError={() => setFailed(true)}
-          alt="IT Live Score"
-        />
-      )}
+      <BrandMark width={width} />
 
       {showScore && (
         <span
@@ -67,7 +34,7 @@ export default function BrandLogo({ width = 128, showScore = true, className = '
         </span>
       )}
 
-      {/* Ekran o'quvchi uchun yagona nom — fallbackda ham, rasmda ham */}
+      {/* Ekran o'quvchi uchun yagona nom */}
       <span className="sr-only">IT Live Score</span>
     </span>
   );

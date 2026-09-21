@@ -302,7 +302,9 @@
 /* `inline` — utilita to'g'ridan-to'g'ri var() ni yozadi, shuning uchun
    data-theme almashganda barcha rang qayta hisoblanadi. */
 @theme inline {
-  --font-sans: "Roboto", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Roboto — brend fonti (DESIGN-GUIDE 6-bo'lim). Zanjirda "Inter" bor edi,
+     lekin u hech qayerda yuklanmaydi, ya'ni faqat chalg'itardi. */
+  --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --radius-sm: 8px;
   --radius-md: 12px;
