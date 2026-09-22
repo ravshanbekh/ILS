@@ -690,6 +690,10 @@ export const supportHoursApi = {
   /** Ish vaqti, tushlik va chegaralar — backenddagi yagona manbadan */
   getRules: () => api.get('/support-hours/rules'),
 
+  /** Assistentlar mehnati va reytingi (support_oversight ruxsati kerak) */
+  getStats: (from: string, to: string) =>
+    api.get('/support-hours/stats', { params: { from, to } }),
+
   // Assistent
   getMyDay: (date: string, assistantId?: string) =>
     api.get('/support-hours/my-day', { params: { date, assistantId } }),

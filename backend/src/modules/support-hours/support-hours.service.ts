@@ -581,6 +581,170 @@ class SupportHoursService {
   }
 
   /** Assistentlar ro'yxati (admin bir assistent nomidan soat ochishi uchun) */
+  // ============ ASSISTENT MEHNATI: STATISTIKA VA REYTING ============
+
+  /**
+   * Har bir assistentning bir davrdagi mehnati.
+   *
+   * "ISHLAGAN SOAT" NIMA — ataylab ikkiga ajratilgan:
+   *
+   *   openedHours  — nechta soat OCHGAN. Bu hali mehnat emas, taklif.
+   *   bookedHours  — o'quvchi yozilgan soatlar. Assistent band bo'lgan.
+   *   workedHours  — kamida bitta o'quvchi HAQIQATAN KELGAN soatlar.
+   *
+   * Reyting `workedHours` bo'yicha quriladi, chunki "10 soat ochib qo'yib
+   * hech kim kelmagan" bilan "6 soat ishlab 18 bolaga qaragan" bir xil
+   * emas. Lekin uchalasi ham ko'rsatiladi — bitta raqamga ishonib qolmaslik
+   * uchun.
+   *
+   * DIQQAT: workedHours davomat belgilanishiga bog'liq. Assistent
+   * "keldi/kelmadi" ni bosmasa, yozuv `band` holatida qoladi va ishlagan
+   * soat sifatida hisoblanmaydi. Shuning uchun `unmarked` alohida
+   * qaytariladi — agar u katta bo'lsa, reyting emas, intizom muammosi.
+   */
+  async getAssistantStats(fromStr: string, toStr: string) {
+    const from = parseDateOnly(fromStr);
+    const to = parseDateOnly(toStr);
+    if (!from || !to) throw ApiError.badRequest("Sana noto'g'ri");
+    if (from > to) throw ApiError.badRequest("Boshlanish sanasi tugash sanasidan keyin");
+
+    const [people, slots] = await Promise.all([
+      prisma.user.findMany({
+        where: await oversightWhere(),
+        select: { id: true, fullName: true, role: true, avatarUrl: true },
+      }),
+      prisma.supportSlot.findMany({
+        where: { date: { gte: from, lte: to } },
+        select: {
+          id: true,
+          assistantId: true,
+          date: true,
+          startHour: true,
+          capacity: true,
+          bookings: { select: { studentId: true, status: true } },
+        },
+      }),
+    ]);
+
+    type Acc = {
+      openedHours: number;
+      bookedHours: number;
+      workedHours: number;
+      capacityOffered: number;
+      attended: number;
+      noShow: number;
+      cancelled: number;
+      unmarked: number;
+      students: Set<string>;
+      days: Set<string>;
+    };
+
+    const empty = (): Acc => ({
+      openedHours: 0, bookedHours: 0, workedHours: 0, capacityOffered: 0,
+      attended: 0, noShow: 0, cancelled: 0, unmarked: 0,
+      students: new Set(), days: new Set(),
+    });
+
+    const acc = new Map<string, Acc>();
+    for (const p of people) acc.set(p.id, empty());
+
+    for (const slot of slots) {
+      // Ro'yxatda yo'q odam (masalan o'chirilgan) ham hisobga olinsin
+      if (!acc.has(slot.assistantId)) acc.set(slot.assistantId, empty());
+      const a = acc.get(slot.assistantId)!;
+
+      a.openedHours += 1;
+      a.capacityOffered += slot.capacity;
+      a.days.add(toDateOnlyString(slot.date));
+
+      const live = slot.bookings.filter((b) => b.status !== 'bekor');
+      const came = slot.bookings.filter((b) => b.status === 'keldi');
+
+      if (live.length > 0) a.bookedHours += 1;
+      if (came.length > 0) a.workedHours += 1;
+
+      for (const b of slot.bookings) {
+        if (b.status === 'keldi') { a.attended += 1; a.students.add(b.studentId); }
+        else if (b.status === 'kelmadi') a.noShow += 1;
+        else if (b.status === 'bekor') a.cancelled += 1;
+        else a.unmarked += 1; // 'band' — hali belgilanmagan
+      }
+    }
+
+    // Davr uzunligi — haftalik o'rtachani hisoblash uchun
+    const dayMs = 24 * 60 * 60 * 1000;
+    const totalDays = Math.round((to.getTime() - from.getTime()) / dayMs) + 1;
+    const weeks = Math.max(totalDays / 7, 1 / 7);
+
+    const byId = new Map(people.map((p) => [p.id, p]));
+
+    const rows = [...acc.entries()].map(([id, a]) => {
+      const person = byId.get(id);
+      return {
+        assistantId: id,
+        fullName: person?.fullName ?? "O'chirilgan foydalanuvchi",
+        role: person?.role ?? null,
+        avatarUrl: person?.avatarUrl ?? null,
+
+        openedHours: a.openedHours,
+        bookedHours: a.bookedHours,
+        workedHours: a.workedHours,
+        /** Ochgan, lekin hech kim yozilmagan soatlar */
+        idleHours: a.openedHours - a.bookedHours,
+        /** Faol kunlar soni */
+        activeDays: a.days.size,
+
+        attended: a.attended,
+        uniqueStudents: a.students.size,
+        noShow: a.noShow,
+        cancelled: a.cancelled,
+        /** Davomati belgilanmagan yozuvlar — ko'p bo'lsa reyting ishonchsiz */
+        unmarked: a.unmarked,
+
+        capacityOffered: a.capacityOffered,
+        /** Taklif qilingan joylarning qanchasi ishlatilgan, % */
+        fillRate: a.capacityOffered > 0 ? Math.round((a.attended / a.capacityOffered) * 100) : 0,
+        /** Haftasiga o'rtacha necha soat ishlagan */
+        hoursPerWeek: Math.round((a.workedHours / weeks) * 10) / 10,
+        /** Bitta ishlagan soatga o'rtacha nechta o'quvchi */
+        studentsPerHour: a.workedHours > 0 ? Math.round((a.attended / a.workedHours) * 10) / 10 : 0,
+      };
+    });
+
+    // Reyting: ishlagan soat -> qabul qilingan o'quvchi -> noyob o'quvchi
+    rows.sort(
+      (x, y) =>
+        y.workedHours - x.workedHours ||
+        y.attended - x.attended ||
+        y.uniqueStudents - x.uniqueStudents ||
+        x.fullName.localeCompare(y.fullName),
+    );
+    rows.forEach((r, i) => ((r as any).rank = i + 1));
+
+    const totals = rows.reduce(
+      (t, r) => ({
+        openedHours: t.openedHours + r.openedHours,
+        workedHours: t.workedHours + r.workedHours,
+        attended: t.attended + r.attended,
+        noShow: t.noShow + r.noShow,
+        unmarked: t.unmarked + r.unmarked,
+      }),
+      { openedHours: 0, workedHours: 0, attended: 0, noShow: 0, unmarked: 0 },
+    );
+
+    return {
+      from: toDateOnlyString(from),
+      to: toDateOnlyString(to),
+      days: totalDays,
+      weeks: Math.round(weeks * 10) / 10,
+      totals,
+      /** true bo'lsa davomat deyarli belgilanmagan — reytingga ishonib bo'lmaydi */
+      attendanceUnreliable:
+        totals.unmarked > 0 && totals.unmarked >= totals.attended + totals.noShow,
+      rows,
+    };
+  }
+
   async listAssistants() {
     return prisma.user.findMany({
       where: await oversightWhere(),

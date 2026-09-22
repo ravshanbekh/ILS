@@ -67,6 +67,7 @@ const CoinOversightPage = lazyWithReload(() => import('@/pages/shared/CoinOversi
 const SupportBookingPage = lazyWithReload(() => import('@/pages/student/SupportBookingPage'));
 const MySupportHoursPage = lazyWithReload(() => import('@/pages/shared/MySupportHoursPage'));
 const SupportOversightPage = lazyWithReload(() => import('@/pages/shared/SupportOversightPage'));
+const SupportStatsPage = lazyWithReload(() => import('@/pages/shared/SupportStatsPage'));
 const MyProfilePage = lazyWithReload(() => import('@/pages/shared/MyProfilePage'));
 const HomeworkBankPage = lazyWithReload(() => import('@/pages/admin/HomeworkBankPage'));
 const StudentHomeworkPage = lazyWithReload(() => import('@/pages/student/HomeworkPage'));
@@ -238,6 +239,7 @@ export default function App() {
               <Route path="/admin/shop-orders" element={<ShopOrdersPage />} />
               <Route path="/admin/coin-oversight" element={<CoinOversightPage />} />
               <Route path="/admin/support-hours" element={<SupportOversightPage />} />
+              <Route path="/admin/support-stats" element={<SupportStatsPage />} />
               <Route path="/admin/my-support-hours" element={<MySupportHoursPage />} />
               <Route path="/admin/profile" element={<MyProfilePage />} />
               <Route path="/admin/homework-bank" element={<HomeworkBankPage />} />
@@ -321,6 +323,7 @@ export default function App() {
               <Route path="/viewer/:role/coin-oversight" element={<CoinOversightPage />} />
               <Route path="/viewer/:role/my-support-hours" element={<MySupportHoursPage />} />
               <Route path="/viewer/:role/support-hours" element={<SupportOversightPage />} />
+              <Route path="/viewer/:role/support-stats" element={<SupportStatsPage />} />
               <Route path="/viewer/:role/profile" element={<MyProfilePage />} />
             </Route>
 

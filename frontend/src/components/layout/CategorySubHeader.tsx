@@ -70,6 +70,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/monitoring', label: 'Monitoring', icon: Phone },
       { to: '/admin/predictions', label: 'AI Prognozlar', icon: TrendingDown },
       { to: '/admin/support-hours', label: 'Assistent soatlari', icon: CalendarClock },
+      { to: '/admin/support-stats', label: 'Assistentlar reytingi', icon: Trophy },
     ]
   },
   {

@@ -195,6 +195,19 @@ class SupportHoursController {
     }
   }
 
+  /** GET /api/support-hours/stats?from=YYYY-MM-DD&to=YYYY-MM-DD */
+  async stats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const from = String(req.query.from || '');
+      const to = String(req.query.to || '');
+      if (!from || !to) throw ApiError.badRequest("'from' va 'to' sanalari kerak");
+      const data = await supportHoursService.getAssistantStats(from, to);
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /** GET /api/support-hours/assistants */
   async listAssistants(_req: Request, res: Response, next: NextFunction) {
     try {

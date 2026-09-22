@@ -127,7 +127,10 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
       : []),
     // Nazorat — qo'lda beriladigan ruxsat
     ...(canSupportOversight
-      ? [{ to: `/viewer/${user!.role}/support-hours`, icon: ClipboardList, label: 'Assistent soatlari' }]
+      ? [
+          { to: `/viewer/${user!.role}/support-hours`, icon: ClipboardList, label: 'Assistent soatlari' },
+          { to: `/viewer/${user!.role}/support-stats`, icon: Trophy, label: 'Assistentlar reytingi' },
+        ]
       : []),
   ] : [];
 

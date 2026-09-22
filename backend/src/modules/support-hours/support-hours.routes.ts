@@ -29,5 +29,7 @@ router.delete('/bookings/:id', supportHoursController.cancel);
 // ── Admin nazorati (qo'lda beriladigan ruxsat) ───────────────────────────
 router.get('/overview', permissionGuard('support_oversight'), supportHoursController.getOverview);
 router.get('/assistants', permissionGuard('support_oversight'), supportHoursController.listAssistants);
+/** Mehnat statistikasi va reyting — kim necha soat ishlagan, nechta bolaga qaragan */
+router.get('/stats', permissionGuard('support_oversight'), supportHoursController.stats);
 
 export default router;
