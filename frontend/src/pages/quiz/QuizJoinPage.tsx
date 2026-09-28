@@ -12,11 +12,17 @@ interface Player { id: string; fullName: string; score: number; streak: number; 
 interface QuizQ { id: string; question: string; options: string[]; timePerQ: number; index: number; total: number; imageUrl?: string; }
 interface LeaderboardEntry { rank: number; fullName: string; score: number; streak?: number; }
 
+/**
+ * Javob variantlari — o'yin ranglari (index.css dagi .quiz-opt-*).
+ * Tailwind palitrasidan olinmaydi: u yerda "ko'k" brend qiziliga bog'langan
+ * va A bilan B bir xil rangda chiqardi. O'quvchi javobni rang va shakl
+ * bo'yicha tanlaydi, shuning uchun to'rttasi aniq farq qilishi shart.
+ */
 const OPTION_STYLES = [
-  { bg: 'bg-red-500',     hover: 'hover:bg-red-400',     icon: '▲', label: 'A' },
-  { bg: 'bg-blue-500',    hover: 'hover:bg-blue-400',    icon: '◆', label: 'B' },
-  { bg: 'bg-yellow-500',  hover: 'hover:bg-yellow-400',  icon: '●', label: 'C' },
-  { bg: 'bg-emerald-500', hover: 'hover:bg-emerald-400', icon: '■', label: 'D' },
+  { bg: 'quiz-opt quiz-opt-a', hover: 'quiz-opt-hover', icon: '▲', label: 'A' },
+  { bg: 'quiz-opt quiz-opt-b', hover: 'quiz-opt-hover', icon: '◆', label: 'B' },
+  { bg: 'quiz-opt quiz-opt-c', hover: 'quiz-opt-hover', icon: '●', label: 'C' },
+  { bg: 'quiz-opt quiz-opt-d', hover: 'quiz-opt-hover', icon: '■', label: 'D' },
 ];
 
 // ─── Score Counter Animation ──────────────────────────────────────────────────
@@ -441,7 +447,9 @@ export default function QuizJoinPage() {
   if (stage === 'finished') {
     const isTop3 = myRank && myRank <= 3;
     const rankEmoji = myRank === 1 ? '🥇' : myRank === 2 ? '🥈' : myRank === 3 ? '🥉' : '🏅';
-    const rankColors = ['', 'from-yellow-500 to-amber-400', 'from-zinc-400 to-zinc-300', 'from-amber-700 to-amber-600'];
+    // Qat'iy medal ranglari (index.css .rank-*). Ilgari palitra gradienti edi va
+    // light rejimda kumush to'q kulrang, oltin esa jigarrangga aylanardi.
+    const rankColors = ['', 'rank-gold', 'rank-silver', 'rank-bronze'];
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-violet-950 via-zinc-950 to-zinc-950 flex flex-col items-center justify-start p-4 pt-10">
@@ -449,7 +457,7 @@ export default function QuizJoinPage() {
 
         {/* My result hero */}
         <div className="relative z-20 w-full max-w-md mb-6">
-          <div className={`rounded-3xl p-6 text-center ${isTop3 ? `bg-gradient-to-br ${rankColors[myRank!]} text-black shadow-2xl` : 'bg-zinc-900 border border-zinc-700'}`}>
+          <div className={`rounded-3xl p-6 text-center ${isTop3 ? `${rankColors[myRank!]} text-black shadow-2xl` : 'bg-zinc-900 border border-zinc-700'}`}>
             <div className="text-7xl mb-3 animate-bounce">{rankEmoji}</div>
             <h1 className={`text-3xl font-black mb-1 ${isTop3 ? 'text-black' : 'text-white'}`}>{fullName}</h1>
             <p className={`text-sm mb-4 ${isTop3 ? 'text-black/70' : 'text-zinc-400'}`}>
@@ -500,7 +508,7 @@ export default function QuizJoinPage() {
             return (
               <div key={i} className={`flex items-center gap-3 px-4 py-3 border-b border-zinc-800/50 last:border-0 transition-all ${isMe ? 'bg-violet-500/15 border-l-2 border-l-violet-500' : ''}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0
-                  ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                  ${i === 0 ? 'rank-gold' : i === 1 ? 'rank-silver' : i === 2 ? 'rank-bronze' : 'bg-zinc-800 text-zinc-400'}`}>
                   {p.rank}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -583,7 +591,7 @@ export default function QuizJoinPage() {
                 ${isMe ? 'bg-violet-500/20 border border-violet-500/40 scale-[1.02]' : 'bg-zinc-900 border border-zinc-800'}`}
                 style={{ animationDelay: `${i * 50}ms` }}>
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0
-                  ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-300'}`}>
+                  ${i === 0 ? 'rank-gold' : i === 1 ? 'rank-silver' : i === 2 ? 'rank-bronze' : 'bg-zinc-700 text-zinc-300'}`}>
                   {p.rank}
                 </div>
                 <span className={`flex-1 font-medium ${isMe ? 'text-violet-300' : 'text-white'}`}>
@@ -615,7 +623,7 @@ export default function QuizJoinPage() {
         </button>
 
         {chosenStyle ? (
-          <div className={`w-24 h-24 ${chosenStyle.bg} rounded-3xl flex items-center justify-center text-5xl text-white shadow-2xl mb-6 animate-bounce`}>
+          <div className={`w-24 h-24 ${chosenStyle.bg} rounded-3xl flex items-center justify-center text-5xl shadow-2xl mb-6 animate-bounce`}>
             {chosenStyle.icon}
           </div>
         ) : (
@@ -678,7 +686,7 @@ export default function QuizJoinPage() {
           {answerResult.streak >= 2 && (
             <div className="flex items-center gap-2 justify-center bg-amber-500/20 border border-amber-500/30 px-6 py-3 rounded-2xl mb-4">
               <span className="text-3xl">🔥</span>
-              <span className="text-amber-300 font-black text-xl">{answerResult.streak}× streak!</span>
+              <span className="text-amber-400 font-black text-xl">{answerResult.streak}× streak!</span>
             </div>
           )}
         </div>
@@ -769,7 +777,7 @@ export default function QuizJoinPage() {
                 onClick={() => submitAnswer(i)}
                 disabled={isRevealed}
                 className={`
-                  ${style.bg} ${!isRevealed ? style.hover : ''} text-white rounded-2xl p-4
+                  ${style.bg} ${!isRevealed ? style.hover : ''} rounded-2xl p-4
                   flex items-center gap-3 font-semibold text-left transition-all duration-200
                   active:scale-95 shadow-lg min-h-[80px]
                   ${isChosen ? 'ring-4 ring-white ring-offset-2 ring-offset-zinc-950 scale-[1.02]' : ''}

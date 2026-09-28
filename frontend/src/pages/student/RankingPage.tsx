@@ -305,16 +305,16 @@ export default function StudentRankingPage() {
                           {/* Rank Badge */}
                           <div className="w-10 flex justify-center shrink-0">
                             {rank === 1 ? (
-                              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                                <Medal className="w-5 h-5 text-white" />
+                              <div className="w-9 h-9 rounded-xl rank-gold flex items-center justify-center shadow-lg shadow-amber-500/20">
+                                <Medal className="w-5 h-5" />
                               </div>
                             ) : rank === 2 ? (
-                              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-300 to-zinc-500 flex items-center justify-center shadow-lg shadow-zinc-500/20">
-                                <Medal className="w-5 h-5 text-white" />
+                              <div className="w-9 h-9 rounded-xl rank-silver flex items-center justify-center shadow-lg shadow-zinc-500/20">
+                                <Medal className="w-5 h-5" />
                               </div>
                             ) : rank === 3 ? (
-                              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-700 to-orange-800 flex items-center justify-center shadow-lg shadow-amber-700/20">
-                                <Medal className="w-5 h-5 text-white" />
+                              <div className="w-9 h-9 rounded-xl rank-bronze flex items-center justify-center shadow-lg shadow-amber-700/20">
+                                <Medal className="w-5 h-5" />
                               </div>
                             ) : (
                               <span className="text-base font-bold text-zinc-500">#{rank}</span>

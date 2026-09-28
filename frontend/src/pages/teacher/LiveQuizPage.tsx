@@ -584,8 +584,8 @@ export default function LiveQuizPage() {
       {/* Katta variantlar — to'g'ri javob KO'RSATILMAYDI (doska ekranda) */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         {(currentQData.options as string[] || []).map((o: string, i: number) => (
-          <div key={i} className={`flex items-center gap-4 px-5 py-5 rounded-2xl text-white font-bold text-lg md:text-2xl shadow-lg min-h-[80px]
-            ${['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-emerald-500'][i]}`}>
+          <div key={i} className={`quiz-opt flex items-center gap-4 px-5 py-5 rounded-2xl font-bold text-lg md:text-2xl shadow-lg min-h-[80px]
+            ${['quiz-opt-a', 'quiz-opt-b', 'quiz-opt-c', 'quiz-opt-d'][i]}`}>
             <span className="text-3xl opacity-80 flex-shrink-0">{['▲', '◆', '●', '■'][i]}</span>
             <span className="leading-tight">{o}</span>
           </div>
@@ -633,7 +633,7 @@ export default function LiveQuizPage() {
             <div key={p.id || i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all
               ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' : i === 1 ? 'bg-zinc-400/10' : i === 2 ? 'bg-amber-700/10' : 'bg-zinc-900/60'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0
-                ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-300 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
+                ${i === 0 ? 'rank-gold' : i === 1 ? 'rank-silver' : i === 2 ? 'rank-bronze' : 'bg-zinc-700 text-zinc-400'}`}>
                 {i + 1}
               </div>
               <span className="text-white flex-1 font-medium truncate">{p.fullName}</span>
@@ -1438,7 +1438,7 @@ export default function LiveQuizPage() {
                         <div key={p.id || i} className={`flex items-center gap-3 px-4 py-3 rounded-xl
                           ${i === 0 ? 'bg-yellow-500/10 border border-yellow-500/20' : i === 1 ? 'bg-zinc-400/10' : i === 2 ? 'bg-amber-700/10' : 'bg-zinc-800'}`}>
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm
-                            ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-zinc-300 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-300'}`}>{i + 1}</div>
+                            ${i === 0 ? 'rank-gold' : i === 1 ? 'rank-silver' : i === 2 ? 'rank-bronze' : 'bg-zinc-700 text-zinc-300'}`}>{i + 1}</div>
                           <span className="text-white flex-1 font-medium">{p.fullName}</span>
                           <span className="text-violet-400 font-black text-lg">{p.score?.toLocaleString()}</span>
                         </div>
@@ -1603,18 +1603,18 @@ export default function LiveQuizPage() {
                                   key={idx}
                                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs ${
                                     idx === 0
-                                      ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 font-bold'
+                                      ? 'bg-yellow-500/10 border border-yellow-500/20 text-amber-400 font-bold'
                                       : idx === 1
                                       ? 'bg-zinc-400/10 border border-zinc-400/20 text-zinc-300 font-semibold'
                                       : idx === 2
-                                      ? 'bg-amber-700/10 border border-amber-700/20 text-amber-300 font-semibold'
+                                      ? 'bg-amber-700/10 border border-amber-700/20 text-amber-400 font-semibold'
                                       : 'bg-zinc-800/80 text-zinc-300'
                                   }`}
                                 >
                                   <div className="flex items-center gap-2.5">
                                     <span
                                       className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                                        idx === 0 ? 'bg-yellow-400 text-black' : idx === 1 ? 'bg-zinc-300 text-black' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-zinc-700 text-zinc-400'
+                                        idx === 0 ? 'rank-gold' : idx === 1 ? 'rank-silver' : idx === 2 ? 'rank-bronze' : 'bg-zinc-700 text-zinc-400'
                                       }`}
                                     >
                                       {idx + 1}

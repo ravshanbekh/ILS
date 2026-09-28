@@ -504,32 +504,51 @@
   }
 }
 
-/* Argument: to'yingan brend foni — o'zida yoki ota elementida */
+/* Argument: to'yingan brend foni — o'zida yoki ota elementida.
+   Ro'yxat qo'lda emas — patch skriptida bitta manbadan yaratilgan, chunki u
+   ikki marta takrorlanadi va qo'lda tahrirlanganda bir-biridan ajralib
+   ketardi.
+
+   GRADIENTLAR HAQIDA (2026-09-28 tuzatilgan xato):
+   Ilgari bu yerda [class*="bg-gradient-to-"] turardi, ya'ni HAR QANDAY
+   gradient oq yozuv olardi. Lekin ilovada och gradientlar ham bor:
+     from-violet-500/10  — Live Quiz savol kartasi
+     from-violet-950     — Live Quiz lobby foni
+     from-zinc-950       — bir nechta sahifa foni
+   Light rejimda ular deyarli oq bo'ladi va oq yozuv YO'QOLARDI (Ravshan
+   Live Quiz savolini o'qiy olmagan). Endi faqat BOSHLANISHI to'yingan
+   gradientlar oq yozuv oladi; qolganlari theme rangida qoladi. */
 :is(
     [class~="bg-blue-500"], [class~="bg-blue-600"], [class~="bg-blue-700"], [class~="bg-blue-800"],
-    [class~="bg-violet-500"], [class~="bg-violet-600"], [class~="bg-violet-700"],
-    [class~="bg-purple-500"], [class~="bg-purple-600"], [class~="bg-purple-700"],
-    [class~="bg-indigo-500"], [class~="bg-indigo-600"],
-    [class~="bg-emerald-500"], [class~="bg-emerald-600"], [class~="bg-emerald-700"],
-    [class~="bg-green-500"], [class~="bg-green-600"],
-    [class~="bg-red-500"], [class~="bg-red-600"], [class~="bg-red-700"],
-    [class~="bg-amber-500"], [class~="bg-amber-600"],
-    [class~="bg-orange-500"], [class~="bg-orange-600"],
-    [class~="bg-teal-500"], [class~="bg-teal-600"],
-    [class*="bg-gradient-to-"]
+    [class~="bg-violet-500"], [class~="bg-violet-600"], [class~="bg-violet-700"], [class~="bg-purple-500"],
+    [class~="bg-purple-600"], [class~="bg-purple-700"], [class~="bg-indigo-500"], [class~="bg-indigo-600"],
+    [class~="bg-emerald-500"], [class~="bg-emerald-600"], [class~="bg-emerald-700"], [class~="bg-green-500"],
+    [class~="bg-green-600"], [class~="bg-red-500"], [class~="bg-red-600"], [class~="bg-red-700"],
+    [class~="bg-amber-500"], [class~="bg-amber-600"], [class~="bg-orange-500"], [class~="bg-orange-600"],
+    [class~="bg-teal-500"], [class~="bg-teal-600"], [class~="from-red-500"], [class~="from-red-600"],
+    [class~="from-red-700"], [class~="from-blue-500"], [class~="from-blue-600"], [class~="from-blue-700"],
+    [class~="from-violet-500"], [class~="from-violet-600"], [class~="from-violet-700"], [class~="from-purple-500"],
+    [class~="from-purple-600"], [class~="from-purple-700"], [class~="from-emerald-500"], [class~="from-emerald-600"],
+    [class~="from-emerald-700"], [class~="from-green-500"], [class~="from-green-600"], [class~="from-green-700"],
+    [class~="from-teal-500"], [class~="from-teal-600"], [class~="from-teal-700"], [class~="from-orange-500"],
+    [class~="from-orange-600"], [class~="from-orange-700"], [class~="from-indigo-500"], [class~="from-indigo-600"],
+    [class~="from-amber-700"]
   ),
   :is(
     [class~="bg-blue-500"], [class~="bg-blue-600"], [class~="bg-blue-700"], [class~="bg-blue-800"],
-    [class~="bg-violet-500"], [class~="bg-violet-600"], [class~="bg-violet-700"],
-    [class~="bg-purple-500"], [class~="bg-purple-600"], [class~="bg-purple-700"],
-    [class~="bg-indigo-500"], [class~="bg-indigo-600"],
-    [class~="bg-emerald-500"], [class~="bg-emerald-600"], [class~="bg-emerald-700"],
-    [class~="bg-green-500"], [class~="bg-green-600"],
-    [class~="bg-red-500"], [class~="bg-red-600"], [class~="bg-red-700"],
-    [class~="bg-amber-500"], [class~="bg-amber-600"],
-    [class~="bg-orange-500"], [class~="bg-orange-600"],
-    [class~="bg-teal-500"], [class~="bg-teal-600"],
-    [class*="bg-gradient-to-"]
+    [class~="bg-violet-500"], [class~="bg-violet-600"], [class~="bg-violet-700"], [class~="bg-purple-500"],
+    [class~="bg-purple-600"], [class~="bg-purple-700"], [class~="bg-indigo-500"], [class~="bg-indigo-600"],
+    [class~="bg-emerald-500"], [class~="bg-emerald-600"], [class~="bg-emerald-700"], [class~="bg-green-500"],
+    [class~="bg-green-600"], [class~="bg-red-500"], [class~="bg-red-600"], [class~="bg-red-700"],
+    [class~="bg-amber-500"], [class~="bg-amber-600"], [class~="bg-orange-500"], [class~="bg-orange-600"],
+    [class~="bg-teal-500"], [class~="bg-teal-600"], [class~="from-red-500"], [class~="from-red-600"],
+    [class~="from-red-700"], [class~="from-blue-500"], [class~="from-blue-600"], [class~="from-blue-700"],
+    [class~="from-violet-500"], [class~="from-violet-600"], [class~="from-violet-700"], [class~="from-purple-500"],
+    [class~="from-purple-600"], [class~="from-purple-700"], [class~="from-emerald-500"], [class~="from-emerald-600"],
+    [class~="from-emerald-700"], [class~="from-green-500"], [class~="from-green-600"], [class~="from-green-700"],
+    [class~="from-teal-500"], [class~="from-teal-600"], [class~="from-teal-700"], [class~="from-orange-500"],
+    [class~="from-orange-600"], [class~="from-orange-700"], [class~="from-indigo-500"], [class~="from-indigo-600"],
+    [class~="from-amber-700"]
   ) :where(
     .text-white, .text-zinc-50, .text-zinc-100,
     .hover\:text-white, .group-hover\:text-white
@@ -538,10 +557,53 @@
 }
 
 /* Oltin fon to'q yozuvni talab qiladi (oltin + oq = past kontrast) */
-:is([class~="bg-amber-500"], [class~="bg-yellow-500"]),
-:is([class~="bg-amber-500"], [class~="bg-yellow-500"]) :where(.text-white) {
+:is(
+  [class~="bg-amber-500"], [class~="bg-yellow-500"], [class~="from-amber-500"], [class~="from-yellow-500"]
+),
+:is(
+  [class~="bg-amber-500"], [class~="bg-yellow-500"], [class~="from-amber-500"], [class~="from-yellow-500"]
+) :where(.text-white) {
   color: #3d2a00;
 }
+
+/* ── Live Quiz javob variantlari ─────────────────────────────────────────
+   Bular brend ranglari EMAS, o'yin ranglari (Kahoot uslubi). O'quvchi
+   javobni rang VA shakl bo'yicha tanlaydi, shuning uchun to'rttasi
+   bir-biridan aniq farq qilishi SHART.
+
+   Nega palitradan olinmaydi: bg-blue-* brend qiziliga bog'langan, ya'ni
+   ilgari A (qizil) va B ("ko'k" -> qizil) variantlar BIR XIL rangda edi.
+   Bu yerda ranglar qat'iy va theme'ga bog'liq emas — doskada ham, telefonda
+   ham, light'da ham, dark'da ham bir xil ko'rinadi.
+
+   Kontrast (oq yozuv bilan): qizil 5.3:1, ko'k 5.1:1, yashil 4.6:1.
+   Oltin fonda to'q yozuv: 11:1. Hammasi WCAG AA dan o'tadi. */
+.quiz-opt { color: #ffffff; }
+.quiz-opt-a { background-color: #d7263d; }
+.quiz-opt-b { background-color: #1368ce; }
+.quiz-opt-c { background-color: #f2b705; color: #2b1e00; }
+.quiz-opt-d { background-color: #26890c; }
+
+.quiz-opt-a.quiz-opt-hover:hover { background-color: #bf1f33; }
+.quiz-opt-b.quiz-opt-hover:hover { background-color: #0f58b0; }
+.quiz-opt-c.quiz-opt-hover:hover { background-color: #d9a404; }
+.quiz-opt-d.quiz-opt-hover:hover { background-color: #1f7009; }
+
+/* ── Reyting medallari: 1-2-3 o'rin ──────────────────────────────────────
+   Oltin, kumush, bronza — ma'noli QAT'IY ranglar, theme'ga bog'liq emas
+   (quiz variantlari bilan bir xil tamoyil).
+
+   Nega kerak bo'ldi: palitrada light rejimda yellow-400 va zinc-300
+   shadelari MATN uchun to'q qilingan (#8A4B00 jigarrang, #586981 kulrang).
+   Kod ularni YORQIN FON sifatida ishlatgan joylarda — reyting nishonlari,
+   medallar, podium — qora yozuv to'q fonga tushib, o'rin raqami va ism
+   o'qilmay qolardi. Oltin gradient esa oltin -> jigarrangga aylanardi.
+
+   Kontrast (to'q yozuv, fonning to'qroq chetida):
+     oltin 8.9:1, kumush 8.2:1, bronza 4.8:1 — hammasi WCAG AA. */
+.rank-gold   { background-image: linear-gradient(135deg, #ffd54a, #f2b705); color: #2b1e00; }
+.rank-silver { background-image: linear-gradient(135deg, #eef1f5, #b3bdc9); color: #1a2230; }
+.rank-bronze { background-image: linear-gradient(135deg, #e8ad73, #b8733a); color: #2a1506; }
 
 /* ── 6. Asosiy sirt ───────────────────────────────────────────────────── */
 @layer base {
