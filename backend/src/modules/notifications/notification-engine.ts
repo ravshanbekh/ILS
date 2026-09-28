@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { enrolledStudentWhere } from '../../shared/constants/studentScope';
 import fs from 'fs';
 import path from 'path';
 import { generateText, getAISettings } from '../../shared/utils/ai';
@@ -113,8 +114,10 @@ class NotificationEngine {
   private async checkLongInactivity() {
     const threshold = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
     
+    // Guruhsiz o'quvchi uchun "2 hafta topshirmadi" ogohlantirishi
+    // ma'nosiz: uning o'qituvchisi ham, guruhi ham yo'q.
     const students = await prisma.user.findMany({
-      where: { role: 'student', isActive: true },
+      where: enrolledStudentWhere(),
       include: {
         submissions: { orderBy: { submittedAt: 'desc' }, take: 1 },
         groupStudents: { include: { group: { include: { teacher: true } } } }

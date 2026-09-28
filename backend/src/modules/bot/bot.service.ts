@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
+import { enrolledStudentWhere } from '../../shared/constants/studentScope';
 import { TelegramLinkRecord } from './bot.types';
 
 /**
@@ -739,18 +740,14 @@ class BotService {
    */
   async getParentCoverage(filters?: { groupId?: string; teacherId?: string }) {
     const students = await prisma.user.findMany({
-      where: {
-        role: 'student',
-        isActive: true,
-        groupStudents: filters?.groupId || filters?.teacherId
-          ? {
-              some: {
-                ...(filters.groupId ? { groupId: filters.groupId } : {}),
-                ...(filters.teacherId ? { group: { teacherId: filters.teacherId } } : {}),
-              },
-            }
-          : undefined,
-      },
+      // Qamrov foizi faqat faol guruhdagi o'quvchilar bo'yicha — guruhsizlar
+      // maxrajga kirsa, foiz sun'iy ravishda pasayib ketardi.
+      // groupId va teacherId birga kelishi mumkin, shuning uchun ikkalasi
+      // ham bitta guruh sharti ichida qo'llanadi.
+      where: enrolledStudentWhere({
+        ...(filters?.groupId ? { id: filters.groupId } : {}),
+        ...(filters?.teacherId ? { teacherId: filters.teacherId } : {}),
+      }),
       include: {
         groupStudents: {
           include: { group: { include: { teacher: { select: { fullName: true } } } } },

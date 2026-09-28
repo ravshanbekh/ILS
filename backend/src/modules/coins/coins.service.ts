@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { enrolledStudentWhere, groupScopeFrom } from '../../shared/constants/studentScope';
 import { ApiError } from '../../shared/middleware/errorHandler';
 import settingsService from '../settings/settings.service';
 import logger from '../../shared/utils/logger';
@@ -199,12 +200,7 @@ class CoinsService {
     const period = filters?.period || 'month';
     const since = this.periodStart(period);
 
-    const studentWhere: any = { role: 'student', isActive: true };
-    if (filters?.groupId) {
-      studentWhere.groupStudents = { some: { groupId: filters.groupId } };
-    } else if (filters?.teacherId) {
-      studentWhere.groupStudents = { some: { group: { teacherId: filters.teacherId } } };
-    }
+    const studentWhere: any = enrolledStudentWhere(groupScopeFrom(filters));
 
     const students = await prisma.user.findMany({
       where: studentWhere,

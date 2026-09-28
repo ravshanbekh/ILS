@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { enrolledStudentWhere, enrolledStudentSql } from '../../shared/constants/studentScope';
 import { ApiError } from '../../shared/middleware/errorHandler';
 import fs from 'fs';
 import path from 'path';
@@ -27,6 +28,9 @@ class StatisticsService {
     // Grafik uchun 10 hafta orqaga
     const seriesFrom = new Date(now.getTime() - 10 * 7 * 24 * 60 * 60 * 1000);
 
+    /** Statistikaga kiradigan o'quvchi — bitta ta'rif, pastda hamma joyda */
+    const enrolled = enrolledStudentWhere();
+
     const [
       totalStudents,
       totalTeachers,
@@ -44,34 +48,37 @@ class StatisticsService {
       prevPending,
       prevChecked,
     ] = await Promise.all([
-      prisma.user.count({ where: { role: 'student', isActive: true } }),
+      // O'quvchi va topshiriq ko'rsatkichlari FAQAT faol guruhdagi
+      // o'quvchilar bo'yicha (shared/constants/studentScope.ts).
+      prisma.user.count({ where: enrolled }),
       prisma.user.count({ where: { role: 'teacher', isActive: true } }),
       prisma.group.count({ where: { isActive: true } }),
       prisma.normative.count({ where: { isActive: true } }),
-      prisma.submission.count(),
-      prisma.submission.count({ where: { status: 'pending' } }),
-      prisma.submission.count({ where: { status: 'checked' } }),
+      prisma.submission.count({ where: { student: enrolled } }),
+      prisma.submission.count({ where: { status: 'pending', student: enrolled } }),
+      prisma.submission.count({ where: { status: 'checked', student: enrolled } }),
 
-      prisma.user.count({ where: { role: 'student', isActive: true, createdAt: { lt: monthStart } } }),
+      prisma.user.count({ where: { AND: [enrolled, { createdAt: { lt: monthStart } }] } }),
       prisma.user.count({ where: { role: 'teacher', isActive: true, createdAt: { lt: monthStart } } }),
       prisma.group.count({ where: { isActive: true, createdAt: { lt: monthStart } } }),
       prisma.normative.count({ where: { isActive: true, createdAt: { lt: monthStart } } }),
-      prisma.submission.count({ where: { submittedAt: { lt: monthStart } } }),
+      prisma.submission.count({ where: { submittedAt: { lt: monthStart }, student: enrolled } }),
       // Oy boshida "kutilayotgan" bo'lganlar: o'shangacha yuborilgan va
       // o'sha paytda hali tekshirilmagan topshiriqlar.
       prisma.submission.count({
         where: {
           submittedAt: { lt: monthStart },
+          student: enrolled,
           OR: [{ checkedAt: null }, { checkedAt: { gte: monthStart } }],
         },
       }),
-      prisma.submission.count({ where: { checkedAt: { lt: monthStart } } }),
+      prisma.submission.count({ where: { checkedAt: { lt: monthStart }, student: enrolled } }),
     ]);
 
     // Natijalar taqsimoti
     const resultDistribution = await prisma.submission.groupBy({
       by: ['result'],
-      where: { status: 'checked' },
+      where: { status: 'checked', student: enrolled },
       _count: true,
     });
 
@@ -143,7 +150,7 @@ class StatisticsService {
       const [students, teachers, groups, normatives, submissions, checked] = await Promise.all([
         prisma.$queryRaw<Bucket[]>`
           SELECT date_trunc('week', created_at) AS wk, COUNT(*)::int AS c
-          FROM users WHERE role = 'student' AND is_active = true AND created_at >= ${from}
+          FROM users WHERE ${enrolledStudentSql('users.id')} AND created_at >= ${from}
           GROUP BY 1 ORDER BY 1`,
         prisma.$queryRaw<Bucket[]>`
           SELECT date_trunc('week', created_at) AS wk, COUNT(*)::int AS c
@@ -160,10 +167,12 @@ class StatisticsService {
         prisma.$queryRaw<Bucket[]>`
           SELECT date_trunc('week', submitted_at) AS wk, COUNT(*)::int AS c
           FROM submissions WHERE submitted_at >= ${from}
+            AND ${enrolledStudentSql('submissions.student_id')}
           GROUP BY 1 ORDER BY 1`,
         prisma.$queryRaw<Bucket[]>`
           SELECT date_trunc('week', checked_at) AS wk, COUNT(*)::int AS c
           FROM submissions WHERE checked_at >= ${from}
+            AND ${enrolledStudentSql('submissions.student_id')}
           GROUP BY 1 ORDER BY 1`,
       ]);
 
@@ -180,7 +189,8 @@ class StatisticsService {
           SELECT g.wk AS wk,
                  (SELECT COUNT(*)::int FROM submissions s
                    WHERE s.submitted_at < g.wk
-                     AND (s.checked_at IS NULL OR s.checked_at >= g.wk)) AS c
+                     AND (s.checked_at IS NULL OR s.checked_at >= g.wk)
+                     AND ${enrolledStudentSql('s.student_id')}) AS c
           FROM generate_series(
                  date_trunc('week', ${from}::timestamptz),
                  date_trunc('week', now()),

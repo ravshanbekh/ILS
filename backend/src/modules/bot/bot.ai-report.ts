@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { enrolledStudentWhere } from '../../shared/constants/studentScope';
 import logger from '../../shared/utils/logger';
 import { generateText, getAISettings } from '../../shared/utils/ai';
 import TelegramBot from 'node-telegram-bot-api';
@@ -205,7 +206,10 @@ export async function fetchEducationalMetrics() {
   const inactiveStudents = allStudentIds.filter(id => !recentSet.has(id));
 
   // ═══════════ 8. UMUMIY RAQAMLAR ═══════════
-  const totalStudents = await prisma.user.count({ where: { role: 'student', isActive: true } });
+  // Hisobotning qolgan ko'rsatkichlari faol guruhlardan hisoblanadi —
+  // "Jami o'quvchilar" ham shu to'plamdan bo'lishi kerak. Ilgari bu yerda
+  // butun baza sanalardi va hisobot ichida ikki xil to'plam aralashardi.
+  const totalStudents = await prisma.user.count({ where: enrolledStudentWhere() });
 
   return {
     date: todayStart.toLocaleDateString('uz-UZ'),

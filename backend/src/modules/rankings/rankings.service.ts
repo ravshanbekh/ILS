@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { enrolledStudentWhere, groupScopeFrom } from '../../shared/constants/studentScope';
 import { PaginationParams, createPaginatedResult } from '../../shared/utils/pagination';
 import {
   getCheckedStatsByStudent,
@@ -16,13 +17,9 @@ class RankingsService {
    * Umumiy reyting (o'quv markaz, o'qituvchi yoki guruh bo'yicha)
    */
   async getOverallRanking(params: PaginationParams, filters?: { teacherId?: string; groupId?: string; search?: string }) {
-    const whereClause: any = { role: 'student', isActive: true };
-
-    if (filters?.groupId) {
-      whereClause.groupStudents = { some: { groupId: filters.groupId } };
-    } else if (filters?.teacherId) {
-      whereClause.groupStudents = { some: { group: { teacherId: filters.teacherId } } };
-    }
+    // Faqat FAOL guruhdagi o'quvchilar. Ilgari guruh sharti faqat filtr
+    // tanlanganda qo'shilardi — filtrsiz reytingga guruhsizlar ham kirardi.
+    const whereClause: any = enrolledStudentWhere(groupScopeFrom(filters));
 
     if (filters?.search) {
       whereClause.fullName = { contains: filters.search, mode: 'insensitive' };
@@ -105,12 +102,7 @@ class RankingsService {
    * — o'qituvchi faqat o'z o'quvchilarini, admin hammasini ko'radi (scoping controllerda).
    */
   async getStudentCategories(filters?: { teacherId?: string; groupId?: string }) {
-    const whereClause: any = { role: 'student', isActive: true };
-    if (filters?.groupId) {
-      whereClause.groupStudents = { some: { groupId: filters.groupId } };
-    } else if (filters?.teacherId) {
-      whereClause.groupStudents = { some: { group: { teacherId: filters.teacherId } } };
-    }
+    const whereClause: any = enrolledStudentWhere(groupScopeFrom(filters));
 
     const students = await prisma.user.findMany({
       where: whereClause,

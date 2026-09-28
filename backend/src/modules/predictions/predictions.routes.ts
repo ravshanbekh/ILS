@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 import prisma from '../../config/database';
+import { enrolledStudentWhere } from '../../shared/constants/studentScope';
 
 const router = Router();
 router.use(authenticate);
@@ -93,7 +94,7 @@ function calculateDropoutRisk(student: any): { risk: number; factors: string[] }
 router.get('/dropout', roleGuard('admin'), async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const students = await prisma.user.findMany({
-      where: { role: 'student', isActive: true },
+      where: enrolledStudentWhere(),
       include: {
         submissions: {
           where: { status: 'checked' },
@@ -182,7 +183,7 @@ router.get('/revenue', roleGuard('admin'), async (_req: Request, res: Response, 
 
     // Active students count
     const activeStudents = await prisma.user.count({
-      where: { role: 'student', isActive: true },
+      where: enrolledStudentWhere(),
     });
 
     res.json({
