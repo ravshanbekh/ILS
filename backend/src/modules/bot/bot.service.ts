@@ -248,7 +248,13 @@ class BotService {
     // Guruh reytingi — ilgari bu yerda ikki qavatli sikl bor edi (har bir guruh uchun,
     // guruhdagi har bir o'quvchi uchun alohida so'rov). Endi ikkita so'rov kifoya.
     const myGroupIds = groupStudents.map((gs) => gs.groupId);
-    const [peers, peerSubs] = await Promise.all([
+
+    // Ball guruhga biriktirilgan NORMATIVLAR bo'yicha hisoblanadi, submission.groupId
+    // bo'yicha emas. Sabab: submission.groupId topshirilgan paytdagi guruhni saqlaydi va
+    // o'quvchi boshqa guruhga ko'chirilganda yangilanmaydi — natijada ko'chirilgan
+    // o'quvchining bali guruh reytingida ko'rinmay qolardi.
+    // Web tarafdagi rankings.service.ts ham aynan shu mantiqda ishlaydi.
+    const [peers, groupNorms] = await Promise.all([
       myGroupIds.length
         ? prisma.groupStudent.findMany({
             where: { groupId: { in: myGroupIds } },
@@ -256,20 +262,41 @@ class BotService {
           })
         : Promise.resolve([] as { groupId: string; studentId: string }[]),
       myGroupIds.length
-        ? prisma.submission.findMany({
-            where: { groupId: { in: myGroupIds }, status: 'checked' },
-            select: { studentId: true, groupId: true, score: true },
+        ? prisma.groupNormative.findMany({
+            where: { groupId: { in: myGroupIds } },
+            select: { groupId: true, normativeId: true },
           })
-        : Promise.resolve([] as { studentId: string; groupId: string | null; score: number }[]),
+        : Promise.resolve([] as { groupId: string; normativeId: string }[]),
     ]);
 
-    // guruh -> (o'quvchi -> jami ball) — bitta o'tishda tayyorlanadi
+    const peerIds = [...new Set(peers.map((p) => p.studentId))];
+    const peerSubs = peerIds.length
+      ? await prisma.submission.findMany({
+          where: { studentId: { in: peerIds }, status: 'checked' },
+          select: { studentId: true, normativeId: true, score: true },
+        })
+      : [];
+
+    // guruh -> shu guruhga biriktirilgan normativ id'lari
+    const normsByGroup = new Map<string, Set<string>>();
+    for (const gn of groupNorms) {
+      let set = normsByGroup.get(gn.groupId);
+      if (!set) { set = new Set(); normsByGroup.set(gn.groupId, set); }
+      set.add(gn.normativeId);
+    }
+
+    // guruh -> (o'quvchi -> jami ball)
     const totalsByGroup = new Map<string, Map<string, number>>();
-    for (const sub of peerSubs) {
-      if (!sub.groupId) continue;
-      let totals = totalsByGroup.get(sub.groupId);
-      if (!totals) { totals = new Map(); totalsByGroup.set(sub.groupId, totals); }
-      totals.set(sub.studentId, (totals.get(sub.studentId) || 0) + sub.score);
+    for (const gid of myGroupIds) {
+      const allowed = normsByGroup.get(gid);
+      const totals = new Map<string, number>();
+      for (const sub of peerSubs) {
+        // Guruhga normativ biriktirilmagan bo'lsa, cheklov qo'ymaymiz —
+        // aks holda leaderboard butunlay bo'sh chiqadi.
+        if (allowed && allowed.size > 0 && !allowed.has(sub.normativeId)) continue;
+        totals.set(sub.studentId, (totals.get(sub.studentId) || 0) + sub.score);
+      }
+      totalsByGroup.set(gid, totals);
     }
 
     const groups = groupStudents.map((gs) => {
@@ -332,12 +359,25 @@ class BotService {
       include: { student: { select: { id: true, fullName: true } } },
     });
 
-    // Guruhdagi barcha ballar — bitta guruhlangan so'rovda
-    // (ilgari har bir o'quvchi uchun alohida so'rov ketardi)
-    const grouped = groupStudents.length
+    // Guruhga biriktirilgan normativlar. Ball aynan shular bo'yicha hisoblanadi —
+    // `submission.groupId` bo'yicha emas, chunki u o'quvchi boshqa guruhga
+    // ko'chirilganda eski guruhda qolib ketadi (transferStudent uni yangilamaydi).
+    const groupNormatives = await prisma.groupNormative.findMany({
+      where: { groupId },
+      select: { normativeId: true },
+    });
+    const normativeIds = groupNormatives.map((gn) => gn.normativeId);
+
+    const studentIds = groupStudents.map((gs) => gs.studentId);
+    const grouped = studentIds.length
       ? await prisma.submission.groupBy({
           by: ['studentId'],
-          where: { studentId: { in: groupStudents.map((gs) => gs.studentId) }, groupId, status: 'checked' },
+          where: {
+            studentId: { in: studentIds },
+            status: 'checked',
+            // Guruhga normativ biriktirilmagan bo'lsa, cheklov qo'yilmaydi
+            ...(normativeIds.length > 0 ? { normativeId: { in: normativeIds } } : {}),
+          },
           _sum: { score: true },
         })
       : [];
@@ -350,7 +390,16 @@ class BotService {
     }));
 
     scores.sort((a, b) => b.score - a.score);
-    return scores.map((s, i) => ({ ...s, rank: i + 1 }));
+
+    // Dense ranking: teng ballga teng o'rin. getStudentStats ham shu usulda
+    // hisoblaydi — ikki joyda bir xil o'rin ko'rinishi uchun.
+    let rank = 0;
+    let prevScore: number | null = null;
+    return scores.map((s, i) => {
+      if (prevScore === null || s.score < prevScore) rank = i + 1;
+      prevScore = s.score;
+      return { ...s, rank };
+    });
   }
 
   // ============ FEEDBACK ============

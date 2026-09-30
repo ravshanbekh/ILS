@@ -58,9 +58,19 @@ class ExportService {
 
     // O'quvchilar ma'lumotlari — bitta so'rovda (ilgari har bir o'quvchi uchun alohida edi)
     const exportStudentIds = group.groupStudents.map((gs) => gs.student.id);
+    // Guruhga biriktirilgan normativlar bo'yicha filtrlaymiz, `submission.groupId`
+    // bo'yicha emas: u topshirilgan paytdagi guruhni saqlaydi va o'quvchi boshqa
+    // guruhga ko'chirilganda yangilanmaydi — natijada uning ballari hisobotdan
+    // tushib qolardi.
+    const exportNormativeIds = group.groupNormatives.map((gn) => gn.normative.id);
     const exportSubs = exportStudentIds.length
       ? await prisma.submission.findMany({
-          where: { studentId: { in: exportStudentIds }, groupId },
+          where: {
+            studentId: { in: exportStudentIds },
+            ...(exportNormativeIds.length > 0
+              ? { normativeId: { in: exportNormativeIds } }
+              : {}),
+          },
           select: { studentId: true, score: true, result: true, status: true },
         })
       : [];
@@ -144,7 +154,12 @@ class ExportService {
       const rowData: any = { student: stat.student.fullName };
 
       const submissions = await prisma.submission.findMany({
-        where: { studentId: stat.student.id, groupId },
+        where: {
+          studentId: stat.student.id,
+          ...(exportNormativeIds.length > 0
+            ? { normativeId: { in: exportNormativeIds } }
+            : {}),
+        },
         select: { normativeId: true, result: true, score: true, status: true },
       });
 
