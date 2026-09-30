@@ -120,8 +120,8 @@ export default function QuizTestDetailPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="h-8 w-64 rounded bg-slate-100 animate-pulse" />
-        <div className="mt-6 h-64 rounded-xl bg-slate-50 animate-pulse" />
+        <div className="h-8 w-64 rounded bg-zinc-800 animate-pulse" />
+        <div className="mt-6 h-64 rounded-xl bg-zinc-800/50 animate-pulse" />
       </div>
     );
   }
@@ -131,18 +131,18 @@ export default function QuizTestDetailPage() {
     <div className="p-4 sm:p-6 max-w-6xl mx-auto">
       <button
         onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100"
       >
         <ArrowLeft className="w-4 h-4" /> Testlar ro'yxati
       </button>
 
       {/* Sarlavha va havola */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-slate-900">{test.title}</h1>
+            <h1 className="text-xl font-bold text-zinc-50">{test.title}</h1>
             {test.description && (
-              <p className="mt-1 text-sm text-slate-500 line-clamp-2">{test.description}</p>
+              <p className="mt-1 text-sm text-zinc-400 line-clamp-2">{test.description}</p>
             )}
           </div>
 
@@ -163,9 +163,9 @@ export default function QuizTestDetailPage() {
                       ? s === 'active'
                         ? 'bg-emerald-600 text-white'
                         : s === 'closed'
-                        ? 'bg-rose-600 text-white'
-                        : 'bg-slate-600 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        ? 'bg-red-600 text-white'
+                        : 'bg-zinc-700 text-white'
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   }`}
                 >
                   <meta.Icon className="w-3.5 h-3.5" />
@@ -176,12 +176,12 @@ export default function QuizTestDetailPage() {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2.5">
+        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-indigo-900 px-3 py-2.5">
           <Link2 className="w-4 h-4 shrink-0 text-indigo-500" />
-          <code className="flex-1 truncate text-sm font-mono text-indigo-900">{shareUrl}</code>
+          <code className="flex-1 truncate text-sm font-mono text-indigo-400">{shareUrl}</code>
           <button
             onClick={copyLink}
-            className="rounded-md bg-white px-3 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+            className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-indigo-400 hover:bg-indigo-900"
           >
             {copied ? 'Nusxalandi' : 'Nusxalash'}
           </button>
@@ -189,14 +189,14 @@ export default function QuizTestDetailPage() {
             href={shareUrl}
             target="_blank"
             rel="noreferrer"
-            className="rounded-md bg-white p-1.5 text-indigo-700 hover:bg-indigo-100"
+            className="rounded-md bg-zinc-900 p-1.5 text-indigo-400 hover:bg-indigo-900"
             title="Ochib ko'rish"
           >
             <ExternalLink className="w-4 h-4" />
           </a>
         </div>
         {test.status !== 'active' && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-400">
             <AlertTriangle className="w-3.5 h-3.5" />
             Test <b>Faol</b> holatida bo'lmasa, havola ochilmaydi
           </p>
@@ -204,7 +204,7 @@ export default function QuizTestDetailPage() {
       </div>
 
       {/* Tablar */}
-      <div className="mt-5 flex gap-1 border-b border-slate-200">
+      <div className="mt-5 flex gap-1 border-b border-zinc-800">
         {([
           ['questions', 'Savollar', ListChecks, test.questions.length],
           ['settings', 'Sozlamalar', Settings, null],
@@ -215,14 +215,14 @@ export default function QuizTestDetailPage() {
             onClick={() => setTab(key as Tab)}
             className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition ${
               tab === key
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-indigo-600 text-indigo-400'
+                : 'border-transparent text-zinc-400 hover:text-zinc-100'
             }`}
           >
             <Icon className="w-4 h-4" />
             {label}
             {badge !== null && badge > 0 && (
-              <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
+              <span className="rounded-full bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-300">
                 {badge}
               </span>
             )}
@@ -270,13 +270,13 @@ function QuestionsTab({ test, reload }: { test: TestFull; reload: () => void }) 
         </button>
         <button
           onClick={() => fileRef.current?.click()}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-800/50"
         >
           <Upload className="w-4 h-4" /> Excel'dan yuklash
         </button>
         <button
           onClick={downloadTemplate}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-800/50"
         >
           <Download className="w-4 h-4" /> Namuna fayl
         </button>
@@ -293,26 +293,26 @@ function QuestionsTab({ test, reload }: { test: TestFull; reload: () => void }) 
           }}
         />
 
-        <div className="ml-auto flex gap-3 text-sm text-slate-500">
-          <span>Yopiq: <b className="text-slate-700">{test.closedTotal}</b></span>
-          <span>Ochiq: <b className="text-slate-700">{test.openTotal}</b></span>
+        <div className="ml-auto flex gap-3 text-sm text-zinc-400">
+          <span>Yopiq: <b className="text-zinc-200">{test.closedTotal}</b></span>
+          <span>Ochiq: <b className="text-zinc-200">{test.openTotal}</b></span>
         </div>
       </div>
 
       {test.questions.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-slate-200 py-14 text-center">
-          <ListChecks className="mx-auto h-10 w-10 text-slate-300" />
-          <p className="mt-3 font-medium text-slate-700">Savollar hali qo'shilmagan</p>
-          <p className="mt-1 text-sm text-slate-400">
+        <div className="rounded-xl border-2 border-dashed border-zinc-800 py-14 text-center">
+          <ListChecks className="mx-auto h-10 w-10 text-zinc-600" />
+          <p className="mt-3 font-medium text-zinc-200">Savollar hali qo'shilmagan</p>
+          <p className="mt-1 text-sm text-zinc-500">
             Qo'lda kiriting yoki Excel fayldan yuklang
           </p>
         </div>
       ) : (
         <div className="space-y-3">
           {test.questions.map((q, i) => (
-            <div key={q.id} className="rounded-xl border border-slate-200 bg-white p-4">
+            <div key={q.id} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
               <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-semibold text-zinc-300">
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -320,27 +320,27 @@ function QuestionsTab({ test, reload }: { test: TestFull; reload: () => void }) 
                     <span
                       className={`rounded px-1.5 py-0.5 text-xs font-medium ${
                         q.type === 'open'
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-sky-100 text-sky-700'
+                          ? 'bg-amber-900 text-amber-400'
+                          : 'bg-sky-500/15 text-sky-400'
                       }`}
                     >
                       {q.type === 'open' ? 'Ochiq' : 'Yopiq'}
                     </span>
-                    <span className="text-xs text-slate-400">{q.points} ball</span>
+                    <span className="text-xs text-zinc-500">{q.points} ball</span>
                     {q.manualReview && (
-                      <span className="rounded bg-violet-100 px-1.5 py-0.5 text-xs text-violet-700">
+                      <span className="rounded bg-violet-900 px-1.5 py-0.5 text-xs text-violet-400">
                         qo'lda baholanadi
                       </span>
                     )}
                   </div>
 
-                  <p className="mt-1.5 whitespace-pre-wrap text-sm text-slate-800">{q.text}</p>
+                  <p className="mt-1.5 whitespace-pre-wrap text-sm text-zinc-100">{q.text}</p>
 
                   {q.imageUrl && (
                     <img
                       src={`${API_BASE}${q.imageUrl}`}
                       alt=""
-                      className="mt-2 max-h-44 rounded-lg border border-slate-200 object-contain"
+                      className="mt-2 max-h-44 rounded-lg border border-zinc-800 object-contain"
                     />
                   )}
 
@@ -352,13 +352,13 @@ function QuestionsTab({ test, reload }: { test: TestFull; reload: () => void }) 
                           <li
                             key={oi}
                             className={`flex items-start gap-2 rounded px-2 py-1 text-sm ${
-                              ok ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600'
+                              ok ? 'bg-emerald-900 text-emerald-400' : 'text-zinc-300'
                             }`}
                           >
                             {ok ? (
                               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             ) : (
-                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" />
+                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-600" />
                             )}
                             <span>{o}</span>
                           </li>
@@ -370,12 +370,12 @@ function QuestionsTab({ test, reload }: { test: TestFull; reload: () => void }) 
                   {q.type === 'open' && (
                     <div className="mt-2 text-sm">
                       {q.acceptedAnswers && q.acceptedAnswers.length > 0 ? (
-                        <p className="text-slate-600">
-                          <span className="text-slate-400">Qabul qilinadi: </span>
+                        <p className="text-zinc-300">
+                          <span className="text-zinc-500">Qabul qilinadi: </span>
                           {q.acceptedAnswers.join(' / ')}
                         </p>
                       ) : (
-                        <p className="text-violet-600">
+                        <p className="text-violet-400">
                           Javob namunasi yo'q — mentor qo'lda baholaydi
                         </p>
                       )}
@@ -386,14 +386,14 @@ function QuestionsTab({ test, reload }: { test: TestFull; reload: () => void }) 
                 <div className="flex shrink-0 gap-1">
                   <button
                     onClick={() => setEditing(q)}
-                    className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    className="rounded p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
                     title="Tahrirlash"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(q)}
-                    className="rounded p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                    className="rounded p-1.5 text-zinc-500 hover:bg-red-900 hover:text-red-400"
                     title="O'chirish"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -516,13 +516,13 @@ function QuestionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4">
-      <div className="my-8 w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="font-semibold text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4">
+      <div className="my-8 w-full max-w-2xl rounded-xl bg-zinc-900 shadow-xl">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+          <h2 className="font-semibold text-zinc-50">
             {isEdit ? 'Savolni tahrirlash' : 'Yangi savol'}
           </h2>
-          <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100">
+          <button onClick={onClose} className="rounded p-1 text-zinc-500 hover:bg-zinc-800">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -536,14 +536,14 @@ function QuestionModal({
                 onClick={() => setType(t)}
                 className={`flex-1 rounded-lg border px-4 py-3 text-left transition ${
                   type === t
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? 'border-indigo-500 bg-indigo-900'
+                    : 'border-zinc-800 hover:border-zinc-700'
                 }`}
               >
-                <div className="text-sm font-semibold text-slate-800">
+                <div className="text-sm font-semibold text-zinc-100">
                   {t === 'closed' ? 'Yopiq savol' : 'Ochiq savol'}
                 </div>
-                <div className="mt-0.5 text-xs text-slate-500">
+                <div className="mt-0.5 text-xs text-zinc-400">
                   {t === 'closed'
                     ? 'Variantlardan tanlaydi'
                     : 'Javobni o\'zi yozadi'}
@@ -553,36 +553,36 @@ function QuestionModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Savol matni <span className="text-rose-500">*</span>
+            <label className="mb-1.5 block text-sm font-medium text-zinc-200">
+              Savol matni <span className="text-red-500">*</span>
             </label>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={3}
-              className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="w-full resize-none rounded-lg border border-zinc-800 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/25"
             />
           </div>
 
           {/* Rasm */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Rasm</label>
+            <label className="mb-1.5 block text-sm font-medium text-zinc-200">Rasm</label>
             {question?.imageUrl && !removeImage && !image && (
               <div className="mb-2 flex items-center gap-2">
                 <img
                   src={`${API_BASE}${question.imageUrl}`}
                   alt=""
-                  className="h-20 rounded border border-slate-200 object-contain"
+                  className="h-20 rounded border border-zinc-800 object-contain"
                 />
                 <button
                   onClick={() => setRemoveImage(true)}
-                  className="text-xs text-rose-600 hover:underline"
+                  className="text-xs text-red-400 hover:underline"
                 >
                   Rasmni olib tashlash
                 </button>
               </div>
             )}
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800/50">
               <ImageIcon className="w-4 h-4" />
               {image ? image.name : 'Rasm tanlash (5 MB gacha)'}
               <input
@@ -600,7 +600,7 @@ function QuestionModal({
           {/* Yopiq savol variantlari */}
           {type === 'closed' && (
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
+              <label className="mb-1.5 block text-sm font-medium text-zinc-200">
                 Variantlar — to'g'risini belgilang
               </label>
               <div className="space-y-2">
@@ -612,7 +612,7 @@ function QuestionModal({
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition ${
                         correct.includes(i)
                           ? 'border-emerald-500 bg-emerald-500 text-white'
-                          : 'border-slate-200 text-slate-300 hover:border-emerald-300'
+                          : 'border-zinc-800 text-zinc-600 hover:border-emerald-500/40'
                       }`}
                     >
                       <Check className="w-4 h-4" />
@@ -625,7 +625,7 @@ function QuestionModal({
                         setOptions(next);
                       }}
                       placeholder={`Variant ${i + 1}`}
-                      className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                      className="flex-1 rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                     />
                     {options.length > 2 && (
                       <button
@@ -633,7 +633,7 @@ function QuestionModal({
                           setOptions(options.filter((_, x) => x !== i));
                           setCorrect(correct.filter((c) => c !== i).map((c) => (c > i ? c - 1 : c)));
                         }}
-                        className="rounded p-1.5 text-slate-300 hover:bg-rose-50 hover:text-rose-600"
+                        className="rounded p-1.5 text-zinc-600 hover:bg-red-900 hover:text-red-400"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -644,12 +644,12 @@ function QuestionModal({
               {options.length < 6 && (
                 <button
                   onClick={() => setOptions([...options, ''])}
-                  className="mt-2 text-sm text-indigo-600 hover:underline"
+                  className="mt-2 text-sm text-indigo-400 hover:underline"
                 >
                   + Variant qo'shish
                 </button>
               )}
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-2 text-xs text-zinc-500">
                 Bir nechta to'g'ri javob bo'lishi mumkin. Ishtirokchi HAMMASINI to'g'ri
                 belgilasagina ball oladi.
               </p>
@@ -660,7 +660,7 @@ function QuestionModal({
           {type === 'open' && (
             <div className="space-y-3">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                <label className="mb-1.5 block text-sm font-medium text-zinc-200">
                   Qabul qilinadigan javoblar — har biri yangi qatorda
                 </label>
                 <textarea
@@ -668,29 +668,29 @@ function QuestionModal({
                   onChange={(e) => setAccepted(e.target.value)}
                   rows={4}
                   placeholder={'Toshkent\ntoshkent shahri'}
-                  className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 font-mono text-sm outline-none focus:border-indigo-400"
+                  className="w-full resize-none rounded-lg border border-zinc-800 px-3 py-2.5 font-mono text-sm outline-none focus:border-indigo-400"
                 />
-                <p className="mt-1.5 text-xs text-slate-400">
+                <p className="mt-1.5 text-xs text-zinc-500">
                   Bo'sh qoldirsangiz, javobni siz qo'lda baholaysiz
                 </p>
               </div>
 
-              <label className="flex items-center gap-2 text-sm text-slate-700">
+              <label className="flex items-center gap-2 text-sm text-zinc-200">
                 <input
                   type="checkbox"
                   checked={caseSensitive}
                   onChange={(e) => setCaseSensitive(e.target.checked)}
-                  className="rounded border-slate-300"
+                  className="rounded border-zinc-700"
                 />
                 Katta-kichik harf farqlansin
               </label>
 
-              <label className="flex items-center gap-2 text-sm text-slate-700">
+              <label className="flex items-center gap-2 text-sm text-zinc-200">
                 <input
                   type="checkbox"
                   checked={manualReview}
                   onChange={(e) => setManualReview(e.target.checked)}
-                  className="rounded border-slate-300"
+                  className="rounded border-zinc-700"
                 />
                 Javob to'g'ri bo'lsa ham qo'lda tekshiraman
               </label>
@@ -698,19 +698,19 @@ function QuestionModal({
           )}
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Ball</label>
+            <label className="mb-1.5 block text-sm font-medium text-zinc-200">Ball</label>
             <input
               type="number"
               min={1}
               value={points}
               onChange={(e) => setPoints(Math.max(1, Number(e.target.value)))}
-              className="w-24 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              className="w-24 rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
-          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
+        <div className="flex justify-end gap-2 border-t border-zinc-800 px-5 py-4">
+          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
             Bekor qilish
           </button>
           <button
@@ -774,40 +774,40 @@ function ImportModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4">
-      <div className="my-8 w-full max-w-3xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="inline-flex items-center gap-2 font-semibold text-slate-900">
-            <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4">
+      <div className="my-8 w-full max-w-3xl rounded-xl bg-zinc-900 shadow-xl">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+          <h2 className="inline-flex items-center gap-2 font-semibold text-zinc-50">
+            <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
             Excel'dan yuklash
           </h2>
-          <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100">
+          <button onClick={onClose} className="rounded p-1 text-zinc-500 hover:bg-zinc-800">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto p-5">
           {error ? (
-            <p className="text-sm text-rose-600">{error}</p>
+            <p className="text-sm text-red-400">{error}</p>
           ) : (
             <>
               <div className="mb-4 flex flex-wrap gap-4 text-sm">
-                <span className="rounded-lg bg-emerald-50 px-3 py-1.5 text-emerald-700">
+                <span className="rounded-lg bg-emerald-900 px-3 py-1.5 text-emerald-400">
                   O'qildi: <b>{parsed.length}</b>
                 </span>
                 {skipped.length > 0 && (
-                  <span className="rounded-lg bg-amber-50 px-3 py-1.5 text-amber-700">
+                  <span className="rounded-lg bg-amber-900 px-3 py-1.5 text-amber-400">
                     O'tkazib yuborildi: <b>{skipped.length}</b>
                   </span>
                 )}
               </div>
 
               {skipped.length > 0 && (
-                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                  <p className="mb-1 text-sm font-medium text-amber-800">
+                <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-900 p-3">
+                  <p className="mb-1 text-sm font-medium text-amber-400">
                     Quyidagi qatorlar qabul qilinmadi:
                   </p>
-                  <ul className="space-y-0.5 text-xs text-amber-700">
+                  <ul className="space-y-0.5 text-xs text-amber-400">
                     {skipped.slice(0, 10).map((s, i) => (
                       <li key={i}>{s.row}-qator — {s.reason}</li>
                     ))}
@@ -818,31 +818,31 @@ function ImportModal({
 
               <div className="space-y-2">
                 {parsed.map((q, i) => (
-                  <div key={i} className="rounded-lg border border-slate-200 p-3">
+                  <div key={i} className="rounded-lg border border-zinc-800 p-3">
                     <div className="flex items-center gap-2">
                       <span
                         className={`rounded px-1.5 py-0.5 text-xs font-medium ${
                           q.type === 'open'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-sky-100 text-sky-700'
+                            ? 'bg-amber-900 text-amber-400'
+                            : 'bg-sky-500/15 text-sky-400'
                         }`}
                       >
                         {q.type === 'open' ? 'Ochiq' : 'Yopiq'}
                       </span>
-                      <span className="text-xs text-slate-400">{q.points} ball</span>
+                      <span className="text-xs text-zinc-500">{q.points} ball</span>
                       {q.warning && (
-                        <span className="text-xs text-violet-600">{q.warning}</span>
+                        <span className="text-xs text-violet-400">{q.warning}</span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-slate-800">{q.text}</p>
+                    <p className="mt-1 text-sm text-zinc-100">{q.text}</p>
                     {q.options && (
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-zinc-400">
                         {q.options.map((o, oi) => (
                           <span
                             key={oi}
                             className={
                               (q.correctIndexes ?? []).includes(oi)
-                                ? 'font-semibold text-emerald-700'
+                                ? 'font-semibold text-emerald-400'
                                 : ''
                             }
                           >
@@ -853,7 +853,7 @@ function ImportModal({
                       </p>
                     )}
                     {q.acceptedAnswers && q.acceptedAnswers.length > 0 && (
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-zinc-400">
                         Javob: {q.acceptedAnswers.join(' / ')}
                       </p>
                     )}
@@ -864,8 +864,8 @@ function ImportModal({
           )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
-          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
+        <div className="flex justify-end gap-2 border-t border-zinc-800 px-5 py-4">
+          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
             Bekor qilish
           </button>
           <button
@@ -940,7 +940,7 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
           <input
             value={form.title}
             onChange={(e) => set('title', e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+            className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
           />
         </Field>
         <Field label="Shartlar va ko'rsatmalar" hint="Ishtirokchi test boshlashdan oldin ko'radi">
@@ -948,7 +948,7 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
             value={form.description}
             onChange={(e) => set('description', e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+            className="w-full resize-none rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
           />
         </Field>
       </Section>
@@ -962,7 +962,7 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
               min={1}
               value={form.durationMin}
               onChange={(e) => set('durationMin', Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             />
           </Field>
           <Field label="Boshlanish" hint="bo'sh = darhol">
@@ -970,7 +970,7 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
               type="datetime-local"
               value={form.startsAt}
               onChange={(e) => set('startsAt', e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             />
           </Field>
           <Field label="Tugash" hint="bo'sh = cheksiz">
@@ -978,7 +978,7 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
               type="datetime-local"
               value={form.expiresAt}
               onChange={(e) => set('expiresAt', e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             />
           </Field>
         </div>
@@ -998,7 +998,7 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
               value={form.closedCount}
               onChange={(e) => set('closedCount', e.target.value)}
               placeholder="hammasi"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             />
           </Field>
           <Field label={`Ochiq savol (bankda ${test.openTotal} ta)`}>
@@ -1009,12 +1009,12 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
               value={form.openCount}
               onChange={(e) => set('openCount', e.target.value)}
               placeholder="hammasi"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             />
           </Field>
         </div>
 
-        <div className="mt-3 rounded-lg bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
+        <div className="mt-3 rounded-lg bg-indigo-900 px-3 py-2 text-sm text-indigo-400">
           Har ishtirokchiga <b>{shownClosed + shownOpen}</b> ta savol beriladi
           {shownClosed + shownOpen > 0 && (
             <> ({shownClosed} yopiq, {shownOpen} ochiq)</>
@@ -1044,7 +1044,7 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
               min={1}
               value={form.attemptsAllowed}
               onChange={(e) => set('attemptsAllowed', Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             />
           </Field>
           <Field label="O'tish foizi" hint="bo'sh = o'tdi/yiqildi ko'rsatilmaydi">
@@ -1055,7 +1055,7 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
               value={form.passPercent}
               onChange={(e) => set('passPercent', e.target.value)}
               placeholder="masalan 60"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             />
           </Field>
         </div>
@@ -1095,7 +1095,7 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
           {saving ? 'Saqlanmoqda...' : 'Sozlamalarni saqlash'}
         </button>
         {savedAt && Date.now() - savedAt < 3000 && (
-          <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600">
+          <span className="inline-flex items-center gap-1.5 text-sm text-emerald-400">
             <Check className="w-4 h-4" /> Saqlandi
           </span>
         )}
@@ -1114,9 +1114,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <h3 className="font-semibold text-slate-900">{title}</h3>
-      {note && <p className="mt-1 text-sm text-slate-500">{note}</p>}
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+      <h3 className="font-semibold text-zinc-50">{title}</h3>
+      {note && <p className="mt-1 text-sm text-zinc-400">{note}</p>}
       <div className="mt-4 space-y-4">{children}</div>
     </div>
   );
@@ -1133,9 +1133,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-medium text-slate-700">
+      <label className="mb-1.5 block text-sm font-medium text-zinc-200">
         {label}
-        {hint && <span className="ml-1.5 font-normal text-slate-400">— {hint}</span>}
+        {hint && <span className="ml-1.5 font-normal text-zinc-500">— {hint}</span>}
       </label>
       {children}
     </div>
@@ -1162,11 +1162,11 @@ function Toggle({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 rounded border-slate-300"
+        className="mt-0.5 rounded border-zinc-700"
       />
       <span>
-        <span className="text-sm text-slate-700">{label}</span>
-        {hint && <span className="block text-xs text-slate-400">{hint}</span>}
+        <span className="text-sm text-zinc-200">{label}</span>
+        {hint && <span className="block text-xs text-zinc-500">{hint}</span>}
       </span>
     </label>
   );
@@ -1225,14 +1225,14 @@ function ResultsTab({ test }: { test: TestFull }) {
     }
   };
 
-  if (loading) return <div className="h-40 rounded-xl bg-slate-50 animate-pulse" />;
+  if (loading) return <div className="h-40 rounded-xl bg-zinc-800/50 animate-pulse" />;
 
   if (attempts.length === 0) {
     return (
-      <div className="rounded-xl border-2 border-dashed border-slate-200 py-14 text-center">
-        <BarChart3 className="mx-auto h-10 w-10 text-slate-300" />
-        <p className="mt-3 font-medium text-slate-700">Hali hech kim ishlamagan</p>
-        <p className="mt-1 text-sm text-slate-400">
+      <div className="rounded-xl border-2 border-dashed border-zinc-800 py-14 text-center">
+        <BarChart3 className="mx-auto h-10 w-10 text-zinc-600" />
+        <p className="mt-3 font-medium text-zinc-200">Hali hech kim ishlamagan</p>
+        <p className="mt-1 text-sm text-zinc-500">
           Havolani tarqating — natijalar shu yerda paydo bo'ladi
         </p>
       </div>
@@ -1256,15 +1256,15 @@ function ResultsTab({ test }: { test: TestFull }) {
       <div className="mb-3 flex justify-end">
         <button
           onClick={() => exportResults(test.title, attempts)}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-800/50"
         >
           <Download className="w-4 h-4" /> Excel'ga yuklash
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <thead className="bg-zinc-800/50 text-left text-xs uppercase text-zinc-400">
             <tr>
               <th className="px-4 py-3">Ishtirokchi</th>
               <th className="px-4 py-3">Ball</th>
@@ -1274,19 +1274,19 @@ function ResultsTab({ test }: { test: TestFull }) {
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-zinc-800">
             {attempts.map((a) => (
-              <tr key={a.id} className="hover:bg-slate-50">
+              <tr key={a.id} className="hover:bg-zinc-800/50">
                 <td className="px-4 py-3">
-                  <div className="font-medium text-slate-800">{a.fullName}</div>
-                  <div className="text-xs text-slate-400">
+                  <div className="font-medium text-zinc-100">{a.fullName}</div>
+                  <div className="text-xs text-zinc-500">
                     {a.phone && <span>{a.phone} · </span>}
                     {a.attemptNumber}-urinish
                   </div>
                 </td>
-                <td className="px-4 py-3 text-slate-700">
+                <td className="px-4 py-3 text-zinc-200">
                   {a.score ?? '—'}
-                  {a.maxScore !== null && <span className="text-slate-400"> / {a.maxScore}</span>}
+                  {a.maxScore !== null && <span className="text-zinc-500"> / {a.maxScore}</span>}
                 </td>
                 <td className="px-4 py-3">
                   {a.percent === null ? (
@@ -1295,10 +1295,10 @@ function ResultsTab({ test }: { test: TestFull }) {
                     <span
                       className={`rounded px-2 py-0.5 text-xs font-medium ${
                         a.passed === true
-                          ? 'bg-emerald-100 text-emerald-700'
+                          ? 'bg-emerald-900 text-emerald-400'
                           : a.passed === false
-                          ? 'bg-rose-100 text-rose-700'
-                          : 'bg-slate-100 text-slate-600'
+                          ? 'bg-red-900 text-red-400'
+                          : 'bg-zinc-800 text-zinc-300'
                       }`}
                     >
                       {a.percent}%
@@ -1307,30 +1307,30 @@ function ResultsTab({ test }: { test: TestFull }) {
                 </td>
                 <td className="px-4 py-3">
                   {a.status === 'in_progress' ? (
-                    <span className="text-amber-600">Jarayonda</span>
+                    <span className="text-amber-400">Jarayonda</span>
                   ) : a.needsReview ? (
-                    <span className="inline-flex items-center gap-1 text-violet-600">
+                    <span className="inline-flex items-center gap-1 text-violet-400">
                       <AlertTriangle className="w-3.5 h-3.5" /> Tekshirish kerak
                     </span>
                   ) : (
-                    <span className="text-slate-500">Yakunlangan</span>
+                    <span className="text-zinc-400">Yakunlangan</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs text-slate-500">
+                <td className="px-4 py-3 text-xs text-zinc-400">
                   {a.submittedAt ? new Date(a.submittedAt).toLocaleString('uz-UZ') : '—'}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
                     <button
                       onClick={() => setOpen(a.id)}
-                      className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                      className="rounded p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-indigo-400"
                       title="Javoblarni ko'rish"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => remove(a)}
-                      className="rounded p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                      className="rounded p-1.5 text-zinc-500 hover:bg-red-900 hover:text-red-400"
                       title="O'chirish"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1359,11 +1359,11 @@ function Stat({ label, value, warn }: { label: string; value: any; warn?: boolea
   return (
     <div
       className={`rounded-xl border p-4 ${
-        warn ? 'border-violet-200 bg-violet-50' : 'border-slate-200 bg-white'
+        warn ? 'border-violet-500/40 bg-violet-900' : 'border-zinc-800 bg-zinc-900'
       }`}
     >
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className={`mt-1 text-2xl font-bold ${warn ? 'text-violet-700' : 'text-slate-900'}`}>
+      <div className="text-xs text-zinc-400">{label}</div>
+      <div className={`mt-1 text-2xl font-bold ${warn ? 'text-violet-400' : 'text-zinc-50'}`}>
         {value}
       </div>
     </div>
@@ -1415,28 +1415,28 @@ function AttemptModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4">
-      <div className="my-8 w-full max-w-3xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4">
+      <div className="my-8 w-full max-w-3xl rounded-xl bg-zinc-900 shadow-xl">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
           <div>
-            <h2 className="font-semibold text-slate-900">
+            <h2 className="font-semibold text-zinc-50">
               {data?.attempt?.fullName ?? 'Yuklanmoqda...'}
             </h2>
             {data?.attempt && (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-zinc-400">
                 {data.attempt.score ?? 0} / {data.attempt.maxScore ?? 0} ball
                 {data.attempt.percent !== null && ` · ${data.attempt.percent}%`}
               </p>
             )}
           </div>
-          <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100">
+          <button onClick={onClose} className="rounded p-1 text-zinc-500 hover:bg-zinc-800">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="max-h-[65vh] space-y-3 overflow-y-auto p-5">
           {!data ? (
-            <div className="h-32 rounded-lg bg-slate-50 animate-pulse" />
+            <div className="h-32 rounded-lg bg-zinc-800/50 animate-pulse" />
           ) : (
             data.items.map((item: any, i: number) => {
               const q = item.question;
@@ -1450,16 +1450,16 @@ function AttemptModal({
                   key={q.id}
                   className={`rounded-lg border p-4 ${
                     a?.needsReview
-                      ? 'border-violet-200 bg-violet-50'
+                      ? 'border-violet-500/40 bg-violet-900'
                       : a?.isCorrect
-                      ? 'border-emerald-200 bg-emerald-50'
-                      : 'border-rose-200 bg-rose-50'
+                      ? 'border-emerald-500/40 bg-emerald-900'
+                      : 'border-red-500/40 bg-red-900'
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    <span className="text-xs font-semibold text-slate-500">{i + 1}.</span>
-                    <p className="flex-1 text-sm font-medium text-slate-800">{q.text}</p>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs font-semibold text-zinc-400">{i + 1}.</span>
+                    <p className="flex-1 text-sm font-medium text-zinc-100">{q.text}</p>
+                    <span className="text-xs text-zinc-400">
                       {a?.points ?? 0}/{q.points}
                     </span>
                   </div>
@@ -1474,10 +1474,10 @@ function AttemptModal({
                             key={oi}
                             className={`text-sm ${
                               isCorrect
-                                ? 'font-semibold text-emerald-700'
+                                ? 'font-semibold text-emerald-400'
                                 : isGiven
-                                ? 'text-rose-700 line-through'
-                                : 'text-slate-500'
+                                ? 'text-red-400 line-through'
+                                : 'text-zinc-400'
                             }`}
                           >
                             {isGiven ? '▸ ' : '   '}
@@ -1491,12 +1491,12 @@ function AttemptModal({
 
                   {q.type === 'open' && (
                     <div className="mt-2 pl-6">
-                      <p className="text-sm text-slate-800">
-                        <span className="text-slate-400">Javobi: </span>
-                        {a?.textAnswer || <i className="text-slate-400">bo'sh</i>}
+                      <p className="text-sm text-zinc-100">
+                        <span className="text-zinc-500">Javobi: </span>
+                        {a?.textAnswer || <i className="text-zinc-500">bo'sh</i>}
                       </p>
                       {q.acceptedAnswers && (q.acceptedAnswers as string[]).length > 0 && (
-                        <p className="mt-1 text-xs text-slate-500">
+                        <p className="mt-1 text-xs text-zinc-400">
                           Kutilgan: {(q.acceptedAnswers as string[]).join(' / ')}
                         </p>
                       )}
@@ -1513,7 +1513,7 @@ function AttemptModal({
                           <button
                             onClick={() => review(a.id, false)}
                             disabled={busy === a.id}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-60"
                           >
                             <X className="w-3.5 h-3.5" /> Noto'g'ri
                           </button>

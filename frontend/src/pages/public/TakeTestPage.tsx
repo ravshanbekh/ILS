@@ -242,7 +242,7 @@ export default function TakeTestPage() {
       <Shell>
         <div className="flex flex-col items-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-          <p className="mt-3 text-sm text-slate-500">Yuklanmoqda...</p>
+          <p className="mt-3 text-sm text-zinc-400">Yuklanmoqda...</p>
         </div>
       </Shell>
     );
@@ -252,9 +252,9 @@ export default function TakeTestPage() {
     return (
       <Shell>
         <div className="py-12 text-center">
-          <XCircle className="mx-auto h-12 w-12 text-rose-400" />
-          <h1 className="mt-4 text-xl font-bold text-slate-900">Test ochilmadi</h1>
-          <p className="mt-2 text-slate-500">{error}</p>
+          <XCircle className="mx-auto h-12 w-12 text-red-400" />
+          <h1 className="mt-4 text-xl font-bold text-zinc-50">Test ochilmadi</h1>
+          <p className="mt-2 text-zinc-400">{error}</p>
         </div>
       </Shell>
     );
@@ -265,17 +265,17 @@ export default function TakeTestPage() {
     return (
       <Shell>
         <div className="py-6">
-          <h1 className="text-2xl font-bold text-slate-900">{info.title}</h1>
+          <h1 className="text-2xl font-bold text-zinc-50">{info.title}</h1>
           {info.createdBy && (
-            <p className="mt-1 text-sm text-slate-500">{info.createdBy.fullName}</p>
+            <p className="mt-1 text-sm text-zinc-400">{info.createdBy.fullName}</p>
           )}
 
           {info.blocked ? (
-            <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-900 p-4">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
               <div>
-                <p className="font-medium text-amber-900">Hozir ishlab bo'lmaydi</p>
-                <p className="mt-0.5 text-sm text-amber-700">{info.blocked}</p>
+                <p className="font-medium text-amber-400">Hozir ishlab bo'lmaydi</p>
+                <p className="mt-0.5 text-sm text-amber-400">{info.blocked}</p>
               </div>
             </div>
           ) : (
@@ -289,7 +289,7 @@ export default function TakeTestPage() {
               </div>
 
               {(info.closedShown > 0 || info.openShown > 0) && (
-                <p className="mt-2 text-xs text-slate-400">
+                <p className="mt-2 text-xs text-zinc-500">
                   {info.closedShown > 0 && `${info.closedShown} ta variantli`}
                   {info.closedShown > 0 && info.openShown > 0 && ' · '}
                   {info.openShown > 0 && `${info.openShown} ta ochiq savol`}
@@ -297,43 +297,43 @@ export default function TakeTestPage() {
               )}
 
               {info.description && (
-                <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="mb-1.5 text-sm font-semibold text-slate-700">Shartlar</p>
-                  <p className="whitespace-pre-wrap text-sm text-slate-600">{info.description}</p>
+                <div className="mt-5 rounded-xl border border-zinc-800 bg-zinc-800/50 p-4">
+                  <p className="mb-1.5 text-sm font-semibold text-zinc-200">Shartlar</p>
+                  <p className="whitespace-pre-wrap text-sm text-zinc-300">{info.description}</p>
                 </div>
               )}
 
               <div className="mt-6 space-y-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Ism va familiyangiz <span className="text-rose-500">*</span>
+                  <label className="mb-1.5 block text-sm font-medium text-zinc-200">
+                    Ism va familiyangiz <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                     <input
                       autoFocus
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && start()}
                       placeholder="Masalan: Alisher Karimov"
-                      className="w-full rounded-lg border border-slate-200 py-3 pl-9 pr-3 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-lg border border-zinc-800 py-3 pl-9 pr-3 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/25"
                     />
                   </div>
                 </div>
 
                 {info.requirePhone && (
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                      Telefon raqam <span className="text-rose-500">*</span>
+                    <label className="mb-1.5 block text-sm font-medium text-zinc-200">
+                      Telefon raqam <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                       <input
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && start()}
                         placeholder="+998 90 123 45 67"
-                        className="w-full rounded-lg border border-slate-200 py-3 pl-9 pr-3 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                        className="w-full rounded-lg border border-zinc-800 py-3 pl-9 pr-3 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/25"
                       />
                     </div>
                   </div>
@@ -348,7 +348,7 @@ export default function TakeTestPage() {
                 {starting ? 'Boshlanmoqda...' : 'Testni boshlash'}
               </button>
 
-              <p className="mt-3 text-center text-xs text-slate-400">
+              <p className="mt-3 text-center text-xs text-zinc-500">
                 Boshlaganingizdan so'ng taymer ishga tushadi va to'xtamaydi
               </p>
             </>
@@ -375,24 +375,24 @@ export default function TakeTestPage() {
     return (
       <Shell wide>
         {/* Yuqori panel */}
-        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+        <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-zinc-800 bg-zinc-950/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-800">{info?.title}</p>
-              <p className="text-xs text-slate-500">
+              <p className="truncate text-sm font-semibold text-zinc-100">{info?.title}</p>
+              <p className="text-xs text-zinc-400">
                 {answered} / {questions.length} javob berildi
               </p>
             </div>
             <div
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-sm font-bold ${
-                low ? 'animate-pulse bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'
+                low ? 'animate-pulse bg-red-900 text-red-400' : 'bg-zinc-800 text-zinc-200'
               }`}
             >
               <Timer className="h-4 w-4" />
               {mm}:{ss}
             </div>
           </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-800">
             <div
               className="h-full rounded-full bg-indigo-500 transition-all"
               style={{ width: `${(answered / Math.max(1, questions.length)) * 100}%` }}
@@ -413,8 +413,8 @@ export default function TakeTestPage() {
                   i === current
                     ? 'bg-indigo-600 text-white'
                     : done
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    ? 'bg-emerald-900 text-emerald-400'
+                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                 }`}
               >
                 {i + 1}
@@ -425,8 +425,8 @@ export default function TakeTestPage() {
 
         {/* Savol */}
         {q && (
-          <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
               <span>{current + 1}-savol</span>
               <span>·</span>
               <span>{q.points} ball</span>
@@ -439,13 +439,13 @@ export default function TakeTestPage() {
               )}
             </div>
 
-            <p className="mt-2 whitespace-pre-wrap text-lg font-medium text-slate-900">{q.text}</p>
+            <p className="mt-2 whitespace-pre-wrap text-lg font-medium text-zinc-50">{q.text}</p>
 
             {q.imageUrl && (
               <img
                 src={`${API_BASE}${q.imageUrl}`}
                 alt=""
-                className="mt-3 max-h-80 w-full rounded-lg border border-slate-200 object-contain"
+                className="mt-3 max-h-80 w-full rounded-lg border border-zinc-800 object-contain"
               />
             )}
 
@@ -459,20 +459,20 @@ export default function TakeTestPage() {
                       onClick={() => pickOption(q, i)}
                       className={`flex w-full items-start gap-3 rounded-xl border-2 px-4 py-3 text-left transition ${
                         on
-                          ? 'border-indigo-500 bg-indigo-50'
-                          : 'border-slate-200 hover:border-indigo-200 hover:bg-slate-50'
+                          ? 'border-indigo-500 bg-indigo-900'
+                          : 'border-zinc-800 hover:border-indigo-500/40 hover:bg-zinc-800/50'
                       }`}
                     >
                       <span
                         className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 text-xs font-bold ${
                           on
                             ? 'border-indigo-500 bg-indigo-500 text-white'
-                            : 'border-slate-300 text-transparent'
+                            : 'border-zinc-700 text-transparent'
                         }`}
                       >
                         ✓
                       </span>
-                      <span className="text-slate-800">{o}</span>
+                      <span className="text-zinc-100">{o}</span>
                     </button>
                   );
                 })}
@@ -485,7 +485,7 @@ export default function TakeTestPage() {
                 onChange={(e) => typeAnswer(q, e.target.value)}
                 rows={5}
                 placeholder="Javobingizni shu yerga yozing"
-                className="mt-4 w-full resize-none rounded-xl border-2 border-slate-200 px-4 py-3 outline-none focus:border-indigo-400"
+                className="mt-4 w-full resize-none rounded-xl border-2 border-zinc-800 px-4 py-3 outline-none focus:border-indigo-400"
               />
             )}
           </div>
@@ -496,7 +496,7 @@ export default function TakeTestPage() {
           <button
             onClick={() => setCurrent((c) => Math.max(0, c - 1))}
             disabled={current === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-200 hover:bg-zinc-800/50 disabled:opacity-40"
           >
             <ChevronLeft className="h-4 w-4" /> Oldingi
           </button>
@@ -504,7 +504,7 @@ export default function TakeTestPage() {
           {current < questions.length - 1 ? (
             <button
               onClick={() => setCurrent((c) => Math.min(questions.length - 1, c + 1))}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-900"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 hover:bg-zinc-200"
             >
               Keyingi <ChevronRight className="h-4 w-4" />
             </button>
@@ -524,7 +524,7 @@ export default function TakeTestPage() {
           <button
             onClick={() => doSubmit(false)}
             disabled={submitting}
-            className="mt-3 w-full rounded-lg border border-emerald-200 bg-emerald-50 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
+            className="mt-3 w-full rounded-lg border border-emerald-500/40 bg-emerald-900 py-2.5 text-sm font-medium text-emerald-400 hover:bg-emerald-900 disabled:opacity-60"
           >
             Testni hozir yakunlash
           </button>
@@ -541,8 +541,8 @@ export default function TakeTestPage() {
           {result.hidden ? (
             <>
               <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500" />
-              <h1 className="mt-4 text-2xl font-bold text-slate-900">Javoblaringiz qabul qilindi</h1>
-              <p className="mt-2 text-slate-500">
+              <h1 className="mt-4 text-2xl font-bold text-zinc-50">Javoblaringiz qabul qilindi</h1>
+              <p className="mt-2 text-zinc-400">
                 Natija mentor tomonidan ko'rib chiqiladi
               </p>
             </>
@@ -551,26 +551,26 @@ export default function TakeTestPage() {
               <div
                 className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full ${
                   result.passed === true
-                    ? 'bg-emerald-100'
+                    ? 'bg-emerald-900'
                     : result.passed === false
-                    ? 'bg-rose-100'
-                    : 'bg-indigo-100'
+                    ? 'bg-red-900'
+                    : 'bg-indigo-900'
                 }`}
               >
                 <span
                   className={`text-3xl font-bold ${
                     result.passed === true
-                      ? 'text-emerald-600'
+                      ? 'text-emerald-400'
                       : result.passed === false
-                      ? 'text-rose-600'
-                      : 'text-indigo-600'
+                      ? 'text-red-400'
+                      : 'text-indigo-400'
                   }`}
                 >
                   {result.percent}%
                 </span>
               </div>
 
-              <h1 className="mt-4 text-2xl font-bold text-slate-900">
+              <h1 className="mt-4 text-2xl font-bold text-zinc-50">
                 {result.passed === true
                   ? 'Tabriklaymiz!'
                   : result.passed === false
@@ -578,7 +578,7 @@ export default function TakeTestPage() {
                   : 'Test yakunlandi'}
               </h1>
 
-              <p className="mt-2 text-slate-600">
+              <p className="mt-2 text-zinc-300">
                 {result.score} / {result.maxScore} ball
                 {result.correctCount !== null && (
                   <> · {result.correctCount} ta to'g'ri javob</>
@@ -586,7 +586,7 @@ export default function TakeTestPage() {
               </p>
 
               {result.needsReview && (
-                <div className="mx-auto mt-4 max-w-sm rounded-xl border border-violet-200 bg-violet-50 p-3 text-sm text-violet-700">
+                <div className="mx-auto mt-4 max-w-sm rounded-xl border border-violet-500/40 bg-violet-900 p-3 text-sm text-violet-400">
                   Ochiq savollaringiz mentor tomonidan tekshiriladi — yakuniy ball
                   o'zgarishi mumkin
                 </div>
@@ -594,22 +594,22 @@ export default function TakeTestPage() {
 
               {result.review && (
                 <div className="mt-8 space-y-3 text-left">
-                  <h2 className="font-semibold text-slate-800">Javoblaringiz</h2>
+                  <h2 className="font-semibold text-zinc-100">Javoblaringiz</h2>
                   {result.review.map((r: any, i: number) => (
                     <div
                       key={i}
                       className={`rounded-xl border p-4 ${
                         r.needsReview
-                          ? 'border-violet-200 bg-violet-50'
+                          ? 'border-violet-500/40 bg-violet-900'
                           : r.isCorrect
-                          ? 'border-emerald-200 bg-emerald-50'
-                          : 'border-rose-200 bg-rose-50'
+                          ? 'border-emerald-500/40 bg-emerald-900'
+                          : 'border-red-500/40 bg-red-900'
                       }`}
                     >
                       <div className="flex items-start gap-2">
-                        <span className="text-xs font-semibold text-slate-500">{i + 1}.</span>
-                        <p className="flex-1 text-sm font-medium text-slate-800">{r.text}</p>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs font-semibold text-zinc-400">{i + 1}.</span>
+                        <p className="flex-1 text-sm font-medium text-zinc-100">{r.text}</p>
+                        <span className="text-xs text-zinc-400">
                           {r.points}/{r.maxPoints}
                         </span>
                       </div>
@@ -624,10 +624,10 @@ export default function TakeTestPage() {
                                 key={oi}
                                 className={`text-sm ${
                                   isCorrect
-                                    ? 'font-semibold text-emerald-700'
+                                    ? 'font-semibold text-emerald-400'
                                     : isGiven
-                                    ? 'text-rose-700 line-through'
-                                    : 'text-slate-500'
+                                    ? 'text-red-400 line-through'
+                                    : 'text-zinc-400'
                                 }`}
                               >
                                 {isGiven ? '▸ ' : '   '}
@@ -641,13 +641,13 @@ export default function TakeTestPage() {
 
                       {r.type === 'open' && (
                         <div className="mt-2 pl-6 text-sm">
-                          <p className="text-slate-800">
-                            <span className="text-slate-400">Siz: </span>
-                            {r.given?.textAnswer || <i className="text-slate-400">bo'sh</i>}
+                          <p className="text-zinc-100">
+                            <span className="text-zinc-500">Siz: </span>
+                            {r.given?.textAnswer || <i className="text-zinc-500">bo'sh</i>}
                           </p>
                           {r.acceptedAnswers && (r.acceptedAnswers as string[]).length > 0 && (
-                            <p className="mt-0.5 text-slate-500">
-                              <span className="text-slate-400">Kutilgan: </span>
+                            <p className="mt-0.5 text-zinc-400">
+                              <span className="text-zinc-500">Kutilgan: </span>
                               {(r.acceptedAnswers as string[]).join(' / ')}
                             </p>
                           )}
@@ -660,7 +660,7 @@ export default function TakeTestPage() {
             </>
           )}
 
-          <p className="mt-8 text-sm text-slate-400">
+          <p className="mt-8 text-sm text-zinc-500">
             {result.fullName} · {result.testTitle}
           </p>
         </div>
@@ -675,9 +675,9 @@ export default function TakeTestPage() {
 
 function Shell({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-zinc-800/50">
       <div className={`mx-auto px-4 py-6 sm:px-6 ${wide ? 'max-w-3xl' : 'max-w-xl'}`}>
-        <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-7">{children}</div>
+        <div className="rounded-2xl bg-zinc-900 p-5 shadow-sm sm:p-7">{children}</div>
       </div>
     </div>
   );
@@ -693,10 +693,10 @@ function InfoBox({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
-      <Icon className="mx-auto h-4 w-4 text-slate-400" />
-      <div className="mt-1 text-xs text-slate-500">{label}</div>
-      <div className="font-semibold text-slate-800">{value}</div>
+    <div className="rounded-xl border border-zinc-800 bg-zinc-800/50 p-3 text-center">
+      <Icon className="mx-auto h-4 w-4 text-zinc-500" />
+      <div className="mt-1 text-xs text-zinc-400">{label}</div>
+      <div className="font-semibold text-zinc-100">{value}</div>
     </div>
   );
 }

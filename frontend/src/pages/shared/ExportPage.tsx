@@ -144,7 +144,7 @@ export default function ExportPage() {
                   </button>
                   <button
                     onClick={() => window.open('/admin/export/monthly-pdf', '_blank')}
-                    className="flex-1 py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2"
+                    className="flex-1 py-3 px-4 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2"
                   >
                     <Download className="w-4 h-4" />
                     Chiroyli PDF

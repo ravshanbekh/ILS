@@ -31,9 +31,9 @@ function errMsg(e: any, fallback: string): string {
 }
 
 const STATUS_META = {
-  draft: { label: 'Qoralama', cls: 'bg-slate-100 text-slate-600', Icon: CircleDashed },
-  active: { label: 'Faol', cls: 'bg-emerald-100 text-emerald-700', Icon: CheckCircle2 },
-  closed: { label: 'Yopilgan', cls: 'bg-rose-100 text-rose-700', Icon: Lock },
+  draft: { label: 'Qoralama', cls: 'bg-zinc-800 text-zinc-300', Icon: CircleDashed },
+  active: { label: 'Faol', cls: 'bg-emerald-900 text-emerald-400', Icon: CheckCircle2 },
+  closed: { label: 'Yopilgan', cls: 'bg-red-900 text-red-400', Icon: Lock },
 } as const;
 
 export default function QuizTestsPage() {
@@ -118,8 +118,8 @@ export default function QuizTestsPage() {
       {/* Sarlavha */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Test paneli</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold text-zinc-50">Test paneli</h1>
+          <p className="text-sm text-zinc-400 mt-1">
             O'z testingizni yarating, havolasini tarqating va natijalarni ko'ring.
             Ishtirokchi tizimga kirishi shart emas — ism-familiyasini yozadi.
           </p>
@@ -136,15 +136,15 @@ export default function QuizTestsPage() {
       {/* Filtrlar */}
       <div className="flex flex-wrap gap-3 mb-5">
         <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Nom yoki kod bo'yicha qidirish"
-            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            className="w-full rounded-lg border border-zinc-800 bg-zinc-900 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/25"
           />
         </div>
-        <div className="flex rounded-lg border border-slate-200 bg-white p-1">
+        <div className="flex rounded-lg border border-zinc-800 bg-zinc-900 p-1">
           {([
             ['all', 'Hammasi'],
             ['active', 'Faol'],
@@ -157,7 +157,7 @@ export default function QuizTestsPage() {
               className={`px-3 py-1.5 text-sm rounded-md transition ${
                 statusFilter === key
                   ? 'bg-indigo-600 text-white font-medium'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  : 'text-zinc-300 hover:bg-zinc-800/50'
               }`}
             >
               {label}
@@ -170,13 +170,13 @@ export default function QuizTestsPage() {
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-44 rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
+            <div key={i} className="h-44 rounded-xl border border-zinc-800 bg-zinc-800/50 animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-slate-200 py-16 text-center">
-          <FileQuestion className="w-12 h-12 mx-auto text-slate-300" />
-          <p className="mt-3 font-medium text-slate-700">
+        <div className="rounded-xl border-2 border-dashed border-zinc-800 py-16 text-center">
+          <FileQuestion className="w-12 h-12 mx-auto text-zinc-600" />
+          <p className="mt-3 font-medium text-zinc-200">
             {tests.length === 0 ? 'Hali test yaratilmagan' : 'Filtr bo\'yicha test topilmadi'}
           </p>
           {tests.length === 0 && (
@@ -195,12 +195,12 @@ export default function QuizTestsPage() {
             return (
               <div
                 key={t.id}
-                className="group rounded-xl border border-slate-200 bg-white p-4 hover:border-indigo-300 hover:shadow-sm transition"
+                className="group rounded-xl border border-zinc-800 bg-zinc-900 p-4 hover:border-indigo-500/40 hover:shadow-sm transition"
               >
                 <div className="flex items-start justify-between gap-2">
                   <button
                     onClick={() => navigate(`${basePath}/${t.id}`)}
-                    className="text-left font-semibold text-slate-900 hover:text-indigo-600 line-clamp-2"
+                    className="text-left font-semibold text-zinc-50 hover:text-indigo-400 line-clamp-2"
                   >
                     {t.title}
                   </button>
@@ -211,10 +211,10 @@ export default function QuizTestsPage() {
                 </div>
 
                 {user?.role === 'admin' && t.createdBy && (
-                  <p className="mt-1 text-xs text-slate-400">{t.createdBy.fullName}</p>
+                  <p className="mt-1 text-xs text-zinc-500">{t.createdBy.fullName}</p>
                 )}
 
-                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400">
                   <span className="inline-flex items-center gap-1">
                     <FileQuestion className="w-3.5 h-3.5" /> {t._count.questions} savol
                   </span>
@@ -227,14 +227,14 @@ export default function QuizTestsPage() {
                 </div>
 
                 {/* Havola */}
-                <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2">
-                  <code className="flex-1 truncate text-xs font-mono text-slate-600">
+                <div className="mt-3 flex items-center gap-2 rounded-lg bg-zinc-800/50 px-2.5 py-2">
+                  <code className="flex-1 truncate text-xs font-mono text-zinc-300">
                     /t/{t.code}
                   </code>
                   <button
                     onClick={() => copyLink(t.code)}
                     title="Havolani nusxalash"
-                    className="rounded p-1 text-slate-500 hover:bg-white hover:text-indigo-600"
+                    className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-indigo-400"
                   >
                     <Link2 className="w-4 h-4" />
                   </button>
@@ -243,33 +243,33 @@ export default function QuizTestsPage() {
                     target="_blank"
                     rel="noreferrer"
                     title="Yangi oynada ochish"
-                    className="rounded p-1 text-slate-500 hover:bg-white hover:text-indigo-600"
+                    className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-indigo-400"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
                 {copiedCode === t.code && (
-                  <p className="mt-1 text-xs font-medium text-emerald-600">Havola nusxalandi</p>
+                  <p className="mt-1 text-xs font-medium text-emerald-400">Havola nusxalandi</p>
                 )}
 
-                <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+                <div className="mt-3 flex gap-2 border-t border-zinc-800 pt-3">
                   <button
                     onClick={() => navigate(`${basePath}/${t.id}`)}
-                    className="flex-1 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200"
+                    className="flex-1 rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-200 hover:bg-zinc-700"
                   >
                     Ochish
                   </button>
                   <button
                     onClick={() => handleDuplicate(t.id)}
                     title="Nusxa olish"
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(t)}
                     title="O'chirish"
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                    className="rounded-lg p-1.5 text-zinc-500 hover:bg-red-900 hover:text-red-400"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -320,31 +320,31 @@ function CreateTestModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="font-semibold text-slate-900">Yangi test</h2>
-          <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-lg rounded-xl bg-zinc-900 shadow-xl">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+          <h2 className="font-semibold text-zinc-50">Yangi test</h2>
+          <button onClick={onClose} className="rounded p-1 text-zinc-500 hover:bg-zinc-800">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-4 p-5">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Test nomi <span className="text-rose-500">*</span>
+            <label className="mb-1.5 block text-sm font-medium text-zinc-200">
+              Test nomi <span className="text-red-500">*</span>
             </label>
             <input
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Masalan: 1-modul yakuniy testi"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-lg border border-zinc-800 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/25"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-200">
               Shartlar va ko'rsatmalar
             </label>
             <textarea
@@ -352,12 +352,12 @@ function CreateTestModal({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Ishtirokchi test boshlashdan oldin ko'radi. Masalan: har savolga bitta javob, orqaga qaytish mumkin emas."
-              className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="w-full resize-none rounded-lg border border-zinc-800 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/25"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-200">
               Vaqt (daqiqa)
             </label>
             <input
@@ -365,18 +365,18 @@ function CreateTestModal({
               min={1}
               value={durationMin}
               onChange={(e) => setDurationMin(Number(e.target.value))}
-              className="w-32 rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="w-32 rounded-lg border border-zinc-800 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/25"
             />
-            <p className="mt-1.5 text-xs text-slate-400">
+            <p className="mt-1.5 text-xs text-zinc-500">
               Qolgan sozlamalarni keyingi oynada belgilaysiz
             </p>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
+        <div className="flex justify-end gap-2 border-t border-zinc-800 px-5 py-4">
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800"
           >
             Bekor qilish
           </button>
