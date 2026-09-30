@@ -1,16 +1,22 @@
 import { Outlet } from 'react-router-dom';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Sidebar from './Sidebar';
+import Topbar from './Topbar';
+import { TopbarContext } from './topbarContext';
+import type { TopbarState } from './topbarContext';
 import CategorySubHeader from './CategorySubHeader';
 import MilestoneWarningBanner from '../shared/MilestoneWarningBanner';
 import { useAuthStore } from '../../stores/authStore';
-import { Menu } from 'lucide-react';
 
 export default function AppLayout() {
   const role = useAuthStore((st) => st.user?.role);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Yig'ilgan holat brauzerda eslab qolinadi
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+
+  // Sahifalar <Header /> orqali shu yerga sarlavha uzatadi (topbarContext.tsx)
+  const [topbar, setTopbar] = useState<TopbarState>({});
+  const topbarCtx = useMemo(() => ({ setTopbar }), []);
 
   const toggleCollapsed = () => {
     setCollapsed(prev => {
@@ -28,16 +34,10 @@ export default function AppLayout() {
         onToggleCollapse={toggleCollapsed}
       />
       <main className={`flex-1 flex flex-col min-w-0 overflow-y-auto h-screen bg-zinc-950 transition-[margin] duration-300 ${collapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        {/* Mobile top bar with hamburger */}
-        <div className="lg:hidden sticky top-0 z-30 bg-zinc-950/95 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <span className="text-sm font-bold text-white">ILS</span>
-        </div>
+        {/* Global topbar — HAR BIR sahifada bitta. Mavzu, bildirishnomalar va
+            akkaunt menyusi shu yerda. Mobilda chap tomonida menyu tugmasi
+            (ilgari alohida ikkinchi panel edi va ular bir-birini yopardi). */}
+        <Topbar {...topbar} onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Sub Navigation Bar for Category Switching */}
         <CategorySubHeader />
@@ -51,7 +51,9 @@ export default function AppLayout() {
         )}
 
         <div className="flex-1 w-full max-w-7xl mx-auto">
-          <Outlet />
+          <TopbarContext.Provider value={topbarCtx}>
+            <Outlet />
+          </TopbarContext.Provider>
         </div>
       </main>
     </div>
