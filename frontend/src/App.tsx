@@ -52,6 +52,9 @@ const ChecklistManagePage = lazyWithReload(() => import('@/pages/admin/Checklist
 const PredictionsPage = lazyWithReload(() => import('@/pages/admin/PredictionsPage'));
 const ExamsPage = lazyWithReload(() => import('@/pages/teacher/ExamsPage'));
 const LiveQuizPage = lazyWithReload(() => import('@/pages/teacher/LiveQuizPage'));
+const QuizTestsPage = lazyWithReload(() => import('@/pages/teacher/QuizTestsPage'));
+const QuizTestDetailPage = lazyWithReload(() => import('@/pages/teacher/QuizTestDetailPage'));
+const TakeTestPage = lazyWithReload(() => import('@/pages/public/TakeTestPage'));
 const ExamLobbyPage = lazyWithReload(() => import('@/pages/exam/ExamLobbyPage'));
 const QuizJoinPage = lazyWithReload(() => import('@/pages/quiz/QuizJoinPage'));
 const LessonsPage = lazyWithReload(() => import('@/pages/shared/LessonsPage'));
@@ -184,6 +187,10 @@ export default function App() {
             {/* Auth */}
             <Route path="/login" element={<AuthRedirect />} />
 
+            {/* Ommaviy test havolasi — tizimga kirish talab qilinmaydi.
+                Ishtirokchi ism-familiyasini yozib ishlaydi. */}
+            <Route path="/t/:code" element={<TakeTestPage />} />
+
             {/* Dizayn qabul tekshiruvi uchun sahifa. FAQAT dev rejimida
                 mavjud — `import.meta.env.DEV` production bundlega kirmaydi.
                 Referens screenshotlar bilan yonma-yon solishtirish uchun. */}
@@ -229,6 +236,8 @@ export default function App() {
               <Route path="/admin/predictions" element={<PredictionsPage />} />
               <Route path="/admin/exams" element={<ExamsPage />} />
               <Route path="/admin/live-quiz" element={<LiveQuizPage />} />
+              <Route path="/admin/quiz-tests" element={<QuizTestsPage />} />
+              <Route path="/admin/quiz-tests/:id" element={<QuizTestDetailPage />} />
               <Route path="/admin/lessons" element={<LessonsPage />} />
               <Route path="/admin/trash" element={<TrashPage />} />
               <Route path="/admin/permissions" element={<PermissionsPage />} />
@@ -270,6 +279,8 @@ export default function App() {
               <Route path="/teacher/export" element={<ExportPage />} />
               <Route path="/teacher/exams" element={<ExamsPage />} />
               <Route path="/teacher/live-quiz" element={<LiveQuizPage />} />
+              <Route path="/teacher/quiz-tests" element={<QuizTestsPage />} />
+              <Route path="/teacher/quiz-tests/:id" element={<QuizTestDetailPage />} />
               <Route path="/teacher/lessons" element={<LessonsPage />} />
             </Route>
 

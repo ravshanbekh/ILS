@@ -182,6 +182,15 @@ export const PERMISSIONS = {
     legacyRoles: ['administrator', 'filial_rahbari', 'nazoratchi'],
   },
 
+  // ── Test paneli ──
+  quiz_tests: {
+    label: 'Test paneli',
+    description:
+      "O'z testini yaratish, savol qo'shish, havola tarqatish va natijalarni ko'rish. Har kim faqat o'zi yaratgan testni ko'radi",
+    category: 'Imtihon',
+    legacyRoles: ['teacher', 'assistant'],
+  },
+
   // ── Xavfli amallar ──
   restore_trash: {
     label: 'Savatni boshqarish',

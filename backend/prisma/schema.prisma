@@ -116,6 +116,9 @@ model User {
   supportBookings           SupportBooking[]      @relation("StudentSupportBookings")
   permissions               UserPermission[]      @relation("UserPermissions")
   permissionsGranted        UserPermission[]      @relation("PermissionGrantedBy")
+  // Universal test paneli
+  quizTestsCreated          QuizTest[]            @relation("QuizTestCreator")
+  quizAnswersReviewed       QuizTestAnswer[]      @relation("QuizAnswerReviewer")
 
   @@map("users")
 }
@@ -1333,4 +1336,179 @@ model ExamGroup {
   @@unique([examId, groupId])
   @@index([groupId])
   @@map("exam_groups")
+}
+
+// ============================================================
+//  UNIVERSAL TEST PANELI (mentorlar o'z testini yaratadi)
+//  Exam modulidan farqi: ishtirokchi ro'yxatdan o'tmaydi —
+//  havola ochib, ism-familiyasini yozadi va ishlaydi.
+// ============================================================
+
+enum QuizTestStatus {
+  draft
+  active
+  closed
+}
+
+enum QuizQuestionType {
+  closed // variantli (bitta yoki bir nechta to'g'ri javob)
+  open   // ochiq — javob matn sifatida yoziladi
+}
+
+enum QuizAttemptStatus {
+  in_progress
+  submitted
+  expired
+}
+
+/// Mentor yaratadigan universal test.
+/// Har sozlama shu yerda — vaqt, savol soni, ochiq/yopiq nisbati, urinishlar.
+model QuizTest {
+  id          String  @id @default(uuid()) @db.Uuid
+  title       String  @db.VarChar(200)
+  description String? @db.VarChar(2000) // shartlar, qoidalar, ko'rsatmalar
+  code        String  @unique @db.VarChar(12) // havola kodi: /t/ABC123
+  createdById String  @map("created_by_id") @db.Uuid
+
+  // ── Vaqt ──
+  durationMin Int       @default(30) @map("duration_min")
+  startsAt    DateTime? @map("starts_at")
+  expiresAt   DateTime? @map("expires_at")
+
+  // ── Savol tanlash ──
+  // null = bankdagi hamma savol beriladi.
+  // Son berilsa — shuncha savol TASODIFIY tanlanadi.
+  closedCount Int? @map("closed_count") // nechta yopiq savol berilsin
+  openCount   Int? @map("open_count")   // nechta ochiq savol berilsin
+
+  shuffleQuestions Boolean @default(true) @map("shuffle_questions")
+  shuffleOptions   Boolean @default(true) @map("shuffle_options")
+
+  // ── Ishtirokchi ──
+  attemptsAllowed Int     @default(1) @map("attempts_allowed")
+  requirePhone    Boolean @default(false) @map("require_phone")
+
+  // ── Natija ko'rsatish ──
+  showResult         Boolean @default(true) @map("show_result")          // ball ko'rsatilsinmi
+  showCorrectAnswers Boolean @default(false) @map("show_correct_answers") // to'g'ri javoblar ko'rsatilsinmi
+  passPercent        Int?    @map("pass_percent")                        // o'tish foizi
+
+  status    QuizTestStatus @default(draft)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  createdBy User               @relation("QuizTestCreator", fields: [createdById], references: [id])
+  questions QuizTestQuestion[]
+  attempts  QuizTestAttempt[]
+
+  @@index([createdById])
+  @@index([status])
+  @@map("quiz_tests")
+}
+
+/// Savol banki. Ochiq va yopiq savollar bitta jadvalda —
+/// `type` ustuni ajratadi, shunda "nechtasi ochiq" sozlamasi ishlaydi.
+model QuizTestQuestion {
+  id     String           @id @default(uuid()) @db.Uuid
+  testId String           @map("test_id") @db.Uuid
+  type   QuizQuestionType @default(closed)
+
+  text     String  @db.Text
+  imageUrl String? @map("image_url")
+
+  // ── Yopiq savol uchun ──
+  options        Json? // ["A varianti", "B varianti", ...]
+  correctIndexes Json? // [0] yoki [0, 2] — bir nechta to'g'ri javob bo'lishi mumkin
+
+  // ── Ochiq savol uchun ──
+  // Qabul qilinadigan javoblar ro'yxati: ["Toshkent", "toshkent shahri"]
+  acceptedAnswers Json?   @map("accepted_answers")
+  caseSensitive   Boolean @default(false) @map("case_sensitive")
+  // Javob ro'yxatga tushmasa, mentor qo'lda baholaydi
+  manualReview    Boolean @default(false) @map("manual_review")
+
+  points Int @default(1)
+  order  Int @default(0)
+
+  test    QuizTest         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers QuizTestAnswer[]
+
+  @@index([testId])
+  @@map("quiz_test_questions")
+}
+
+/// Bitta ishtirokchining bitta urinishi.
+/// User bilan bog'lanmagan — ism-familiya yetarli.
+model QuizTestAttempt {
+  id     String @id @default(uuid()) @db.Uuid
+  testId String @map("test_id") @db.Uuid
+
+  fullName String  @map("full_name") @db.VarChar(150)
+  phone    String? @db.VarChar(30)
+
+  attemptNumber Int               @default(1) @map("attempt_number")
+  status        QuizAttemptStatus @default(in_progress)
+
+  // Shu urinishda berilgan savollar — tartibi bilan.
+  // Tasodifiy tanlov va aralashtirish natijasi shu yerda muhrlanadi.
+  questionIds Json   @map("question_ids")
+
+  /// Har savol uchun variantlarning KO'RSATILGAN tartibi:
+  ///   { "<savol id>": [2, 0, 1, 3] }
+  /// Massivdagi pozitsiya - ishtirokchi ko'rgan tartib, qiymati - asl indeks.
+  /// Shusiz aralashtirilgan javob asl `correctIndexes` bilan solishtirilib,
+  /// to'g'ri javob ham noto'g'ri deb baholanardi.
+  optionOrders Json? @map("option_orders")
+  token       String @unique @db.VarChar(64) // sahifa yangilansa, davom ettirish uchun
+
+  startedAt   DateTime  @default(now()) @map("started_at")
+  deadlineAt  DateTime  @map("deadline_at")
+  submittedAt DateTime? @map("submitted_at")
+
+  score        Int? // to'plangan ball
+  maxScore     Int? @map("max_score")
+  percent      Int? // foiz
+  correctCount Int? @map("correct_count")
+  passed       Boolean?
+
+  // Ochiq javoblar qo'lda baholanishi kutilyaptimi
+  needsReview Boolean @default(false) @map("needs_review")
+
+  ip        String?  @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  test    QuizTest         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers QuizTestAnswer[]
+
+  @@index([testId, status])
+  @@index([testId, createdAt])
+  @@map("quiz_test_attempts")
+}
+
+/// Bitta savolga berilgan javob.
+model QuizTestAnswer {
+  id         String @id @default(uuid()) @db.Uuid
+  attemptId  String @map("attempt_id") @db.Uuid
+  questionId String @map("question_id") @db.Uuid
+
+  selected   Json?   // yopiq: [0] yoki [0, 2]
+  textAnswer String? @map("text_answer") @db.Text // ochiq
+
+  isCorrect   Boolean?
+  points      Int      @default(0)
+  needsReview Boolean  @default(false) @map("needs_review")
+
+  // Mentor qo'lda bahoi
+  reviewedById String?   @map("reviewed_by_id") @db.Uuid
+  reviewedAt   DateTime? @map("reviewed_at")
+
+  answeredAt DateTime @default(now()) @map("answered_at")
+
+  attempt    QuizTestAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question   QuizTestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  reviewedBy User?            @relation("QuizAnswerReviewer", fields: [reviewedById], references: [id])
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@map("quiz_test_answers")
 }

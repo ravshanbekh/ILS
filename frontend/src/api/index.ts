@@ -753,3 +753,44 @@ export const homeworkApi = {
   // O'quvchi
   getMine: () => api.get('/homework/mine'),
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Universal test paneli
+//  Mentor qismi `api` (token bilan), ommaviy qism `publicApi` orqali —
+//  ommaviy so'rovda 401 interceptor login sahifasiga uloqtirmasligi kerak.
+// ─────────────────────────────────────────────────────────────────────────────
+export const quizTestsApi = {
+  // ── Mentor ──
+  create: (data: any) => api.post('/quiz-tests', data),
+  getMine: () => api.get('/quiz-tests'),
+  getById: (id: string) => api.get(`/quiz-tests/${id}`),
+  update: (id: string, data: any) => api.patch(`/quiz-tests/${id}`, data),
+  remove: (id: string) => api.delete(`/quiz-tests/${id}`),
+  duplicate: (id: string) => api.post(`/quiz-tests/${id}/duplicate`),
+  preview: (id: string) => api.get(`/quiz-tests/${id}/preview`),
+
+  // Savollar — rasm bo'lgani uchun FormData
+  addQuestion: (id: string, form: FormData) =>
+    api.post(`/quiz-tests/${id}/questions`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  bulkAddQuestions: (id: string, questions: any[]) =>
+    api.post(`/quiz-tests/${id}/questions/bulk`, { questions }),
+  updateQuestion: (id: string, qId: string, form: FormData) =>
+    api.patch(`/quiz-tests/${id}/questions/${qId}`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  deleteQuestion: (id: string, qId: string) =>
+    api.delete(`/quiz-tests/${id}/questions/${qId}`),
+  reorderQuestions: (id: string, ids: string[]) =>
+    api.patch(`/quiz-tests/${id}/questions/reorder`, { ids }),
+
+  // Natijalar
+  getResults: (id: string) => api.get(`/quiz-tests/${id}/results`),
+  getAttempt: (id: string, attemptId: string) =>
+    api.get(`/quiz-tests/${id}/attempts/${attemptId}`),
+  deleteAttempt: (id: string, attemptId: string) =>
+    api.delete(`/quiz-tests/${id}/attempts/${attemptId}`),
+  reviewAnswer: (id: string, answerId: string, data: { isCorrect: boolean; points?: number }) =>
+    api.patch(`/quiz-tests/${id}/answers/${answerId}/review`, data),
+};

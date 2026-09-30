@@ -39,6 +39,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
     items: [
       { to: '/admin/lessons', label: 'Darsliklar', icon: BookOpen },
       { to: '/admin/exams', label: 'Imtihonlar', icon: FileText },
+      { to: '/admin/quiz-tests', label: 'Test paneli', icon: ClipboardList },
       { to: '/admin/live-quiz', label: 'Live Quiz', icon: Zap },
       { to: '/admin/homework-bank', label: 'Uyga vazifa bankasi', icon: BookOpen },
     ]
@@ -120,6 +121,7 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
     items: [
       { to: '/teacher/lessons', label: 'Darsliklar', icon: BookOpen },
       { to: '/teacher/exams', label: 'Imtihonlar', icon: FileText },
+      { to: '/teacher/quiz-tests', label: 'Test paneli', icon: ClipboardList },
       { to: '/teacher/live-quiz', label: 'Live Quiz', icon: Zap },
     ]
   },
