@@ -59,7 +59,6 @@ const STATUS_LABEL: Record<string, string> = {
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function ExamsPage() {
   const { user } = useAuthStore();
-  const isAdmin = user?.role === 'admin';
   // Qo'lda beriladigan ruxsatlar (admin har doim true). Ro'yxatga obuna —
   // ruxsatlar serverdan kelganda tugmalar qayta chizilishi uchun.
   const can = usePermissionStore((s) => s.can);
@@ -67,6 +66,8 @@ export default function ExamsPage() {
   const canCreate = can('exam_create');
   const canEdit = can('exam_edit');
   const canDelete = can('exam_delete');
+  // Markaz (global) imtihoni: yaratish va BARCHA markaz imtihonlarini boshqarish
+  const canGlobal = can('exam_global');
 
   const navigate = useNavigate();
   const [listTab, setListTab] = useState<'my' | 'global'>('my');
@@ -604,7 +605,7 @@ export default function ExamsPage() {
               </div>
             </div>
 
-            {isAdmin && (
+            {canGlobal && (
               <div className="flex items-center gap-2 mb-4 text-white">
                 <input
                   type="checkbox"
@@ -902,17 +903,17 @@ export default function ExamsPage() {
                           onClick={e => { e.stopPropagation(); activateGlobal(exam); }}
                           className="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition flex-1"
                         >✨ Aktivlashtirish</button>
-                        {isAdmin && (
-                          <>
-                            <button
-                              onClick={e => { e.stopPropagation(); openEdit(exam); }}
-                              className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
-                            >✏️ Tahrirlash</button>
-                            <button
-                              onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
-                              className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
-                            >🗑️ O'chirish</button>
-                          </>
+                        {canGlobal && canEdit && (
+                          <button
+                            onClick={e => { e.stopPropagation(); openEdit(exam); }}
+                            className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
+                          >✏️ Tahrirlash</button>
+                        )}
+                        {canGlobal && canDelete && (
+                          <button
+                            onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
+                            className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
+                          >🗑️ O'chirish</button>
                         )}
                       </>
                     )}
@@ -950,7 +951,7 @@ export default function ExamsPage() {
             {tab === 'questions' ? (
               <div className="p-4">
                 {/* Import and Add Forms (Only if not a session exam) */}
-                {!selected.templateId && canCreate && (
+                {!selected.templateId && canCreate && (!selected.isGlobal || canGlobal) && (
                   <>
                     <div className="flex items-center gap-3 mb-4 flex-wrap">
                       <label className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium cursor-pointer transition">
@@ -1060,7 +1061,7 @@ export default function ExamsPage() {
                             ))}
                           </div>
                         </div>
-                        {!selected.templateId && canCreate && (
+                        {!selected.templateId && canCreate && (!selected.isGlobal || canGlobal) && (
                           <div className="opacity-0 group-hover:opacity-100 flex items-center gap-3 transition">
                             <button
                               onClick={() => {
@@ -1195,7 +1196,7 @@ export default function ExamsPage() {
                 onChange={e => setEditForm(f => ({ ...f, maxProjectScore: Number(e.target.value) }))}
               />
             </div>
-            {isAdmin && (
+            {canGlobal && (
               <div className="flex items-center gap-2 pt-2 text-white">
                 <input
                   type="checkbox"

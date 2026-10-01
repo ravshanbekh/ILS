@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../../config/database';
 import { env } from '../../config/env';
+import { hasPermission } from '../../shared/middleware/permission.middleware';
 
 interface ExamSessionPayload {
   type: 'exam_session';
@@ -57,13 +58,30 @@ function verifyExamSessionToken(token: unknown): ExamSessionPayload | null {
   }
 }
 
+/** Markaz (global) imtihonini yaratish/boshqarish huquqi: admin yoki exam_global */
+async function canManageGlobal(userId: string, userRole?: string): Promise<boolean> {
+  if (userRole === 'admin') return true;
+  if (!userRole) return false;
+  return hasPermission({ userId, role: userRole }, 'exam_global');
+}
+
+/**
+ * Imtihonni boshqara oladimi (savollar, sozlamalar, o'chirish):
+ *  - admin — hammasini;
+ *  - yaratgan odam — o'zinikini;
+ *  - "Markaz imtihonlarini boshqarish" ruxsati borlar — BARCHA markaz
+ *    imtihonlarini (umumiy resurs, kim yaratganidan qat'i nazar).
+ * Qaysi amal ekanini route'dagi ruxsat (exam_create/edit/delete) belgilaydi.
+ */
 async function isExamOwner(examId: string, userId: string, userRole?: string): Promise<boolean> {
   if (userRole === 'admin') return true;
-  const exam = await prisma.exam.findFirst({
-    where: { id: examId, createdById: userId },
-    select: { id: true },
+  const exam = await prisma.exam.findUnique({
+    where: { id: examId },
+    select: { createdById: true, isGlobal: true },
   });
-  return Boolean(exam);
+  if (!exam) return false;
+  if (exam.createdById === userId) return true;
+  return exam.isGlobal && (await canManageGlobal(userId, userRole));
 }
 
 
@@ -74,6 +92,11 @@ export const createExam = async (req: Request, res: Response, next: NextFunction
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
     if (!userId) return res.status(401).json({ error: 'Auth xatosi' });
+
+    // Markaz imtihoni faqat admin yoki "Markaz imtihonlarini boshqarish"
+    // ruxsati borlar uchun; boshqalarda belgi jim e'tiborsiz qoldiriladi
+    // (avvalgidek)
+    const makeGlobal = Boolean(isGlobal) && (await canManageGlobal(userId, userRole));
 
     const accessCode = generateCode(10);
     const now = new Date();
@@ -95,7 +118,7 @@ export const createExam = async (req: Request, res: Response, next: NextFunction
         maxAiScore,
         maxProjectScore,
         status: 'draft',
-        isGlobal: Boolean(isGlobal && userRole === 'admin'),
+        isGlobal: makeGlobal,
         step2Name: step2Name || undefined,
         step3Name: step3Name || undefined,
         step2Type: step2Type || 'link',
@@ -276,11 +299,12 @@ export const deleteExam = async (req: Request, res: Response, next: NextFunction
     const { id } = req.params;
     const userId = (req as any).user?.userId;
     const userRole = (req as any).user?.role;
-    // Admin har qanday imtihonni o'chirishi mumkin
-    const where = userRole === 'admin'
-      ? { id }
-      : { id, createdById: userId };
-    await prisma.exam.delete({ where });
+    // Admin — har qanday; yaratgan — o'zinikini; markaz boshqaruvchisi —
+    // markaz imtihonlarini. Ilgari begona id'da prisma P2025 bilan 500 qaytardi.
+    if (!(await isExamOwner(id, userId, userRole))) {
+      return res.status(404).json({ error: "Topilmadi yoki ruxsatingiz yo'q" });
+    }
+    await prisma.exam.delete({ where: { id } });
     res.json({ message: "O'chirildi" });
   } catch (e: any) {
     next(e);
@@ -295,10 +319,12 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
     const userRole = (req as any).user?.role;
     const { title, categoryId, step2Name, step3Name, testCount, durationHours, maxTestScore, maxAiScore, maxProjectScore, isGlobal, step2Type, step2Desc, step3Type, step3Desc } = req.body;
 
-    // Admin har qanday, teacher faqat o'zining imtihonini
-    const where = userRole === 'admin' ? { id } : { id, createdById: userId };
-    const exam = await prisma.exam.findFirst({ where, select: { id: true } });
-    if (!exam) return res.status(404).json({ error: "Topilmadi yoki ruxsatingiz yo'q" });
+    // Admin — har qanday; yaratgan — o'zinikini; markaz boshqaruvchisi —
+    // markaz imtihonlarini
+    if (!(await isExamOwner(id, userId, userRole))) {
+      return res.status(404).json({ error: "Topilmadi yoki ruxsatingiz yo'q" });
+    }
+    const mayToggleGlobal = isGlobal !== undefined && (await canManageGlobal(userId, userRole));
 
     const hours = durationHours !== undefined ? Number(durationHours) : undefined;
     const now = new Date();
@@ -315,7 +341,7 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
         ...(maxTestScore !== undefined && { maxTestScore: Number(maxTestScore) }),
         ...(maxAiScore !== undefined && { maxAiScore: Number(maxAiScore) }),
         ...(maxProjectScore !== undefined && { maxProjectScore: Number(maxProjectScore) }),
-        ...(isGlobal !== undefined && userRole === 'admin' && { isGlobal: Boolean(isGlobal) }),
+        ...(mayToggleGlobal && { isGlobal: Boolean(isGlobal) }),
         ...(step2Type !== undefined && { step2Type }),
         ...(step2Desc !== undefined && { step2Desc }),
         ...(step3Type !== undefined && { step3Type }),

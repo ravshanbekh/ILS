@@ -206,6 +206,13 @@ export const PERMISSIONS = {
     category: 'Imtihon',
     legacyRoles: ['teacher'], // ilgari roleGuard(admin, teacher)
   },
+  exam_global: {
+    label: 'Markaz imtihonlarini boshqarish',
+    description:
+      "Imtihonni \"Markaz imtihoni\" qilib yaratish va BARCHA markaz imtihonlarini boshqarish (admin yaratganlarini ham). Yuqoridagi ruxsatlar bilan birga ishlaydi: yaratish uchun \"Imtihon yaratish\", tahrirlash/o'chirish uchun tegishlisi ham yoqilgan bo'lsin",
+    category: 'Imtihon',
+    legacyRoles: [], // ilgari faqat admin — qo'lda beriladi
+  },
   quiz_tests: {
     label: 'Test paneli',
     description:
