@@ -9,7 +9,7 @@ import {
   Gift, Package, Coins
 , CalendarClock, UserCircle} from 'lucide-react';
 import BrandLogo from '@/components/brand/BrandLogo';
-import { ADMIN_GROUPS, TEACHER_GROUPS, STUDENT_GROUPS } from './CategorySubHeader';
+import { getNavGroups } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
 
 const studentLinks = [
@@ -63,18 +63,20 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
 
   // Gamifikatsiya bo'limlari qo'lda beriladigan ruxsatga bog'liq
   const can = usePermissionStore((s) => s.can);
+  // `can` funksiyasi hech qachon o'zgarmaydi — faqat unga obuna bo'linsa,
+  // ruxsatlar serverdan kelganda menyu qayta chizilmasdi va ruxsatli
+  // bandlar (do'kon, coin, vazifa bankasi) boshqa sahifaga o'tilgandagina
+  // paydo bo'lardi. Ro'yxatning o'ziga obuna bo'lamiz.
+  usePermissionStore((s) => s.permissions);
   const canShopOrders = can('shop_orders');
   const canShopManage = can('shop_manage');
   const canCoinOversight = can('coin_oversight');
   const canSupportOversight = can('support_oversight');
+  const canHomeworkManage = can('homework_manage');
 
-  const rawGroups: NavCategoryGroup[] = user?.role === 'admin'
-    ? ADMIN_GROUPS
-    : user?.role === 'teacher'
-    ? TEACHER_GROUPS
-    : user?.role === 'student'
-    ? STUDENT_GROUPS
-    : [];
+  // Rol guruhlari + ruxsatga qarab qo'shiladigan bandlar (CategorySubHeader
+  // bilan bitta manba — getNavGroups)
+  const rawGroups: NavCategoryGroup[] = getNavGroups(user?.role, can);
 
   const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
 
@@ -124,6 +126,11 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     // Kartochkasi o'quvchiga ko'rinadigan rollar o'z profilini to'ldiradi
     ...(['assistant', 'robototexnika_ustoz'].includes(user!.role)
       ? [{ to: `/viewer/${user!.role}/profile`, icon: UserCircle, label: 'Mening profilim' }]
+      : []),
+    // Ta'lim — "Uyga vazifa bankasini boshqarish" ruxsati berilganlarga
+    // (masalan assistent darsliklarga vazifa yozadi)
+    ...(canHomeworkManage
+      ? [{ to: `/viewer/${user!.role}/homework-bank`, icon: BookOpen, label: 'Uyga vazifa bankasi' }]
       : []),
     // Nazorat — qo'lda beriladigan ruxsat
     ...(canSupportOversight

@@ -1,14 +1,20 @@
 import { Router } from 'express';
 import homeworkController from './homework.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
-import { permissionGuard } from '../../shared/middleware/permission.middleware';
+import { permissionGuard, roleOrPermission } from '../../shared/middleware/permission.middleware';
 
 const router = Router();
 router.use(authenticate);
 
 // ── Bank: vazifalarni yozish (admin; kerak bo'lsa qo'lda beriladi) ──────────
 // Ko'rish o'qituvchiga ham kerak — u bankdan tanlab guruhiga beradi.
-router.get('/bank', roleGuard('admin', 'teacher', 'administrator', 'filial_rahbari'), homeworkController.listBank);
+// Bankni boshqarish ruxsati berilgan har qanday rol (masalan assistant) ham
+// ko'radi — ko'rmasdan yozib/tahrirlab bo'lmaydi.
+router.get(
+  '/bank',
+  roleOrPermission(['admin', 'teacher', 'administrator', 'filial_rahbari'], 'homework_manage'),
+  homeworkController.listBank,
+);
 router.post('/bank', permissionGuard('homework_manage'), homeworkController.createBank);
 router.put('/bank/:id', permissionGuard('homework_manage'), homeworkController.updateBank);
 router.delete('/bank/:id', permissionGuard('homework_manage'), homeworkController.deleteBank);

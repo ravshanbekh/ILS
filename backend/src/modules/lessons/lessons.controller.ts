@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/database';
+import { hasPermission } from '../../shared/middleware/permission.middleware';
 
 // ─── Papkalar ──────────────────────────────────────────────────────────────────
 
@@ -159,8 +160,11 @@ export const getItems = async (req: Request, res: Response, next: NextFunction) 
     const { id } = req.params;
     const user = req.user!;
     const isAdmin = ['admin', 'administrator', 'filial_rahbari'].includes(user.role);
+    // Uyga vazifa bankini boshqaruvchi barcha darsliklarni ko'radi (faqat
+    // o'qish) — aks holda assistent bank sahifasida papkani tanlasa 403 olardi
+    const canSeeAll = isAdmin || (await hasPermission(user, 'homework_manage'));
 
-    if (!isAdmin) {
+    if (!canSeeAll) {
       // Teacher ruxsatini tekshirish (to'g'ridan-to'g'ri yoki ajdod papkadan meros)
       const { inherited } = await getTeacherVisibility(user.userId);
       if (!inherited.has(id)) return res.status(403).json({ error: "Bu papkaga ruxsatingiz yo'q" });

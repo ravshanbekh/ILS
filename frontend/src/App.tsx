@@ -281,6 +281,8 @@ export default function App() {
               <Route path="/teacher/live-quiz" element={<LiveQuizPage />} />
               <Route path="/teacher/quiz-tests" element={<QuizTestsPage />} />
               <Route path="/teacher/quiz-tests/:id" element={<QuizTestDetailPage />} />
+              {/* Faqat "homework_manage" ruxsati berilgan o'qituvchiga menyuda chiqadi */}
+              <Route path="/teacher/homework-bank" element={<HomeworkBankPage />} />
               <Route path="/teacher/lessons" element={<LessonsPage />} />
             </Route>
 
@@ -336,6 +338,7 @@ export default function App() {
               <Route path="/viewer/:role/support-hours" element={<SupportOversightPage />} />
               <Route path="/viewer/:role/support-stats" element={<SupportStatsPage />} />
               <Route path="/viewer/:role/profile" element={<MyProfilePage />} />
+              <Route path="/viewer/:role/homework-bank" element={<HomeworkBankPage />} />
             </Route>
 
             {/* Default redirect */}

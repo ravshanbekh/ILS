@@ -39,6 +39,32 @@ export const permissionGuard = (permission: PermissionKey) => {
 };
 
 /**
+ * Rol YOKI ruxsat — ikkalasidan biri yetarli.
+ *
+ * permissionGuard rol tekshiruvidan KEYIN qo'shimcha cheklov sifatida
+ * ishlaydi (rol + ruxsat). Bu esa aksincha — ruxsat rolga qo'shimcha
+ * IMKONIYAT beradi: ro'yxatdagi rollar avvalgidek o'tadi, ro'yxatda yo'q rol
+ * esa (masalan assistant) shu ruxsat qo'lda berilgan bo'lsa o'tadi.
+ *
+ * Nega kerak bo'ldi: "Uyga vazifa bankasini boshqarish" assistentga berilgan,
+ * lekin bankni KO'RISH va darsliklar daraxti roleGuard bilan faqat
+ * admin/teacher/... ga ochiq edi — ruxsat bor-u, sahifa ishlamasdi.
+ */
+export const roleOrPermission = (roles: string[], permission: PermissionKey) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      if (!user) return next(ApiError.unauthorized());
+      if (roles.includes(user.role)) return next();
+      if (await hasPermission(user, permission)) return next();
+      next(ApiError.forbidden("Bu amalni bajarish uchun ruxsatingiz yo'q"));
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
+/**
  * Guard emas — controller ichida "shu ruxsat bormi?" deb tekshirish uchun.
  * Masalan do'kon ro'yxatida yashirilgan mahsulotlarni faqat boshqaruv
  * ruxsati borlarga ko'rsatish uchun ishlatiladi.

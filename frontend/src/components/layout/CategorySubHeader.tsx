@@ -1,5 +1,6 @@
 import { useLocation, NavLink } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { usePermissionStore } from '@/stores/permissionStore';
 import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
@@ -150,6 +151,30 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
   }
 ];
 
+/**
+ * Rolning menyu guruhlari + qo'lda berilgan RUXSATlarga qarab qo'shiladigan
+ * bandlar. Sidebar va shu sub-header BIR xil natija olishi uchun yagona joy.
+ *
+ * Ilgari guruhlar faqat rolga qarab statik edi: o'qituvchiga
+ * "Uyga vazifa bankasini boshqarish" ruxsati berilsa ham menyuda hech narsa
+ * chiqmasdi.
+ */
+export function getNavGroups(
+  role: string | undefined,
+  can: (permission: string) => boolean,
+): NavCategoryGroup[] {
+  if (role === 'admin') return ADMIN_GROUPS;
+  if (role === 'student') return STUDENT_GROUPS;
+  if (role !== 'teacher') return [];
+
+  if (!can('homework_manage')) return TEACHER_GROUPS;
+  return TEACHER_GROUPS.map((g) =>
+    g.id === 'education_exams'
+      ? { ...g, items: [...g.items, { to: '/teacher/homework-bank', label: 'Uyga vazifa bankasi', icon: BookOpen }] }
+      : g,
+  );
+}
+
 export const STUDENT_GROUPS: NavCategoryGroup[] = [
   {
     id: 'normatives_student',
@@ -172,13 +197,11 @@ export default function CategorySubHeader() {
   const { user } = useAuthStore();
   const location = useLocation();
 
-  const groups = user?.role === 'admin'
-    ? ADMIN_GROUPS
-    : user?.role === 'teacher'
-    ? TEACHER_GROUPS
-    : user?.role === 'student'
-    ? STUDENT_GROUPS
-    : [];
+  const can = usePermissionStore((s) => s.can);
+  // Ruxsatlar yuklanganda qayta hisoblansin (can funksiyasi o'zgarmaydi)
+  usePermissionStore((s) => s.permissions);
+
+  const groups = getNavGroups(user?.role, can);
   if (groups.length === 0) return null;
 
   const activeGroup = groups.find(group =>

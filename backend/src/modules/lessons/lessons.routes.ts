@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
+import { roleOrPermission } from '../../shared/middleware/permission.middleware';
 import * as lessonsController from './lessons.controller';
 
 const router = Router();
@@ -12,7 +13,14 @@ router.use(authenticate);
 router.get('/folders', lessonsController.getFolders);
 
 // GET  /api/lessons/folders/tree — barcha papkalar yassi ro'yxati (admin, ko'chirish uchun)
-router.get('/folders/tree', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.getFolderTree);
+// Uyga vazifa bankini boshqaruvchi (ruxsat bilan) ham butun daraxtni ko'radi —
+// vazifani istalgan darslikka yozishi kerak. Faqat o'qish; papkani
+// yaratish/o'zgartirish avvalgidek faqat rollarga.
+router.get(
+  '/folders/tree',
+  roleOrPermission(['admin', 'administrator', 'filial_rahbari'], 'homework_manage'),
+  lessonsController.getFolderTree,
+);
 
 // POST /api/lessons/folders — papka yaratish (admin, parentId bo'lsa — ichki papka)
 router.post('/folders', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.createFolder);
