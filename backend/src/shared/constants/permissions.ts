@@ -183,6 +183,29 @@ export const PERMISSIONS = {
   },
 
   // ── Test paneli ──
+  // ── Imtihonlar ──
+  // O'qituvchi faqat O'ZI yaratgan imtihonga tegadi (egalik controllerda
+  // tekshiriladi); admin — hammasiga.
+  exam_create: {
+    label: 'Imtihon yaratish',
+    description:
+      "Yangi imtihon ochish va uni to'ldirish: savol qo'shish (qo'lda yoki Excel'dan), savolni tahrirlash/o'chirish, variantlarni aralashtirish",
+    category: 'Imtihon',
+    legacyRoles: ['teacher'], // ilgari roleGuard(admin, teacher) — o'qituvchilar ishlab turgan edi
+  },
+  exam_edit: {
+    label: 'Imtihonni tahrirlash',
+    description:
+      "Imtihon sozlamalarini o'zgartirish: nomi, yo'nalishi, test soni, vaqti va ballari, bosqich nomlari",
+    category: 'Imtihon',
+    legacyRoles: [], // ilgari faqat admin — o'qituvchiga qo'lda beriladi
+  },
+  exam_delete: {
+    label: "Imtihonni o'chirish",
+    description: "O'zi yaratgan imtihonni natijalari bilan birga o'chirish",
+    category: 'Imtihon',
+    legacyRoles: ['teacher'], // ilgari roleGuard(admin, teacher)
+  },
   quiz_tests: {
     label: 'Test paneli',
     description:

@@ -121,6 +121,31 @@ class PermissionsService {
   }
 
   /**
+   * Rolning standart ruxsatlarini beradi (permissions.ts `legacyRoles`).
+   *
+   * Nega kerak: seedLegacyPermissions faqat BIR MARTA, o'sha paytdagi
+   * foydalanuvchilarga tarqatadi. Undan keyin qo'shilgan o'qituvchi hech
+   * qanday standart ruxsat olmasdi — masalan "Test paneli" yoki imtihon
+   * yaratish yopiq bo'lib qolardi. Endi foydalanuvchi yaratilganda va roli
+   * o'zgarganda chaqiriladi.
+   *
+   * Faqat QO'SHADI (skipDuplicates). Hech narsani olib tashlamaydi — admin
+   * qo'lda olgan ruxsat roli o'zgarmaguncha qaytmaydi.
+   */
+  async grantRoleDefaults(userId: string, role: string): Promise<number> {
+    const { PERMISSIONS } = await import('../../shared/constants/permissions');
+    const keys = (PERMISSION_KEYS as PermissionKey[]).filter((k) =>
+      (PERMISSIONS[k].legacyRoles as readonly string[]).includes(role),
+    );
+    if (keys.length === 0) return 0;
+    const result = await prisma.userPermission.createMany({
+      data: keys.map((permission) => ({ userId, permission })),
+      skipDuplicates: true,
+    });
+    return result.count;
+  }
+
+  /**
    * Ruxsatlar tizimi birinchi marta ishga tushganda — hozirgi holatni saqlab qolish.
    * Har bir ruxsat uchun, ilgari o'sha amalni roli tufayli bajara olgan
    * foydalanuvchilarga o'sha ruxsat beriladi. Shu bilan yangi tizim yoqilganda

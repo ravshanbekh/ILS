@@ -5,6 +5,7 @@ import { ApiError } from '../../shared/middleware/errorHandler';
 import { CreateUserInput, UpdateUserInput } from './users.validation';
 import { PaginationParams, createPaginatedResult } from '../../shared/utils/pagination';
 import logger from '../../shared/utils/logger';
+import permissionsService from '../permissions/permissions.service';
 
 class UsersService {
   /**
@@ -229,6 +230,9 @@ class UsersService {
       },
     });
 
+    // Rolning standart ruxsatlari (masalan o'qituvchiga imtihon yaratish)
+    await permissionsService.grantRoleDefaults(user.id, user.role);
+
     // Audit log
     if (createdByUserId) {
       await prisma.auditLog.create({
@@ -261,14 +265,16 @@ class UsersService {
           continue;
         }
         const passwordHash = await bcrypt.hash(data.password, 10);
-        await prisma.user.create({
+        const createdUser = await prisma.user.create({
           data: {
             fullName: data.fullName,
             login: data.login,
             passwordHash,
             role: data.role as any,
-          }
+          },
+          select: { id: true, role: true },
         });
+        await permissionsService.grantRoleDefaults(createdUser.id, createdUser.role);
         created++;
       } catch (err: any) {
         errors.push(`${data.login} - saqlashda xato: ${err.message}`);
@@ -339,6 +345,11 @@ class UsersService {
         createdAt: true,
       },
     });
+
+    // Rol o'zgargan bo'lsa — yangi rolning standart ruxsatlari qo'shiladi
+    if (data.role && data.role !== existing.role) {
+      await permissionsService.grantRoleDefaults(user.id, user.role);
+    }
 
     // Audit log
     if (updatedByUserId) {

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { parseExcelQuestions } from '@/utils';
 import { useAuthStore } from '@/stores/authStore';
+import { usePermissionStore } from '@/stores/permissionStore';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -59,6 +60,13 @@ const STATUS_LABEL: Record<string, string> = {
 export default function ExamsPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
+  // Qo'lda beriladigan ruxsatlar (admin har doim true). Ro'yxatga obuna —
+  // ruxsatlar serverdan kelganda tugmalar qayta chizilishi uchun.
+  const can = usePermissionStore((s) => s.can);
+  usePermissionStore((s) => s.permissions);
+  const canCreate = can('exam_create');
+  const canEdit = can('exam_edit');
+  const canDelete = can('exam_delete');
 
   const navigate = useNavigate();
   const [listTab, setListTab] = useState<'my' | 'global'>('my');
@@ -445,12 +453,14 @@ export default function ExamsPage() {
           >
             📊 Barcha Natijalar (Ustoz/Guruh)
           </button>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-all"
-          >
-            <span className="text-lg">+</span> Yangi imtihon
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-all"
+            >
+              <span className="text-lg">+</span> Yangi imtihon
+            </button>
+          )}
         </div>
       </div>
 
@@ -873,14 +883,18 @@ export default function ExamsPage() {
                           onClick={e => { e.stopPropagation(); loadExam(exam); loadResults(); }}
                           className="text-xs px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition"
                         >Natijalar</button>
-                        <button
-                          onClick={e => { e.stopPropagation(); openEdit(exam); }}
-                          className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
-                        >✏️ Tahrirlash</button>
-                        <button
-                          onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
-                          className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
-                        >🗑️ O'chirish</button>
+                        {canEdit && (
+                          <button
+                            onClick={e => { e.stopPropagation(); openEdit(exam); }}
+                            className="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition"
+                          >✏️ Tahrirlash</button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={e => { e.stopPropagation(); requestDeleteExam(exam); }}
+                            className="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg transition"
+                          >🗑️ O'chirish</button>
+                        )}
                       </>
                     ) : (
                       <>
@@ -936,7 +950,7 @@ export default function ExamsPage() {
             {tab === 'questions' ? (
               <div className="p-4">
                 {/* Import and Add Forms (Only if not a session exam) */}
-                {!selected.templateId && (
+                {!selected.templateId && canCreate && (
                   <>
                     <div className="flex items-center gap-3 mb-4 flex-wrap">
                       <label className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium cursor-pointer transition">
@@ -1046,7 +1060,7 @@ export default function ExamsPage() {
                             ))}
                           </div>
                         </div>
-                        {!selected.templateId && (
+                        {!selected.templateId && canCreate && (
                           <div className="opacity-0 group-hover:opacity-100 flex items-center gap-3 transition">
                             <button
                               onClick={() => {
