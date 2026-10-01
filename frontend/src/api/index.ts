@@ -529,6 +529,12 @@ export const lessonsApi = {
   updateItem: (itemId: string, data: { title?: string; url?: string; type?: string; order?: number; folderId?: string }) =>
     api.patch(`/lessons/items/${itemId}`, data),
   deleteItem: (itemId: string) => api.delete(`/lessons/items/${itemId}`),
+  /** Papka ichidagi darsliklarning yangi tartibi (to'liq ro'yxat) */
+  reorderItems: (folderId: string, ids: string[]) =>
+    api.put(`/lessons/folders/${folderId}/items/order`, { ids }),
+  /** Bir darajadagi papkalarning yangi tartibi (parentId null = bosh daraja) */
+  reorderFolders: (parentId: string | null, ids: string[]) =>
+    api.put('/lessons/folders/order', { parentId, ids }),
 
   // Ruxsatlar
   getFolderAccess: (folderId: string) => api.get(`/lessons/folders/${folderId}/access`),

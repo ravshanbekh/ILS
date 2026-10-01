@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { lessonsApi } from '@/api';
 import ConfirmModal from '@/components/shared/ConfirmModal';
+import { useSortable } from '@/hooks/useSortable';
 import {
   FolderOpen, Plus, Trash2, Edit3, ExternalLink, Users, X,
   BookOpen, Link, FileText, Video, ChevronRight, Check, Save,
-  FolderPlus, Lock, FolderInput, Home
+  FolderPlus, Lock, FolderInput, Home, GripVertical
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -149,6 +150,58 @@ export default function LessonsPage() {
     description: string;
   } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // ─── Qo'lda tartiblash (admin) ───────────────────────────────────────────
+  // Optimistik: ro'yxat darhol yangi tartibda chiziladi, server javobidan
+  // keyin "Saqlandi" chiqadi. Xato bo'lsa eski tartib qaytariladi; 409
+  // (boshqa admin shu payt o'zgartirgan) bo'lsa ro'yxat serverdan qayta olinadi.
+  const [orderNote, setOrderNote] = useState<{ scope: 'items' | 'folders'; text: string } | null>(null);
+  const noteTimer = useRef<number | undefined>(undefined);
+  const showOrderNote = (scope: 'items' | 'folders', text: string) => {
+    setOrderNote({ scope, text });
+    window.clearTimeout(noteTimer.current);
+    noteTimer.current = window.setTimeout(() => setOrderNote(null), 1800);
+  };
+
+  const itemIds = useMemo(() => items.map((i) => i.id), [items]);
+  const folderIds = useMemo(() => folders.map((f) => f.id), [folders]);
+
+  async function saveItemOrder(ids: string[]) {
+    if (!selectedFolder) return;
+    const folderId = selectedFolder.id;
+    const prev = items;
+    const byId = new Map(items.map((i) => [i.id, i]));
+    setItems(ids.map((id) => byId.get(id)!));
+    try {
+      await lessonsApi.reorderItems(folderId, ids);
+      showOrderNote('items', 'Tartib saqlandi');
+    } catch (e: any) {
+      setItems(prev);
+      alert(e.response?.data?.error || "Tartibni saqlab bo'lmadi");
+      if (e.response?.status === 409) {
+        const res = await lessonsApi.getItems(folderId);
+        setItems(res.data.data);
+      }
+    }
+  }
+
+  async function saveFolderOrder(ids: string[]) {
+    const parentId = selectedFolder?.id ?? null;
+    const prev = folders;
+    const byId = new Map(folders.map((f) => [f.id, f]));
+    setFolders(ids.map((id) => byId.get(id)!));
+    try {
+      await lessonsApi.reorderFolders(parentId, ids);
+      showOrderNote('folders', 'Tartib saqlandi');
+    } catch (e: any) {
+      setFolders(prev);
+      alert(e.response?.data?.error || "Tartibni saqlab bo'lmadi");
+      if (e.response?.status === 409) await reloadCurrentLevelFolders();
+    }
+  }
+
+  const itemSort = useSortable({ ids: itemIds, onReorder: saveItemOrder, disabled: !isAdmin || items.length < 2 });
+  const folderSort = useSortable({ ids: folderIds, onReorder: saveFolderOrder, disabled: !isAdmin || folders.length < 2 });
 
   // ─── Data loading ────────────────────────────────────────────────────────
   useEffect(() => { loadRootFolders(); }, []);
@@ -417,12 +470,33 @@ export default function LessonsPage() {
               </p>
             </div>
           ) : (
-            folders.map(folder => (
+            <>
+            {isAdmin && folders.length > 1 && (
+              <p className="flex items-center gap-1.5 px-1 text-xs text-zinc-500">
+                <GripVertical className="h-3.5 w-3.5" aria-hidden="true" />
+                {orderNote?.scope === 'folders' ? (
+                  <span className="font-medium text-emerald-400">✓ {orderNote.text}</span>
+                ) : (
+                  "Tartibni o'zgartirish uchun ushlab suring"
+                )}
+              </p>
+            )}
+            {folders.map(folder => (
               <div
                 key={folder.id}
+                ref={folderSort.itemRef(folder.id)}
                 onClick={() => openFolder(folder)}
                 className="group relative flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
               >
+                {isAdmin && folders.length > 1 && (
+                  <span
+                    {...folderSort.handleProps(folder.id)}
+                    title="Ushlab suring"
+                    className="no-press flex h-8 w-6 flex-shrink-0 items-center justify-center rounded-md text-zinc-500 transition hover:bg-zinc-700/60 hover:text-zinc-200 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 -ml-1.5"
+                  >
+                    <GripVertical className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                )}
                 <span className="text-2xl">{folder.icon}</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate text-white">
@@ -474,7 +548,8 @@ export default function LessonsPage() {
                   </div>
                 )}
               </div>
-            ))
+            ))}
+            </>
           )}
         </div>
 
@@ -500,6 +575,11 @@ export default function LessonsPage() {
                 </div>
                 {isAdmin && (
                   <div className="flex items-center gap-2">
+                    {orderNote?.scope === 'items' && (
+                      <span className="text-xs font-medium text-emerald-400 animate-fade-in" role="status">
+                        ✓ {orderNote.text}
+                      </span>
+                    )}
                     <button
                       onClick={() => openCreateFolder(selectedFolder.id)}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition"
@@ -532,8 +612,18 @@ export default function LessonsPage() {
                     {items.map((item) => (
                       <div
                         key={item.id}
+                        ref={itemSort.itemRef(item.id)}
                         className="group flex items-center gap-3 p-3 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-xl transition"
                       >
+                        {isAdmin && items.length > 1 && (
+                          <span
+                            {...itemSort.handleProps(item.id)}
+                            title="Ushlab suring — tartibni o'zgartirish"
+                            className="no-press flex h-8 w-6 flex-shrink-0 items-center justify-center rounded-md text-zinc-500 transition hover:bg-zinc-700/60 hover:text-zinc-200 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 -ml-1"
+                          >
+                            <GripVertical className="h-4 w-4" aria-hidden="true" />
+                          </span>
+                        )}
                         <span className="text-lg flex-shrink-0">{typeIcon(item.type)}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-white text-sm font-medium truncate">{item.title}</p>

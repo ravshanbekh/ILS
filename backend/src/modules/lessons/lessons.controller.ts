@@ -172,7 +172,9 @@ export const getItems = async (req: Request, res: Response, next: NextFunction) 
 
     const items = await prisma.lessonItem.findMany({
       where: { folderId: id },
-      orderBy: { order: 'asc' },
+      // Teng `order` (eski ma'lumotlarda ko'p uchraydi) bo'lsa tartib
+      // tasodifiy bo'lmasin — yaratilgan vaqti hal qiladi
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     });
 
     res.json({ data: items });
@@ -209,9 +211,18 @@ export const updateItem = async (req: Request, res: Response, next: NextFunction
     const { itemId } = req.params;
     const { title, url, type, order, folderId } = req.body;
 
+    // Boshqa papkaga ko'chirilganda darslik manzilning OXIRIGA tushadi.
+    // Ilgari eski papkadagi `order` raqami bilan ketardi va yangi papkadagi
+    // raqamlar bilan to'qnashib, tartib aralashib qolardi (19, 20, 9, 7...).
+    let moveOrder: number | undefined;
     if (folderId !== undefined) {
       const dest = await prisma.lessonFolder.findUnique({ where: { id: folderId } });
       if (!dest) return res.status(404).json({ error: "Manzil papka topilmadi" });
+      const current = await prisma.lessonItem.findUnique({ where: { id: itemId }, select: { folderId: true } });
+      if (current && current.folderId !== folderId && order === undefined) {
+        const last = await prisma.lessonItem.aggregate({ where: { folderId }, _max: { order: true } });
+        moveOrder = (last._max.order ?? -1) + 1;
+      }
     }
 
     const item = await prisma.lessonItem.update({
@@ -221,11 +232,78 @@ export const updateItem = async (req: Request, res: Response, next: NextFunction
         ...(url !== undefined && { url }),
         ...(type !== undefined && { type }),
         ...(order !== undefined && { order }),
+        ...(moveOrder !== undefined && { order: moveOrder }),
         ...(folderId !== undefined && { folderId }),
       },
     });
 
     res.json({ data: item });
+  } catch (e) { next(e); }
+};
+
+// ─── Qo'lda tartiblash ──────────────────────────────────────────────────────
+
+/**
+ * Yangi tartib ro'yxati mavjud elementlarga AYNAN mos kelishini tekshiradi:
+ * hech biri tushib qolmagan, begona yoki takror yo'q. Aks holda (masalan
+ * boshqa admin shu payt darslik qo'shgan/o'chirgan bo'lsa) qisman tartib
+ * yozilib, ro'yxat buzilardi — bunday holda 409 qaytariladi va sahifa
+ * yangilanadi. Sof funksiya — test qilish oson.
+ */
+export function validateReorder(existingIds: string[], requestedIds: unknown): string | null {
+  if (!Array.isArray(requestedIds) || requestedIds.some((x) => typeof x !== 'string')) {
+    return "ids massivi (satrlar) talab qilinadi";
+  }
+  if (new Set(requestedIds).size !== requestedIds.length) return 'Ro\'yxatda takror element bor';
+  if (requestedIds.length !== existingIds.length) {
+    return "Ro'yxat eskirgan — sahifani yangilab qayta urinib ko'ring";
+  }
+  const existing = new Set(existingIds);
+  if (requestedIds.some((x) => !existing.has(x as string))) {
+    return "Ro'yxat eskirgan — sahifani yangilab qayta urinib ko'ring";
+  }
+  return null;
+}
+
+/** PUT /api/lessons/folders/:id/items/order — papka ichidagi darsliklar tartibi */
+export const reorderItems = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { ids } = req.body as { ids: unknown };
+
+    const existing = await prisma.lessonItem.findMany({ where: { folderId: id }, select: { id: true } });
+    const err = validateReorder(existing.map((x) => x.id), ids);
+    if (err) return res.status(409).json({ error: err });
+
+    // Bitta tranzaksiyada 0..n-1 — oraliqlar va to'qnashuvlar ham tozalanadi
+    await prisma.$transaction(
+      (ids as string[]).map((itemId, index) =>
+        prisma.lessonItem.update({ where: { id: itemId }, data: { order: index } }),
+      ),
+    );
+    res.json({ data: { ok: true } });
+  } catch (e) { next(e); }
+};
+
+/** PUT /api/lessons/folders/order — bir darajadagi papkalar tartibi
+ *  body: { parentId: string | null, ids: string[] } */
+export const reorderFolders = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { parentId = null, ids } = req.body as { parentId?: string | null; ids: unknown };
+
+    const existing = await prisma.lessonFolder.findMany({
+      where: { parentId: parentId ?? null },
+      select: { id: true },
+    });
+    const err = validateReorder(existing.map((x) => x.id), ids);
+    if (err) return res.status(409).json({ error: err });
+
+    await prisma.$transaction(
+      (ids as string[]).map((folderId, index) =>
+        prisma.lessonFolder.update({ where: { id: folderId }, data: { order: index } }),
+      ),
+    );
+    res.json({ data: { ok: true } });
   } catch (e) { next(e); }
 };
 

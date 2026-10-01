@@ -25,6 +25,9 @@ router.get(
 // POST /api/lessons/folders — papka yaratish (admin, parentId bo'lsa — ichki papka)
 router.post('/folders', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.createFolder);
 
+// PUT  /api/lessons/folders/order — bir darajadagi papkalarni qo'lda tartiblash (admin)
+router.put('/folders/order', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.reorderFolders);
+
 // PATCH /api/lessons/folders/:id — papka tahrirlash (admin)
 router.patch('/folders/:id', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.updateFolder);
 
@@ -38,6 +41,9 @@ router.get('/folders/:id/items', lessonsController.getItems);
 
 // POST /api/lessons/folders/:id/items — darslik qo'shish (admin)
 router.post('/folders/:id/items', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.addItem);
+
+// PUT  /api/lessons/folders/:id/items/order — darsliklarni qo'lda tartiblash (admin)
+router.put('/folders/:id/items/order', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.reorderItems);
 
 // PATCH /api/lessons/items/:itemId — darslik tahrirlash (admin)
 router.patch('/items/:itemId', roleGuard('admin', 'administrator', 'filial_rahbari'), lessonsController.updateItem);
