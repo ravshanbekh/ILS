@@ -50,18 +50,35 @@ export const permissionGuard = (permission: PermissionKey) => {
  * lekin bankni KO'RISH va darsliklar daraxti roleGuard bilan faqat
  * admin/teacher/... ga ochiq edi — ruxsat bor-u, sahifa ishlamasdi.
  */
-export const roleOrPermission = (roles: string[], permission: PermissionKey) => {
+export const roleOrPermission = (roles: string[], permission: PermissionKey | PermissionKey[]) => {
+  // Bir nechta kalit berilsa — istalgan BIRI yetarli (masalan imtihonni
+  // ko'rish uchun yaratish, tahrirlash yoki o'chirish ruxsatidan biri)
+  const keys = Array.isArray(permission) ? permission : [permission];
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       const user = req.user;
       if (!user) return next(ApiError.unauthorized());
       if (roles.includes(user.role)) return next();
-      if (await hasPermission(user, permission)) return next();
+      for (const key of keys) {
+        if (await hasPermission(user, key)) return next();
+      }
       next(ApiError.forbidden("Bu amalni bajarish uchun ruxsatingiz yo'q"));
     } catch (error) {
       next(error);
     }
   };
+};
+
+/**
+ * Faqat xodimlar (o'quvchi emas). Ruxsat bilan ochiladigan route'larda
+ * roleGuard o'rniga ishlatiladi: qaysi xodim rolida bo'lishidan qat'i nazar
+ * qo'lda berilgan ruxsat hal qiladi, lekin o'quvchiga hech qachon ochilmaydi
+ * (ruxsat tasodifan berib yuborilgan bo'lsa ham).
+ */
+export const staffOnly = (req: Request, _res: Response, next: NextFunction) => {
+  if (!req.user) return next(ApiError.unauthorized());
+  if (req.user.role === 'student') return next(ApiError.forbidden("Bu amalni bajarish uchun ruxsatingiz yo'q"));
+  next();
 };
 
 /**

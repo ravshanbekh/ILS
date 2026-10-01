@@ -1,7 +1,7 @@
 import { Router, json } from 'express';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 import { loginLimiter } from '../../shared/middleware/rateLimiter';
-import { permissionGuard } from '../../shared/middleware/permission.middleware';
+import { permissionGuard, roleOrPermission, staffOnly } from '../../shared/middleware/permission.middleware';
 import * as examController from './exam.controller';
 import * as examStudent from './exam.student.controller';
 import * as examGradeController from './exam.grade.controller';
@@ -40,12 +40,17 @@ const upload = multer({
 const canCreate = permissionGuard('exam_create');
 const canEdit = permissionGuard('exam_edit');
 const canDelete = permissionGuard('exam_delete');
+// Imtihonlar sahifasidan foydalanish (ro'yxat, ochish, faollashtirish,
+// natijalar): o'qituvchi rol bo'yicha; boshqa xodim (masalan assistant) —
+// imtihon ruxsatlaridan BIRI berilgan bo'lsa. Har kim faqat O'Z
+// imtihonini ko'radi — egalik controllerlarda (createdById).
+const examStaff = roleOrPermission(['admin', 'teacher'], ['exam_create', 'exam_edit', 'exam_delete']);
 
-router.post('/', authenticate, roleGuard('admin', 'teacher'), canCreate, examController.createExam);
-router.get('/', authenticate, roleGuard('admin', 'teacher'), examController.getMyExams);
+router.post('/', authenticate, staffOnly, canCreate, examController.createExam);
+router.get('/', authenticate, examStaff, examController.getMyExams);
 
 // Global imtihonlar (Admin + Teachers)
-router.get('/global', authenticate, roleGuard('admin', 'teacher'), examController.getGlobalExams);
+router.get('/global', authenticate, examStaff, examController.getGlobalExams);
 
 // ── O'quvchi: o'z profilidan ko'radi va kiradi ──────────────────────────────
 router.get('/my-active', authenticate, roleGuard('student'), examStudent.getMyActiveExams);
@@ -53,30 +58,30 @@ router.get('/my-results', authenticate, roleGuard('student'), examStudent.getMyE
 router.post('/:id/enter', authenticate, roleGuard('student'), examStudent.enterExamAsMe);
 
 // ── O'qituvchi: imtihonni guruhga biriktirish ───────────────────────────────
-router.get('/:id/groups', authenticate, roleGuard('admin', 'teacher'), examStudent.getExamGroups);
-router.patch('/:id/groups', authenticate, roleGuard('admin', 'teacher'), examStudent.setExamGroups);
-router.post('/global/:id/activate', authenticate, roleGuard('admin', 'teacher'), examController.activateGlobalExam);
+router.get('/:id/groups', authenticate, examStaff, examStudent.getExamGroups);
+router.patch('/:id/groups', authenticate, examStaff, examStudent.setExamGroups);
+router.post('/global/:id/activate', authenticate, examStaff, examController.activateGlobalExam);
 
-router.get('/results/all', authenticate, roleGuard('admin', 'teacher'), examController.getAllExamResults);
-router.get('/:id', authenticate, roleGuard('admin', 'teacher'), examController.getExamById);
+router.get('/results/all', authenticate, examStaff, examController.getAllExamResults);
+router.get('/:id', authenticate, examStaff, examController.getExamById);
 // Ilgari faqat admin edi, lekin sahifa ✏️ tugmasini o'qituvchiga ham
 // ko'rsatardi (bosganda 403). Endi exam_edit ruxsati bor o'qituvchi O'Z
 // imtihonini tahrirlaydi — egalik updateExam ichida tekshiriladi.
-router.patch('/:id', authenticate, roleGuard('admin', 'teacher'), canEdit, examController.updateExam);
-router.patch('/:id/activate', authenticate, roleGuard('admin', 'teacher'), examController.activateExam);
-router.patch('/:id/complete', authenticate, roleGuard('admin', 'teacher'), examController.completeExam);
-router.delete('/:id', authenticate, roleGuard('admin', 'teacher'), canDelete, examController.deleteExam);
+router.patch('/:id', authenticate, staffOnly, canEdit, examController.updateExam);
+router.patch('/:id/activate', authenticate, examStaff, examController.activateExam);
+router.patch('/:id/complete', authenticate, examStaff, examController.completeExam);
+router.delete('/:id', authenticate, staffOnly, canDelete, examController.deleteExam);
 
 // Savollar (qo'lda + Excel import)
-router.post('/:id/questions', authenticate, roleGuard('admin', 'teacher'), canCreate, upload.single('image'), examController.addQuestions);
-router.post('/:id/questions/bulk', authenticate, roleGuard('admin', 'teacher'), canCreate, json({ limit: '5mb' }), examController.bulkAddQuestions);
-router.put('/:id/questions/:qId', authenticate, roleGuard('admin', 'teacher'), canCreate, upload.single('image'), examController.updateQuestion);
-router.delete('/:id/questions/:qId', authenticate, roleGuard('admin', 'teacher'), canCreate, examController.deleteQuestion);
-router.post('/:id/shuffle-options', authenticate, roleGuard('admin', 'teacher'), canCreate, examController.shuffleQuestionOptions);
+router.post('/:id/questions', authenticate, staffOnly, canCreate, upload.single('image'), examController.addQuestions);
+router.post('/:id/questions/bulk', authenticate, staffOnly, canCreate, json({ limit: '5mb' }), examController.bulkAddQuestions);
+router.put('/:id/questions/:qId', authenticate, staffOnly, canCreate, upload.single('image'), examController.updateQuestion);
+router.delete('/:id/questions/:qId', authenticate, staffOnly, canCreate, examController.deleteQuestion);
+router.post('/:id/shuffle-options', authenticate, staffOnly, canCreate, examController.shuffleQuestionOptions);
 
 // Natijalar — o'qituvchi uchun
-router.get('/:id/results', authenticate, roleGuard('admin', 'teacher'), examController.getExamResults);
-router.patch('/:id/grade/:participantId', authenticate, roleGuard('admin', 'teacher'), examGradeController.gradeParticipant);
+router.get('/:id/results', authenticate, examStaff, examController.getExamResults);
+router.patch('/:id/grade/:participantId', authenticate, examStaff, examGradeController.gradeParticipant);
 
 // ── O'quvchi tomonidan (Public — faqat accessCode kerak) ──
 router.get('/join/:code', examController.getExamByCode);

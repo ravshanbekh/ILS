@@ -3,8 +3,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import rateLimit from 'express-rate-limit';
-import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
-import { permissionGuard } from '../../shared/middleware/permission.middleware';
+import { authenticate } from '../../shared/middleware/auth.middleware';
+import { permissionGuard, staffOnly } from '../../shared/middleware/permission.middleware';
 import * as ctrl from './quiz-test.controller';
 import * as pub from './quiz-test.public.controller';
 
@@ -67,12 +67,14 @@ router.get('/attempt/:token/result', publicLimiter, pub.getAttemptResult);
 //  `quiz_tests` ruxsati: admin va teacher'da sukut bo'yicha bor
 //  (permissions.ts dagi legacyRoles), boshqalarga qo'lda beriladi.
 // ═══════════════════════════════════════════════════════════════════════════
-// roleGuard rolni, permissionGuard esa shaxsni tekshiradi.
 // `quiz_tests` legacyRoles: teacher + assistant — ular avvalgidek ishlaydi,
 // boshqa rolga admin qo'lda ruxsat beradi.
+// Rol ro'yxati o'rniga staffOnly: ruxsat berilgan HAR QANDAY xodim (kassir,
+// HR va h.k.) ishlay oladi — ilgari ro'yxatda yo'q rolga ruxsat yoqilsa
+// ham 403 olardi. O'quvchiga baribir yopiq.
 const mentor = [
   authenticate,
-  roleGuard('admin', 'teacher', 'assistant', 'administrator', 'filial_rahbari', 'nazoratchi'),
+  staffOnly,
   permissionGuard('quiz_tests'),
 ];
 

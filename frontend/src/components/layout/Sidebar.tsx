@@ -7,7 +7,7 @@ import {
   PanelLeftClose, PanelLeftOpen,
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
   Gift, Package, Coins
-, CalendarClock, UserCircle} from 'lucide-react';
+, CalendarClock, UserCircle, FileText} from 'lucide-react';
 import BrandLogo from '@/components/brand/BrandLogo';
 import { getNavGroups } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
@@ -73,6 +73,8 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   const canCoinOversight = can('coin_oversight');
   const canSupportOversight = can('support_oversight');
   const canHomeworkManage = can('homework_manage');
+  const canExams = can('exam_create') || can('exam_edit') || can('exam_delete');
+  const canQuizTests = can('quiz_tests');
 
   // Rol guruhlari + ruxsatga qarab qo'shiladigan bandlar (CategorySubHeader
   // bilan bitta manba — getNavGroups)
@@ -131,6 +133,13 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     // (masalan assistent darsliklarga vazifa yozadi)
     ...(canHomeworkManage
       ? [{ to: `/viewer/${user!.role}/homework-bank`, icon: BookOpen, label: 'Uyga vazifa bankasi' }]
+      : []),
+    // Imtihon — yaratish/tahrirlash/o'chirish ruxsatlaridan biri bo'lsa
+    ...(canExams
+      ? [{ to: `/viewer/${user!.role}/exams`, icon: FileText, label: 'Imtihonlar' }]
+      : []),
+    ...(canQuizTests
+      ? [{ to: `/viewer/${user!.role}/quiz-tests`, icon: ClipboardList, label: 'Test paneli' }]
       : []),
     // Nazorat — qo'lda beriladigan ruxsat
     ...(canSupportOversight

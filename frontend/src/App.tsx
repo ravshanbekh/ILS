@@ -339,6 +339,10 @@ export default function App() {
               <Route path="/viewer/:role/support-stats" element={<SupportStatsPage />} />
               <Route path="/viewer/:role/profile" element={<MyProfilePage />} />
               <Route path="/viewer/:role/homework-bank" element={<HomeworkBankPage />} />
+              {/* Qo'lda berilgan ruxsat bo'lsa menyuda chiqadi (exam_*, quiz_tests) */}
+              <Route path="/viewer/:role/exams" element={<ExamsPage />} />
+              <Route path="/viewer/:role/quiz-tests" element={<QuizTestsPage />} />
+              <Route path="/viewer/:role/quiz-tests/:id" element={<QuizTestDetailPage />} />
             </Route>
 
             {/* Default redirect */}

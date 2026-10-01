@@ -104,7 +104,15 @@ export default function QuizTestsPage() {
     }
   };
 
-  const basePath = user?.role === 'admin' ? '/admin/quiz-tests' : '/teacher/quiz-tests';
+  // Rolga qarab o'z bo'limi: admin, o'qituvchi yoki ruxsat berilgan boshqa
+  // xodim (/viewer/:role/...). Ilgari boshqa rol /teacher/... ga yuborilib,
+  // u yerdagi rol himoyasi uni qaytarib yuborardi.
+  const basePath =
+    user?.role === 'admin'
+      ? '/admin/quiz-tests'
+      : user?.role === 'teacher'
+      ? '/teacher/quiz-tests'
+      : `/viewer/${user?.role}/quiz-tests`;
 
   const filtered = tests.filter((t) => {
     if (statusFilter !== 'all' && t.status !== statusFilter) return false;

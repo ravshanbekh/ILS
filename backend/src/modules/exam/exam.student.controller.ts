@@ -199,14 +199,22 @@ export const setExamGroups = async (req: Request, res: Response, next: NextFunct
       throw ApiError.forbidden('Bu imtihon sizga tegishli emas');
     }
 
-    // IDOR himoyasi: o'qituvchi begona guruhni biriktira olmasligi kerak
-    if (user.role !== 'admin' && groupIds.length > 0) {
+    // IDOR himoyasi: o'qituvchi begona guruhni biriktira olmasligi kerak.
+    // Imtihon ruxsati qo'lda berilgan boshqa xodim (masalan assistant) —
+    // o'z guruhi yo'q, admin kabi istalgan MAVJUD guruhni tanlaydi (aks holda
+    // imtihonni umuman faollashtira olmasdi).
+    if (user.role === 'teacher' && groupIds.length > 0) {
       const mine = await prisma.group.findMany({
         where: { id: { in: groupIds }, teacherId: user.userId },
         select: { id: true },
       });
       if (mine.length !== groupIds.length) {
         throw ApiError.forbidden("Faqat o'z guruhlaringizni tanlay olasiz");
+      }
+    } else if (user.role !== 'admin' && groupIds.length > 0) {
+      const found = await prisma.group.count({ where: { id: { in: groupIds } } });
+      if (found !== new Set(groupIds).size) {
+        throw ApiError.badRequest('Tanlangan guruhlardan biri topilmadi');
       }
     }
 
