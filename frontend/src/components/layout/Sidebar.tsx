@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { usePermissionStore } from '@/stores/permissionStore';
 import {
-  LayoutDashboard, GraduationCap, X, ChevronDown, ChevronRight,
+  LayoutDashboard, GraduationCap, X, ChevronRight,
   PanelLeftClose, PanelLeftOpen,
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
   Gift, Package, Coins
@@ -170,17 +170,104 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     if (onClose) onClose();
   };
 
+  // ── Surib yopish (mobil) ────────────────────────────────────────────────
+  // iPhone'dagidek: ochiq menyuni barmoq bilan chapga surasiz, menyu barmoq
+  // ortidan ergashadi, fon esa shunga yarasha ochiladi. Qo'yib yuborilganda
+  // yo'l uzunligi yoki tezligiga qarab yopiladi yoki joyiga qaytadi.
+  // Holat ref'da — har piksel uchun React render qilinmaydi, to'g'ridan-to'g'ri
+  // style yoziladi (60 fps).
+  const asideRef = useRef<HTMLElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<{
+    x: number; y: number; dx: number;
+    lastX: number; lastT: number; v: number;
+    decided: boolean; active: boolean;
+  } | null>(null);
+
+  const resetDragStyles = () => {
+    const aside = asideRef.current;
+    const backdrop = backdropRef.current;
+    if (aside) { aside.style.transition = ''; aside.style.translate = ''; }
+    if (backdrop) { backdrop.style.transition = ''; backdrop.style.opacity = ''; }
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!isOpen || isDesktop || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    drag.current = {
+      x: t.clientX, y: t.clientY, dx: 0,
+      lastX: t.clientX, lastT: performance.now(), v: 0,
+      decided: false, active: false,
+    };
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    const d = drag.current;
+    const aside = asideRef.current;
+    if (!d || !aside) return;
+    const t = e.touches[0];
+    const dx = t.clientX - d.x;
+    const dy = t.clientY - d.y;
+
+    // Birinchi 8px — yo'nalishni aniqlash. Vertikal bo'lsa bu oddiy scroll,
+    // aralashmaymiz; faqat chapga gorizontal harakat suriladi.
+    if (!d.decided) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      d.decided = true;
+      d.active = Math.abs(dx) > Math.abs(dy) && dx < 0;
+      if (d.active) {
+        aside.style.transition = 'none';
+        if (backdropRef.current) backdropRef.current.style.transition = 'none';
+      }
+    }
+    if (!d.active) return;
+
+    const now = performance.now();
+    d.v = (t.clientX - d.lastX) / Math.max(1, now - d.lastT); // px/ms
+    d.lastX = t.clientX;
+    d.lastT = now;
+    d.dx = Math.min(0, dx);
+    aside.style.translate = `${d.dx}px 0`;
+    if (backdropRef.current) {
+      backdropRef.current.style.opacity = String(Math.max(0, 1 + d.dx / aside.offsetWidth));
+    }
+  };
+
+  const onTouchEnd = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.active) return;
+    const width = asideRef.current?.offsetWidth ?? 256;
+    // Uchdan biridan ko'p surilgan yoki tez "otilgan" bo'lsa — yopiladi
+    const shouldClose = d.dx < -width / 3 || d.v < -0.45;
+    // Inline uslublar olib tashlanadi: element joriy nuqtadan klassdagi
+    // holatga (ochiq yoki yopiq) o'sha iOS egri chizig'i bilan suzib boradi
+    resetDragStyles();
+    if (shouldClose) onClose?.();
+  };
+
   return (
     <>
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
+      {/* Mobile overlay — doim DOMda, opacity bilan. Ilgari shartli chizilardi:
+          menyu ochilganda fon birdan qorayar, yopilganda esa menyu hali
+          suzib ketayotganda fon allaqachon yo'qolardi. */}
+      <div
+        ref={backdropRef}
+        className={`fixed inset-0 bg-black/60 z-40 lg:hidden transition-opacity duration-[var(--motion-drawer-ios)] ease-[var(--ease-ios)] ${
+          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      <aside className={`fixed left-0 top-0 h-screen bg-zinc-900 border-r border-zinc-800 flex flex-col z-50 shrink-0 transition-all duration-300 ease-in-out lg:translate-x-0 w-64 ${isCollapsed ? 'lg:w-16' : 'lg:w-64'} ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside
+        ref={asideRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+        className={`fixed left-0 top-0 h-screen bg-zinc-900 border-r border-zinc-800 flex flex-col z-50 shrink-0 touch-pan-y transition-all duration-[var(--motion-drawer-ios)] ease-[var(--ease-ios)] lg:duration-300 lg:translate-x-0 w-64 ${isCollapsed ? 'lg:w-16' : 'lg:w-64'} ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
         {/* Logo */}
         <div className={`h-16 flex items-center justify-between border-b border-zinc-800 shrink-0 ${isCollapsed ? 'lg:px-0 lg:justify-center px-6' : 'px-6'}`}>
           {/* Logo lockup — DESIGN-GUIDE 3-bo'lim: wordmark, ostida "Score".
@@ -338,16 +425,16 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
                       >
                         {group.items.length}
                       </span>
-                      {isExpanded ? (
-                        <ChevronDown className="h-4 w-4" style={{ color: 'var(--muted-foreground)' }} />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" style={{ color: 'var(--muted-foreground)' }} />
-                      )}
+                      {/* Bitta strelka buriladi (ilgari ikki xil ikonka almashardi) */}
+                      <ChevronRight
+                        className={`h-4 w-4 transition-transform duration-300 ease-[var(--ease-ios-out)] ${isExpanded ? 'rotate-90' : ''}`}
+                        style={{ color: 'var(--muted-foreground)' }}
+                      />
                     </span>
                   </button>
 
                   {isExpanded && (
-                    <div className="px-2 pb-2">
+                    <div className="ios-expand px-2 pb-2">
                       {group.items.map(item => {
                         const ItemIcon = item.icon;
                         const isSubActive = location.pathname.startsWith(item.to);

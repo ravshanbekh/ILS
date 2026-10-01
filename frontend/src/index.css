@@ -48,6 +48,17 @@
   --motion-drawer: 240ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 
+  /* Native (iOS) harakat egri chiziqlari — 9-bo'limga qarang.
+     ios     : UIKit sheet/drawer egri chizig'i — tez boshlanadi, uzoq va
+               yumshoq to'xtaydi (Apple'ning o'z modal va menyulari).
+     ios-out : umumiy "yumshoq to'xtash" — rang, opacity, sahifa kirishi.
+     spring  : engil prujina (~4% oshib ketib qaytadi) — bosilgan tugma
+               qaytishi, oyna va menyu paydo bo'lishi. */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-ios-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --motion-drawer-ios: 420ms;
+
   --z-content: 0;
   --z-table: 10;
   --z-header: 30;
@@ -704,6 +715,199 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── 9. Native harakat (iOS uslubi) ───────────────────────────────────────
+   Maqsad: dizayn, joylashuv va ranglar O'ZGARMASDAN sayt telefonda ilova
+   kabi "his qilinsin" — yumshoq bosilish, prujinali ochilish, silliq
+   o'tishlar. Bu bo'lim faqat harakat va teginish xulqini belgilaydi;
+   hech qaysi o'lcham, rang yoki joylashuvga tegmaydi.
+
+   Qatlam haqida: transition-property va :active qoidalari ATAYLAB
+   qatlamsiz (unlayered). Tailwind utilitalari `@layer utilities` ichida,
+   qatlamsiz qoida esa har qanday qatlamdan kuchli. Shu tufayli
+   `transition-colors` yozilgan tugma ham bosilganda kichrayish
+   animatsiyasini oladi. Davomiylik (duration) esa Tailwind'da qoladi —
+   `duration-300` kabi tanlovlar buzilmaydi. */
+
+@layer base {
+  html {
+    /* iOS/Android'dagi kulrang "tap" chaqnashi o'rniga o'zimizning
+       yumshoq bosilish effekti ishlaydi */
+    -webkit-tap-highlight-color: transparent;
+    /* Telefon burilganda iOS shriftni o'zicha kattalashtirmasin */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  :where(button, [role="button"], [role="menuitem"], [role="tab"], a[href], summary, label, select, .pressable) {
+    /* 300 ms "double-tap zoom" kutishini o'chiradi — bosish darhol ishlaydi */
+    touch-action: manipulation;
+  }
+
+  :where(button, [role="button"], [role="menuitem"], [role="tab"], .pressable) {
+    /* Tugmani uzoq bosganda matn belgilanib, iOS lupa/menyusi chiqmasin */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Hech qanday transition klassi bo'lmagan tugmalar ham silliq o'zgarsin.
+     base qatlamida — Tailwind'ning `duration-*`/`ease-*` klasslari ustun. */
+  :where(button, [role="button"], [role="menuitem"], [role="tab"], a[href], summary, .pressable) {
+    transition-duration: 200ms;
+  }
+}
+
+/* Qaysi xususiyatlar silliq o'zgaradi. `scale` va `translate` qo'shilgan —
+   bosilish effekti shular orqali ishlaydi.
+   Egri chiziqlar ro'yxati xususiyatlar ro'yxatiga MOS (12-o'rin = scale):
+   prujina faqat `scale`ga beriladi. Rangga prujina berilsa, egri chiziq
+   1 dan oshgan joyda rang bir lahza maqsaddan o'tib "chaqnaydi". */
+:where(button, [role="button"], [role="menuitem"], [role="tab"], a[href], summary, .pressable) {
+  transition-property: color, background-color, border-color, outline-color,
+    text-decoration-color, fill, stroke, opacity, box-shadow, transform,
+    translate, scale, rotate, filter, backdrop-filter;
+  transition-timing-function: var(--ease-ios-out), var(--ease-ios-out),
+    var(--ease-ios-out), var(--ease-ios-out), var(--ease-ios-out),
+    var(--ease-ios-out), var(--ease-ios-out), var(--ease-ios-out),
+    var(--ease-ios-out), var(--ease-ios-out), var(--ease-ios-out),
+    var(--ease-spring), var(--ease-ios-out), var(--ease-ios-out),
+    var(--ease-ios-out);
+}
+
+/* Bosilish — iPhone'dagidek element barmoq ostida biroz "botadi" va qo'yib
+   yuborilganda yumshoq qaytadi. Bosish tez (90 ms), qaytish elementning
+   o'z davomiyligida va prujina egri chizig'ida.
+   Kichik tugmalar 0.96, havola/karta/menyu qatorlari 0.98 — katta
+   elementni kuchli kichraytirish sakrashdek ko'rinadi. */
+:is(button, [role="button"], [role="tab"], summary, .pressable):not(:disabled):not([aria-disabled="true"]):not(.no-press):active {
+  scale: 0.96;
+  transition-duration: 90ms;
+  transition-timing-function: var(--ease-ios-out);
+}
+:is(a[href], [role="menuitem"]):not(.no-press):active {
+  scale: 0.98;
+  transition-duration: 90ms;
+  transition-timing-function: var(--ease-ios-out);
+}
+
+/* ── Paydo bo'lish animatsiyalari ──
+   `backwards` to'ldirish — animatsiya tugagach element o'z holatiga
+   to'liq qaytadi (forwards bo'lsa :active dagi scale'ni bosib qolardi). */
+@keyframes ios-fade-in {
+  from { opacity: 0; }
+}
+@keyframes ios-scale-in {
+  from { opacity: 0; scale: 0.94; }
+}
+@keyframes ios-sheet-up {
+  from { opacity: 0; translate: 0 40px; }
+}
+@keyframes ios-pop {
+  from { opacity: 0; scale: 0.9; translate: 0 -6px; }
+}
+@keyframes ios-expand {
+  from { opacity: 0; translate: 0 -6px; }
+}
+
+/* Bu ikki klass kodda 22 joyda ishlatilgan, lekin hech qachon
+   aniqlanmagan edi — modallar animatsiyasiz "sakrab" chiqardi. */
+.animate-fade-in {
+  animation: ios-fade-in 240ms var(--ease-ios-out) backwards;
+}
+.animate-scale-in {
+  animation: ios-scale-in 380ms var(--ease-spring) backwards;
+}
+
+/* Barcha modal oynalar (loyihada 47 ta, hammasi bir naqshda:
+   `fixed inset-0 … flex justify-center`) — fon xira paydo bo'ladi, oyna
+   esa prujina bilan kattalashib chiqadi. Komponentlarga tegmasdan. */
+.fixed.inset-0.flex.justify-center {
+  animation: ios-fade-in 240ms var(--ease-ios-out) backwards;
+}
+.fixed.inset-0.flex.justify-center > :first-child {
+  animation: ios-scale-in 380ms var(--ease-spring) backwards;
+}
+/* Telefonda — iOS sheet kabi pastdan suzib chiqadi */
+@media (max-width: 639px) {
+  .fixed.inset-0.flex.justify-center > :first-child {
+    animation: ios-sheet-up var(--motion-drawer-ios) var(--ease-ios) backwards;
+  }
+}
+
+/* Ochiladigan menyular (akkaunt, bildirishnomalar) — tugmadan "o'sib"
+   chiqadi, xuddi iOS kontekst menyusi kabi */
+.ios-pop {
+  transform-origin: top right;
+  animation: ios-pop 300ms var(--ease-spring) backwards;
+}
+
+/* Akkordeon ichi (sidebar bo'limlari) ochilganda yumshoq tushadi */
+.ios-expand {
+  animation: ios-expand 280ms var(--ease-ios-out) backwards;
+}
+
+/* Rasmlar yuklanganda birdan "paydo" bo'lmay, yumshoq ochiladi.
+   Klassni main.tsx'dagi global `load` tinglovchisi qo'shadi. O'z
+   animatsiyasi bor rasmlarga (3D ikonkalar, animate-*) tegilmaydi. */
+img.ios-img-in:not([class*="animate-"]) {
+  animation: ios-fade-in 360ms var(--ease-ios-out) backwards;
+}
+
+/* ── Scroll ── */
+/* Ichki scroll joylari oxiriga yetganda butun sahifani tortib ketmasin
+   (iOS'dagi kabi har bir ro'yxat o'z chegarasida to'xtaydi).
+   <main> bundan mustasno — sahifaning o'zi pull-to-refresh'ni saqlaydi. */
+:where(.overflow-y-auto, .overflow-auto):not(main) {
+  overscroll-behavior-y: contain;
+}
+/* Gorizontal lentalar: chetga yetganda brauzerning "orqaga" imosi ishga
+   tushib ketmasin; tablarga yumshoq "yopishish" */
+:where(.overflow-x-auto) {
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.no-scrollbar.overflow-x-auto {
+  scroll-snap-type: x proximity;
+}
+.no-scrollbar.overflow-x-auto > * {
+  scroll-snap-align: start;
+}
+
+/* Kodda ishlatilgan, lekin aniqlanmagan edi — telefonda tablar ostida
+   kulrang scroll chizig'i ko'rinib turardi */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--n-600) transparent;
+}
+
+/* iPhone: 16px dan kichik maydonga bosilganda Safari butun sahifani
+   kattalashtirib yuboradi va qaytarmaydi — ilovadagi his butunlay
+   buziladi. Faqat iOS'da (-webkit-touch-callout faqat iOS Safari'da bor)
+   maydon shrifti 16px qilinadi; Android va kompyuterda hech narsa
+   o'zgarmaydi. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Mavzu almashganda (quyosh/oy tugmasi) ranglar bir zumda "chaqnab"
+   o'zgarmaydi — butun ekran yumshoq o'tadi (View Transitions API) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 360ms;
+  animation-timing-function: var(--ease-ios-out);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -712,5 +916,11 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Harakatni kamaytirishni tanlagan foydalanuvchiga bosilish
+     kichrayishi ham ko'rsatilmaydi */
+  :is(button, [role="button"], [role="tab"], summary, .pressable, a[href], [role="menuitem"]):active {
+    scale: none !important;
   }
 }

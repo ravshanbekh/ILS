@@ -1,6 +1,7 @@
 import { Bell, Sun, Moon, X, Info, Clock, AlertTriangle, Brain, TrendingDown, Search, Menu } from 'lucide-react';
 import UserMenu from './UserMenu';
 import { useState, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { notificationsApi } from '@/api';
 import { socket } from '@/utils/socket';
 import { applyTheme, resolveTheme, setPreference, watchSystemTheme } from '@/theme/theme';
@@ -50,7 +51,25 @@ export default function Topbar({ title, subtitle, showSearch, searchValue, onSea
   useEffect(() => watchSystemTheme(setTheme), []);
 
   const toggleTheme = () => {
-    setTheme(setPreference(resolveTheme() === 'light' ? 'dark' : 'light'));
+    const next = resolveTheme() === 'light' ? 'dark' : 'light';
+    const apply = () => {
+      // setPreference data-theme'ni darhol yozadi; flushSync ikonkani ham
+      // shu kadrning o'zida almashtiradi — "yangi" surat to'liq bo'lsin
+      const resolved = setPreference(next);
+      flushSync(() => setTheme(resolved));
+    };
+    // Ekran yumshoq o'tadi (index.css 9-bo'lim). API bo'lmagan brauzerda
+    // yoki harakatni kamaytirish yoqilganda — avvalgidek darhol.
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (document.startViewTransition && !reduce) {
+      // Tab yashirin bo'lsa yoki boshqa o'tish ustiga tushsa brauzer
+      // animatsiyani bekor qiladi va `ready` reject bo'ladi. Mavzu baribir
+      // almashadi (apply chaqiriladi) — faqat konsolga ushlanmagan xato
+      // tushmasligi uchun jim ushlaymiz.
+      document.startViewTransition(apply).ready.catch(() => {});
+    } else {
+      apply();
+    }
   };
 
   useEffect(() => {
@@ -174,7 +193,7 @@ export default function Topbar({ title, subtitle, showSearch, searchValue, onSea
                 className="fixed inset-0 z-40"
                 onClick={() => setIsOpen(false)}
               />
-              <div className="absolute right-0 mt-3 w-80 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col max-h-[400px]">
+              <div className="ios-pop absolute right-0 mt-3 w-80 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col max-h-[400px]">
                 <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900 shrink-0">
                   <h3 className="font-bold text-white text-sm">Xabarnomalar</h3>
                   {unreadCount > 0 && (

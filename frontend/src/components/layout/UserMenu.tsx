@@ -171,7 +171,7 @@ export default function UserMenu() {
           role="menu"
           aria-label="Akkaunt"
           onKeyDown={onMenuKeyDown}
-          className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-2xl border p-2"
+          className="ios-pop absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-2xl border p-2"
           style={{
             background: 'var(--surface)',
             borderColor: 'var(--border)',
