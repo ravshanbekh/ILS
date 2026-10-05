@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, ChevronRight, X } from 'lucide-react';
 import { milestonesApi } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -69,6 +70,12 @@ export default function MilestoneWarningBanner() {
 
   if (!data || data.total === 0 || dismissed) return null;
 
+  // Guruh sahifasi faqat admin va o'qituvchida bor — o'sha yerda bosqich
+  // kartochkasi (sana tanlash / "o'tkazildi" belgisi). Boshqalarga matn.
+  const isTeacher = user?.role === 'teacher';
+  const groupHref = (groupId: string) =>
+    user?.role === 'admin' ? `/admin/groups/${groupId}` : isTeacher ? `/teacher/groups/${groupId}` : null;
+
   const hide = () => {
     setDismissed(true);
     try {
@@ -90,8 +97,14 @@ export default function MilestoneWarningBanner() {
 
           <div className="flex-1 min-w-0">
             <p className="text-red-400 font-bold text-base sm:text-lg leading-tight">
+              {isTeacher ? 'Guruhingizda ' : ''}
               {parts.join(' va ')} kechikdi
             </p>
+            {isTeacher && (
+              <p className="mt-0.5 text-xs text-zinc-400">
+                Guruh sahifasida sanani belgilang yoki o'tkazilganini tasdiqlang
+              </p>
+            )}
 
             <button
               type="button"
@@ -103,16 +116,34 @@ export default function MilestoneWarningBanner() {
 
             {expanded && (
               <ul className="mt-3 space-y-1.5">
-                {data.items.map((it) => (
-                  <li key={it.id} className="text-sm text-zinc-300 flex flex-wrap gap-x-2">
-                    <span className="font-semibold text-white">{it.groupName}</span>
-                    <span className="text-zinc-500">·</span>
-                    <span>{it.type === 'demo_day' ? 'Demo day' : 'Imtihon'}</span>
-                    <span className="text-zinc-500">·</span>
-                    <span className="text-zinc-400">{it.teacherName}</span>
-                    <span className="text-red-400 font-semibold">{it.daysLate} kun</span>
-                  </li>
-                ))}
+                {data.items.map((it) => {
+                  const href = groupHref(it.groupId);
+                  return (
+                    <li key={it.id} className="text-sm text-zinc-300 flex flex-wrap items-center gap-x-2">
+                      {href ? (
+                        <Link
+                          to={href}
+                          className="inline-flex items-center gap-0.5 font-semibold text-white underline-offset-2 hover:underline"
+                        >
+                          {it.groupName}
+                          <ChevronRight className="h-3.5 w-3.5 text-zinc-500" aria-hidden="true" />
+                        </Link>
+                      ) : (
+                        <span className="font-semibold text-white">{it.groupName}</span>
+                      )}
+                      <span className="text-zinc-500">·</span>
+                      <span>{it.type === 'demo_day' ? 'Demo day' : 'Imtihon'}</span>
+                      {/* O'qituvchiga o'z ismini takrorlash shart emas */}
+                      {!isTeacher && (
+                        <>
+                          <span className="text-zinc-500">·</span>
+                          <span className="text-zinc-400">{it.teacherName}</span>
+                        </>
+                      )}
+                      <span className="text-red-400 font-semibold">{it.daysLate} kun</span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

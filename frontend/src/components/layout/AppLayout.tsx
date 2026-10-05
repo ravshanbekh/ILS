@@ -7,9 +7,17 @@ import type { TopbarState } from './topbarContext';
 import CategorySubHeader from './CategorySubHeader';
 import MilestoneWarningBanner from '../shared/MilestoneWarningBanner';
 import { useAuthStore } from '../../stores/authStore';
+import { usePermissionStore } from '../../stores/permissionStore';
 
 export default function AppLayout() {
   const role = useAuthStore((st) => st.user?.role);
+  const can = usePermissionStore((s) => s.can);
+  usePermissionStore((s) => s.permissions); // ruxsatlar kelganda qayta chizilsin
+  // Kechikish banneri: guruh mentori (o'z guruhlari), admin va nazorat
+  // ruxsati borlar (hammasi). Rol ro'yxati o'rniga ruxsat — kimga
+  // "Demo day va imtihon nazorati" berilsa, o'sha ko'radi.
+  const showMilestoneBanner =
+    !!role && (['admin', 'administrator', 'teacher'].includes(role) || can('milestone_oversight'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Yig'ilgan holat brauzerda eslab qolinadi
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
@@ -74,7 +82,7 @@ export default function AppLayout() {
             Faqat nazorat qiladigan va bosqichga javobgar rollarga —
             o'quvchiga ko'rsatilsa ham bo'sh chiqardi, lekin har sahifada
             keraksiz so'rov yuborilardi. */}
-        {role && ['admin', 'administrator', 'teacher', 'filial_rahbari', 'nazoratchi'].includes(role) && (
+        {showMilestoneBanner && (
           <MilestoneWarningBanner />
         )}
 

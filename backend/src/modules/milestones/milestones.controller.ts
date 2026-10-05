@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/database';
 import { ApiError } from '../../shared/middleware/errorHandler';
 import milestonesService from './milestones.service';
+import { hasPermission } from '../../shared/middleware/permission.middleware';
 
 const ADMIN_ROLES = ['admin', 'administrator'];
 
@@ -86,13 +87,21 @@ class MilestonesController {
 
   /**
    * GET /api/milestones/warnings — ekran tepasidagi banner.
-   * O'qituvchi/assistent faqat o'z guruhlarini ko'radi.
+   *  - admin va "Demo day va imtihon nazorati" ruxsati borlar — HAMMA guruh;
+   *  - o'qituvchi (guruh mentori) — faqat o'z guruhlari.
+   *
+   * Ilgari faqat admin/administrator hammasini ko'rardi. Filial rahbari va
+   * nazoratchida banner yoqilgan va nazorat ruxsati bor edi, lekin ularga
+   * ham "o'z guruhlaring" filtri qo'llanib, guruhi yo'qligi uchun banner
+   * hech qachon chiqmasdi.
    */
   async warnings(req: Request, res: Response, next: NextFunction) {
     try {
-      const isAdmin = ADMIN_ROLES.includes(req.user!.role);
+      const user = req.user!;
+      const seeAll =
+        ADMIN_ROLES.includes(user.role) || (await hasPermission(user, 'milestone_oversight'));
       const data = await milestonesService.getWarnings(
-        isAdmin ? {} : { teacherId: req.user!.userId }
+        seeAll ? {} : { teacherId: user.userId }
       );
       res.json({ success: true, data });
     } catch (error) {
