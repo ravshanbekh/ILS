@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import TimeBadge from '@/components/shared/TimeBadge';
 import Header from '@/components/layout/Header';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import { normativesApi, submissionsApi, groupsApi } from '@/api';
@@ -290,12 +291,7 @@ export default function StudentNormativesPage() {
 
                           {/* Info row */}
                           <div className="flex flex-wrap items-center gap-3">
-                            {norm.timeLimit && (
-                              <span className="flex items-center gap-1.5 text-xs bg-amber-500/10 text-amber-500 px-3 py-1.5 rounded-lg border border-amber-500/20">
-                                <Clock className="w-3.5 h-3.5" />
-                                {norm.timeLimit} sekund
-                              </span>
-                            )}
+                            {!!norm.timeLimit && <TimeBadge seconds={norm.timeLimit} size="md" />}
                             <span className="text-xs bg-blue-500/10 text-blue-500 px-3 py-1.5 rounded-lg border border-blue-500/20">
                               Max: {norm.maxScore} ball
                             </span>

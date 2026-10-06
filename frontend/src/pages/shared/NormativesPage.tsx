@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import TimeBadge from '@/components/shared/TimeBadge';
+import { formatDuration } from '@/utils/duration';
 import { useAuthStore } from '@/stores/authStore';
 import { normativesApi, categoriesApi } from '@/api';
 import Header from '@/components/layout/Header';
@@ -222,7 +224,7 @@ export default function NormativesPage() {
                   <th className="px-6 py-4 w-16 text-center">N</th>
                   <th className="px-6 py-4">Qaysi funksiya</th>
                   <th className="px-6 py-4">Nima qila olsin</th>
-                  <th className="px-6 py-4 text-center">Vaqti</th>
+                  <th className="px-6 py-4 text-center whitespace-nowrap">Vaqti</th>
                   <th className="px-6 py-4 text-center">Url</th>
                   {user?.role === 'admin' && <th className="px-6 py-4 text-right">Amallar</th>}
                 </tr>
@@ -252,14 +254,8 @@ export default function NormativesPage() {
                           {n.description || <span className="text-zinc-600 italic">Kiritilmagan</span>}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        {n.timeLimit ? (
-                          <span className="px-2 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded font-mono text-xs">
-                            {n.timeLimit} sek
-                          </span>
-                        ) : (
-                          <span className="text-zinc-600">-</span>
-                        )}
+                      <td className="px-6 py-4 text-center whitespace-nowrap">
+                        <TimeBadge seconds={n.timeLimit} />
                       </td>
                       <td className="px-6 py-4 text-center">
                         {n.url ? (
@@ -527,8 +523,8 @@ export default function NormativesPage() {
                 
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-1">Maksimal Vaqti</span>
-                  <div className="text-amber-500 font-bold font-mono text-sm">
-                    {viewingNormative.timeLimit ? `${viewingNormative.timeLimit} sek` : '-'}
+                  <div className="text-amber-400 font-bold text-sm tabular-nums">
+                    {formatDuration(viewingNormative.timeLimit)}
                   </div>
                 </div>
               </div>

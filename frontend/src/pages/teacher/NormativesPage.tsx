@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import TimeBadge from '@/components/shared/TimeBadge';
+import { formatDuration } from '@/utils/duration';
 import Header from '@/components/layout/Header';
 import { normativesApi, groupsApi } from '@/api';
-import { Loader2, BookOpen, Link as LinkIcon, Clock, CheckCircle, Plus, Search } from 'lucide-react';
+import { Loader2, BookOpen, Link as LinkIcon, CheckCircle, Plus, Search } from 'lucide-react';
 
 const PAGE_SIZE = 15;
 
@@ -140,7 +142,7 @@ export default function TeacherNormativesPage() {
         ) : (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             {/* Table Header */}
-            <div className="grid grid-cols-[60px_60px_1fr_2fr_100px_80px_80px] items-center gap-4 px-5 py-3 border-b border-zinc-800 bg-zinc-900">
+            <div className="grid grid-cols-[60px_60px_1fr_2fr_120px_80px_80px] items-center gap-4 px-5 py-3 border-b border-zinc-800 bg-zinc-900">
               <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold text-center">N</span>
               <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold text-center">#</span>
               <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Qaysi funksiya</span>
@@ -155,7 +157,7 @@ export default function TeacherNormativesPage() {
               {paginated.map((norm, idx) => (
                 <div
                   key={norm.id}
-                  className="grid grid-cols-[60px_60px_1fr_2fr_100px_80px_80px] items-center gap-4 px-5 py-3.5 hover:bg-zinc-800/20 transition-colors"
+                  className="grid grid-cols-[60px_60px_1fr_2fr_120px_80px_80px] items-center gap-4 px-5 py-3.5 hover:bg-zinc-800/20 transition-colors"
                 >
                   {/* Row number */}
                   <div className="flex justify-center">
@@ -185,14 +187,7 @@ export default function TeacherNormativesPage() {
 
                   {/* Time limit */}
                   <div className="flex justify-center">
-                    {norm.timeLimit ? (
-                      <span className="flex items-center gap-1 text-xs font-bold bg-amber-500/10 text-amber-500 px-2 py-1 rounded border border-amber-500/20 whitespace-nowrap">
-                        <Clock className="w-3 h-3" />
-                        {norm.timeLimit} sek
-                      </span>
-                    ) : (
-                      <span className="text-zinc-700 text-xs">—</span>
-                    )}
+                    <TimeBadge seconds={norm.timeLimit} />
                   </div>
 
                   {/* URL */}
@@ -380,8 +375,8 @@ export default function TeacherNormativesPage() {
                 
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-1">Maksimal Vaqti</span>
-                  <div className="text-amber-500 font-bold font-mono text-sm">
-                    {viewingNormative.timeLimit ? `${viewingNormative.timeLimit} sek` : '-'}
+                  <div className="text-amber-400 font-bold text-sm tabular-nums">
+                    {formatDuration(viewingNormative.timeLimit)}
                   </div>
                 </div>
               </div>
