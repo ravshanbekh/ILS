@@ -10,6 +10,11 @@ router.use(authenticate);
 router.get('/', normativesController.getAll);
 
 // GET /api/normatives/:id — Bitta normativ
+// JSON eksport / import — faqat admin. '/:id' dan OLDIN turishi shart,
+// aks holda "export" so'zi id deb olinadi.
+router.get('/export', roleGuard('admin'), normativesController.exportJson);
+router.post('/import', roleGuard('admin'), normativesController.importJson);
+
 router.get('/:id', normativesController.getById);
 
 // POST /api/normatives — Yangi normativ yaratish (admin/teacher)

@@ -4,6 +4,7 @@ import { ApiError } from '../../shared/middleware/errorHandler';
 import { CreateNormativeInput, UpdateNormativeInput } from './normatives.validation';
 import { PaginationParams, createPaginatedResult } from '../../shared/utils/pagination';
 import logger from '../../shared/utils/logger';
+import { buildExport, extractItems, planImport, FIELD_LABELS, ImportPlan } from './normatives.transfer';
 
 class NormativesService {
   /**
@@ -215,6 +216,132 @@ class NormativesService {
 
     logger.info(`Normative deactivated: #${existing.taskNumber}`);
     return { message: 'Normativ o\'chirildi' };
+  }
+
+  // ─── JSON eksport / import (faqat admin) ──────────────────────────────────
+
+  /** Barcha normativlar — o'chirilganlari ham (isActive belgisi bilan) */
+  async exportAll() {
+    const [normatives, categories] = await Promise.all([
+      prisma.normative.findMany({ orderBy: [{ categoryId: 'asc' }, { taskNumber: 'asc' }, { createdAt: 'asc' }] }),
+      prisma.category.findMany({ select: { id: true, name: true } }),
+    ]);
+    return buildExport(normatives, categories);
+  }
+
+  /** Reja: nima yaratiladi / yangilanadi / qayerda xato. Bazaga yozmaydi. */
+  async planImport(body: unknown): Promise<ImportPlan> {
+    const extracted = extractItems(body);
+    if ('error' in extracted) throw ApiError.badRequest(extracted.error);
+    const [db, categories] = await Promise.all([
+      prisma.normative.findMany({
+        select: {
+          id: true, taskNumber: true, title: true, description: true, timeLimit: true,
+          url: true, maxScore: true, isActive: true, categoryId: true,
+        },
+      }),
+      prisma.category.findMany({ select: { id: true, name: true } }),
+    ]);
+    return planImport(extracted.items, db, categories);
+  }
+
+  /** Foydalanuvchiga ko'rsatiladigan qisqa xulosa (butun rejani emas) */
+  summarize(plan: ImportPlan) {
+    return {
+      total: plan.total,
+      createCount: plan.create.length,
+      updateCount: plan.update.length,
+      unchanged: plan.unchanged,
+      newCategories: plan.newCategories,
+      errors: plan.errors.slice(0, 200),
+      errorCount: plan.errors.length,
+      create: plan.create.slice(0, 300).map((c) => ({
+        taskNumber: c.taskNumber,
+        title: c.title,
+        newCategory: c.newCategoryName,
+      })),
+      update: plan.update.slice(0, 300).map((u) => ({
+        id: u.id,
+        taskNumber: u.taskNumber,
+        title: u.title,
+        changes: u.changes.map((f) => FIELD_LABELS[f]),
+      })),
+    };
+  }
+
+  /**
+   * Importni bajarish. Reja QAYTA hisoblanadi (oldindan ko'rishdan beri baza
+   * o'zgargan bo'lishi mumkin) va bitta tranzaksiyada yoziladi: xato bo'lsa
+   * hech narsa o'zgarmaydi.
+   */
+  async applyImport(body: unknown, userId?: string) {
+    const plan = await this.planImport(body);
+    if (plan.errors.length > 0) return { applied: false as const, plan };
+
+    await prisma.$transaction(
+      async (tx) => {
+        // 1) Yangi yo'nalishlar
+        const catIdByName = new Map<string, string>();
+        for (const name of plan.newCategories) {
+          const cat = await tx.category.upsert({
+            where: { name },
+            update: {},
+            create: { name },
+            select: { id: true },
+          });
+          catIdByName.set(name, cat.id);
+        }
+        const resolveCat = (id: string | null, newName?: string | null) =>
+          newName ? catIdByName.get(newName) ?? null : id;
+
+        // 2) Yangi normativlar
+        if (plan.create.length > 0) {
+          await tx.normative.createMany({
+            data: plan.create.map((c) => ({
+              taskNumber: c.taskNumber,
+              title: c.title,
+              description: c.description,
+              timeLimit: c.timeLimit,
+              url: c.url,
+              maxScore: c.maxScore,
+              isActive: c.isActive,
+              categoryId: resolveCat(c.categoryId, c.newCategoryName),
+            })),
+          });
+        }
+
+        // 3) Yangilanadiganlar — faqat o'zgargan maydonlar
+        for (const u of plan.update) {
+          const { newCategoryName, ...fields } = u.data;
+          const data: Record<string, unknown> = { ...fields };
+          if ('categoryId' in data) data.categoryId = resolveCat(data.categoryId as string | null, newCategoryName);
+          await tx.normative.update({ where: { id: u.id }, data });
+        }
+
+        if (userId) {
+          await tx.auditLog.create({
+            data: {
+              userId,
+              action: 'IMPORT_NORMATIVES',
+              targetType: 'normative',
+              targetId: null,
+              details: {
+                created: plan.create.length,
+                updated: plan.update.length,
+                unchanged: plan.unchanged,
+                newCategories: plan.newCategories,
+              },
+            },
+          });
+        }
+      },
+      { timeout: 60_000 },
+    );
+
+    logger.info(
+      `Normatives imported: +${plan.create.length} yangi, ${plan.update.length} yangilandi, ${plan.unchanged} o'zgarishsiz`,
+    );
+    return { applied: true as const, plan };
   }
 }
 

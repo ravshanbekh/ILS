@@ -147,6 +147,13 @@ export const normativesApi = {
   update: (id: string, data: any) => api.put(`/normatives/${id}`, data),
 
   delete: (id: string) => api.delete(`/normatives/${id}`),
+
+  /** Barcha normativlar JSON sifatida (faqat admin) */
+  exportJson: () => api.get('/normatives/export'),
+
+  /** dryRun=true — faqat oldindan ko'rish, hech narsa yozilmaydi */
+  importJson: (payload: unknown, dryRun: boolean) =>
+    api.post('/normatives/import', payload, { params: dryRun ? { dryRun: 1 } : undefined }),
 };
 
 export const submissionsApi = {

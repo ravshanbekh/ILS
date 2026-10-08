@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { normativesApi, categoriesApi } from '@/api';
 import Header from '@/components/layout/Header';
 import ConfirmModal from '@/components/shared/ConfirmModal';
+import NormativesJsonTransfer from '@/components/shared/NormativesJsonTransfer';
 import { Plus, Pencil, Trash2, Link as LinkIcon, Search, Check, AlertCircle } from 'lucide-react';
 
 export default function NormativesPage() {
@@ -198,7 +199,9 @@ export default function NormativesPage() {
           </div>
           
           {user?.role === 'admin' && (
-            <div className="flex w-full sm:w-auto gap-2">
+            <div className="flex flex-wrap w-full sm:w-auto gap-2">
+              {/* JSON eksport / import — faqat admin (server ham tekshiradi) */}
+              <NormativesJsonTransfer onImported={() => { fetchNormatives(); fetchCategories(); }} />
               <button 
                 onClick={() => setShowCategoryModal(true)}
                 className="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"

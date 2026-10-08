@@ -106,6 +106,46 @@ class NormativesController {
       next(error);
     }
   }
+
+  /**
+   * GET /api/normatives/export — barcha normativlar JSON fayl sifatida (admin)
+   */
+  async exportJson(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await normativesService.exportAll();
+      const date = new Date().toISOString().slice(0, 10);
+      res.setHeader('Content-Disposition', `attachment; filename="normativlar-${date}.json"`);
+      res.json(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/normatives/import?dryRun=1 — oldindan ko'rish (hech narsa yozmaydi)
+   * POST /api/normatives/import          — bajarish (xato bo'lsa hech narsa yozilmaydi)
+   */
+  async importJson(req: Request, res: Response, next: NextFunction) {
+    try {
+      const dryRun = req.query.dryRun === '1' || req.query.dryRun === 'true';
+      if (dryRun) {
+        const plan = await normativesService.planImport(req.body);
+        return res.json({ success: true, data: normativesService.summarize(plan) });
+      }
+      const result = await normativesService.applyImport(req.body, req.user?.userId);
+      const summary = normativesService.summarize(result.plan);
+      if (!result.applied) {
+        return res.status(400).json({
+          success: false,
+          error: { message: `Faylda ${summary.errorCount} ta xato bor — hech narsa yozilmadi` },
+          data: summary,
+        });
+      }
+      res.json({ success: true, data: summary });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new NormativesController();
