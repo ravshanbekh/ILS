@@ -8,6 +8,13 @@ export function startMilestonesScheduler() {
   if (started) return;
   started = true;
 
+  // Server ishga tushganda (deploy'dan keyin) bir marta — kechagi cron'dan
+  // keyin o'tkazilgan imtihonlar ertangi 06:00 ni kutmasin.
+  milestonesService
+    .refreshStatuses()
+    .then((r) => logger.info(`Bosqichlar (start): ${r.autoClosed} ta imtihon yopildi, ${r.markedLate} ta kechikdi`))
+    .catch((err) => logger.error('Bosqichlar holatini start’da yangilashda xato:', err));
+
   // Har kuni 06:00 — imtihonlarni avtomatik yopish va kechikkanlarni belgilash.
   //
   // Ogohlantirish bot orqali YUBORILMAYDI: Ravshan ekrandagi bannerni

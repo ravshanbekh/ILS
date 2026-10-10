@@ -126,26 +126,39 @@ export async function markHeld(milestoneId: string, userId: string) {
 }
 
 /**
- * Kunlik yangilash (cron):
- *   1) imtihon bosqichlarini haqiqiy imtihonlardan avtomatik yopish
- *   2) muddati o'tganlarni "kechikdi" ga o'tkazish
+ * O'tkazilgan imtihonlardan imtihon bosqichlarini yopish.
+ *
+ * Imtihon guruh uchun "o'tkazilgan" hisoblanadi, agar u qoralama bo'lmasa,
+ * bosqich oynasi boshlangandan keyin boshlangan bo'lsa va:
+ *   - guruhga biriktirilgan bo'lsa (examGroups), YOKI
+ *   - shu guruh o'quvchisi unda qatnashgan bo'lsa (participants.groupId).
+ *
+ * Ikkinchi shart nega kerak bo'ldi: markaz imtihoni faollashtirilganda
+ * yaratiladigan nusxa va kod bilan kiriladigan imtihon guruhga
+ * biriktirilmaydi. Ilgari faqat examGroups qidirilardi — SF-2 da imtihon
+ * kechikib o'tkazilgan bo'lsa ham bosqich “kechikdi” bo'lib qolaverdi.
+ *
+ * groupIds berilsa — faqat shu guruhlar (imtihon hodisalaridan darhol
+ * chaqiriladi); berilmasa — hammasi (kunlik cron).
  */
-export async function refreshStatuses() {
-  const now = today();
-
+export async function closeHeldExamMilestones(groupIds?: string[]) {
+  if (groupIds && groupIds.length === 0) return 0;
   const openExams = await prisma.groupMilestone.findMany({
-    where: { type: 'imtihon', heldAt: null },
+    where: { type: 'imtihon', heldAt: null, ...(groupIds && { groupId: { in: groupIds } }) },
     select: { id: true, groupId: true, candidates: true, dueDate: true },
   });
 
-  let autoClosed = 0;
+  let closed = 0;
   for (const m of openExams) {
     const from = m.candidates[0] ?? m.dueDate;
     const exam = await prisma.exam.findFirst({
       where: {
         status: { not: 'draft' },
-        examGroups: { some: { groupId: m.groupId } },
         startsAt: { gte: from },
+        OR: [
+          { examGroups: { some: { groupId: m.groupId } } },
+          { participants: { some: { groupId: m.groupId } } },
+        ],
       },
       orderBy: { startsAt: 'asc' },
       select: { id: true, startsAt: true },
@@ -167,8 +180,23 @@ export async function refreshStatuses() {
         status: startDay > m.dueDate ? 'kechikib_bajarildi' : 'bajarildi',
       },
     });
-    autoClosed++;
+    closed++;
   }
+  return closed;
+}
+
+/**
+ * Kunlik yangilash (cron):
+ *   1) imtihon bosqichlarini haqiqiy imtihonlardan avtomatik yopish
+ *   2) muddati o'tganlarni "kechikdi" ga o'tkazish
+ *
+ * DIQQAT: bosqich kechikkani haqida ota-onalarga (Telegram bot) HECH QACHON
+ * xabar yuborilmaydi — bu ichki nazorat. Kechikish faqat admin va guruh
+ * mentori ekranidagi bannerda ko'rinadi (Ravshan qarori, 2026-10-10).
+ */
+export async function refreshStatuses() {
+  const now = today();
+  const autoClosed = await closeHeldExamMilestones();
 
   const late = await prisma.groupMilestone.updateMany({
     where: {
@@ -311,6 +339,7 @@ export default {
   pickDate,
   markHeld,
   refreshStatuses,
+  closeHeldExamMilestones,
   getOverview,
   getWarnings,
   getMonthlySummary,

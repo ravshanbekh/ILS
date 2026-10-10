@@ -72,7 +72,14 @@ async function safeSend(chatId: bigint | number, text: string, options?: SendOpt
   }
 }
 
-/** Boshqa modullar (masalan murojaat javobi) uchun ochiq wrapper */
+/**
+ * Boshqa modullar (masalan murojaat javobi) uchun ochiq wrapper.
+ *
+ * QOIDA (Ravshan, 2026-10-10): demo day yoki imtihon bosqichi KECHIKKANI
+ * haqida ota-onalarga hech qachon xabar yuborilmaydi — bu ichki nazorat,
+ * faqat admin va guruh mentori ekranidagi bannerda ko'rinadi
+ * (milestones moduli). Bu yerga shunday xabar qo'shmang.
+ */
 export async function safeSendToParent(chatId: bigint | number, text: string) {
   await safeSend(chatId, text, { parse_mode: 'Markdown' });
 }

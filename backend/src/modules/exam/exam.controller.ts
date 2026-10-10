@@ -3,6 +3,22 @@ import jwt from 'jsonwebtoken';
 import prisma from '../../config/database';
 import { env } from '../../config/env';
 import { hasPermission } from '../../shared/middleware/permission.middleware';
+import milestonesService from '../milestones/milestones.service';
+import logger from '../../shared/utils/logger';
+
+/**
+ * Imtihon guruhda o'tkazilgani bilan uning “imtihon” bosqichini darhol yopadi
+ * (ertangi cron’ni kutmasdan) — aks holda mentor imtihonni o'tkazib bo'lsa
+ * ham “kechikdi” banneri bir kun turib qolardi. Javobni kutmaydi va xatosi
+ * imtihon jarayonini buzmaydi.
+ */
+function closeMilestonesFor(groupIds: (string | null | undefined)[]) {
+  const ids = [...new Set(groupIds.filter((g): g is string => !!g))];
+  if (ids.length === 0) return;
+  milestonesService
+    .closeHeldExamMilestones(ids)
+    .catch((err) => logger.warn('Imtihon bosqichini yopishda xato:', err));
+}
 
 interface ExamSessionPayload {
   type: 'exam_session';
@@ -272,6 +288,8 @@ export const activateExam = async (req: Request, res: Response, next: NextFuncti
         expiresAt: new Date(now.getTime() + hours * 60 * 60 * 1000),
       },
     });
+    const groups = await prisma.examGroup.findMany({ where: { examId: id }, select: { groupId: true } });
+    closeMilestonesFor(groups.map((g) => g.groupId));
     res.json({ data: updated });
   } catch (e: any) {
     next(e);
@@ -287,6 +305,11 @@ export const completeExam = async (req: Request, res: Response, next: NextFuncti
       where: { id, createdById: userId },
       data: { status: 'completed' },
     });
+    const [groups, parts] = await Promise.all([
+      prisma.examGroup.findMany({ where: { examId: id }, select: { groupId: true } }),
+      prisma.examParticipant.findMany({ where: { examId: id }, select: { groupId: true }, distinct: ['groupId'] }),
+    ]);
+    closeMilestonesFor([...groups.map((g) => g.groupId), ...parts.map((p) => p.groupId)]);
     res.json({ data: updated });
   } catch (e: any) {
     next(e);
@@ -751,6 +774,8 @@ export const startExam = async (req: Request, res: Response, next: NextFunction)
         startedAt: new Date(),
       },
     });
+    // Guruh o'quvchisi imtihonga kirdi — demak imtihon shu guruhda o'tkazilyapti
+    closeMilestonesFor([participant.groupId]);
 
     const questions = await getRandomQuestions(exam.id, exam.testCount);
     const sessionToken = createExamSessionToken(participant, exam.expiresAt, questions.map(q => q.id));
