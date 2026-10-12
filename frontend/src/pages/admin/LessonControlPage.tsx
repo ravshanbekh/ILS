@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { lessonSessionsApi } from '@/api';
-import { AlarmClock, Loader2, Unlock, CheckCircle2, AlertTriangle, HelpCircle, History } from 'lucide-react';
+import { AlarmClock, Loader2, Unlock, CheckCircle2, AlertTriangle, HelpCircle, History, ChevronRight } from 'lucide-react';
 import { uzDayMonth } from '@/utils/uzDate';
 
 interface UngradedItem {
@@ -200,13 +201,20 @@ export default function LessonControlPage() {
                   Dars kuni belgilanmagan guruhlar ({report.notConfigured.length})
                 </h3>
                 <div className="flex flex-wrap gap-2">
+                  {/* Bosilganda guruh sahifasining aynan “Dars kuni” tugmalariga olib boradi */}
                   {report.notConfigured.map((g) => (
-                    <span key={g.groupId} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-300">
+                    <Link
+                      key={g.groupId}
+                      to={`/admin/groups/${g.groupId}#dars-kuni`}
+                      title={`${g.groupName} — dars kunini belgilash`}
+                      className="inline-flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-blue-500/50 hover:text-white"
+                    >
                       {g.groupName}
-                    </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-zinc-500" aria-hidden="true" />
+                    </Link>
                   ))}
                 </div>
-                <p className="text-zinc-600 text-xs mt-2">Guruh sahifasida "Dars kuni" (juft/toq/har kuni) belgilang.</p>
+                <p className="text-zinc-600 text-xs mt-2">Guruhni bosing — sahifasida "Dars kuni" (juft/toq/har kuni) ni belgilang.</p>
               </section>
             )}
           </div>

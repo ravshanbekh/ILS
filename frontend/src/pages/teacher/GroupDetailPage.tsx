@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
 import { usePermissionStore } from '@/stores/permissionStore';
@@ -17,6 +17,19 @@ export default function GroupDetailPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [group, setGroup] = useState<any>(null);
+  // Dars nazoratidan “#dars-kuni” bilan kelinganda — o‘sha joyga surib, yoritib ko‘rsatamiz
+  const location = useLocation();
+  const [highlightDayType, setHighlightDayType] = useState(false);
+  const groupLoaded = !!group;
+  useEffect(() => {
+    if (!groupLoaded || location.hash !== '#dars-kuni') return;
+    const el = document.getElementById('dars-kuni');
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightDayType(true);
+    const t = window.setTimeout(() => setHighlightDayType(false), 2500);
+    return () => window.clearTimeout(t);
+  }, [groupLoaded, location.hash]);
   const [rankData, setRankData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -429,7 +442,12 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Dars kuni */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm">
+        <div
+          id="dars-kuni"
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border text-sm transition-shadow duration-500 ${
+            highlightDayType ? 'border-blue-500 ring-4 ring-blue-500/30' : 'border-zinc-800'
+          }`}
+        >
           <span className="text-zinc-400">Dars kuni:</span>
           {(['juft', 'toq', 'har_kuni'] as const).map((t) => (
             <button
