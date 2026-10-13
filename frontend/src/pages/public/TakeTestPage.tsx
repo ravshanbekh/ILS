@@ -151,21 +151,45 @@ export default function TakeTestPage() {
   };
 
   // ── Javob saqlash ──
+  // Saqlanmay qolgan javoblar (internet uzildi, server band) — yakunlashda
+  // qayta yuboriladi, aks holda o'quvchi javob berdim deb o'ylab ball yo'qotardi.
+  const unsavedRef = useRef<Set<string>>(new Set());
+  // Har savol uchun oxirgi saqlash raqami — kechikkan qayta urinish
+  // o'quvchi keyin tanlagan yangi javobni eskisi bilan bosib ketmasin.
+  const saveSeqRef = useRef<Record<string, number>>({});
   const saveAnswer = useCallback(
     async (questionId: string, value: { selected?: number[]; textAnswer?: string }) => {
+      const seq = (saveSeqRef.current[questionId] ?? 0) + 1;
+      saveSeqRef.current[questionId] = seq;
       setSaving((p) => ({ ...p, [questionId]: true }));
       try {
-        await publicTestApi.saveAnswer(token, { questionId, ...value });
-      } catch (e: any) {
-        if (e?.response?.status === 410) {
-          // vaqt tugadi
-          if (!submittedRef.current) {
-            submittedRef.current = true;
-            doSubmit(true);
+        // Vaqtinchalik xatoda (tarmoq, 429, 5xx) 3 martagacha qayta urinamiz
+        for (let attempt = 0; ; attempt++) {
+          if (saveSeqRef.current[questionId] !== seq) return; // yangiroq javob bor
+          try {
+            await publicTestApi.saveAnswer(token, { questionId, ...value });
+            unsavedRef.current.delete(questionId);
+            return;
+          } catch (e: any) {
+            const status = e?.response?.status;
+            if (status === 410) {
+              // vaqt tugadi
+              if (!submittedRef.current) {
+                submittedRef.current = true;
+                doSubmit(true);
+              }
+              return;
+            }
+            const transient = !status || status === 429 || status >= 500;
+            if (!transient || attempt >= 3) {
+              unsavedRef.current.add(questionId);
+              return;
+            }
+            await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
           }
         }
       } finally {
-        setSaving((p) => ({ ...p, [questionId]: false }));
+        if (saveSeqRef.current[questionId] === seq) setSaving((p) => ({ ...p, [questionId]: false }));
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,12 +237,17 @@ export default function TakeTestPage() {
     try {
       // Yozilayotgan ochiq javoblar yo'qolmasin
       Object.values(textTimers.current).forEach(clearTimeout);
+      // + avval saqlanmay qolgan har qanday javob qayta yuboriladi
       await Promise.all(
         questions
-          .filter((q) => q.type === 'open' && answers[q.id]?.textAnswer)
+          .filter(
+            (q) =>
+              (q.type === 'open' && answers[q.id]?.textAnswer) ||
+              (unsavedRef.current.has(q.id) && answers[q.id])
+          )
           .map((q) =>
             publicTestApi
-              .saveAnswer(token, { questionId: q.id, textAnswer: answers[q.id].textAnswer })
+              .saveAnswer(token, { questionId: q.id, ...answers[q.id] })
               .catch(() => {})
           )
       );

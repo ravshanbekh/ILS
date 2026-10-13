@@ -153,7 +153,12 @@ export function pickQuestionIds({
  * Qo'lda baholanadigan javob bo'lsa, `needsReview` bilan belgilanadi —
  * ball keyin mentor baholaganda qayta hisoblanadi.
  */
-export async function finalizeAttempt(attemptId: string) {
+/**
+ * submittedAt — odatda hozir. Vaqti tugab, sahifa yopilgan urinish keyinroq
+ * yakunlanganda (finalizeExpiredAttempts) uning muddati (deadlineAt) yoziladi —
+ * aks holda "topshirgan vaqt" mentor natijani ochgan payt bo‘lib qolardi.
+ */
+export async function finalizeAttempt(attemptId: string, submittedAt: Date = new Date()) {
   const attempt = await prisma.quizTestAttempt.findUnique({
     where: { id: attemptId },
     include: {
@@ -180,7 +185,7 @@ export async function finalizeAttempt(attemptId: string) {
     where: { id: attemptId },
     data: {
       status: 'submitted',
-      submittedAt: new Date(),
+      submittedAt,
       score,
       maxScore,
       percent,
@@ -190,6 +195,22 @@ export async function finalizeAttempt(attemptId: string) {
       passed: needsReview || passPercent === null ? null : percent >= passPercent,
     },
   });
+}
+
+/**
+ * Vaqti tugagan, lekin yakunlanmagan urinishlarni yopadi.
+ *
+ * Ishtirokchi taymer tugaganda sahifani yopib ketsa, urinish abadiy
+ * “jarayonda” qolardi va mentor uning ballini ko‘rmasdi. Natijalar va Excel
+ * ochilishidan oldin chaqiriladi — berilgan javoblar bo‘yicha baholanadi.
+ */
+export async function finalizeExpiredAttempts(testId: string): Promise<number> {
+  const expired = await prisma.quizTestAttempt.findMany({
+    where: { testId, status: 'in_progress', deadlineAt: { lt: new Date() } },
+    select: { id: true, deadlineAt: true },
+  });
+  for (const a of expired) await finalizeAttempt(a.id, a.deadlineAt);
+  return expired.length;
 }
 
 /** Mentor ochiq javobni baholagandan keyin ballarni qayta yig'ish. */

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { quizTestsApi } from '../../api';
 import {
-  parseQuizTestFile, downloadTemplate, exportResults,
+  parseQuizTestFile, downloadTemplate,
   type ParsedQuestion,
 } from '@/utils/quizTestExcel';
 
@@ -196,9 +196,17 @@ export default function QuizTestDetailPage() {
           </a>
         </div>
         {test.status !== 'active' && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-400">
+          <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-amber-400">
             <AlertTriangle className="w-3.5 h-3.5" />
             Test <b>Faol</b> holatida bo'lmasa, havola ochilmaydi
+            {test.status === 'draft' && test.questions.length > 0 && (
+              <button
+                onClick={() => changeStatus('active')}
+                className="ml-1 inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-0.5 font-medium text-white hover:bg-emerald-500"
+              >
+                <Play className="w-3 h-3" /> Hozir faol qilish
+              </button>
+            )}
           </p>
         )}
       </div>
@@ -1197,14 +1205,16 @@ function ResultsTab({ test }: { test: TestFull }) {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-  const load = async () => {
+  // silent — jonli yangilashda xato oynasi chiqmasin
+  const load = async (silent = false) => {
     try {
       const res = await quizTestsApi.getResults(test.id);
       setAttempts(res.data.data.attempts);
       setStats(res.data.data.stats);
     } catch (e: any) {
-      alert(errMsg(e, 'Natijalarni yuklab bo\'lmadi'));
+      if (!silent) alert(errMsg(e, 'Natijalarni yuklab bo\'lmadi'));
     } finally {
       setLoading(false);
     }
@@ -1214,6 +1224,38 @@ function ResultsTab({ test }: { test: TestFull }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [test.id]);
+
+  // Jonli natijalar: kimdir ishlayotgan bo‘lsa, ro‘yxat 15 soniyada yangilanadi —
+  // o‘quvchi tugatishi bilan natijasi mentorga ko‘rinadi (sahifani yangilamasdan).
+  const live = (stats?.inProgress ?? 0) > 0;
+  useEffect(() => {
+    if (!live) return;
+    const t = window.setInterval(() => {
+      if (document.visibilityState === 'visible') load(true);
+    }, 15000);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, test.id]);
+
+  const downloadExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await quizTestsApi.exportResults(test.id);
+      const url = URL.createObjectURL(res.data as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safe = test.title.replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 60) || 'test';
+      a.download = `${safe} — natijalar.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert(errMsg(e, 'Excel faylni tayyorlab bo\'lmadi'));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const remove = async (a: Attempt) => {
     if (!confirm(`${a.fullName} natijasi o'chirilsinmi?`)) return;
@@ -1253,12 +1295,24 @@ function ResultsTab({ test }: { test: TestFull }) {
         />
       </div>
 
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs text-zinc-500">
+          {live ? (
+            <span className="inline-flex items-center gap-1.5 text-emerald-400">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              {stats?.inProgress} kishi ishlamoqda — natijalar o‘zi yangilanadi
+            </span>
+          ) : (
+            'Natijalar o‘quvchi testni tugatishi bilan shu yerda paydo bo‘ladi'
+          )}
+        </span>
         <button
-          onClick={() => exportResults(test.title, attempts)}
-          className="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-800/50"
+          onClick={downloadExcel}
+          disabled={exporting}
+          className="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-800/50 disabled:opacity-60"
         >
-          <Download className="w-4 h-4" /> Excel'ga yuklash
+          <Download className={`w-4 h-4 ${exporting ? 'animate-pulse' : ''}`} />
+          {exporting ? 'Tayyorlanmoqda...' : 'Excel’ga yuklash'}
         </button>
       </div>
 

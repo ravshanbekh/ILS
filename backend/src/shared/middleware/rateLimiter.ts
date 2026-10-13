@@ -11,6 +11,10 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Ommaviy test (havola + ism-familiya) o'z chegaralariga ega va ishtirokchi
+  // bo'yicha sanaydi (quiz-test.routes.ts). Bu umumiy IP chegarasi esa bitta
+  // Wi-Fi'dagi butun sinfni bitta odam deb sanab, javoblarni saqlatmasdi.
+  skip: (req) => /^\/quiz-tests\/(public|attempt)\//.test(req.path),
 });
 
 // Login uchun maxsus limiter (qattiqroq)

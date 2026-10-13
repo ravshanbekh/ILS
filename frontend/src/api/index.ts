@@ -800,6 +800,8 @@ export const quizTestsApi = {
 
   // Natijalar
   getResults: (id: string) => api.get(`/quiz-tests/${id}/results`),
+  /** Dizaynli Excel (3 varaq) — serverda quriladi */
+  exportResults: (id: string) => api.get(`/quiz-tests/${id}/results/export`, { responseType: 'blob' }),
   getAttempt: (id: string, attemptId: string) =>
     api.get(`/quiz-tests/${id}/attempts/${attemptId}`),
   deleteAttempt: (id: string, attemptId: string) =>

@@ -7,7 +7,9 @@ import {
   pickQuestionIds,
   recalculateAttempt,
   shuffle,
+  finalizeExpiredAttempts,
 } from './quiz-test.service';
+import { buildResultsWorkbook } from './quiz-test.excel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Mentor tomoni: test yaratish, savollar, natijalar
@@ -504,6 +506,33 @@ export const reorderQuestions = async (req: Request, res: Response, next: NextFu
 
 // ─── Natijalar ───────────────────────────────────────────────────────────────
 
+/**
+ * GET /api/quiz-tests/:id/results/export — dizaynli Excel (3 varaq).
+ * Faqat test egasi (yoki admin).
+ */
+export const exportResultsExcel = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const test = await prisma.quizTest.findFirst({
+      where: { id: req.params.id, ...ownerFilter(req) },
+      select: { id: true },
+    });
+    if (!test) return res.status(404).json({ error: 'Test topilmadi' });
+
+    await finalizeExpiredAttempts(test.id);
+    const file = await buildResultsWorkbook(test.id);
+    if (!file) return res.status(404).json({ error: 'Test topilmadi' });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="natijalar.xlsx"; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
+    );
+    res.send(file.buffer);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getResults = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const test = await prisma.quizTest.findFirst({
@@ -511,6 +540,9 @@ export const getResults = async (req: Request, res: Response, next: NextFunction
       select: { id: true, title: true, passPercent: true },
     });
     if (!test) return res.status(404).json({ error: 'Test topilmadi' });
+
+    // Vaqti tugab, sahifasi yopilgan urinishlar “jarayonda” qolib ketmasin
+    await finalizeExpiredAttempts(test.id);
 
     const attempts = await prisma.quizTestAttempt.findMany({
       where: { testId: test.id },
