@@ -35,6 +35,7 @@ import { IlsOAuthProvider, McpTokenExtra } from './oauth/provider';
 import { renderConsentPage, renderErrorPage, verifyConsentRequest } from './oauth/pages';
 import { createMcpServer } from './server';
 import { McpActor } from './context';
+import { mcpEventLogger, basicClientAuthToBody } from './events';
 
 // Taymingni tenglashtirish uchun: login topilmasa ham bcrypt ishlaydi
 const DUMMY_HASH = '$2a$12$BtyX2urLv3wsEzMDPeiah.7eJ0KAr4ZqkPa2l90CJOQwLltqvXXui';
@@ -76,8 +77,11 @@ export function createMcpRouter() {
   router.use('/.well-known/oauth-protected-resource', prmHandler);
 
   // ── OAuth endpointlari (SDK handlerlari: validatsiya, PKCE, xato formatlari) ─
+  // Diagnostika — faqat MCP/OAuth yo'llari (router ilova ildizida turadi)
+  router.use(['/mcp', '/.well-known/oauth-authorization-server', '/.well-known/oauth-protected-resource'], mcpEventLogger);
+
   router.use(paths.authorize, authorizationHandler({ provider }) as any);
-  router.use(paths.token, tokenHandler({ provider }) as any);
+  router.use(paths.token, basicClientAuthToBody, tokenHandler({ provider }) as any);
   router.use(
     paths.register,
     clientRegistrationHandler({
@@ -85,7 +89,7 @@ export function createMcpRouter() {
       rateLimit: { windowMs: 60 * 60 * 1000, max: 20 },
     }) as any
   );
-  router.use(paths.revoke, revocationHandler({ provider }) as any);
+  router.use(paths.revoke, basicClientAuthToBody, revocationHandler({ provider }) as any);
 
   // ── Login + rozilik ─────────────────────────────────────────────────────────
   // bcrypt qimmat va parol taxmin qilish nishoni — qattiq chegara

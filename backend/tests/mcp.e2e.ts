@@ -111,13 +111,13 @@ async function main() {
     check('claude.ai mijozi ro\'yxatdan o\'tdi', regRes.status === 201 && !!client.client_id, `${regRes.status}`);
 
     // ── 3. Avtorizatsiya ──────────────────────────────────────────────────────
-    async function authorize(access: 'read' | 'write', password = adminPassword, login = admin.login) {
+    async function authorize(access: 'read' | 'write', password = adminPassword, login = admin.login, cid: string = client.client_id) {
       const verifier = b64url(crypto.randomBytes(32));
       const challenge = b64url(crypto.createHash('sha256').update(verifier).digest());
       const state = b64url(crypto.randomBytes(8));
       const u = new URL(asm.authorization_endpoint);
       u.search = new URLSearchParams({
-        response_type: 'code', client_id: client.client_id, redirect_uri: REDIRECT, code_challenge: challenge,
+        response_type: 'code', client_id: cid, redirect_uri: REDIRECT, code_challenge: challenge,
         code_challenge_method: 'S256', state, scope: 'ils:read', resource: `${BASE}/mcp`,
       }).toString();
       const page = await fetch(u, { redirect: 'manual' });
@@ -199,6 +199,54 @@ async function main() {
       try { data = JSON.parse(text); } catch { /* matn */ }
       return { isError: !!r.json?.result?.isError || !!r.json?.error, text, data, raw: r.json };
     };
+
+    // ── 4b. Mijoz autentifikatsiyasi usullari (claude.ai qaysini tanlasa ham) ─
+    console.log('\n4b) Mijoz autentifikatsiyasi: basic / post / none');
+    const regAs = async (method?: string) => {
+      const body: Record<string, unknown> = { client_name: 'Claude', redirect_uris: [REDIRECT], grant_types: ['authorization_code', 'refresh_token'] };
+      if (method) body.token_endpoint_auth_method = method;
+      return (await fetch(asm.registration_endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+    };
+    const codeFor = async (cid: string) => {
+      const a = await authorize('write', adminPassword, admin.login, cid);
+      return { code: new URL(a.approve.headers.get('location')!).searchParams.get('code')!, verifier: a.verifier };
+    };
+    // Usul ko'rsatilmagan — RFC 7591 bo'yicha client_secret_basic
+    const cb = await regAs();
+    check('usulsiz ro\'yxat → client_secret berildi', !!cb.client_secret, cb.token_endpoint_auth_method ?? '(yo\'q)');
+    const b1 = await codeFor(cb.client_id);
+    const noSecret = await tokenReq({ grant_type: 'authorization_code', code: b1.code, code_verifier: b1.verifier, client_id: cb.client_id, redirect_uri: REDIRECT });
+    check('sirsiz token so\'rovi → invalid_client', noSecret.status === 400 && (await noSecret.json()).error === 'invalid_client');
+    const basicRes = await fetch(asm.token_endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${Buffer.from(`${encodeURIComponent(cb.client_id)}:${encodeURIComponent(cb.client_secret)}`).toString('base64')}`,
+      },
+      body: new URLSearchParams({ grant_type: 'authorization_code', code: b1.code, code_verifier: b1.verifier, redirect_uri: REDIRECT }).toString(),
+    });
+    const basicTok = await basicRes.json();
+    check('client_secret_basic (Authorization: Basic) → token', basicRes.status === 200 && !!basicTok.access_token, `${basicRes.status} ${basicTok.error ?? ''}`);
+    const basicRefresh = await fetch(asm.token_endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: `Basic ${Buffer.from(`${cb.client_id}:${cb.client_secret}`).toString('base64')}` },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: basicTok.refresh_token ?? 'x' }).toString(),
+    });
+    check('… refresh ham Basic bilan', basicRefresh.status === 200);
+    const wrongBasic = await fetch(asm.token_endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: `Basic ${Buffer.from(`${cb.client_id}:notogri`).toString('base64')}` },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: 'x' }).toString(),
+    });
+    check('noto\'g\'ri Basic sir → invalid_client', wrongBasic.status === 400 && (await wrongBasic.json()).error === 'invalid_client');
+    const cp = await regAs('client_secret_post');
+    const p1 = await codeFor(cp.client_id);
+    const postRes = await tokenReq({ grant_type: 'authorization_code', code: p1.code, code_verifier: p1.verifier, client_id: cp.client_id, client_secret: cp.client_secret, redirect_uri: REDIRECT });
+    check('client_secret_post → token', postRes.status === 200);
+    const { recentMcpEvents } = await import('../src/mcp/events');
+    const evs = recentMcpEvents();
+    check('diagnostika: token qadamlari usuli bilan yozildi', evs.some((e) => e.step === 'token:authorization_code' && e.clientAuth === 'basic' && e.status === 200) && evs.some((e) => e.error === 'invalid_client'));
+    check('diagnostika: jurnalda sir/kod yo\'q', !JSON.stringify(evs).includes(cb.client_secret) && !JSON.stringify(evs).includes(b1.code));
 
     console.log('\n5) MCP — o\'qish amallari');
     const init = await rpc(readTok.access_token, 'initialize', {

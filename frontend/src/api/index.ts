@@ -824,9 +824,23 @@ export interface McpConnection {
   expiresAt: string;
 }
 
+/** OAuth/MCP so'rovi natijasi (diagnostika; maxfiy narsa yo'q) */
+export interface McpEvent {
+  at: string;
+  method: string;
+  path: string;
+  status: number;
+  ms: number;
+  step: string;
+  error?: string;
+  detail?: string;
+  clientAuth?: string;
+  ua?: string;
+}
+
 export const mcpApi = {
   getConnections: () =>
-    api.get<{ success: boolean; data: { enabled: boolean; serverUrl: string; scopes: string[]; connections: McpConnection[] } }>(
+    api.get<{ success: boolean; data: { enabled: boolean; serverUrl: string; scopes: string[]; connections: McpConnection[]; recentEvents?: McpEvent[] } }>(
       '/mcp/connections'
     ),
   revoke: (id: string) => api.delete(`/mcp/connections/${encodeURIComponent(id)}`),

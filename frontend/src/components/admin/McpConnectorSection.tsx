@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Copy, Check, Loader2, Trash2, ShieldCheck, Eye, PencilLine, RefreshCw, AlertCircle } from 'lucide-react';
-import { mcpApi, type McpConnection } from '@/api';
+import { Copy, Check, Loader2, Trash2, ShieldCheck, Eye, PencilLine, RefreshCw, AlertCircle, Activity, ChevronDown } from 'lucide-react';
+import { mcpApi, type McpConnection, type McpEvent } from '@/api';
 
 /**
  * Sozlamalar → Claude (MCP).
@@ -44,6 +44,8 @@ export default function McpConnectorSection() {
   const [connections, setConnections] = useState<McpConnection[]>([]);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [events, setEvents] = useState<McpEvent[]>([]);
+  const [showEvents, setShowEvents] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -53,6 +55,7 @@ export default function McpConnectorSection() {
       setServerUrl(res.data.data.serverUrl);
       setEnabled(res.data.data.enabled);
       setConnections(res.data.data.connections);
+      setEvents(res.data.data.recentEvents ?? []);
     } catch (e) {
       setError(errMsg(e, 'Ma\'lumotni yuklab bo\'lmadi'));
     } finally {
@@ -250,6 +253,62 @@ export default function McpConnectorSection() {
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      {/* Diagnostika: ulanish yiqilsa qaysi qadamda ekanini ko'rsatadi */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950">
+        <button
+          onClick={() => setShowEvents((v) => !v)}
+          className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-white"
+        >
+          <Activity className="w-4 h-4 text-sky-400" />
+          Diagnostika — so'nggi ulanish so'rovlari ({events.length})
+          {events.some((e) => e.status >= 400 && e.status !== 401) && (
+            <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[11px] text-red-400">xato bor</span>
+          )}
+          <ChevronDown className={`ml-auto w-4 h-4 text-zinc-500 transition-transform ${showEvents ? 'rotate-180' : ''}`} />
+        </button>
+        {showEvents && (
+          <div className="border-t border-zinc-800 px-4 py-3">
+            <p className="mb-2 text-xs text-zinc-500">
+              Claude “wasn't connected” desa, shu yerda qaysi qadam (token, mcp…) qanday xato bilan tugaganini ko'ring.
+              401 — tokensiz birinchi so'rov, bu normal. Server qayta ishga tushsa ro'yxat tozalanadi.
+            </p>
+            {events.length === 0 ? (
+              <p className="text-xs text-zinc-500">Hozircha so'rov yo'q.</p>
+            ) : (
+              <div className="max-h-80 overflow-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="sticky top-0 bg-zinc-950 text-zinc-500">
+                    <tr>
+                      <th className="py-1.5 pr-3 font-medium">Vaqt</th>
+                      <th className="py-1.5 pr-3 font-medium">Qadam</th>
+                      <th className="py-1.5 pr-3 font-medium">Natija</th>
+                      <th className="py-1.5 font-medium">Izoh</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map((e, i) => {
+                      const bad = e.status >= 400 && e.status !== 401;
+                      return (
+                        <tr key={i} className="border-t border-zinc-900 align-top">
+                          <td className="py-1.5 pr-3 whitespace-nowrap text-zinc-400">{fmt(e.at).slice(11)}</td>
+                          <td className="py-1.5 pr-3 font-mono text-zinc-200">{e.step}</td>
+                          <td className={`py-1.5 pr-3 font-semibold ${bad ? 'text-red-400' : e.status === 401 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                            {e.status}
+                          </td>
+                          <td className="py-1.5 text-zinc-400 break-all">
+                            {[e.error, e.detail, e.clientAuth && `auth:${e.clientAuth}`].filter(Boolean).join(' · ') || '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

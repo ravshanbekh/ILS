@@ -11,6 +11,7 @@ import { Router } from 'express';
 import prisma from '../config/database';
 import { authenticate, roleGuard } from '../shared/middleware/auth.middleware';
 import { mcpConfig, SUPPORTED_SCOPES } from './config';
+import { recentMcpEvents } from './events';
 
 const router = Router();
 router.use(authenticate, roleGuard('admin'));
@@ -74,6 +75,9 @@ router.get('/connections', async (_req, res, next) => {
         serverUrl: mcpConfig.resourceUrl.href,
         scopes: SUPPORTED_SCOPES,
         connections: [...map.values()],
+        // Diagnostika: oxirgi OAuth/MCP so'rovlari (maxfiy narsa yo'q) — ulanish
+        // yiqilsa qaysi qadamda va qanday xato bilan ekanini ko'rsatadi
+        recentEvents: recentMcpEvents().slice(0, 40),
       },
     });
   } catch (e) {
