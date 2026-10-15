@@ -57,26 +57,60 @@ Huquqni o'zgartirish uchun connector'ni uzing (Disconnect) va qayta ulang.
 | `ils_audit_log` | Kim, qachon, nima qilgan (MCP amallari `mcp.` bilan boshlanadi) |
 | `ils_db_schema` | Jadval va ustunlar (haqiqiy snake_case nomlar), FK, enum'lar |
 | `ils_sql_query` | Bitta `SELECT`/`WITH` so'rovi, faqat o'qish rejimida: 8 soniya, ko'pi bilan 1000 qator |
+| `ils_get_record` | Istalgan jadvaldan bitta yozuv, barcha ustunlari bilan (maxfiylar yashirilgan) |
+| `ils_get_permissions` | Xodim ruxsatlari katalogi va xodimning hozirgi ruxsatlari |
 
-### Boshqarish (`ils:write`)
+### Boshqarish (`ils:write`) — 29 amal
 
-Bu amallar faqat yozish huquqi bilan ulanganda ko'rinadi.
+Bu amallar faqat yozish huquqi bilan ulanganda ko'rinadi. Hammasi panel servislari orqali ishlaydi.
 
-| Amal | Panel servisi |
+| Soha | Amallar |
 | --- | --- |
-| `ils_create_group`, `ils_update_group` | `groupsService.create/update` (bosqichlar jadvali avtomatik) |
-| `ils_add_students_to_group`, `ils_remove_student_from_group` ⚠️ | `groupsService.addStudents/removeStudent` |
-| `ils_transfer_student` ⚠️ | `groupsService.transferStudent` (normativlar ham ko'chadi) |
-| `ils_create_normative`, `ils_update_normative`, `ils_assign_normatives` | `normativesService` |
-| `ils_mark_milestone_held` | `milestonesService.markHeld` |
-| `ils_set_user_active` ⚠️ | `usersService.update`. Admin va o'zingizga qo'llanmaydi |
+| Guruhlar | `ils_create_group`, `ils_update_group`, `ils_group_lifecycle` ⚠️ (graduate / ungraduate / archive / restore) |
+| O'quvchi ↔ guruh | `ils_add_students_to_group`, `ils_remove_student_from_group` ⚠️, `ils_transfer_student` ⚠️ |
+| Foydalanuvchilar | `ils_create_user` (vaqtinchalik parol bilan, guruhga qo'shish mumkin), `ils_update_user` (ism, login, rol, filial), `ils_reset_password` ⚠️, `ils_set_user_active` ⚠️, `ils_restore_user` |
+| Ruxsatlar | `ils_set_permissions` ⚠️ (xodimning to'liq ruxsatlar ro'yxati) |
+| Normativlar | `ils_create_normative`, `ils_update_normative`, `ils_assign_normatives`, `ils_check_submission` 📨, `ils_allow_resubmit` |
+| Darslar | `ils_grade_lesson` (uy vazifasi, faollik, coin; muddatdan keyin ham), `ils_unlock_lesson` |
+| Bosqichlar | `ils_set_milestone_date`, `ils_mark_milestone_held` |
+| Muzlatish | `ils_freeze_student`, `ils_unfreeze` ⚠️ |
+| Murojaatlar | `ils_reply_appeal` 📨, `ils_set_appeal_status` |
+| Do'kon | `ils_shop_order` (fulfill / cancel — bekor qilinsa coin qaytadi) |
+| Xabar | `ils_send_notification` (panel ichida: foydalanuvchilar, guruh yoki rol) |
+| **Qo'lda tuzatish** | `ils_record_change` ⚠️ (istalgan jadval: update / create / delete), `ils_undo_change` ⚠️ |
 
-⚠️ belgisi bor amallar `destructiveHint` bilan belgilangan, Claude ularni bajarishdan oldin alohida tasdiq so'raydi.
+Belgilar:
+- ⚠️ — `destructiveHint`: Claude bajarishdan oldin alohida tasdiq so'raydi.
+- 📨 — tashqariga xabar ketadi: ota-onaga Telegram (`ils_check_submission` da o'quvchiga panel bildirishnomasi ham).
+
+#### Qo'lda tuzatish (`ils_record_change`) qanday ishlaydi
+
+Bu maxsus amal yo'q tuzatishlar uchun, masalan noto'g'ri yozilgan ball, sana yoki izoh.
+
+1. **Ko'rinish.** `confirmToken` siz chaqiriladi va **"oldin → keyin"** jadvali hamda `confirmToken` qaytadi. Bu bosqichda baza o'zgarmaydi. Claude buni sizga ko'rsatadi.
+2. **Qo'llash.** Xuddi shu argumentlar `confirmToken` bilan qayta yuboriladi.
+   - Kod 10 daqiqa amal qiladi.
+   - Kod faqat aynan shu admin, jadval, yozuv va o'zgarish uchun yaroqli.
+   - Ko'rinishdan keyin yozuv panelda o'zgargan bo'lsa, rad etiladi.
+3. **Qaytarish.** Natijada `auditId` bo'ladi. `ils_undo_change` uni audit jurnalidagi "oldin" holatiga qaytaradi:
+   - update → eski qiymatlar;
+   - create → o'chirish;
+   - delete → aynan o'sha ID bilan qayta tiklash.
+
+   Yozuv keyin yana o'zgargan bo'lsa yoki allaqachon qaytarilgan bo'lsa, undo to'xtaydi.
+
+Cheklovlar (imtiyoz oshirish va ko'rinmas yo'qotishga qarshi):
+- **Yopiq jadvallar:** `mcp_oauth_*`, `audit_logs` (o'zgarmas), `user_permissions` (o'rniga `ils_set_permissions`).
+- **Yopiq ustunlar:** parol, token, xesh, `id` va `created_at`. `users` jadvalida faqat ism, login, bio, filial, avatar, faollik va rol o'zgaradi.
+- **Admin:** admin akkauntini tahrirlab bo'lmaydi, hech kimni admin qilib bo'lmaydi, o'z akkauntingizni ham o'zgartirib bo'lmaydi. Bu barcha amallarga tegishli.
+- **O'chirish** faqat bog'liq yozuvlari yo'q ("barg") jadvallarda ishlaydi. Guruh kabi jadvallar uchun `ils_group_lifecycle archive` ishlatiladi.
+- **Biznes izchilligi:** guruhning jadval maydonlari o'zgarsa, bosqichlar avtomatik qayta quriladi.
 
 Yozish amallari haqida:
 - Argumentlar panelning o'z zod sxemalari bilan qayta tekshiriladi.
-- Har bir chaqiruv, muvaffaqiyatsizi ham, `audit_logs` ga `mcp.<amal>` sifatida yoziladi. Yozuvda kim, qaysi mijoz, argumentlar va natija bo'ladi.
-- O'chirish (delete), parol va rol o'zgartirish, foydalanuvchi yaratish ataylab **yo'q**: bu amallar panelda qoladi, parollar chatga tushmasligi kerak.
+- Har bir chaqiruv, muvaffaqiyatsizi ham, `audit_logs` ga `mcp.<amal>` sifatida yoziladi. Qo'lda tuzatishlarda to'liq "oldin/keyin" ham saqlanadi.
+- **Vaqtinchalik parollar** (`ils_create_user`, `ils_reset_password`) faqat bitta javobda chiqadi. Ular foydalanuvchiga yetkaziladi, u kirgach parolni almashtirishi kerak.
+- Ataylab **yo'q:** foydalanuvchini butunlay o'chirish (faqat nofaol qilish) va savatni bo'shatish.
 
 ## Xavfsizlik modeli
 
@@ -185,7 +219,7 @@ claude mcp add it-live-local -- node "<to'liq yo'l>/backend/dist/mcp/main.js"
 cd backend
 npm run test:mcp   # build + unit: SQL validator, redaction, redirect allowlist, imzo, huquq bo'yicha amallar
 npm run smoke:mcp  # stdio jarayoni: amallar ro'yxati + jonli so'rov (lokal baza)
-npm run e2e:mcp    # to'liq OAuth oqimi + 24 amal + SQL himoyasi + rotation + uzish (87 tekshiruv)
+npm run e2e:mcp    # to'liq OAuth oqimi + 45 amal + qo'lda tuzatish/undo + SQL himoyasi + rotation + uzish (143 tekshiruv)
 ```
 
 `e2e:mcp` lokal bazada `mcpe2e-` belgili fixture'lar yaratadi va oxirida o'chiradi. Uni prod bazaga qarshi **ishga tushirmang**.
@@ -209,7 +243,9 @@ backend/src/mcp/
   server.ts              McpServer + ko'rsatmalar; amallar huquqqa qarab ro'yxatga olinadi
   tools/read.ts          tahlil amallari
   tools/sql.ts           ils_db_schema + ils_sql_query
-  tools/write.ts         boshqarish amallari (panel servislari orqali)
+  tools/write.ts         boshqarish 1: guruh, o'quvchi, normativ, bosqich (+ guarded qobig'i)
+  tools/manage.ts        boshqarish 2: baholash, foydalanuvchi/parol, ruxsat, dars, muzlatish, murojaat, do'kon, xabar
+  tools/records.ts       qo'lda tuzatish (ikki bosqichli) + undo + ils_get_record
   oauth/provider.ts      OAuth provayderi (DCR, kod, token, rotation, revoke)
   oauth/pages.ts         login/rozilik sahifasi, imzo
   http.ts                Express router: metadata, OAuth, /mcp

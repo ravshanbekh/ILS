@@ -17,7 +17,10 @@ const EXAMPLES_READ = [
 const EXAMPLES_WRITE = [
   'FN-12 guruhini oching: ustozi Aliyev, 2026-11-01 dan 6 oy, juft kunlar',
   'Shu o\'quvchini FN-07 dan FN-09 ga o\'tkaz',
-  'BE-03 guruhiga 21–25 normativlarni biriktir',
+  'Yangi o\'quvchi qo\'sh: Karimov Aziz, login aziz_k, FN-09 guruhiga',
+  '3 kundan beri kutilayotgan normativlarni ko\'rsat, keyin birga baholaymiz',
+  'Kechagi FN-07 darsida Aliyevga “kelmadi” adashib qo\'yilgan — “toliq” qil',
+  'Shu topshiriq bali noto\'g\'ri yozilgan — qo\'lda tuzat, oldin/keyin ko\'rsat',
 ];
 
 // uz-UZ lokali brauzerlarda "2026 M10 12" ko'rinishini beradi — qo'lda formatlaymiz
@@ -172,7 +175,11 @@ export default function McpConnectorSection() {
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
             <PencilLine className="w-4 h-4 text-amber-400" /> Boshqarish
           </div>
-          <p className="mb-2 text-xs text-zinc-500">Ulanishda “O'qish va boshqarish” tanlansa. Har amal audit jurnaliga yoziladi.</p>
+          <p className="mb-2 text-xs text-zinc-500">
+            Ulanishda “O'qish va boshqarish” tanlansa: guruh, o'quvchi va xodimlar, normativ baholash, dars baholari,
+            muzlatish, murojaatlar, coin va do'kon, bildirishnoma — hamda istalgan yozuvni qo'lda tuzatish
+            (oldin/keyin ko'rinishi va orqaga qaytarish). Har amal audit jurnaliga yoziladi.
+          </p>
           <ul className="space-y-1.5 text-xs text-zinc-300">
             {EXAMPLES_WRITE.map((e) => (
               <li key={e} className="rounded-lg bg-zinc-900 px-2.5 py-1.5">“{e}”</li>

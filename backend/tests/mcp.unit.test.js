@@ -89,6 +89,8 @@ test('amallar ro\'yxati huquqqa bog\'liq', async () => {
   assert.ok(readNames.includes('ils_overview') && readNames.includes('ils_sql_query'));
   assert.ok(r.tools.every((t) => t.annotations?.readOnlyHint === true));
   assert.ok(!readNames.some((n) => n.startsWith('ils_create') || n === 'ils_transfer_student'));
+  assert.equal(readNames.length, 16);
+  assert.ok(readNames.includes('ils_get_record') && !readNames.includes('ils_record_change'));
   const res = await r.client.callTool({ name: 'ils_create_group', arguments: { name: 'x' } }).catch((e) => ({ isError: true, e }));
   assert.equal(res.isError, true);
   await r.client.close();
@@ -101,6 +103,13 @@ test('amallar ro\'yxati huquqqa bog\'liq', async () => {
     assert.ok(writeNames.includes(n), n);
   }
   const destructive = w.tools.filter((t) => t.annotations?.destructiveHint).map((t) => t.name).sort();
-  assert.deepEqual(destructive, ['ils_remove_student_from_group', 'ils_set_user_active', 'ils_transfer_student']);
+  assert.deepEqual(destructive, [
+    'ils_group_lifecycle', 'ils_record_change', 'ils_remove_student_from_group', 'ils_reset_password',
+    'ils_set_permissions', 'ils_set_user_active', 'ils_transfer_student', 'ils_undo_change', 'ils_unfreeze',
+  ]);
+  assert.equal(writeNames.length, 45);
+  for (const n of ['ils_check_submission', 'ils_create_user', 'ils_grade_lesson', 'ils_record_change', 'ils_undo_change', 'ils_send_notification']) {
+    assert.ok(writeNames.includes(n), n);
+  }
   await w.client.close();
 });

@@ -53,6 +53,7 @@ async function main() {
   const server = app.listen(PORT);
 
   const tag = `mcpe2e-${Date.now().toString(36)}`;
+  const tagU = tag.replace(/-/g, '_'); // panel login qoidasi '-' ga ruxsat bermaydi
   const adminPassword = crypto.randomBytes(12).toString('base64url');
   const ids = { users: [] as string[], groups: [] as string[], normatives: [] as string[] };
 
@@ -317,6 +318,163 @@ async function main() {
     check('audit: har yozish amali yozildi', ['mcp.create_group', 'mcp.transfer_student', 'mcp.set_user_active', 'mcp.sql_query'].every((a) => acts.has(a)), [...acts].join(','));
     check('audit: muvaffaqiyatsiz urinish ham yozildi', audits.some((a) => a.action === 'mcp.create_group' && (a.details as any)?.ok === false));
 
+    // ── 7b. To'liq boshqaruv: domen amallari ─────────────────────────────────
+    console.log('\n7b) To\'liq boshqaruv — domen amallari');
+    const W = writeTok.access_token;
+    check('amallar soni: 16 o\'qish + 29 boshqarish', wnames.length === 45, `${wnames.length} ta`);
+    const pendingSub = await prisma.submission.findFirst({ where: { studentId: students[1].id, normativeId: norms[0].id } });
+    const cs = await call(W, 'ils_check_submission', { submissionId: pendingSub!.id, result: 'blue', comment: 'MCP orqali' });
+    check('ils_check_submission', cs.data?.checked === true && cs.data.submission.result === 'blue', cs.text.slice(0, 100));
+    const notifCheck = await prisma.notification.count({ where: { userId: students[1].id, type: 'submission_checked' } });
+    check('… o\'quvchiga bildirishnoma ketdi', notifCheck === 1);
+    const rs = await call(W, 'ils_allow_resubmit', { submissionId: pendingSub!.id });
+    check('ils_allow_resubmit', rs.data?.done === true, rs.text.slice(0, 80));
+
+    const cuAdmin = await call(W, 'ils_create_user', { fullName: 'Hacker', login: `${tagU}_x`, role: 'admin' });
+    check('admin yaratib bo\'lmaydi', cuAdmin.isError);
+    const cu = await call(W, 'ils_create_user', { fullName: 'MCP Yangi O\'quvchi', login: `${tagU}_new`, role: 'student', groupId: group.id });
+    check('ils_create_user + guruhga qo\'shish', cu.data?.created === true && cu.data.addedToGroup === group.id && !!cu.data.temporaryPassword, cu.text.slice(0, 100));
+    const newUser = await prisma.user.findUnique({ where: { login: `${tagU}_new` }, select: { id: true, passwordHash: true } });
+    check('… vaqtinchalik parol ishlaydi', !!newUser && (await bcrypt.compare(cu.data.temporaryPassword, newUser.passwordHash)));
+    const uuAdmin = await call(W, 'ils_update_user', { userId: admin.id, fullName: 'x' });
+    check('o\'z/admin akkauntini tahrirlab bo\'lmaydi', uuAdmin.isError);
+    const uuRole = await call(W, 'ils_update_user', { userId: teacher.id, role: 'admin' });
+    check('hech kimni admin qilib bo\'lmaydi', uuRole.isError);
+    const uuFil = await call(W, 'ils_update_user', { userId: teacher.id, filial: 'yoq-filial' });
+    check('noto\'g\'ri filial rad etildi', uuFil.isError && uuFil.text.includes('filial'));
+    const uu = await call(W, 'ils_update_user', { userId: teacher.id, fullName: 'MCP E2E Ustoz (yangi)' });
+    check('ils_update_user', uu.data?.user?.fullName === 'MCP E2E Ustoz (yangi)');
+    const tvBefore = (await prisma.user.findUnique({ where: { id: newUser!.id }, select: { tokenVersion: true } }))!.tokenVersion;
+    const rp = await call(W, 'ils_reset_password', { userId: newUser!.id });
+    const afterRp = await prisma.user.findUnique({ where: { id: newUser!.id }, select: { passwordHash: true, tokenVersion: true } });
+    check('ils_reset_password: yangi parol + sessiyalar tugadi', !!rp.data?.temporaryPassword && (await bcrypt.compare(rp.data.temporaryPassword, afterRp!.passwordHash)) && afterRp!.tokenVersion === tvBefore + 1);
+    const rpAdmin = await call(W, 'ils_reset_password', { userId: admin.id });
+    check('admin parolini tiklab bo\'lmaydi', rpAdmin.isError);
+    const sp = await call(W, 'ils_set_permissions', { userId: teacher.id, permissions: ['quiz_tests', 'exam_create'] });
+    check('ils_set_permissions', sp.data?.done === true && sp.data.now.includes('exam_create'), sp.text.slice(0, 100));
+    const spBad = await call(W, 'ils_set_permissions', { userId: teacher.id, permissions: ['root_access'] });
+    check('noma\'lum ruxsat rad etildi', spBad.isError);
+    const gp = await call(W, 'ils_get_permissions', { userId: teacher.id });
+    check('ils_get_permissions', gp.data?.catalog?.length > 10 && gp.data.user.permissions.includes('quiz_tests'));
+
+    const fz = await call(W, 'ils_freeze_student', { studentId: students[1].id, reason: 'kasallik', detailedNote: 'e2e' });
+    check('ils_freeze_student', fz.data?.frozen === true, fz.text.slice(0, 80));
+    const uf = await call(W, 'ils_unfreeze', { freezeId: fz.data?.freeze?.id });
+    check('ils_unfreeze', uf.data?.done === true);
+    const sn = await call(W, 'ils_send_notification', { title: 'E2E xabar', body: 'salom', groupId: group.id });
+    check('ils_send_notification (guruh)', sn.data?.sent >= 2, sn.text.slice(0, 60));
+
+    const sess = await prisma.lessonSession.create({
+      data: { groupId: group.id, teacherId: teacher.id, date: new Date('2026-01-05T00:00:00Z'), deadlineAt: new Date(Date.now() - 3600_000), status: 'yakunlandi' },
+    });
+    await prisma.lessonGrade.create({ data: { sessionId: sess.id, studentId: students[1].id } });
+    const gl = await call(W, 'ils_grade_lesson', { sessionId: sess.id, studentId: students[1].id, homework: 'qisman', activityScore: 4, coinDelta: 5 });
+    check('ils_grade_lesson (muddatdan keyin, admin)', gl.data?.grade?.homework === 'qisman' && gl.data.grade.activityScore === 4 && gl.data.done.length === 3, gl.text.slice(0, 120));
+    const lc = await call(W, 'ils_group_lifecycle', { groupId: group2.id, action: 'graduate' });
+    check('ils_group_lifecycle graduate', !!lc.data?.group?.graduatedAt && lc.data.group.isActive === false, lc.text.slice(0, 100));
+    const lc2 = await call(W, 'ils_group_lifecycle', { groupId: group2.id, action: 'ungraduate' });
+    check('… ungraduate', lc2.data?.group?.graduatedAt === null, lc2.text.slice(0, 100));
+
+    // ── 7c. Qo'lda to'g'rilash + undo ────────────────────────────────────────
+    console.log('\n7c) Qo\'lda to\'g\'rilash va undo');
+    const gr1 = await call(W, 'ils_get_record', { table: 'submissions', id: pendingSub!.id });
+    check('ils_get_record', gr1.data?.record?.result === 'blue' && gr1.data.leafTable === true);
+    const pv1 = await call(W, 'ils_record_change', { table: 'submissions', action: 'update', id: pendingSub!.id, data: { score: 33, comment: 'qo\'lda tuzatildi' } });
+    check('1-bosqich: ko\'rinish + confirmToken', pv1.data?.stage === 'preview' && !!pv1.data.confirmToken && pv1.data.changes?.score?.after === 33, pv1.text.slice(0, 140));
+    check('… ko\'rinishda baza o\'zgarmadi', (await prisma.submission.findUnique({ where: { id: pendingSub!.id } }))!.score !== 33);
+    const tamperRc = await call(W, 'ils_record_change', { table: 'submissions', action: 'update', id: pendingSub!.id, data: { score: 40, comment: 'qo\'lda tuzatildi' }, confirmToken: pv1.data.confirmToken });
+    check('boshqa qiymat + eski kod → rad', tamperRc.isError && tamperRc.text.includes('confirmToken'));
+    const ap1 = await call(W, 'ils_record_change', { table: 'submissions', action: 'update', id: pendingSub!.id, data: { score: 33, comment: 'qo\'lda tuzatildi' }, confirmToken: pv1.data.confirmToken });
+    check('2-bosqich: qo\'llandi + auditId', ap1.data?.applied === true && !!ap1.data.auditId, ap1.text.slice(0, 120));
+    check('… bazada o\'zgardi', (await prisma.submission.findUnique({ where: { id: pendingSub!.id } }))!.score === 33);
+    const undoPv = await call(W, 'ils_undo_change', { auditId: ap1.data.auditId });
+    check('undo ko\'rinishi (confirm=false)', undoPv.data?.stage === 'preview');
+    const undo1 = await call(W, 'ils_undo_change', { auditId: ap1.data.auditId, confirm: true });
+    const restored = await prisma.submission.findUnique({ where: { id: pendingSub!.id } });
+    check('undo: eski qiymatlar qaytdi', undo1.data?.undone === true && restored!.score !== 33 && restored!.comment === 'MCP orqali', undo1.text.slice(0, 100));
+    const undoAgain = await call(W, 'ils_undo_change', { auditId: ap1.data.auditId, confirm: true });
+    check('ikki marta undo qilib bo\'lmaydi', undoAgain.isError && undoAgain.text.includes('allaqachon'));
+
+    const pv2 = await call(W, 'ils_record_change', { table: 'submissions', action: 'update', id: pendingSub!.id, data: { comment: 'v2' } });
+    await prisma.submission.update({ where: { id: pendingSub!.id }, data: { canResubmit: false } });
+    await prisma.submission.update({ where: { id: pendingSub!.id }, data: { comment: 'panelda o\'zgardi' } });
+    const stale = await call(W, 'ils_record_change', { table: 'submissions', action: 'update', id: pendingSub!.id, data: { comment: 'v2' }, confirmToken: pv2.data.confirmToken });
+    check('ko\'rinishdan keyin yozuv o\'zgarsa → rad', stale.isError && stale.text.includes('o\'zgargan'), stale.text.slice(0, 90));
+    const pv3 = await call(W, 'ils_record_change', { table: 'submissions', action: 'update', id: pendingSub!.id, data: { comment: 'v3' } });
+    const ap3 = await call(W, 'ils_record_change', { table: 'submissions', action: 'update', id: pendingSub!.id, data: { comment: 'v3' }, confirmToken: pv3.data.confirmToken });
+    await prisma.submission.update({ where: { id: pendingSub!.id }, data: { comment: 'yana o\'zgardi' } });
+    const drift = await call(W, 'ils_undo_change', { auditId: ap3.data.auditId, confirm: true });
+    check('undo: keyin o\'zgargan bo\'lsa to\'xtaydi', drift.isError && drift.text.includes('comment'), drift.text.slice(0, 90));
+
+    const pwd = await call(W, 'ils_record_change', { table: 'users', action: 'update', id: teacher.id, data: { password_hash: 'x' } });
+    check('password_hash yopiq', pwd.isError);
+    const mkAdmin = await call(W, 'ils_record_change', { table: 'users', action: 'update', id: teacher.id, data: { role: 'admin' } });
+    check('users.role = admin yopiq', mkAdmin.isError);
+    const edAdmin = await call(W, 'ils_record_change', { table: 'users', action: 'update', id: admin.id, data: { bio: 'x' } });
+    check('admin yozuvi yopiq', edAdmin.isError);
+    const auditEdit = await call(W, 'ils_record_change', { table: 'audit_logs', action: 'delete', id: ap1.data.auditId });
+    check('audit_logs yopiq', auditEdit.isError);
+    const delGroup = await call(W, 'ils_record_change', { table: 'groups', action: 'delete', id: group.id });
+    check('bolali jadvalni o\'chirib bo\'lmaydi (kaskad)', delGroup.isError && delGroup.text.includes('kaskad'));
+    const badCol = await call(W, 'ils_record_change', { table: 'groups', action: 'update', id: group.id, data: { nonexistent: 1 } });
+    check('noma\'lum ustun rad etildi', badCol.isError);
+    const badEnum = await call(W, 'ils_record_change', { table: 'groups', action: 'update', id: group.id, data: { lesson_day_type: 'dushanba' } });
+    check('noto\'g\'ri enum rad etildi', badEnum.isError && badEnum.text.includes('juft'));
+    const sched = await call(W, 'ils_record_change', { table: 'groups', action: 'update', id: group.id, data: { start_date: '2026-09-01', duration_months: 6, lesson_day_type: 'toq' } });
+    const schedAp = await call(W, 'ils_record_change', { table: 'groups', action: 'update', id: group.id, data: { start_date: '2026-09-01', duration_months: 6, lesson_day_type: 'toq' }, confirmToken: sched.data.confirmToken });
+    const msCount = await prisma.groupMilestone.count({ where: { groupId: group.id } });
+    check('jadval maydonlari o\'zgarsa bosqichlar avtomatik quriladi', schedAp.data?.applied === true && msCount > 0, `${msCount} ta bosqich`);
+
+    const missing = await call(W, 'ils_record_change', { table: 'coin_transactions', action: 'create', data: { amount: 10 } });
+    check('create: majburiy ustunlar ko\'rsatildi', missing.isError && missing.text.includes('student_id'));
+    const cpv = await call(W, 'ils_record_change', { table: 'coin_transactions', action: 'create', data: { student_id: students[2].id, amount: 15, reason: 'qo\'lda bonus' } });
+    const cap = await call(W, 'ils_record_change', { table: 'coin_transactions', action: 'create', data: { student_id: students[2].id, amount: 15, reason: 'qo\'lda bonus' }, confirmToken: cpv.data?.confirmToken });
+    const coinRow = cap.data?.id ? await prisma.coinTransaction.findUnique({ where: { id: cap.data.id } }) : null;
+    check('create: yozuv qo\'shildi (ko\'rinishdagi ID bilan)', cap.data?.applied === true && coinRow?.amount === 15 && cap.data.id === cpv.data.id, cap.text.slice(0, 100));
+    const cundo = await call(W, 'ils_undo_change', { auditId: cap.data.auditId, confirm: true });
+    check('create undo → o\'chirildi', cundo.data?.undone === true && !(await prisma.coinTransaction.findUnique({ where: { id: cap.data.id } })));
+
+    const gsRow = await prisma.groupStudent.findFirst({ where: { groupId: group.id, studentId: students[1].id } });
+    const dpv = await call(W, 'ils_record_change', { table: 'group_students', action: 'delete', id: gsRow!.id });
+    const dap = await call(W, 'ils_record_change', { table: 'group_students', action: 'delete', id: gsRow!.id, confirmToken: dpv.data?.confirmToken });
+    check('delete (barg jadval)', dap.data?.applied === true && !(await prisma.groupStudent.findUnique({ where: { id: gsRow!.id } })), dap.text.slice(0, 100));
+    const dundo = await call(W, 'ils_undo_change', { auditId: dap.data.auditId, confirm: true });
+    const back = await prisma.groupStudent.findUnique({ where: { id: gsRow!.id } });
+    check('delete undo → aynan o\'sha yozuv qaytdi', dundo.data?.undone === true && back?.studentId === students[1].id && back.joinedAt.getTime() === gsRow!.joinedAt.getTime());
+    const ms1 = await prisma.groupMilestone.findFirst({ where: { groupId: group.id, heldAt: null }, orderBy: { dueDate: 'asc' } });
+    const pick = ms1?.candidates?.[0] ? ms1.candidates[0].toISOString().slice(0, 10) : null;
+    const smd = pick ? await call(W, 'ils_set_milestone_date', { milestoneId: ms1!.id, date: pick }) : null;
+    check('ils_set_milestone_date', !!smd && !smd.isError && smd.data?.milestone?.status === 'sana_tanlandi', smd?.text.slice(0, 100) ?? 'bosqich yo\'q');
+    const arch = await call(W, 'ils_group_lifecycle', { groupId: group2.id, action: 'archive' });
+    check('ils_group_lifecycle archive', arch.data?.group?.isActive === false && arch.data.group.graduatedAt === null);
+    const rest = await call(W, 'ils_group_lifecycle', { groupId: group2.id, action: 'restore' });
+    check('… restore', rest.data?.group?.isActive === true, rest.text.slice(0, 80));
+    const ru = await call(W, 'ils_restore_user', { userId: students[2].id });
+    check('ils_restore_user', ru.data?.restored === true && (await prisma.user.findUnique({ where: { id: students[2].id } }))!.isActive === true, ru.text.slice(0, 80));
+    const ul = await call(W, 'ils_unlock_lesson', { groupId: group.id, note: 'e2e: ustoz kasal edi' });
+    check('ils_unlock_lesson', ul.data?.unlocked === true, ul.text.slice(0, 100));
+    // Murojaat (bot ishga tushmagan — haqiqiy Telegram xabari ketmaydi)
+    const link = await prisma.telegramLink.create({ data: { telegramId: BigInt(900000001), chatId: BigInt(900000001), studentId: students[0].id, fullName: 'E2E ota-ona' } });
+    const appeal = await prisma.parentAppeal.create({ data: { telegramLinkId: link.id, studentId: students[0].id, type: 'taklif', message: 'E2E murojaat' } });
+    const sas = await call(W, 'ils_set_appeal_status', { appealId: appeal.id, status: 'korib_chiqilmoqda' });
+    check('ils_set_appeal_status', sas.data?.status === 'korib_chiqilmoqda', sas.text.slice(0, 80));
+    const rap = await call(W, 'ils_reply_appeal', { appealId: appeal.id, reply: 'Rahmat, ko\'rib chiqamiz' });
+    const apAfter = await prisma.parentAppeal.findUnique({ where: { id: appeal.id } });
+    check('ils_reply_appeal', rap.data?.replied === true && apAfter?.status === 'hal_qilindi' && apAfter.adminReply === 'Rahmat, ko\'rib chiqamiz', rap.text.slice(0, 80));
+    // Do'kon: bekor qilinsa coin qaytadi
+    const item = await prisma.shopItem.create({ data: { name: `${tag} sovg'a`, price: 20 } });
+    const order = await prisma.shopOrder.create({ data: { studentId: students[0].id, itemId: item.id, priceAtOrder: 20 } });
+    const so = await call(W, 'ils_shop_order', { orderId: order.id, action: 'cancel', note: 'e2e' });
+    check('ils_shop_order cancel', so.data?.order?.status === 'bekor_qilindi', so.text.slice(0, 80));
+    const so2 = await call(W, 'ils_shop_order', { orderId: order.id, action: 'fulfill' });
+    check('… yakunlangan buyurtmani qayta o\'zgartirib bo\'lmaydi', so2.isError);
+    await prisma.coinTransaction.deleteMany({ where: { shopOrderId: order.id } });
+    await prisma.shopOrder.delete({ where: { id: order.id } });
+    await prisma.shopItem.delete({ where: { id: item.id } });
+
+    const recAudits = await prisma.auditLog.count({ where: { userId: admin.id, action: { in: ['mcp.record_update', 'mcp.record_create', 'mcp.record_delete', 'mcp.undo'] } } });
+    check('qo\'lda o\'zgarishlar va undo auditda', recAudits >= 8, `${recAudits} ta`);
+
     // ── 8. Refresh rotation va o'g'irlangan refresh ───────────────────────────
     console.log('\n8) Refresh token');
     const r1 = await (await tokenReq({ grant_type: 'refresh_token', refresh_token: writeTok.refresh_token, client_id: client.client_id })).json();
@@ -363,6 +521,15 @@ async function main() {
     check('GET /mcp → 401/405 (SSE yo\'q)', getMcp.status === 405 || getMcp.status === 401);
   } finally {
     // ── Tozalash ──────────────────────────────────────────────────────────────
+    // MCP orqali yaratilganlar ham (ils_create_user) — prefiks bo'yicha
+    const allFixtureUsers = await prisma.user.findMany({ where: { OR: [{ login: { startsWith: tag } }, { login: { startsWith: tagU } }] }, select: { id: true } });
+    ids.users = [...new Set([...ids.users, ...allFixtureUsers.map((u) => u.id)])];
+    await prisma.lessonSession.deleteMany({ where: { groupId: { in: ids.groups } } });
+    await prisma.coinTransaction.deleteMany({ where: { OR: [{ studentId: { in: ids.users } }, { teacherId: { in: ids.users } }] } });
+    await prisma.studentFreeze.deleteMany({ where: { OR: [{ studentId: { in: ids.users } }, { frozenById: { in: ids.users } }] } });
+    await prisma.notification.deleteMany({ where: { userId: { in: ids.users } } });
+    await prisma.parentAppeal.deleteMany({ where: { studentId: { in: ids.users } } });
+    await prisma.telegramLink.deleteMany({ where: { studentId: { in: ids.users } } });
     const clients = await prisma.mcpOAuthToken.findMany({ where: { userId: { in: ids.users } }, select: { clientId: true }, distinct: ['clientId'] });
     await prisma.mcpOAuthToken.deleteMany({ where: { userId: { in: ids.users } } });
     await prisma.mcpOAuthCode.deleteMany({ where: { userId: { in: ids.users } } });
