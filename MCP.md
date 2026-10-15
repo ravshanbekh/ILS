@@ -22,8 +22,10 @@ claude.ai ──HTTPS──▶ Cloudflare ──▶ server nginx ──▶ front
    - URL: `https://itlivescore.uz/mcp`. Bu manzil panelda ham bor: **Sozlamalar → Claude (MCP connector)**.
    - *Advanced settings* bo'sh qoladi, chunki Claude o'zini avtomatik ro'yxatdan o'tkazadi.
 2. **Connect** ni bosing. IT Live Score sahifasi ochiladi: admin login va parolini kiriting, keyin huquqni tanlang:
-   - **Faqat o'qish va tahlil** (`ils:read`): standart tanlov va eng xavfsizi.
-   - **O'qish va boshqarish** (`ils:read ils:write`).
+   - **To'liq boshqaruv** (`ils:read ils:write`): standart tanlov, 45 amal.
+   - **Faqat o'qish va tahlil** (`ils:read`).
+
+   Huquqni mijoz emas, admin tanlaydi. claude.ai ulanishda ham, token yangilanishida ham faqat `ils:read` so'raydi, lekin admin bergan huquq saqlanib qoladi.
 3. Chatda **"Search and tools"** menyusidan IT Live Score'ni yoqing.
 
 Boshqa mijozlar:

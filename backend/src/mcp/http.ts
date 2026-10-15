@@ -149,10 +149,12 @@ export function createMcpRouter() {
         return again(403, 'Claude connector\'ni faqat administrator ulay oladi');
       }
 
+      // Admin tanlovi hal qiladi (mijoz faqat ils:read so'ragan bo'lsa ham) —
+      // token javobidagi `scope` mijozga haqiqiy huquqni bildiradi (RFC 6749 §3.3)
       const scopes =
-        req.body?.access === 'write' && consent.scopes.includes(mcpConfig.scopes.write)
-          ? [mcpConfig.scopes.read, mcpConfig.scopes.write]
-          : [mcpConfig.scopes.read];
+        req.body?.access === 'read'
+          ? [mcpConfig.scopes.read]
+          : [mcpConfig.scopes.read, mcpConfig.scopes.write];
 
       const code = await provider.createAuthorizationCode({
         clientId: client.client_id,

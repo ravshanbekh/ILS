@@ -118,7 +118,7 @@ async function main() {
       const u = new URL(asm.authorization_endpoint);
       u.search = new URLSearchParams({
         response_type: 'code', client_id: client.client_id, redirect_uri: REDIRECT, code_challenge: challenge,
-        code_challenge_method: 'S256', state, scope: 'ils:read ils:write', resource: `${BASE}/mcp`,
+        code_challenge_method: 'S256', state, scope: 'ils:read', resource: `${BASE}/mcp`,
       }).toString();
       const page = await fetch(u, { redirect: 'manual' });
       const html = await page.text();
@@ -135,6 +135,7 @@ async function main() {
     const bad = await authorize('read', 'notogri-parol');
     check('rozilik sahifasi 200 + CSP', bad.page.status === 200 && (bad.page.headers.get('content-security-policy') ?? '').includes("frame-ancestors 'none'"));
     check('sahifada ilova nomi va ikkala huquq', bad.html.includes('Claude') && bad.html.includes('value="write"'));
+    check('mijoz faqat ils:read so\'rasa ham "to\'liq boshqaruv" chiqadi va standart tanlangan', /value="write" checked/.test(bad.html));
     check('noto\'g\'ri parol → 401, kod berilmadi', bad.approve.status === 401 && !bad.approve.headers.get('location'));
     const notAdmin = await authorize('read', adminPassword, teacher.login);
     check('admin bo\'lmagan foydalanuvchi → 403', notAdmin.approve.status === 403);
@@ -477,7 +478,9 @@ async function main() {
 
     // ── 8. Refresh rotation va o'g'irlangan refresh ───────────────────────────
     console.log('\n8) Refresh token');
-    const r1 = await (await tokenReq({ grant_type: 'refresh_token', refresh_token: writeTok.refresh_token, client_id: client.client_id })).json();
+    // claude.ai refresh'da dastlabki scope'ni (ils:read) yuboradi — boshqaruv huquqi saqlanishi kerak
+    const r1 = await (await tokenReq({ grant_type: 'refresh_token', refresh_token: writeTok.refresh_token, client_id: client.client_id, scope: 'ils:read' })).json();
+    check('refresh scope=ils:read bilan ham boshqaruv saqlandi', r1.scope === 'ils:read ils:write', r1.scope);
     check('refresh → yangi juftlik', !!r1.access_token && r1.refresh_token !== writeTok.refresh_token);
     const oldAccess = await rpc(writeTok.access_token, 'tools/list');
     check('eski access rotation\'dan keyin ishlamaydi', oldAccess.status === 401);

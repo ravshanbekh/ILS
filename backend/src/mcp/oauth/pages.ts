@@ -101,9 +101,11 @@ export function renderConsentPage(
   res: Response,
   opts: { clientName: string; redirectHost: string; requestedScopes: string[]; signed: string; error?: string; login?: string; access?: string }
 ) {
-  const wantsWrite = opts.requestedScopes.includes(mcpConfig.scopes.write);
-  // Xato bilan qayta chizilganda tanlov saqlanadi; standart — xavfsizrog'i (o'qish)
-  const writeChecked = wantsWrite && opts.access === 'write';
+  // Huquqni MIJOZ emas, ADMIN tanlaydi: claude.ai faqat 401 javobidagi
+  // scope'ni (ils:read) so'raydi — ilgari shu sababli "boshqarish" varianti
+  // umuman chiqmasdi. Standart — to'liq boshqaruv (Ravshan qarori, 2026-10-15);
+  // xato bilan qayta chizilganda admin tanlovi saqlanadi.
+  const writeChecked = opts.access !== 'read';
   let redirectOrigin: string | undefined;
   try {
     const req = verifyConsentRequest(opts.signed);
@@ -128,8 +130,8 @@ export function renderConsentPage(
       <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="200" ${opts.login ? 'autofocus' : ''}>
       <fieldset>
         <legend>Qanday huquq berilsin?</legend>
+        <label class="opt"><input type="radio" name="access" value="write" ${writeChecked ? 'checked' : ''}><span>To'liq boshqaruv (tavsiya)<small>Tahlil + guruh, o'quvchi va xodimlar, normativ baholash, dars baholari, muzlatish, murojaatlar, do'kon, bildirishnomalar va istalgan yozuvni qo'lda tuzatish (orqaga qaytarish bilan). Har amal audit jurnaliga yoziladi.</small></span></label>
         <label class="opt"><input type="radio" name="access" value="read" ${writeChecked ? '' : 'checked'}><span>Faqat o'qish va tahlil<small>Guruhlar, o'quvchilar, normativlar, hisobotlar, SQL tahlil. Hech narsa o'zgarmaydi.</small></span></label>
-        ${wantsWrite ? `<label class="opt"><input type="radio" name="access" value="write" ${writeChecked ? 'checked' : ''}><span>O'qish va boshqarish<small>Guruh yaratish/tahrirlash, o'quvchini qo'shish/o'tkazish, normativlar, bosqichlar. Har amal audit jurnaliga yoziladi.</small></span></label>` : ''}
       </fieldset>
       <div class="row">
         <button type="submit" name="decision" value="deny">Rad etish</button>

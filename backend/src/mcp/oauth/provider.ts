@@ -186,8 +186,11 @@ export class IlsOAuthProvider implements OAuthServerProvider {
     if (resource && row.resource && !sameResource(resource.href, row.resource)) {
       throw new InvalidGrantError('resource mos emas');
     }
-    const nextScopes = scopes?.length ? scopes : row.scopes;
-    if (nextScopes.some((s) => !row.scopes.includes(s))) throw new InvalidScopeError('Scope kengaytirib bo\'lmaydi');
+    if (scopes?.some((s) => !row.scopes.includes(s))) throw new InvalidScopeError('Scope kengaytirib bo\'lmaydi');
+    // Admin bergan huquq saqlanadi: claude.ai refresh'da dastlab so'ragan
+    // "ils:read" ni qayta yuboradi — uni toraytirish deb qabul qilsak, boshqaruv
+    // huquqi bir soatdan keyin jimgina yo'qolardi.
+    const nextScopes = row.scopes;
 
     const user = await this.loadEligibleUser(row.userId);
     if (user.tokenVersion !== row.tokenVersion) throw new InvalidGrantError('Sessiya tugatilgan — qayta ulaning');
