@@ -5,7 +5,7 @@ import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
   Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid,
-  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle
+  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle, ClipboardPenLine
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -69,6 +69,8 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/event-feedback', label: 'Demo Day fikrlari', icon: PartyPopper },
       { to: '/admin/frozen-students', label: 'Muzlatilganlar', icon: Snowflake },
       { to: '/admin/teacher-rating', label: "O'qituvchi reytingi", icon: Star },
+      { to: '/admin/lesson-observations', label: 'Dars baholash', icon: ClipboardPenLine },
+      { to: '/admin/lesson-observation-ranking', label: 'Dars reytingi', icon: Trophy },
       { to: '/admin/monitoring', label: 'Monitoring', icon: Phone },
       { to: '/admin/predictions', label: 'AI Prognozlar', icon: TrendingDown },
       { to: '/admin/support-hours', label: 'Assistent soatlari', icon: CalendarClock },

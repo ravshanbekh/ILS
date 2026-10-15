@@ -50,6 +50,7 @@ import permissionsRoutes from './modules/permissions/permissions.routes';
 import supportHoursRoutes from './modules/support-hours/support-hours.routes';
 import homeworkRoutes from './modules/homework/homework.routes';
 import milestonesRoutes from './modules/milestones/milestones.routes';
+import lessonObservationsRoutes from './modules/lesson-observations/lesson-observations.routes';
 import { createMcpRouter, mcpDisabled } from './mcp/http';
 import mcpConnectionsRoutes from './mcp/connections.routes';
 import { mcpConfig } from './mcp/config';
@@ -159,6 +160,7 @@ app.use('/api/permissions', permissionsRoutes);
 app.use('/api/support-hours', supportHoursRoutes);
 app.use('/api/homework', homeworkRoutes);
 app.use('/api/milestones', milestonesRoutes);
+app.use('/api/lesson-observations', lessonObservationsRoutes);
 
 // 404 handler
 app.use((_req, res) => {

@@ -1,4 +1,13 @@
 import api from './client';
+import type { CreateObservation, ObservationFilters } from '@/features/lessonObservations/types';
+
+export const lessonObservationsApi = {
+  form: () => api.get('/lesson-observations/form'),
+  create: (data: CreateObservation) => api.post('/lesson-observations', data),
+  history: (params: ObservationFilters) => api.get('/lesson-observations', { params }),
+  mine: (params: ObservationFilters) => api.get('/lesson-observations/me', { params }),
+  ranking: (params: ObservationFilters) => api.get('/lesson-observations/ranking', { params }),
+};
 
 export const authApi = {
   login: (data: { login: string; password: string }) =>

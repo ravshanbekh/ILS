@@ -3,6 +3,7 @@ import Header from '@/components/layout/Header';
 import { usersApi, authApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
 import { Loader2, Camera, Save, Check, AlertCircle, Building2, User as UserIcon } from 'lucide-react';
+import MyObservationHistory from '@/features/lessonObservations/MyObservationHistory';
 
 interface Filial {
   key: string;
@@ -98,9 +99,10 @@ export default function MyProfilePage() {
 
   return (
     <div className="min-h-screen bg-zinc-950">
-      <Header title="Mening profilim" subtitle="O'quvchilar sizni shu ma'lumotlar bilan ko'radi" />
+      <Header title="Mening profilim" subtitle={user?.role === 'teacher' ? "Dars kuzatuvi baholaringiz va profil ma'lumotlari" : "O'quvchilar sizni shu ma'lumotlar bilan ko'radi"} />
 
       <div className="p-4 sm:p-8 max-w-2xl mx-auto space-y-5">
+        {(user?.role === 'teacher' || user?.role === 'robototexnika_ustoz') && <MyObservationHistory />}
         <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 text-sm text-zinc-300 flex gap-3">
           <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
           <p>
