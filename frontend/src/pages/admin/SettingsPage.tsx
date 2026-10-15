@@ -3,9 +3,10 @@ import Header from '@/components/layout/Header';
 import { settingsApi, authApi, botApi } from '@/api';
 import {
   Settings, PlayCircle, Save, Loader2, CheckCircle2, AlertCircle,
-  Video, Lock, User, Eye, EyeOff, Brain, ChevronDown, Bot
+  Video, Lock, User, Eye, EyeOff, Brain, ChevronDown, Bot, Sparkles
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import McpConnectorSection from '@/components/admin/McpConnectorSection';
 
 // ─── Accordion wrapper ───────────────────────────────────────────────────────
 interface AccordionProps {
@@ -508,6 +509,21 @@ export default function SettingsPage() {
             )}
           </div>
         </AccordionSection>
+
+        {/* ── 5. Claude (MCP connector) — faqat admin ── */}
+        {user?.role === 'admin' && (
+          <AccordionSection
+            id="mcp"
+            icon={<Sparkles className="w-5 h-5 text-white" />}
+            iconBg="bg-gradient-to-br from-orange-500 to-amber-600"
+            title="Claude (MCP connector)"
+            subtitle="Tizim ma'lumotlarini Claude orqali tahlil qilish va boshqarish"
+            openId={openSection}
+            onToggle={toggleSection}
+          >
+            {openSection === 'mcp' && <McpConnectorSection />}
+          </AccordionSection>
+        )}
 
       </div>
     </div>

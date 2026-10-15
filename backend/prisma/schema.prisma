@@ -119,6 +119,8 @@ model User {
   // Universal test paneli
   quizTestsCreated          QuizTest[]            @relation("QuizTestCreator")
   quizAnswersReviewed       QuizTestAnswer[]      @relation("QuizAnswerReviewer")
+  mcpOAuthCodes             McpOAuthCode[]        @relation("McpOAuthCodeUser")
+  mcpOAuthTokens            McpOAuthToken[]       @relation("McpOAuthTokenUser")
 
   @@map("users")
 }
@@ -1511,4 +1513,70 @@ model QuizTestAnswer {
   @@unique([attemptId, questionId])
   @@index([attemptId])
   @@map("quiz_test_answers")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MCP — Claude connector (claude.ai → Settings → Connectors)
+//  OAuth 2.1 (PKCE + Dynamic Client Registration). Kod va tokenlar faqat
+//  SHA-256 xeshi bilan saqlanadi — baza o'g'irlansa ham ishlatib bo'lmaydi.
+//  Batafsil: MCP.md
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Ro'yxatdan o'tgan MCP mijozi (masalan, claude.ai). client_id = id.
+model McpOAuthClient {
+  id        String   @id @db.VarChar(64)
+  name      String?  @db.VarChar(200)
+  /// RFC 7591 mijoz metama'lumoti (redirect_uris, auth usuli va h.k.)
+  metadata  Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  codes  McpOAuthCode[]
+  tokens McpOAuthToken[]
+
+  @@map("mcp_oauth_clients")
+}
+
+/// Bir martalik avtorizatsiya kodi (5 daqiqa).
+model McpOAuthCode {
+  id            String    @id @default(uuid()) @db.Uuid
+  codeHash      String    @unique @map("code_hash") @db.VarChar(64)
+  clientId      String    @map("client_id") @db.VarChar(64)
+  userId        String    @map("user_id") @db.Uuid
+  scopes        String[]
+  codeChallenge String    @map("code_challenge") @db.VarChar(128)
+  redirectUri   String    @map("redirect_uri")
+  resource      String?
+  expiresAt     DateTime  @map("expires_at")
+  usedAt        DateTime? @map("used_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  client McpOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User           @relation("McpOAuthCodeUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mcp_oauth_codes")
+}
+
+/// Access (1 soat) + refresh (30 kun) juftligi. Refresh har ishlatilganda
+/// almashadi (rotation); eski juftlik revokedAt bilan yopiladi.
+model McpOAuthToken {
+  id               String    @id @default(uuid()) @db.Uuid
+  accessHash       String    @unique @map("access_hash") @db.VarChar(64)
+  refreshHash      String    @unique @map("refresh_hash") @db.VarChar(64)
+  clientId         String    @map("client_id") @db.VarChar(64)
+  userId           String    @map("user_id") @db.Uuid
+  scopes           String[]
+  resource         String?
+  /// Berilgan paytdagi users.token_version — parol o'zgarsa token o'ladi
+  tokenVersion     Int       @map("token_version")
+  accessExpiresAt  DateTime  @map("access_expires_at")
+  refreshExpiresAt DateTime  @map("refresh_expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  lastUsedAt       DateTime? @map("last_used_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  client McpOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User           @relation("McpOAuthTokenUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mcp_oauth_tokens")
 }

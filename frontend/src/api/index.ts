@@ -809,3 +809,26 @@ export const quizTestsApi = {
   reviewAnswer: (id: string, answerId: string, data: { isCorrect: boolean; points?: number }) =>
     api.patch(`/quiz-tests/${id}/answers/${answerId}/review`, data),
 };
+
+// ─── MCP — Claude connector (Sozlamalar → Claude) ───────────────────────────
+export interface McpConnection {
+  id: string;
+  clientId: string;
+  clientName: string;
+  redirectHost: string | null;
+  user: { id: string; fullName: string; login: string };
+  scopes: string[];
+  canWrite: boolean;
+  connectedAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string;
+}
+
+export const mcpApi = {
+  getConnections: () =>
+    api.get<{ success: boolean; data: { enabled: boolean; serverUrl: string; scopes: string[]; connections: McpConnection[] } }>(
+      '/mcp/connections'
+    ),
+  revoke: (id: string) => api.delete(`/mcp/connections/${encodeURIComponent(id)}`),
+  revokeAll: () => api.delete('/mcp/connections'),
+};

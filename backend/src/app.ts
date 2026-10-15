@@ -50,6 +50,9 @@ import permissionsRoutes from './modules/permissions/permissions.routes';
 import supportHoursRoutes from './modules/support-hours/support-hours.routes';
 import homeworkRoutes from './modules/homework/homework.routes';
 import milestonesRoutes from './modules/milestones/milestones.routes';
+import { createMcpRouter, mcpDisabled } from './mcp/http';
+import mcpConnectionsRoutes from './mcp/connections.routes';
+import { mcpConfig } from './mcp/config';
 
 const app = express();
 app.set('trust proxy', 1); // nginx orqasida turgani uchun — rate limit va req.ip to'g'ri ishlashi uchun
@@ -114,6 +117,12 @@ app.get('/api/health', (_req, res) => {
     environment: env.NODE_ENV,
   });
 });
+
+// MCP — Claude connector (claude.ai → Connectors). OAuth + /mcp; batafsil: MCP.md
+// MCP_ENABLED=false — favqulodda o'chirish (yo'llar 404 qaytaradi)
+if (mcpConfig.enabled) app.use(createMcpRouter());
+else app.use(mcpDisabled);
+app.use('/api/mcp', mcpConnectionsRoutes);
 
 // API routes
 app.use('/api/auth', authRoutes);
