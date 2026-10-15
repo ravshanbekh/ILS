@@ -1580,3 +1580,29 @@ model McpOAuthToken {
   @@index([userId])
   @@map("mcp_oauth_tokens")
 }
+
+/// Adminning PDF shaklidagi dars kuzatuvi. Ismlar va guruh nomi snapshot
+/// sifatida saqlanadi: foydalanuvchi/guruh o'zgarsa ham tarix yo'qolmaydi.
+model LessonObservation {
+  id               String   @id @default(uuid()) @db.Uuid
+  teacherId        String   @map("teacher_id") @db.Uuid
+  teacherName      String   @map("teacher_name") @db.VarChar(100)
+  observerId       String   @map("observer_id") @db.Uuid
+  observerName     String   @map("observer_name") @db.VarChar(100)
+  groupId          String?  @map("group_id") @db.Uuid
+  groupName        String   @map("group_name") @db.VarChar(100)
+  topic            String   @db.VarChar(200)
+  studentsEnrolled Int      @map("students_enrolled")
+  studentsPresent  Int      @map("students_present")
+  scores           Json
+  totalScore       Int      @map("total_score")
+  criteriaVersion  Int      @default(1) @map("criteria_version")
+  childrenAnswer   String?  @map("children_answer") @db.Text
+  strengths        String   @db.Text
+  improvements     String   @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([teacherId, createdAt])
+  @@index([createdAt])
+  @@map("lesson_observations")
+}
