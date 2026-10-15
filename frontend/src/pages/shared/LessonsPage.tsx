@@ -553,7 +553,7 @@ export default function LessonsPage() {
             </>
           )}
 
-          {isMentor && (
+          {(isMentor || isAdmin) && (
             <aside
               aria-label="Mentor checklist"
               className="rounded-xl border border-zinc-800 bg-zinc-900 p-2 lg:sticky lg:top-[102px]"
