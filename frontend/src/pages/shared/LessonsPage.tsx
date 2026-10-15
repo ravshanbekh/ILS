@@ -103,6 +103,7 @@ function renderFolderTreePicker(
 export default function LessonsPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin' || user?.role === 'administrator' || user?.role === 'filial_rahbari';
+  const isMentor = user?.role === 'teacher';
 
   // Navigatsiya: `folders` — joriy darajadagi (selectedFolder ichidagi, yoki
   // selectedFolder null bo'lsa — bosh) papkalar. `selectedFolder` — hozir
@@ -457,7 +458,7 @@ export default function LessonsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left — Folder List (joriy darajadagi bo'limlar) */}
-        <div className="lg:col-span-1 space-y-2">
+        <div className="lg:col-span-1 min-w-0 space-y-2">
           {loading ? (
             <div className="text-zinc-500 text-sm text-center py-8">Yuklanmoqda...</div>
           ) : folders.length === 0 ? (
@@ -550,6 +551,23 @@ export default function LessonsPage() {
               </div>
             ))}
             </>
+          )}
+
+          {isMentor && (
+            <aside
+              aria-label="Mentor checklist"
+              className="rounded-xl border border-zinc-800 bg-zinc-900 p-2 lg:sticky lg:top-[102px]"
+            >
+              <img
+                src="/mentor-checklist.webp"
+                alt="Mentor checklist: davomat, uy vazifasini tekshirish, baholarni platformaga kiritish, markaz materiallari bilan dars o'tish va aniq uy vazifasi berish."
+                width={941}
+                height={1672}
+                className="mx-auto block h-auto w-full max-h-[65dvh] rounded-lg object-contain lg:max-h-[calc(100dvh-118px)]"
+                loading="eager"
+                decoding="async"
+              />
+            </aside>
           )}
         </div>
 
