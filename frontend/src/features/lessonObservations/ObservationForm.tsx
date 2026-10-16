@@ -128,7 +128,13 @@ export default function ObservationForm({ teachers, sections, maxScore, observer
                   <p className="text-sm font-medium leading-snug text-slate-900">{item.label}</p>
                   <div role="group" aria-label={`${item.label} uchun ball`} className="flex shrink-0 gap-2">
                     {[1, 2, 3, 4, 5].map(score => <button key={score} type="button" aria-label={`${score} ball`} aria-pressed={ratings[item.id] === score}
-                      onClick={() => setRatings(current => ({ ...current, [item.id]: score }))}
+                      title={ratings[item.id] === score ? 'Bahoni bekor qilish' : `${score} ball qo‘yish`}
+                      onClick={() => setRatings(current => {
+                        const next = { ...current };
+                        if (next[item.id] === score) delete next[item.id];
+                        else next[item.id] = score;
+                        return next;
+                      })}
                       className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff3218] ${ratings[item.id] === score ? 'border-[#ff3218] bg-[#ff3218] text-white' : 'border-slate-800 bg-white text-slate-950 hover:border-[#ff3218] hover:text-[#ff3218]'}`}>
                       {score}
                     </button>)}
