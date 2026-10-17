@@ -10,6 +10,12 @@ Manba: **Darsni kuzatish varag'i — A4.pdf**. Forma 5 bo'limdagi 19 mezondan ib
 4. **Dars reytingi** tanlangan davrdagi kuzatuvlarning o'rtacha balli bo'yicha tartiblanadi. Kuzatuvlar soni va so'nggi kuzatuv vaqti ham ko'rsatiladi. Bu reyting mavjud KPI asosidagi **O'qituvchi reytingi**dan alohida.
 5. Mentor **Mening profilim** sahifasida faqat o'z kuzatuvlarini va tarixini ko'radi.
 
+## Tugallanmagan baholash
+
+- Admin forma maydonini yoki ballni o'zgartirishi bilan qoralama shu brauzerning `localStorage` xotirasiga avtomatik yoziladi. Boshqa panelga o'tib qaytganda yoki sahifani qayta yuklaganda davom ettiradi.
+- Qoralama kaliti admin IDsi bilan ajratilgan (`lesson-observation-draft:v1:<adminId>`). Shu sabab ikki admin alohida sessiyalarda turli ustozlarni bir vaqtda baholashi mumkin; yakuniy baholar serverda har biri o'z kuzatuvchisi IDsi bilan mustaqil yoziladi.
+- **Baholashni o'tkazib yuborish** tasdiqlanganda yoki **Bahoni saqlash** muvaffaqiyatli tugaganda qoralama o'chiriladi. Server xatosida qoralama saqlanib qoladi. Brauzer xotirasi tozalansa yoki boshqa qurilmadan kirilsa, tugallanmagan qoralama ko'rinmaydi.
+
 ## Saqlash va ruxsat
 
 - `lesson_observations` jadvali barcha yozuvlarni saqlaydi. Baholarni o'chirish yoki tahrirlash endpointi yo'q. Ustoz, kuzatuvchi va guruh nomlari snapshot sifatida saqlanadi; ularning hisoblari keyin o'zgarsa ham tarix o'qiladi.
