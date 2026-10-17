@@ -82,7 +82,7 @@ export default function LessonObservationsPage() {
 
       {view === 'form' ? (
         formLoading ? <Loading /> : formError ? <ErrorText text={formError} /> :
-          <ObservationForm teachers={teachers} sections={sections} maxScore={maxScore} observerName={user?.fullName || 'Admin'} onSaved={handleSaved} />
+          <ObservationForm key={user?.id} teachers={teachers} sections={sections} maxScore={maxScore} observerId={user?.id || ''} observerName={user?.fullName || 'Admin'} onSaved={handleSaved} />
       ) : <>
         {saved && view === 'history' && <div role="status" className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
           {saved.teacherName} uchun {saved.totalScore}/95 ball saqlandi · {observationTime(saved.createdAt)}
