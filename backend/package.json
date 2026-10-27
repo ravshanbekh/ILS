@@ -15,7 +15,8 @@
     "mcp": "node dist/mcp/main.js",
     "test:mcp": "npm run build && node --test tests/mcp.unit.test.js",
     "smoke:mcp": "node tests/mcp.stdio.smoke.js",
-    "e2e:mcp": "tsx tests/mcp.e2e.ts"
+    "e2e:mcp": "tsx tests/mcp.e2e.ts",
+    "e2e:typing": "tsx tests/typing.e2e.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
@@ -46,6 +47,7 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.13.0",
     "prisma": "^6.6.0",
+    "socket.io-client": "^4.8.3",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }

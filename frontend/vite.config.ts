@@ -25,6 +25,13 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+      // Socket.IO (Live Quiz, "Tez yozish" bellashuvlari) — dev'da ham backendga.
+      // Bu bo'lmasa socket mijozi 5173-portga ulanib, real vaqt ishlamasdi.
+      '/socket.io': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   // "npm run preview" — build qilingan holatni productionga o'xshab sinash
@@ -34,6 +41,7 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://localhost:5000', changeOrigin: true },
       '/uploads': { target: 'http://localhost:5000', changeOrigin: true },
+      '/socket.io': { target: 'http://localhost:5000', changeOrigin: true, ws: true },
     },
   },
 })

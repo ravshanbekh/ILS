@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 
 // Productionda sayt bilan bir xil origin; dev'da VITE_API_URL dan olinadi.
-const SOCKET_URL = (import.meta.env.VITE_API_URL
+export const SOCKET_URL = (import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('/api', '')
   : '') || window.location.origin;
 

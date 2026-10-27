@@ -51,6 +51,8 @@ import supportHoursRoutes from './modules/support-hours/support-hours.routes';
 import homeworkRoutes from './modules/homework/homework.routes';
 import milestonesRoutes from './modules/milestones/milestones.routes';
 import lessonObservationsRoutes from './modules/lesson-observations/lesson-observations.routes';
+import typingRoutes from './modules/typing/typing.routes';
+import { initTypingGateway } from './modules/typing/typing.rooms';
 import { createMcpRouter, mcpDisabled } from './mcp/http';
 import mcpConnectionsRoutes from './mcp/connections.routes';
 import { mcpConfig } from './mcp/config';
@@ -73,6 +75,8 @@ httpServer.maxHeadersCount = 100;     // sarlavhalar bilan to'ldirib yuborishga 
 const socketIoServer = initSocket(httpServer);
 // Live Quiz Socket.IO
 initSocketIO(socketIoServer);
+// "Tez yozish" bellashuvlari — alohida, majburiy autentifikatsiyali namespace
+initTypingGateway(socketIoServer);
 
 // ============ MIDDLEWARE ============
 
@@ -161,6 +165,7 @@ app.use('/api/support-hours', supportHoursRoutes);
 app.use('/api/homework', homeworkRoutes);
 app.use('/api/milestones', milestonesRoutes);
 app.use('/api/lesson-observations', lessonObservationsRoutes);
+app.use('/api/typing', typingRoutes);
 
 // 404 handler
 app.use((_req, res) => {

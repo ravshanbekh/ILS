@@ -121,6 +121,10 @@ model User {
   quizAnswersReviewed       QuizTestAnswer[]      @relation("QuizAnswerReviewer")
   mcpOAuthCodes             McpOAuthCode[]        @relation("McpOAuthCodeUser")
   mcpOAuthTokens            McpOAuthToken[]       @relation("McpOAuthTokenUser")
+  typingResults             TypingResult[]        @relation("TypingResultUser")
+  typingMatchesHosted       TypingMatch[]         @relation("TypingMatchHost")
+  typingMatchPlayers        TypingMatchPlayer[]   @relation("TypingMatchPlayerUser")
+  typingRating              TypingRating?         @relation("TypingRatingUser")
 
   @@map("users")
 }
@@ -1605,4 +1609,114 @@ model LessonObservation {
   @@index([teacherId, createdAt])
   @@index([createdAt])
   @@map("lesson_observations")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  O'YINLAR — "Tez yozish" (CodeType asosida)
+//  Natija SERVERDA hisoblanadi: vaqt server soatidan, matnni server beradi.
+//  Mijoz faqat to'g'ri yozilgan belgilar sonini va bosishlar sonini yuboradi.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Bitta yozish natijasi (mashq yoki bellashuvdagi ishtirok)
+model TypingResult {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  /// solo | duel | ffa | team
+  mode         String   @db.VarChar(10)
+  /// text | code
+  contentType  String   @map("content_type") @db.VarChar(10)
+  /// matn: en | uz | tech; kod: Python, JavaScript ...
+  variant      String   @db.VarChar(30)
+  /// mashq vaqti (15/30/60/120) yoki bellashuv chegarasi, soniya
+  durationSec  Int      @map("duration_sec")
+  wpm          Int
+  rawWpm       Int      @map("raw_wpm")
+  accuracy     Int
+  correctChars Int      @map("correct_chars")
+  totalKeys    Int      @map("total_keys")
+  errors       Int
+  maxCombo     Int      @default(0) @map("max_combo")
+  /// Bellashuvda o'rni (1 — g'olib)
+  place        Int?
+  matchId      String?  @map("match_id") @db.Uuid
+  /// Server tekshiruvi shubhali deb topdi (reytingga kirmaydi)
+  flagged      Boolean  @default(false)
+  flagReason   String?  @map("flag_reason") @db.VarChar(200)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user  User         @relation("TypingResultUser", fields: [userId], references: [id], onDelete: Cascade)
+  match TypingMatch? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([contentType, wpm])
+  @@index([createdAt])
+  @@map("typing_results")
+}
+
+/// Bellashuv (duel / 4 kishilik / jamoaviy)
+model TypingMatch {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @db.VarChar(8)
+  /// duel | ffa | team
+  mode        String    @db.VarChar(10)
+  contentType String    @map("content_type") @db.VarChar(10)
+  variant     String    @db.VarChar(30)
+  text        String    @db.Text
+  hostId      String?   @map("host_id") @db.Uuid
+  timeLimitSec Int      @map("time_limit_sec")
+  /// finished | cancelled
+  status      String    @db.VarChar(12)
+  /// Jamoaviy: A | B | draw
+  winnerTeam  String?   @map("winner_team") @db.VarChar(5)
+  startedAt   DateTime? @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  host    User?               @relation("TypingMatchHost", fields: [hostId], references: [id], onDelete: SetNull)
+  players TypingMatchPlayer[]
+  results TypingResult[]
+
+  @@index([createdAt])
+  @@map("typing_matches")
+}
+
+model TypingMatchPlayer {
+  id           String    @id @default(uuid()) @db.Uuid
+  matchId      String    @map("match_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  /// Jamoaviy rejimda A | B
+  team         String?   @db.VarChar(2)
+  place        Int?
+  wpm          Int       @default(0)
+  accuracy     Int       @default(0)
+  progress     Int       @default(0)
+  finished     Boolean   @default(false)
+  /// finished | timeout | left
+  outcome      String    @db.VarChar(10)
+  ratingBefore Int?      @map("rating_before")
+  ratingAfter  Int?      @map("rating_after")
+  finishedAt   DateTime? @map("finished_at")
+
+  match TypingMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user  User        @relation("TypingMatchPlayerUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, userId])
+  @@index([userId])
+  @@map("typing_match_players")
+}
+
+/// Jang reytingi (ELO) — bellashuvlardan
+model TypingRating {
+  userId    String   @id @map("user_id") @db.Uuid
+  rating    Int      @default(1000)
+  matches   Int      @default(0)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  draws     Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation("TypingRatingUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([rating])
+  @@map("typing_ratings")
 }

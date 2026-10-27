@@ -77,6 +77,9 @@ const HomeworkBankPage = lazyWithReload(() => import('@/pages/admin/HomeworkBank
 const StudentHomeworkPage = lazyWithReload(() => import('@/pages/student/HomeworkPage'));
 const StudentResultsPage = lazyWithReload(() => import('@/pages/student/ResultsPage'));
 const StudentShopPage = lazyWithReload(() => import('@/pages/student/ShopPage'));
+const GameHubPage = lazyWithReload(() => import('@/pages/student/game/GameHubPage'));
+const TypingGamePage = lazyWithReload(() => import('@/pages/student/game/TypingGamePage'));
+const TypingGamesAdminPage = lazyWithReload(() => import('@/pages/admin/TypingGamesPage'));
 const PermissionsPage = lazyWithReload(() => import('@/pages/admin/PermissionsPage'));
 
 /** Sahifa yuklanayotgan paytdagi ko'rsatkich */
@@ -251,6 +254,7 @@ export default function App() {
               <Route path="/admin/shop-items" element={<ShopManagePage />} />
               <Route path="/admin/shop-orders" element={<ShopOrdersPage />} />
               <Route path="/admin/coin-oversight" element={<CoinOversightPage />} />
+              <Route path="/admin/games" element={<TypingGamesAdminPage />} />
               <Route path="/admin/support-hours" element={<SupportOversightPage />} />
               <Route path="/admin/support-stats" element={<SupportStatsPage />} />
               <Route path="/admin/my-support-hours" element={<MySupportHoursPage />} />
@@ -312,6 +316,8 @@ export default function App() {
               <Route path="/student/my-normatives" element={<MyNormativesGuidePage />} />
               <Route path="/student/ranking" element={<StudentRankingPage />} />
               <Route path="/student/shop" element={<StudentShopPage />} />
+              <Route path="/student/game" element={<GameHubPage />} />
+              <Route path="/student/game/typing" element={<TypingGamePage />} />
               <Route path="/student/support-hours" element={<SupportBookingPage />} />
               <Route path="/student/homework" element={<StudentHomeworkPage />} />
               <Route path="/student/results" element={<StudentResultsPage />} />

@@ -5,7 +5,7 @@ import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
   Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid,
-  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle, ClipboardPenLine
+  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle, Keyboard, Gamepad2, ClipboardPenLine
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -94,6 +94,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/shop-items', label: "Do'kon boshqaruvi", icon: Gift },
       { to: '/admin/shop-orders', label: 'Buyurtmalar', icon: Package },
       { to: '/admin/coin-oversight', label: 'Coin nazorati', icon: Coins },
+      { to: '/admin/games', label: "Tez yozish o'yini", icon: Keyboard },
     ]
   },
   {
@@ -191,6 +192,15 @@ export const STUDENT_GROUPS: NavCategoryGroup[] = [
       { to: '/student/homework', label: 'Uyga vazifalar', icon: BookOpen },
       { to: '/student/results', label: 'Natijalarim', icon: Trophy },
       { to: '/student/support-hours', label: 'Yordamchi ustoz', icon: CalendarClock },
+    ]
+  },
+  {
+    id: 'games_student',
+    label: "O'yinlar",
+    icon: Gamepad2,
+    items: [
+      { to: '/student/game', label: "O'yinlar", icon: Gamepad2 },
+      { to: '/student/game/typing', label: 'Tez yozish', icon: Keyboard },
     ]
   }
 ];

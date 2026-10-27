@@ -855,3 +855,40 @@ export const mcpApi = {
   revoke: (id: string) => api.delete(`/mcp/connections/${encodeURIComponent(id)}`),
   revokeAll: () => api.delete('/mcp/connections'),
 };
+
+// ─── O'yinlar: "Tez yozish" ─────────────────────────────────────────────────
+export type TypingCategory = 'text' | 'code' | 'battle';
+export type TypingPeriod = 'week' | 'month' | 'all';
+export interface TypingCounts {
+  correctChars: number;
+  totalKeys: number;
+  errors: number;
+  maxCombo: number;
+}
+export interface TypingLeaderRow {
+  userId: string;
+  fullName: string;
+  value: number;
+  accuracy: number | null;
+  detail: string | null;
+  extra: number | null;
+  at: string | null;
+  rank: number;
+  groups: string[];
+}
+
+export const typingApi = {
+  catalog: () => api.get('/typing/catalog'),
+  startSolo: (data: { contentType: 'text' | 'code'; variant?: string; durationSec?: number; punctuation?: boolean; numbers?: boolean }) =>
+    api.post('/typing/solo/start', data),
+  finishSolo: (data: { sessionId: string; elapsedMs: number; counts: TypingCounts }) => api.post('/typing/solo/finish', data),
+  leaderboard: (params: { category: TypingCategory; period?: TypingPeriod; groupId?: string; limit?: number }) =>
+    api.get('/typing/leaderboard', { params }),
+  myStats: () => api.get('/typing/me/stats'),
+  adminOverview: () => api.get('/typing/admin/overview'),
+  adminLive: () => api.get('/typing/admin/live'),
+  adminResults: (params: Record<string, string | number | undefined>) => api.get('/typing/admin/results', { params }),
+  adminMatches: (params: { mode?: string; page?: number; limit?: number }) => api.get('/typing/admin/matches', { params }),
+  adminMatch: (id: string) => api.get(`/typing/admin/matches/${id}`),
+  adminStudentStats: (id: string) => api.get(`/typing/admin/students/${id}/stats`),
+};

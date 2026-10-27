@@ -7,7 +7,7 @@ import {
   PanelLeftClose, PanelLeftOpen,
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
   Gift, Package, Coins
-, CalendarClock, UserCircle, FileText} from 'lucide-react';
+, CalendarClock, UserCircle, FileText, Gamepad2} from 'lucide-react';
 import BrandLogo from '@/components/brand/BrandLogo';
 import { getNavGroups } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
@@ -21,6 +21,7 @@ const studentLinks = [
   { to: '/student/homework', icon: BookOpen, label: 'Uyga vazifalar' },
   { to: '/student/results', icon: Trophy, label: 'Natijalarim' },
   { to: '/student/support-hours', icon: CalendarClock, label: 'Yordamchi ustoz' },
+  { to: '/student/game', icon: Gamepad2, label: "O'yinlar" },
 ];
 
 const VIEWER_ROLES = [
