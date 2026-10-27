@@ -3,6 +3,7 @@ import { ClipboardCheck, Loader2 } from 'lucide-react';
 import { lessonObservationsApi } from '@/api';
 import ObservationRecordCard from './ObservationRecordCard';
 import type { ObservationList } from './types';
+import DateInput from '@/components/shared/DateInput';
 
 export default function MyObservationHistory() {
   const [from, setFrom] = useState('');
@@ -30,10 +31,10 @@ export default function MyObservationHistory() {
     </div>
     <div className="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:grid-cols-2">
       <label className="text-xs font-semibold text-zinc-400">Boshlanish sanasi
-        <input type="date" value={from} max={to || undefined} onChange={event => { setFrom(event.target.value); setPage(1); }} className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white" />
+        <DateInput value={from} max={to || undefined} onChange={event => { setFrom(event.target.value); setPage(1); }} className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white" />
       </label>
       <label className="text-xs font-semibold text-zinc-400">Tugash sanasi
-        <input type="date" value={to} min={from || undefined} onChange={event => { setTo(event.target.value); setPage(1); }} className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white" />
+        <DateInput value={to} min={from || undefined} onChange={event => { setTo(event.target.value); setPage(1); }} className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white" />
       </label>
     </div>
     {loading ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-[#ff3218]" /></div> :

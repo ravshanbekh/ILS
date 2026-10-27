@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import ObservationForm from '@/features/lessonObservations/ObservationForm';
 import ObservationRecordCard from '@/features/lessonObservations/ObservationRecordCard';
 import { observationTime, type ObservationList, type ObservationRank, type ObservationRecord, type ObservationSection, type ObservationTeacher } from '@/features/lessonObservations/types';
+import DateInput from '@/components/shared/DateInput';
 
 const base = '/admin/lesson-observations';
 const rankingPath = '/admin/lesson-observation-ranking';
@@ -95,10 +96,10 @@ export default function LessonObservationsPage() {
             </select>
           </label>
           <label className="text-xs font-semibold text-zinc-400">Boshlanish sanasi
-            <input type="date" value={from} max={to || undefined} onChange={event => { setFrom(event.target.value); setPage(1); }} className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white" />
+            <DateInput value={from} max={to || undefined} onChange={event => { setFrom(event.target.value); setPage(1); }} className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white" />
           </label>
           <label className="text-xs font-semibold text-zinc-400">Tugash sanasi
-            <input type="date" value={to} min={from || undefined} onChange={event => { setTo(event.target.value); setPage(1); }} className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white" />
+            <DateInput value={to} min={from || undefined} onChange={event => { setTo(event.target.value); setPage(1); }} className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white" />
           </label>
         </div>
 

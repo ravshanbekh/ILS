@@ -3,6 +3,7 @@ import Header from '@/components/layout/Header';
 import { supportHoursApi } from '@/api';
 import { uzDayMonth } from '@/utils/uzDate';
 import { AlertTriangle, Loader2, Trophy, ArrowUpDown } from 'lucide-react';
+import DateInput from '@/components/shared/DateInput';
 
 /**
  * Assistentlar mehnati — statistika va reyting.
@@ -154,17 +155,13 @@ export default function SupportStatsPage() {
           ))}
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <input
-              type="date"
-              value={range.from}
+            <DateInput value={range.from}
               onChange={(e) => { setPreset('custom'); setRange((r) => ({ ...r, from: e.target.value })); }}
               className="min-h-11 rounded-xl border px-3 text-sm"
               aria-label="Boshlanish sanasi"
             />
             <span style={{ color: 'var(--muted-foreground)' }}>—</span>
-            <input
-              type="date"
-              value={range.to}
+            <DateInput value={range.to}
               onChange={(e) => { setPreset('custom'); setRange((r) => ({ ...r, to: e.target.value })); }}
               className="min-h-11 rounded-xl border px-3 text-sm"
               aria-label="Tugash sanasi"

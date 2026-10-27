@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { groupEventsApi } from '@/api';
 import { PartyPopper, Plus, Trash2, Users, Loader2 } from 'lucide-react';
+import DateInput from '@/components/shared/DateInput';
 
 interface EventRow {
   id: string;
@@ -99,7 +100,7 @@ export default function GroupEventsCard({ groupId }: Props) {
           </div>
           <div>
             <label className="text-zinc-500 text-xs block mb-1">Sana va vaqt</label>
-            <input type="datetime-local" value={eventAt} onChange={(e) => setEventAt(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white" />
+            <DateInput mode="datetime" value={eventAt} onChange={(e) => setEventAt(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white" />
           </div>
           <div>
             <label className="text-zinc-500 text-xs block mb-1">Manzil</label>

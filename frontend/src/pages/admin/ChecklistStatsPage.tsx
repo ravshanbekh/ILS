@@ -6,6 +6,7 @@ import {
   X, CheckCircle2, XCircle, Clock, Star, User,
   ClipboardList, Trophy, Minus, ChevronLeft,
 } from 'lucide-react';
+import DateInput from '@/components/shared/DateInput';
 
 // Sana yordamchi funksiyalari
 function toLocalDateStr(date: Date): string {
@@ -514,13 +515,13 @@ export default function ChecklistStatsPage() {
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <div className="flex items-center gap-2 px-2">
-                <Calendar className="w-3.5 h-3.5 text-blue-400" />
-                <input
-                  type="date"
-                  value={selectedDate}
+                {/* DateInput — sayt dizaynidagi kalendar (o'z ikonkasi bilan); ilgari bu
+                    yerda alohida ikonka va [color-scheme:dark] bor edi — light rejimda
+                    ham qorong'i brauzer kalendari ochilardi */}
+                <DateInput required value={selectedDate}
                   max={toLocalDateStr(new Date())}
                   onChange={e => setSelectedDate(e.target.value)}
-                  className="bg-transparent text-sm text-white font-medium outline-none cursor-pointer [color-scheme:dark]"
+                  className="bg-transparent text-sm text-white font-medium outline-none cursor-pointer"
                 />
               </div>
               <button

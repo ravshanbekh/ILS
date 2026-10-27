@@ -12,6 +12,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
+import DateInput from '@/components/shared/DateInput';
 
 // Recharts bo'lmasa xatolikka tushmaslik uchun dinamik import
 const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16','#06b6d4','#a78bfa'];
@@ -818,7 +819,7 @@ export default function FrozenStudentsPage() {
                 </div>
                 <div>
                   <label className="text-zinc-400 text-xs block mb-1">Boshlagan sana</label>
-                  <input type="date" value={freezeForm.startDate} onChange={e => setFreezeForm(f => ({ ...f, startDate: e.target.value }))}
+                  <DateInput value={freezeForm.startDate} onChange={e => setFreezeForm(f => ({ ...f, startDate: e.target.value }))}
                     className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-white text-sm focus:border-blue-500 outline-none" />
                 </div>
               </div>

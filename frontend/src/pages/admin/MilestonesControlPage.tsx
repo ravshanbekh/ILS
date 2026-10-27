@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { milestonesApi } from '@/api';
+import DateInput from '@/components/shared/DateInput';
 
 type MilestoneType = 'demo_day' | 'imtihon';
 type Status =
@@ -170,8 +171,7 @@ export default function MilestonesControlPage() {
               {month} — natijalar
             </h2>
             <div className="flex items-center gap-2">
-              <input
-                type="month"
+              <DateInput required mode="month"
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
                 className="px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm"

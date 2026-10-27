@@ -9,6 +9,7 @@ import { typingApi } from '@/api';
 import TypingLeaderboard from '@/components/typing/TypingLeaderboard';
 import TypingStats, { type TypingStatsData } from '@/components/typing/TypingStats';
 import { MODE_LABEL, variantLabel, fmtDate, medal } from '@/components/typing/typingUi';
+import DateInput from '@/components/shared/DateInput';
 
 type Tab = 'rating' | 'matches' | 'results' | 'live';
 const TABS: { key: Tab; label: string; icon: any }[] = [
@@ -179,8 +180,8 @@ function Results({ onStudent }: { onStudent: (s: { id: string; name: string }) =
         <select value={f.flagged} onChange={(e) => set('flagged', e.target.value)} className={sel} aria-label="Tekshiruv">
           <option value="">Hammasi</option><option value="true">Faqat shubhali</option><option value="false">Tekshiruvdan o'tgan</option>
         </select>
-        <input type="date" value={f.from} onChange={(e) => set('from', e.target.value)} className={sel} aria-label="Dan" />
-        <input type="date" value={f.to} onChange={(e) => set('to', e.target.value)} className={sel} aria-label="Gacha" />
+        <DateInput value={f.from} onChange={(e) => set('from', e.target.value)} className={sel} aria-label="Dan" />
+        <DateInput value={f.to} onChange={(e) => set('to', e.target.value)} className={sel} aria-label="Gacha" />
       </div>
       {!data ? (
         <div className="flex h-24 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-zinc-500" /></div>

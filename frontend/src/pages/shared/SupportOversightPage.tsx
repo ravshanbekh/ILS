@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   CalendarDays,
 } from 'lucide-react';
+import DateInput from '@/components/shared/DateInput';
 
 interface BookedStudent {
   bookingId: string;
@@ -121,9 +122,7 @@ export default function SupportOversightPage() {
             >
               ‹
             </button>
-            <input
-              type="date"
-              value={date}
+            <DateInput required value={date}
               onChange={(e) => e.target.value && setDate(e.target.value)}
               className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white"
             />

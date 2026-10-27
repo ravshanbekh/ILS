@@ -4,6 +4,7 @@ import { groupsApi, usersApi } from '@/api';
 import Header from '@/components/layout/Header';
 import { Link, useNavigate } from 'react-router-dom';
 import { FolderPlus, Pencil, Trash2, Users, Search, ChevronLeft, ChevronRight, GraduationCap, Archive, RotateCcw } from 'lucide-react';
+import DateInput from '@/components/shared/DateInput';
 
 export default function GroupsPage() {
   const { user } = useAuthStore();
@@ -479,9 +480,7 @@ export default function GroupsPage() {
                     <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">
                       Boshlanish sanasi
                     </label>
-                    <input
-                      type="date"
-                      value={formData.startDate}
+                    <DateInput value={formData.startDate}
                       onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                     />

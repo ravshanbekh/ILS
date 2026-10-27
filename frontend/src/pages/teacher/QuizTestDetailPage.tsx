@@ -10,6 +10,7 @@ import {
   parseQuizTestFile, downloadTemplate,
   type ParsedQuestion,
 } from '@/utils/quizTestExcel';
+import DateInput from '@/components/shared/DateInput';
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
@@ -974,16 +975,14 @@ function SettingsTab({ test, reload }: { test: TestFull; reload: () => void }) {
             />
           </Field>
           <Field label="Boshlanish" hint="bo'sh = darhol">
-            <input
-              type="datetime-local"
+            <DateInput mode="datetime"
               value={form.startsAt}
               onChange={(e) => set('startsAt', e.target.value)}
               className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             />
           </Field>
           <Field label="Tugash" hint="bo'sh = cheksiz">
-            <input
-              type="datetime-local"
+            <DateInput mode="datetime"
               value={form.expiresAt}
               onChange={(e) => set('expiresAt', e.target.value)}
               className="w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-indigo-400"

@@ -3,6 +3,7 @@ import Header from '@/components/layout/Header';
 import { appealsApi } from '@/api';
 import { downloadBlob } from '@/utils';
 import { MessageSquare, Loader2, Download, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import DateInput from '@/components/shared/DateInput';
 
 interface Appeal {
   id: string;
@@ -135,9 +136,9 @@ export default function AppealsPage() {
             <button onClick={() => setPreset(0)} className="px-2.5 py-2 rounded-lg text-xs font-semibold border border-zinc-800 text-zinc-400 hover:text-white">Bugun</button>
             <button onClick={() => setPreset(7)} className="px-2.5 py-2 rounded-lg text-xs font-semibold border border-zinc-800 text-zinc-400 hover:text-white">Hafta</button>
             <button onClick={() => setPreset(30)} className="px-2.5 py-2 rounded-lg text-xs font-semibold border border-zinc-800 text-zinc-400 hover:text-white">Oy</button>
-            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-2 text-xs text-white" />
+            <DateInput value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-2 text-xs text-white" />
             <span className="text-zinc-600 text-xs">—</span>
-            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-2 text-xs text-white" />
+            <DateInput value={toDate} onChange={(e) => setToDate(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-2 text-xs text-white" />
             {(fromDate || toDate) && (
               <button onClick={clearDates} className="text-zinc-500 hover:text-white text-xs px-1.5">✕</button>
             )}
