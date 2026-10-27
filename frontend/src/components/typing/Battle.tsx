@@ -84,12 +84,28 @@ export default function Battle({ onFinished, active = true }: { onFinished?: () 
   const [joinCode, setJoinCode] = useState('');
 
   useEffect(() => {
+    // forceNew: o'z manager'i. Ilgari global socket (bildirishnomalar) manager'ini
+    // bo'lishardi — u `autoConnect: false` bilan yaratilgan, multiplex qilingan
+    // socket esa MANAGER'ning autoConnect'iga bo'ysunadi: /typing hech qachon
+    // CONNECT yubormas, prod'da abadiy spinner chiqardi. Shuning uchun alohida
+    // manager + aniq connect().
     const s = io(`${SOCKET_URL}/typing`, {
+      forceNew: true,
+      autoConnect: false,
       withCredentials: true,
       transports: ['websocket', 'polling'],
+      tryAllTransports: true,
       auth: (cb) => cb({ token: localStorage.getItem('accessToken') || '' }),
     });
     sockRef.current = s;
+    // 12 s ichida ulanmasa — abadiy spinner o'rniga xato va "Qayta ulanish"
+    const giveUp = window.setTimeout(() => {
+      if (!s.connected) {
+        setConn('offline');
+        setConnErr('Serverga ulanib bo\'lmadi — internetni tekshirib, qayta urinib ko\'ring');
+      }
+    }, 12_000);
+    s.on('connect', () => window.clearTimeout(giveUp));
     s.on('connect', () => {
       setConn('online');
       setConnErr(null);
@@ -114,7 +130,9 @@ export default function Battle({ onFinished, active = true }: { onFinished?: () 
         if (r?.ok) setRoom(r.room);
       });
     });
+    s.connect();
     return () => {
+      window.clearTimeout(giveUp);
       s.emit('room:leave', {});
       s.close();
     };
