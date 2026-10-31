@@ -3,7 +3,9 @@
  *
  * Mashq (server hisoblagan WPM, shubhali natija), Socket kirish qoidalari,
  * duel / 4 kishilik / jamoaviy bellashuvlar (parallel), firibgarlik
- * (imkonsiz tez progress), ELO, reytinglar, admin marshrutlari.
+ * (imkonsiz tez progress), ELO, reytinglar, admin marshrutlari,
+ * jamoaviy 8 × 8 sig'imi, sinf musobaqasi (mentor ochadi, 20 o'quvchi, erta
+ * yakunlash, reytingsiz, tarix + Excel, egalik tekshiruvi).
  * Fixture'lar "tpe2e" belgisi bilan yaratiladi va oxirida o'chiriladi.
  *
  * Ishlatish (backend papkasidan, LOKAL baza bilan):  npm run e2e:typing
@@ -48,15 +50,17 @@ async function main() {
 
   const tag = `tpe2e${Date.now().toString(36)}`;
   const users: { id: string; token: string; name: string }[] = [];
-  const mk = async (role: 'student' | 'teacher' | 'admin', i: number) => {
+  const mk = async (role: 'student' | 'teacher' | 'admin' | 'assistant', i: number) => {
     const u = await prisma.user.create({ data: { fullName: `TP ${role} ${i}`, login: `${tag}_${role}${i}`, passwordHash: 'x', role } });
     return { id: u.id, name: u.fullName, token: jwt.sign({ userId: u.id, role, login: u.login, tv: 0 }, env.JWT_SECRET) };
   };
   const S = [];
-  for (let i = 1; i <= 10; i++) S.push(await mk('student', i));
+  for (let i = 1; i <= 27; i++) S.push(await mk('student', i));
   const teacher = await mk('teacher', 1);
+  const teacher2 = await mk('teacher', 2);
+  const assistant = await mk('assistant', 1);
   const admin = await mk('admin', 1);
-  users.push(...S, teacher, admin);
+  users.push(...S, teacher, teacher2, assistant, admin);
   const group = await prisma.group.create({ data: { name: `${tag}-G` } });
   await prisma.groupStudent.createMany({ data: S.slice(0, 2).map((s) => ({ groupId: group.id, studentId: s.id })) });
 
@@ -123,10 +127,12 @@ async function main() {
     const anon = await connect();
     check('tokensiz → AUTH_REQUIRED', anon.error === 'AUTH_REQUIRED', anon.error);
     const tch = await connect(teacher.token);
-    check('ustoz → STUDENTS_ONLY', tch.error === 'STUDENTS_ONLY', tch.error);
+    check('ustoz ulanadi (sinf musobaqasi uchun)', tch.connected === true, tch.error);
+    const ast = await connect(assistant.token);
+    check('assistent → STUDENTS_ONLY', ast.error === 'STUDENTS_ONLY', ast.error);
     const c: any[] = [];
     for (const s of S) c.push(await connect(s.token));
-    check('10 o\'quvchi ulandi', c.every((x) => x.connected));
+    check('27 o\'quvchi ulandi', c.every((x) => x.connected));
 
     // ── 3. Lobby'lar ──────────────────────────────────────────────────────────
     console.log('\n3) Xonalar va lobby');
@@ -178,6 +184,7 @@ async function main() {
     check('sanoqdan keyin matn ochildi va hammada bir xil', textOf(0) && textOf(0) === textOf(1) && textOf(2) === textOf(5));
 
     // Simulyatsiya: har o'yinchi o'z tezligida (belgi/soniya)
+    const stopRace = new Set<number>();
     const race = (i: number, cps: number, cheat = false) =>
       (async () => {
         const len = textOf(i).length;
@@ -190,6 +197,8 @@ async function main() {
           if (Math.random() < 0.3) errors++;
           c[i].emit('race:progress', { pos, keys: pos + errors, errors, maxCombo: Math.min(pos, 40) });
           if (pos >= len && (!cheat || (states.get(`${i}`)?.players ?? []).find((p: any) => p.userId === S[i].id)?.finishedAt)) break;
+          if (states.get(`${i}`)?.status === 'finished') break; // mentor erta yakunladi
+          if (stopRace.has(i)) break; // o'yinchi chiqib ketdi — holat endi unga kelmaydi
           if (el > 70) break;
         }
       })();
@@ -249,8 +258,8 @@ async function main() {
     check('admin o\'yinlar (jamoaviy)', am.json?.data?.items?.[0]?.players?.length === 4);
     const md = await api(admin.token, 'GET', `/admin/matches/${am.json.data.items[0].id}`);
     check('admin o\'yin tafsiloti', md.json?.data?.players?.length === 4 && md.json.data.results.length === 4);
-    const ast = await api(admin.token, 'GET', `/admin/students/${S[0].id}/stats`);
-    check('admin: o\'quvchi statistikasi', ast.json?.data?.battles === 1);
+    const ast2 = await api(admin.token, 'GET', `/admin/students/${S[0].id}/stats`);
+    check('admin: o\'quvchi statistikasi', ast2.json?.data?.battles === 1);
     const live = await api(admin.token, 'GET', '/admin/live');
     check('admin: jonli xonalar', Array.isArray(live.json?.data));
     const forbidden = await api(S[0].token, 'GET', '/admin/overview');
@@ -264,6 +273,125 @@ async function main() {
     await sleep(200);
     const after = states.get('1');
     check('xona egasi chiqsa — egalik keyingi o\'yinchiga o\'tadi', after?.code === lr.room.code && after.hostId === S[1].id && after.players.length === 1);
+
+    // ── 8. Jamoaviy 8 × 8 ─────────────────────────────────────────────────────
+    console.log('\n8) Jamoaviy — 8 × 8 = 16');
+    const big = await emit(c[10], 'room:create', { mode: 'team', contentType: 'text', isPrivate: true });
+    check('jamoaviy xona 16 kishilik', big.ok && big.room.maxPlayers === 16, `${big.room?.maxPlayers}`);
+    let bigState: any = big.room;
+    for (let i = 11; i <= 25; i++) bigState = (await emit(c[i], 'room:join', { code: big.room.code })).room ?? bigState;
+    const cntA = bigState.players.filter((p: any) => p.team === 'A').length;
+    const cntB = bigState.players.filter((p: any) => p.team === 'B').length;
+    check('16 o\'yinchi: A = 8, B = 8', bigState.players.length === 16 && cntA === 8 && cntB === 8, `A=${cntA} B=${cntB}`);
+    const over = await emit(c[26], 'room:join', { code: big.room.code });
+    check('17-o\'yinchi rad etiladi', !over.ok && over.error.includes('to\'la'), over.error);
+    const aMember = bigState.players.find((p: any) => p.team === 'A').userId;
+    const sw = await emit(c[S.findIndex((x) => x.id === aMember)], 'room:team', { team: 'B' });
+    check('to\'la jamoaga o\'tib bo\'lmaydi (8 dan oshmaydi)', !sw.ok && sw.error.includes('to\'la'), sw.error);
+    await emit(c[25], 'room:leave');
+    const back = await emit(c[26], 'room:join', { code: big.room.code });
+    check('joy bo\'shasa yana qo\'shiladi', back.ok && back.room.players.length === 16);
+
+    // ── 9. Sinf musobaqasi ────────────────────────────────────────────────────
+    console.log('\n9) Sinf musobaqasi (mentor)');
+    const stuClass = await emit(c[0], 'room:create', { mode: 'class' });
+    check('o\'quvchi sinf musobaqasini ocholmaydi', !stuClass.ok && stuClass.error.includes('mentor'), stuClass.error);
+    const tDuel = await emit(tch, 'room:create', { mode: 'duel' });
+    check('mentor oddiy xona ocholmaydi', !tDuel.ok, tDuel.error);
+    const tJoin = await emit(tch, 'room:join', { code: big.room.code });
+    check('mentor o\'yinchi bo\'lib qo\'shilmaydi', !tJoin.ok, tJoin.error);
+    const cls = await emit(tch, 'room:create', { mode: 'class', title: '  3-guruh    bellashuvi ', contentType: 'text', variant: 'uz', size: 'short' });
+    check('mentor musobaqa ochdi', cls.ok && cls.room.mode === 'class' && cls.room.maxPlayers === 200 && cls.room.isPrivate, cls.error);
+    check('mentor o\'yinchilar ichida emas, nomi tozalangan', cls.room.players.length === 0 && cls.room.hostPlays === false && cls.room.title === '3-guruh bellashuvi' && cls.room.hostName === teacher.name);
+    check('musobaqa ochiq ro\'yxatda ko\'rinmaydi', !(await emit(c[0], 'lobbies:watch')).rooms.some((r: any) => r.code === cls.room.code));
+    const emptyStart = await emit(tch, 'room:start');
+    check('hech kim kirmasa boshlab bo\'lmaydi', !emptyStart.ok && emptyStart.error.includes('hech kim'), emptyStart.error);
+
+    let tstate: any = null;
+    tch.on('room:state', (r: any) => (tstate = r));
+    const CL = Array.from({ length: 20 }, (_, k) => k + 4); // S[4]…S[23] — 20 o'quvchi (jamoaviydan ko'p)
+    let last: any = null;
+    for (const i of CL) last = await emit(c[i], 'room:join', { code: cls.room.code.toLowerCase() });
+    check('20 o\'quvchi kod bilan kirdi (oldingi xonalaridan avtomatik chiqib)', last.ok && last.room.players.length === 20, last.error);
+    await sleep(100);
+    check('mentor xona holatini oladi', tstate?.code === cls.room.code && tstate.players.length === 20);
+    const kicked = new Promise<any>((r) => c[23].once('room:closed', r));
+    const k1 = await emit(tch, 'room:kick', { userId: S[23].id });
+    check('mentor o\'quvchini chiqara oladi', k1.ok && (await kicked).reason.includes('Mentor'));
+    await emit(c[23], 'room:join', { code: cls.room.code });
+    const stStart = await emit(c[4], 'room:start');
+    check('o\'quvchi musobaqani boshlay olmaydi', !stStart.ok, stStart.error);
+    const ratingsBefore = await prisma.typingRating.findMany({ where: { userId: { in: CL.map((i) => S[i].id) } } });
+
+    const go = await emit(tch, 'room:start');
+    check('mentor boshladi', go.ok, go.error);
+    await sleep(3300);
+    check('matn ochildi: mentor va o\'quvchida bir xil', !!tstate?.text && tstate.text === textOf(4) && tstate.status === 'running');
+    const late = await emit(c[24], 'room:join', { code: cls.room.code });
+    check('boshlangandan keyin kirib bo\'lmaydi', !late.ok && late.error.includes('boshlangan'), late.error);
+    const early2 = await emit(c[4], 'room:finish');
+    check('o\'quvchi yakunlay olmaydi', !early2.ok);
+
+    const racers = CL.map((i, k) => race(i, k === 0 ? 22 : k === 1 ? 18 : k === 2 ? 15 : 2));
+    await sleep(2500);
+    stopRace.add(8);
+    await emit(c[8], 'room:leave'); // bittasi o'rtada chiqib ketadi
+    const clsLen = textOf(4).length;
+    await sleep(Math.max(0, (clsLen / 15) * 1000 - 2500) + 1500); // 3 ta tezkor tugatsin
+    const fin = await emit(tch, 'room:finish');
+    check('mentor muddatidan oldin yakunladi', fin.ok, fin.error);
+    await Promise.all(racers);
+    for (let w = 0; w < 20 && !tstate?.results; w++) await sleep(250);
+    const cr = tstate?.results;
+    check('natija: 20 ishtirokchi', cr?.players?.length === 20, `${cr?.players?.length} ${cr?.error ?? ''}`);
+    check('1-o\'rin — eng tez yozgan', cr?.players?.[0]?.userId === S[4].id && cr.players[0].outcome === 'finished', JSON.stringify(cr?.players?.slice(0, 3).map((p: any) => [p.fullName, p.place, p.wpm, p.outcome])));
+    check('tugatganlar 1–3, qolganlar "vaqt tugadi"', cr?.players?.filter((p: any) => p.outcome === 'finished').length === 3 && cr.players.filter((p: any) => p.outcome === 'timeout').length === 16);
+    check('chiqib ketgan oxirida', cr?.players?.[19]?.userId === S[8].id && cr.players[19].outcome === 'left');
+    check('reytingsiz: hech kimda ELO o\'zgarmadi', cr?.rated === false && cr.players.every((p: any) => p.delta === 0));
+    const ratingsAfter = await prisma.typingRating.findMany({ where: { userId: { in: CL.map((i) => S[i].id) } } });
+    check('bazadagi jang reytingi o\'zgarmagan', JSON.stringify(ratingsBefore.map((r) => [r.userId, r.rating, r.matches]).sort()) === JSON.stringify(ratingsAfter.map((r) => [r.userId, r.rating, r.matches]).sort()));
+    const dbc = await prisma.typingMatch.findFirst({ where: { code: cls.room.code }, include: { players: true } });
+    check('bazada: mode=class, nomi, mentor host, 20 o\'yinchi', dbc?.mode === 'class' && dbc.title === '3-guruh bellashuvi' && dbc.hostId === teacher.id && dbc.players.length === 20);
+    const resCnt = await prisma.typingResult.count({ where: { matchId: dbc?.id, mode: 'class' } });
+    check('natijalar tarixga yozildi', resCnt >= 19, `${resCnt}`);
+
+    // REST: tarix, tafsilot, Excel, egalik
+    const cl = await api(teacher.token, 'GET', '/class/matches');
+    const row = cl.json?.data?.items?.[0];
+    check('mentor tarixi', row?.id === dbc?.id && row.participants === 20 && row.finishedCount === 3 && row.top[0].fullName === S[4].name, JSON.stringify(row?.top));
+    const det = await api(teacher.token, 'GET', `/class/matches/${dbc?.id}`);
+    check('tafsilot: guruh, xatolar, vaqt', det.json?.data?.players?.length === 20 && Array.isArray(det.json.data.players[0].groups) && det.json.data.players[0].timeSec > 0);
+    const xr = await fetch(`${BASE}/api/typing/class/matches/${dbc?.id}/excel`, { headers: { Authorization: `Bearer ${teacher.token}` } });
+    const xb = Buffer.from(await xr.arrayBuffer());
+    check('Excel yuklanadi (xlsx)', xr.status === 200 && (xr.headers.get('content-type') ?? '').includes('spreadsheetml') && xb.subarray(0, 2).toString() === 'PK' && xb.length > 5000, `${xr.status} ${xb.length} B`);
+    const other = await api(teacher2.token, 'GET', `/class/matches/${dbc?.id}`);
+    check('boshqa mentor ko\'ra olmaydi', other.status === 404);
+    const otherList = await api(teacher2.token, 'GET', '/class/matches');
+    check('boshqa mentor ro\'yxati bo\'sh', otherList.json?.data?.total === 0);
+    const adm = await api(admin.token, 'GET', `/class/matches/${dbc?.id}`);
+    check('admin ko\'ra oladi', adm.status === 200);
+    const stuDeny = await api(S[4].token, 'GET', '/class/matches');
+    check('o\'quvchi mentor marshrutiga kira olmaydi', stuDeny.status === 403);
+    const am2 = await api(admin.token, 'GET', '/admin/matches?mode=class');
+    check('admin o\'yinlar ro\'yxatida sinf musobaqasi', am2.json?.data?.items?.some((m: any) => m.id === dbc?.id && m.title === '3-guruh bellashuvi'));
+
+    // Mentor qayta ulansa — natija ekraniga qaytadi; yopgach yangisini ochadi
+    tch.close();
+    await sleep(200);
+    // Tinglovchi ulanishdan OLDIN — server holatni darhol (CONNECT bilan birga) yuboradi
+    const { tch2, back2 } = await new Promise<any>((r) => {
+      const s = ioc(`${BASE}/typing`, { auth: { token: teacher.token }, transports: ['websocket'], reconnection: false });
+      sockets.push(s);
+      s.once('room:state', (st: any) => r({ tch2: s, back2: st }));
+      setTimeout(() => r({ tch2: s, back2: null }), 2000);
+    });
+    check('mentor qayta ulandi → musobaqa natijasi qaytdi', back2?.code === cls.room.code && !!back2.results);
+    const cl2 = await emit(tch2, 'room:create', { mode: 'class', contentType: 'code', variant: 'Python', size: 'long' });
+    check('yangi musobaqa (uzun kod, vaqt chegarasi > 240 s)', cl2.ok && cl2.room.textLength >= 300 && cl2.room.timeLimitSec > 240, `${cl2.room?.textLength} belgi, ${cl2.room?.timeLimitSec} s`);
+    await emit(c[24], 'room:join', { code: cl2.room.code });
+    const closed = new Promise<any>((r) => { c[24].once('room:closed', r); setTimeout(() => r(null), 2000); });
+    const cz = await emit(tch2, 'room:close');
+    check('mentor lobby\'ni yopsa o\'quvchilarga xabar boradi', cz.ok && (await closed)?.reason?.includes('yopdi'));
   } finally {
     for (const s of sockets) s?.close?.();
     const ids = users.map((u) => u.id);

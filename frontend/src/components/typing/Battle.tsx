@@ -1,46 +1,21 @@
 /**
- * Bellashuv — Duel (2), 4 kishilik, Jamoaviy (A va B, 8 kishigacha).
+ * Bellashuv — Duel (2), 4 kishilik, Jamoaviy (A va B, 8 × 8 = 16 kishigacha),
+ * Sinf musobaqasi (mentor ochadi — o'quvchi faqat kod bilan kiradi).
  * Real vaqt: Socket.IO `/typing` (backend: modules/typing/typing.rooms.ts).
  * Xona holati va natija serverda; bu yerda faqat ko'rsatish va yozish.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { io, type Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import {
-  Swords, Users, UsersRound, Zap, Copy, Check, LogOut, Play, Loader2, Crown, X, Lock, RefreshCw, Trophy, AlertTriangle,
+  Swords, Users, UsersRound, Zap, Copy, Check, LogOut, Play, Loader2, Crown, X, Lock, RefreshCw, Trophy, AlertTriangle, GraduationCap, LogIn,
 } from 'lucide-react';
-import { SOCKET_URL } from '@/utils/socket';
 import { useAuthStore } from '@/stores/authStore';
 import TypingSurface from './TypingSurface';
 import { MODE_LABEL, variantLabel, medal } from './typingUi';
+import { createTypingSocket, SOCKET_ERR, type RoomMode, type RoomPlayer, type RoomState } from './typingRoom';
+import { ClassBoard, ClassLobby, ClassResults } from './ClassBoard';
 
-type Mode = 'duel' | 'ffa' | 'team';
-interface RoomPlayer {
-  userId: string;
-  fullName: string;
-  team: 'A' | 'B' | null;
-  pos: number;
-  finishedAt: number | null;
-  left: boolean;
-  connected: boolean;
-  wpm: number;
-}
-interface RoomState {
-  code: string;
-  mode: Mode;
-  contentType: 'text' | 'code';
-  variant: string;
-  isPrivate: boolean;
-  hostId: string;
-  status: 'lobby' | 'countdown' | 'running' | 'finished';
-  maxPlayers: number;
-  timeLimitSec: number;
-  startAt: number | null;
-  serverNow: number;
-  text: string | null;
-  textLength: number;
-  players: RoomPlayer[];
-  results: any;
-}
+type Mode = RoomMode;
 interface LobbyRow {
   code: string;
   mode: Mode;
@@ -55,13 +30,9 @@ const CODE_LANGS = ['Tasodifiy', 'Python', 'JavaScript', 'TypeScript', 'C++', 'J
 const MODES: { key: Mode; title: string; desc: string; icon: any }[] = [
   { key: 'duel', title: 'Duel', desc: '1 ga 1 — kim tezroq?', icon: Swords },
   { key: 'ffa', title: '4 kishilik', desc: '4 o\'yinchi, bitta g\'olib', icon: Users },
-  { key: 'team', title: 'Jamoaviy', desc: 'A va B jamoa, 8 kishigacha', icon: UsersRound },
+  { key: 'team', title: 'Jamoaviy', desc: 'A va B jamoa, 8 × 8 — 16 kishigacha', icon: UsersRound },
+  { key: 'class', title: 'Sinf musobaqasi', desc: 'Mentor bergan kod bilan kiring', icon: GraduationCap },
 ];
-const SOCKET_ERR: Record<string, string> = {
-  AUTH_REQUIRED: 'Tizimga qaytadan kiring',
-  AUTH_INVALID: 'Sessiya eskirgan — qaytadan kiring',
-  STUDENTS_ONLY: 'Bellashuv faqat o\'quvchilar uchun',
-};
 
 export default function Battle({ onFinished, active = true }: { onFinished?: () => void; active?: boolean }) {
   const me = useAuthStore((s) => s.user);
@@ -84,19 +55,7 @@ export default function Battle({ onFinished, active = true }: { onFinished?: () 
   const [joinCode, setJoinCode] = useState('');
 
   useEffect(() => {
-    // forceNew: o'z manager'i. Ilgari global socket (bildirishnomalar) manager'ini
-    // bo'lishardi — u `autoConnect: false` bilan yaratilgan, multiplex qilingan
-    // socket esa MANAGER'ning autoConnect'iga bo'ysunadi: /typing hech qachon
-    // CONNECT yubormas, prod'da abadiy spinner chiqardi. Shuning uchun alohida
-    // manager + aniq connect().
-    const s = io(`${SOCKET_URL}/typing`, {
-      forceNew: true,
-      autoConnect: false,
-      withCredentials: true,
-      transports: ['websocket', 'polling'],
-      tryAllTransports: true,
-      auth: (cb) => cb({ token: localStorage.getItem('accessToken') || '' }),
-    });
+    const s = createTypingSocket();
     sockRef.current = s;
     // 12 s ichida ulanmasa — abadiy spinner o'rniga xato va "Qayta ulanish"
     const giveUp = window.setTimeout(() => {
@@ -210,7 +169,7 @@ export default function Battle({ onFinished, active = true }: { onFinished?: () 
     return (
       <div className="space-y-4">
         {notice && <Notice text={notice} />}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {MODES.map((m) => (
             <button
               key={m.key}
@@ -224,6 +183,36 @@ export default function Battle({ onFinished, active = true }: { onFinished?: () 
           ))}
         </div>
 
+        {mode === 'class' ? (
+          <div className="mx-auto max-w-xl space-y-4 rounded-2xl border border-orange-500/30 bg-gradient-to-b from-orange-500/10 to-zinc-900 p-6 text-center">
+            <GraduationCap className="mx-auto h-10 w-10 text-orange-400" />
+            <div>
+              <h3 className="text-lg font-black text-zinc-100">Sinf musobaqasi</h3>
+              <p className="mt-1 text-sm text-zinc-400">
+                Musobaqani mentor ochadi va ekranda kod ko'rsatadi. Kodni kiriting — mentor boshlaganda hamma bir xil matnni yozadi, oxirida natija chiqadi.
+              </p>
+            </div>
+            <form
+              className="flex flex-col items-stretch gap-2 sm:flex-row sm:justify-center"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (joinCode) act('room:join', { code: joinCode });
+              }}
+            >
+              <input
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
+                placeholder="KOD"
+                autoFocus
+                className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-center font-mono text-2xl font-black uppercase tracking-[0.4em] text-zinc-100 placeholder:tracking-[0.3em] placeholder:text-zinc-700 sm:w-56"
+                aria-label="Musobaqa kodi"
+              />
+              <button type="submit" disabled={!joinCode || busy} className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-base font-bold text-white hover:bg-orange-600 disabled:opacity-50">
+                <LogIn className="h-5 w-5" /> Kirish
+              </button>
+            </form>
+          </div>
+        ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
             <h3 className="font-bold text-zinc-100">Xona yaratish</h3>
@@ -303,15 +292,41 @@ export default function Battle({ onFinished, active = true }: { onFinished?: () 
             )}
           </div>
         </div>
+        )}
       </div>
     );
   }
 
   const isHost = room.hostId === me?.id;
+  const isClass = room.mode === 'class';
   const startLocal = room.startAt ? room.startAt - offset : null;
 
   // ── Natija ─────────────────────────────────────────────────────────────────
   if (room.status === 'finished') {
+    if (isClass) {
+      if (!room.results?.players) {
+        return (
+          <Center>
+            {room.results?.error ? <p className="text-sm text-red-400">{room.results.error}</p> : <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />}
+          </Center>
+        );
+      }
+      return (
+        <div className="space-y-3">
+          <ClassHeader room={room} />
+          <ClassResults
+            players={room.results.players}
+            meId={me?.id}
+            textLength={room.results.textLength ?? room.textLength}
+            actions={
+              <button onClick={() => setRoom(null)} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600">
+                <Swords className="h-4 w-4" /> Bellashuvlarga qaytish
+              </button>
+            }
+          />
+        </div>
+      );
+    }
     return <Results room={room} meId={me?.id} onBack={() => setRoom(null)} />;
   }
 
@@ -321,7 +336,16 @@ export default function Battle({ onFinished, active = true }: { onFinished?: () 
       {notice && <Notice text={notice} />}
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
         <div>
-          <div className="text-xs text-zinc-500">{MODE_LABEL[room.mode]} · {variantLabel(room.contentType, room.variant)}</div>
+          <div className="text-xs text-zinc-500">
+            {isClass ? (
+              <>
+                <b className="text-orange-400">{room.title || MODE_LABEL.class}</b> · Mentor: {room.hostName}
+              </>
+            ) : (
+              MODE_LABEL[room.mode]
+            )}{' '}
+            · {variantLabel(room.contentType, room.variant)}
+          </div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-2xl font-black tracking-[0.3em] text-zinc-100">{room.code}</span>
             <CopyBtn text={room.code} />
@@ -329,7 +353,7 @@ export default function Battle({ onFinished, active = true }: { onFinished?: () 
           </div>
         </div>
         <div className="text-xs text-zinc-500">
-          {room.players.length}/{room.maxPlayers} o'yinchi · {room.textLength} belgi · chegara {room.timeLimitSec} s
+          {isClass ? `${room.players.length} o'quvchi` : `${room.players.length}/${room.maxPlayers} o'yinchi`} · {room.textLength} belgi · chegara {room.timeLimitSec} s
         </div>
         <div className="ml-auto flex gap-2">
           {room.status === 'lobby' && isHost && (
@@ -343,11 +367,17 @@ export default function Battle({ onFinished, active = true }: { onFinished?: () 
         </div>
       </div>
 
-      <Track room={room} meId={me?.id} isHost={isHost} onTeam={(t) => act('room:team', { team: t })} onKick={(id) => act('room:kick', { userId: id })} />
+      {isClass ? (
+        room.status === 'lobby' ? <ClassLobby room={room} meId={me?.id} /> : <ClassBoard room={room} meId={me?.id} compact />
+      ) : (
+        <Track room={room} meId={me?.id} isHost={isHost} onTeam={(t) => act('room:team', { team: t })} onKick={(id) => act('room:kick', { userId: id })} />
+      )}
 
       {room.status === 'lobby' ? (
         <p className="rounded-2xl border border-dashed border-zinc-800 py-6 text-center text-sm text-zinc-500">
-          {isHost
+          {isClass
+            ? 'Mentor musobaqani boshlashini kuting…'
+            : isHost
             ? room.mode === 'team'
               ? 'Har ikki jamoada kamida 1 kishi bo\'lsa — "Boshlash" ni bosing. Kodni do\'stlaringizga yuboring.'
               : 'Kamida 2 o\'yinchi bo\'lsa — "Boshlash" ni bosing. Kodni do\'stlaringizga yuboring.'
@@ -427,10 +457,20 @@ function Track({
   return <ul className="space-y-2">{room.players.map(lane)}</ul>;
 }
 
+function ClassHeader({ room }: { room: RoomState }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+      <GraduationCap className="h-5 w-5 text-orange-400" />
+      <span className="font-bold text-zinc-100">{room.title || MODE_LABEL.class}</span>
+      <span className="text-xs text-zinc-500">Mentor: {room.hostName} · {variantLabel(room.contentType, room.variant)} · kod {room.code}</span>
+    </div>
+  );
+}
+
 function Results({ room, meId, onBack }: { room: RoomState; meId?: string; onBack: () => void }) {
   const r = room.results;
   const mine = useMemo(() => r?.players?.find((p: any) => p.userId === meId), [r, meId]);
-  if (!r || r.error) {
+  if (!r || r.error || !r.players) {
     return (
       <Center>
         <p className="text-sm text-red-400">{r?.error ?? 'Natija hisoblanmoqda…'}</p>

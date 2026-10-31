@@ -80,6 +80,7 @@ const StudentShopPage = lazyWithReload(() => import('@/pages/student/ShopPage'))
 const GameHubPage = lazyWithReload(() => import('@/pages/student/game/GameHubPage'));
 const TypingGamePage = lazyWithReload(() => import('@/pages/student/game/TypingGamePage'));
 const TypingGamesAdminPage = lazyWithReload(() => import('@/pages/admin/TypingGamesPage'));
+const TypingContestPage = lazyWithReload(() => import('@/pages/shared/TypingContestPage'));
 const PermissionsPage = lazyWithReload(() => import('@/pages/admin/PermissionsPage'));
 
 /** Sahifa yuklanayotgan paytdagi ko'rsatkich */
@@ -255,6 +256,7 @@ export default function App() {
               <Route path="/admin/shop-orders" element={<ShopOrdersPage />} />
               <Route path="/admin/coin-oversight" element={<CoinOversightPage />} />
               <Route path="/admin/games" element={<TypingGamesAdminPage />} />
+              <Route path="/admin/typing-contest" element={<TypingContestPage />} />
               <Route path="/admin/support-hours" element={<SupportOversightPage />} />
               <Route path="/admin/support-stats" element={<SupportStatsPage />} />
               <Route path="/admin/my-support-hours" element={<MySupportHoursPage />} />
@@ -287,6 +289,7 @@ export default function App() {
               <Route path="/teacher/export" element={<ExportPage />} />
               <Route path="/teacher/exams" element={<ExamsPage />} />
               <Route path="/teacher/live-quiz" element={<LiveQuizPage />} />
+              <Route path="/teacher/typing-contest" element={<TypingContestPage />} />
               <Route path="/teacher/quiz-tests" element={<QuizTestsPage />} />
               <Route path="/teacher/quiz-tests/:id" element={<QuizTestDetailPage />} />
               {/* Faqat "homework_manage" ruxsati berilgan o'qituvchiga menyuda chiqadi */}

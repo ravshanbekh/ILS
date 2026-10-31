@@ -5,7 +5,7 @@ import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
   Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid,
-  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle, Keyboard, Gamepad2, ClipboardPenLine
+  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle, Keyboard, Gamepad2, ClipboardPenLine, Medal
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -95,6 +95,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/shop-orders', label: 'Buyurtmalar', icon: Package },
       { to: '/admin/coin-oversight', label: 'Coin nazorati', icon: Coins },
       { to: '/admin/games', label: "Tez yozish o'yini", icon: Keyboard },
+      { to: '/admin/typing-contest', label: 'Tez yozish musobaqasi', icon: Medal },
     ]
   },
   {
@@ -127,6 +128,7 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
       { to: '/teacher/exams', label: 'Imtihonlar', icon: FileText },
       { to: '/teacher/quiz-tests', label: 'Test paneli', icon: ClipboardList },
       { to: '/teacher/live-quiz', label: 'Live Quiz', icon: Zap },
+      { to: '/teacher/typing-contest', label: 'Tez yozish musobaqasi', icon: Medal },
     ]
   },
   {

@@ -5,6 +5,7 @@ export const MODE_LABEL: Record<string, string> = {
   duel: 'Duel',
   ffa: '4 kishilik',
   team: 'Jamoaviy',
+  class: 'Sinf musobaqasi',
 };
 export const SRC_LABEL: Record<string, string> = { en: 'English', uz: "O'zbek", tech: 'Dasturlash' };
 export const variantLabel = (contentType: string, variant: string) =>

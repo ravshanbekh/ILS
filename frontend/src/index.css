@@ -1227,6 +1227,17 @@ img.ios-img-in:not([class*="animate-"]) {
     from { opacity: 0; transform: translateY(-4px) scale(0.98); }
     to { opacity: 1; transform: none; }
   }
+  /* Tez yozish musobaqasi: yangi kirgan o'quvchi "chip"i va sanoq raqami */
+  .ils-chip-in {
+    animation: ils-chip-in 260ms var(--ease-ios-out);
+  }
+  @keyframes ils-chip-in {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ils-chip-in { animation: none; }
+  }
 }
 @layer utilities {
   /* Inputlar kabi: dekorativ border-zinc-800 emas, aniq ko'rinadigan chegara */

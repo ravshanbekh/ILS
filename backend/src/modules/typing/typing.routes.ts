@@ -2,6 +2,7 @@
  * /api/typing — "Tez yozish" o'yini.
  *   O'quvchi: mashq sessiyasi (start/finish), shaxsiy statistika
  *   Hamma (tizimga kirgan): katalog, reyting
+ *   Mentor (o'qituvchi/admin): sinf musobaqalari tarixi, natija, Excel
  *   Admin: umumiy ko'rinish, barcha natijalar, o'yinlar, jonli xonalar,
  *          o'quvchi statistikasi
  * Bellashuvlar real vaqtda — Socket.IO `/typing` (typing.rooms.ts).
@@ -11,7 +12,8 @@ import { z } from 'zod';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 import { ApiError } from '../../shared/middleware/errorHandler';
 import * as svc from './typing.service';
-import { liveRoomsSnapshot } from './typing.rooms';
+import { liveRoomsSnapshot, MENTOR_ROLES } from './typing.rooms';
+import { buildClassWorkbook } from './typing.excel';
 
 const router = Router();
 router.use(authenticate);
@@ -99,6 +101,46 @@ router.get(
   })
 );
 
+// ── Mentor: sinf musobaqalari (o'qituvchi — o'ziniki, admin — hammasi) ──────────
+const mentor = roleGuard(...MENTOR_ROLES);
+const viewerOf = (req: Request) => ({ userId: req.user!.userId, role: req.user!.role });
+
+router.get(
+  '/class/matches',
+  mentor,
+  wrap(async (req, res) => {
+    const q = parse(
+      z.object({
+        page: z.coerce.number().int().min(1).default(1),
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+      }),
+      req.query
+    );
+    res.json({ success: true, data: await svc.classMatches(viewerOf(req), q) });
+  })
+);
+
+router.get(
+  '/class/matches/:id',
+  mentor,
+  wrap(async (req, res) => {
+    const id = parse(z.string().uuid(), req.params.id);
+    res.json({ success: true, data: await svc.classMatchDetail(viewerOf(req), id) });
+  })
+);
+
+router.get(
+  '/class/matches/:id/excel',
+  mentor,
+  wrap(async (req, res) => {
+    const id = parse(z.string().uuid(), req.params.id);
+    const file = await buildClassWorkbook(viewerOf(req), id);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="musobaqa.xlsx"; filename*=UTF-8''${encodeURIComponent(file.filename)}`);
+    res.send(file.buffer);
+  })
+);
+
 // ── Admin ────────────────────────────────────────────────────────────────────
 const admin = roleGuard('admin');
 
@@ -114,7 +156,7 @@ router.get(
       z.object({
         userId: z.string().uuid().optional(),
         groupId: z.string().uuid().optional(),
-        mode: z.enum(['solo', 'duel', 'ffa', 'team']).optional(),
+        mode: z.enum(['solo', 'duel', 'ffa', 'team', 'class']).optional(),
         contentType: z.enum(['text', 'code']).optional(),
         flagged: z.enum(['true', 'false']).optional(),
         search: z.string().trim().max(100).optional(),
@@ -143,7 +185,7 @@ router.get(
   wrap(async (req, res) => {
     const q = parse(
       z.object({
-        mode: z.enum(['duel', 'ffa', 'team']).optional(),
+        mode: z.enum(['duel', 'ffa', 'team', 'class']).optional(),
         page: z.coerce.number().int().min(1).default(1),
         limit: z.coerce.number().int().min(1).max(100).default(30),
       }),

@@ -1621,7 +1621,7 @@ model LessonObservation {
 model TypingResult {
   id           String   @id @default(uuid()) @db.Uuid
   userId       String   @map("user_id") @db.Uuid
-  /// solo | duel | ffa | team
+  /// solo | duel | ffa | team | class
   mode         String   @db.VarChar(10)
   /// text | code
   contentType  String   @map("content_type") @db.VarChar(10)
@@ -1657,8 +1657,10 @@ model TypingResult {
 model TypingMatch {
   id          String    @id @default(uuid()) @db.Uuid
   code        String    @db.VarChar(8)
-  /// duel | ffa | team
+  /// duel | ffa | team | class (sinf musobaqasi — mentor ochadi, o'zi o'ynamaydi)
   mode        String    @db.VarChar(10)
+  /// Sinf musobaqasi nomi (mentor yozadi)
+  title       String?   @db.VarChar(80)
   contentType String    @map("content_type") @db.VarChar(10)
   variant     String    @db.VarChar(30)
   text        String    @db.Text

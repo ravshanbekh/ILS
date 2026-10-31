@@ -22,7 +22,7 @@ export const MAX_CPS = 25;
 export const MIN_LEADERBOARD_ACCURACY = 85;
 export const TEXT_DURATIONS = [15, 30, 60, 120] as const;
 
-export type Mode = 'solo' | 'duel' | 'ffa' | 'team';
+export type Mode = 'solo' | 'duel' | 'ffa' | 'team' | 'class';
 export type ContentType = 'text' | 'code';
 
 export interface RawCounts {
@@ -276,7 +276,8 @@ export interface FinishedPlayer {
 
 export async function persistMatch(m: {
   code: string;
-  mode: 'duel' | 'ffa' | 'team';
+  mode: 'duel' | 'ffa' | 'team' | 'class';
+  title?: string | null;
   contentType: ContentType;
   variant: string;
   text: string;
@@ -289,16 +290,21 @@ export async function persistMatch(m: {
 }) {
   const ratings = await prisma.typingRating.findMany({ where: { userId: { in: m.players.map((p) => p.userId) } } });
   const rmap = new Map(ratings.map((r) => [r.userId, r.rating]));
-  // Reyting faqat haqiqiy raqobatda: kamida 2 kishi va hech kim "shubhali" emas
-  const rated = m.players.length >= 2 && m.players.every((p) => p.flagged.length === 0);
+  // Reyting faqat haqiqiy raqobatda: kamida 2 kishi va hech kim "shubhali" emas.
+  // Sinf musobaqasi (mentor o'tkazadi, o'nlab o'quvchi) jang reytingiga ta'sir qilmaydi —
+  // natijasi esa tezlik reytinglariga (matn/kod) odatdagidek kiradi.
+  const rated = m.mode !== 'class' && m.players.length >= 2 && m.players.every((p) => p.flagged.length === 0);
   const elo: EloPlayer[] = m.players.map((p) => ({ userId: p.userId, rating: rmap.get(p.userId) ?? START_RATING, place: p.place, team: p.team }));
-  const deltas = rated ? eloDeltas(m.mode, elo, m.winnerTeam) : new Map<string, number>();
+  const deltas = rated ? eloDeltas(m.mode as 'duel' | 'ffa' | 'team', elo, m.winnerTeam) : new Map<string, number>();
 
+  // Sinf musobaqasida 100+ o'quvchi bo'lishi mumkin — yozuvlar createMany bilan,
+  // tranzaksiya vaqti ham uzaytirilgan (standart 5 s yetmasligi mumkin)
   return prisma.$transaction(async (tx) => {
     const match = await tx.typingMatch.create({
       data: {
         code: m.code,
         mode: m.mode,
+        title: m.title ?? null,
         contentType: m.contentType,
         variant: m.variant,
         text: m.text,
@@ -311,44 +317,41 @@ export async function persistMatch(m: {
       },
     });
     const out: { userId: string; wpm: number; accuracy: number; ratingBefore: number; ratingAfter: number; delta: number }[] = [];
+    const playerRows: Prisma.TypingMatchPlayerCreateManyInput[] = [];
+    const resultRows: Prisma.TypingResultCreateManyInput[] = [];
     for (const p of m.players) {
       const metrics = computeMetrics(p.counts, p.elapsedMs);
       const before = rmap.get(p.userId) ?? START_RATING;
       const delta = deltas.get(p.userId) ?? 0;
       const after = before + delta;
-      await tx.typingMatchPlayer.create({
-        data: {
-          matchId: match.id,
-          userId: p.userId,
-          team: p.team,
-          place: p.place,
-          wpm: metrics.wpm,
-          accuracy: metrics.accuracy,
-          progress: p.progress,
-          finished: p.finished,
-          outcome: p.outcome,
-          ratingBefore: rated ? before : null,
-          ratingAfter: rated ? after : null,
-          finishedAt: p.finishedAt,
-        },
+      playerRows.push({
+        matchId: match.id,
+        userId: p.userId,
+        team: p.team,
+        place: p.place,
+        wpm: metrics.wpm,
+        accuracy: metrics.accuracy,
+        progress: p.progress,
+        finished: p.finished,
+        outcome: p.outcome,
+        ratingBefore: rated ? before : null,
+        ratingAfter: rated ? after : null,
+        finishedAt: p.finishedAt,
       });
       if (p.outcome !== 'left' || p.counts.correctChars > 0) {
-        await tx.typingResult.create({
-          data: {
-            userId: p.userId,
-            mode: m.mode,
-            contentType: m.contentType,
-            variant: m.variant,
-            durationSec: Math.round(p.elapsedMs / 1000),
-            ...metrics,
-            ...p.counts,
-            place: p.place,
-            matchId: match.id,
-            // Bellashuv natijasi tezlik reytingiga kirmasin desak — flagged emas,
-            // reyting so'rovi mode'ni hisobga olmaydi: bellashuvdagi haqiqiy tezlik ham hisob
-            flagged: p.flagged.length > 0,
-            flagReason: p.flagged.length ? p.flagged.join('; ').slice(0, 200) : null,
-          },
+        resultRows.push({
+          userId: p.userId,
+          mode: m.mode,
+          contentType: m.contentType,
+          variant: m.variant,
+          durationSec: Math.round(p.elapsedMs / 1000),
+          ...metrics,
+          ...p.counts,
+          place: p.place,
+          matchId: match.id,
+          // Bellashuvdagi haqiqiy tezlik ham tezlik reytingiga kiradi (mode hisobga olinmaydi)
+          flagged: p.flagged.length > 0,
+          flagReason: p.flagged.length ? p.flagged.join('; ').slice(0, 200) : null,
         });
       }
       if (rated) {
@@ -369,8 +372,10 @@ export async function persistMatch(m: {
       }
       out.push({ userId: p.userId, wpm: metrics.wpm, accuracy: metrics.accuracy, ratingBefore: before, ratingAfter: rated ? after : before, delta: rated ? delta : 0 });
     }
+    if (playerRows.length) await tx.typingMatchPlayer.createMany({ data: playerRows });
+    if (resultRows.length) await tx.typingResult.createMany({ data: resultRows });
     return { matchId: match.id, rated, players: out };
-  });
+  }, { timeout: 30_000, maxWait: 10_000 });
 }
 
 // ── Admin ────────────────────────────────────────────────────────────────────
@@ -452,7 +457,7 @@ export async function adminMatches(f: { mode?: string; page: number; limit: numb
       skip: (f.page - 1) * f.limit,
       take: f.limit,
       select: {
-        id: true, code: true, mode: true, contentType: true, variant: true, status: true, winnerTeam: true,
+        id: true, code: true, mode: true, title: true, contentType: true, variant: true, status: true, winnerTeam: true,
         startedAt: true, finishedAt: true, createdAt: true, timeLimitSec: true,
         host: { select: { fullName: true } },
         players: {
@@ -479,6 +484,86 @@ export async function matchDetail(id: string) {
   });
   if (!m) throw ApiError.notFound('O\'yin topilmadi');
   return m;
+}
+
+// ── Sinf musobaqasi (mentor) ─────────────────────────────────────────────────
+
+/** Mentor faqat o'zi o'tkazgan musobaqalarni ko'radi, admin — hammasini */
+const classScope = (viewer: { userId: string; role: string }): Prisma.TypingMatchWhereInput =>
+  viewer.role === 'admin' ? { mode: 'class' } : { mode: 'class', hostId: viewer.userId };
+
+export async function classMatches(viewer: { userId: string; role: string }, f: { page: number; limit: number }) {
+  const where = classScope(viewer);
+  const [total, items] = await Promise.all([
+    prisma.typingMatch.count({ where }),
+    prisma.typingMatch.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (f.page - 1) * f.limit,
+      take: f.limit,
+      select: {
+        id: true, code: true, title: true, contentType: true, variant: true, timeLimitSec: true,
+        startedAt: true, finishedAt: true, createdAt: true,
+        host: { select: { fullName: true } },
+        players: { orderBy: [{ place: 'asc' }], select: { place: true, wpm: true, accuracy: true, finished: true, outcome: true, user: { select: { fullName: true } } } },
+      },
+    }),
+  ]);
+  return {
+    total,
+    page: f.page,
+    limit: f.limit,
+    items: items.map(({ players, ...m }) => {
+      const counted = players.filter((p) => p.outcome !== 'left');
+      return {
+        ...m,
+        participants: players.length,
+        finishedCount: players.filter((p) => p.finished).length,
+        avgWpm: counted.length ? Math.round(counted.reduce((s, p) => s + p.wpm, 0) / counted.length) : 0,
+        top: players.slice(0, 3).map((p) => ({ place: p.place, fullName: p.user.fullName, wpm: p.wpm, accuracy: p.accuracy })),
+      };
+    }),
+  };
+}
+
+export async function classMatchDetail(viewer: { userId: string; role: string }, id: string) {
+  const m = await prisma.typingMatch.findFirst({
+    where: { id, ...classScope(viewer) },
+    include: {
+      host: { select: { fullName: true } },
+      players: { orderBy: [{ place: 'asc' }], include: { user: { select: { id: true, fullName: true, login: true } } } },
+      results: { select: { userId: true, rawWpm: true, errors: true, maxCombo: true, totalKeys: true, correctChars: true, durationSec: true, flagged: true, flagReason: true } },
+    },
+  });
+  if (!m) throw ApiError.notFound('Musobaqa topilmadi');
+  const groups = await groupsOf(m.players.map((p) => p.userId));
+  const res = new Map(m.results.map((r) => [r.userId, r]));
+  const { results: _r, players, ...rest } = m;
+  return {
+    ...rest,
+    textLength: m.text.length,
+    players: players.map((p) => {
+      const r = res.get(p.userId);
+      return {
+        userId: p.userId,
+        fullName: p.user.fullName,
+        login: p.user.login,
+        groups: groups.get(p.userId) ?? [],
+        place: p.place,
+        wpm: p.wpm,
+        accuracy: p.accuracy,
+        progress: p.progress,
+        finished: p.finished,
+        outcome: p.outcome,
+        timeSec: p.finished && p.finishedAt && m.startedAt ? Math.round((p.finishedAt.getTime() - m.startedAt.getTime()) / 100) / 10 : null,
+        rawWpm: r?.rawWpm ?? null,
+        errors: r?.errors ?? null,
+        maxCombo: r?.maxCombo ?? null,
+        flagged: r?.flagged ?? false,
+        flagReason: r?.flagReason ?? null,
+      };
+    }),
+  };
 }
 
 export const catalog = () => ({

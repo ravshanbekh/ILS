@@ -134,7 +134,16 @@ export function pickCode(lang: string): { lang: string; text: string } {
  * Bellashuv matni: barcha o'yinchilar AYNI matnni yozadi.
  * Matn — taxminan 35–45 so'z (≈ 30–60 soniyalik poyga), kod — 1–2 snippet.
  */
-export function raceText(contentType: 'text' | 'code', variant: string) {
+/**
+ * Poyga matni hajmi — sinf musobaqasida mentor tanlaydi. Hajm berilmasa
+ * oddiy bellashuv: kod ≥140 belgi, matn 40 so'z (tech — 30).
+ */
+export type RaceSize = 'short' | 'medium' | 'long';
+export const RACE_SIZES: RaceSize[] = ['short', 'medium', 'long'];
+const CODE_MIN_CHARS: Record<RaceSize, number> = { short: 140, medium: 300, long: 600 };
+const TEXT_WORDS: Record<RaceSize, [number, number]> = { short: [25, 20], medium: [40, 30], long: [80, 60] }; // [oddiy, tech]
+
+export function raceText(contentType: 'text' | 'code', variant: string, size?: RaceSize) {
   if (contentType === 'code') {
     const a = pickCode(variant);
     // Qisqa snippet bo'lsa shu tildan BOSHQA snippetlarni qo'shamiz — poyga
@@ -142,11 +151,12 @@ export function raceText(contentType: 'text' | 'code', variant: string) {
     // bilan bir xil chiqsa qo'shilmay, 37 belgilik "poyga" bo'lib qolardi)
     const pool = CODE_SNIPPETS[a.lang].filter((s) => s !== a.text);
     const parts = [a.text];
-    while (parts.join('\n\n').length < 140 && pool.length) {
+    while (parts.join('\n\n').length < CODE_MIN_CHARS[size ?? 'short'] && pool.length) {
       parts.push(pool.splice(rnd(pool.length), 1)[0]);
     }
     return { variant: a.lang, text: parts.join('\n\n') };
   }
   const src = (['en', 'uz', 'tech'].includes(variant) ? variant : 'en') as TextSource;
-  return { variant: src, text: generateText(src, src === 'tech' ? 30 : 40) };
+  const [plain, tech] = TEXT_WORDS[size ?? 'medium'];
+  return { variant: src, text: generateText(src, src === 'tech' ? tech : plain) };
 }

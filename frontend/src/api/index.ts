@@ -891,4 +891,8 @@ export const typingApi = {
   adminMatches: (params: { mode?: string; page?: number; limit?: number }) => api.get('/typing/admin/matches', { params }),
   adminMatch: (id: string) => api.get(`/typing/admin/matches/${id}`),
   adminStudentStats: (id: string) => api.get(`/typing/admin/students/${id}/stats`),
+  // Sinf musobaqasi (mentor: o'zinikini, admin: hammasini)
+  classMatches: (params: { page?: number; limit?: number }) => api.get('/typing/class/matches', { params }),
+  classMatch: (id: string) => api.get(`/typing/class/matches/${id}`),
+  classExcel: (id: string) => api.get(`/typing/class/matches/${id}/excel`, { responseType: 'blob' }),
 };

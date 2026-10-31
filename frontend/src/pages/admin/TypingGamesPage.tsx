@@ -93,7 +93,7 @@ function Matches({ onStudent }: { onStudent: (s: { id: string; name: string }) =
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-1.5">
-        {[['', 'Hammasi'], ['duel', 'Duel'], ['ffa', '4 kishilik'], ['team', 'Jamoaviy']].map(([k, l]) => (
+        {[['', 'Hammasi'], ['duel', 'Duel'], ['ffa', '4 kishilik'], ['team', 'Jamoaviy'], ['class', 'Sinf musobaqasi']].map(([k, l]) => (
           <button key={k} onClick={() => { setMode(k); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${mode === k ? 'bg-zinc-100 text-zinc-900' : 'border border-zinc-800 bg-zinc-900 text-zinc-400'}`}>{l}</button>
         ))}
       </div>
@@ -109,8 +109,9 @@ function Matches({ onStudent }: { onStudent: (s: { id: string; name: string }) =
               <li key={m.id} className="rounded-2xl border border-zinc-800 bg-zinc-900">
                 <button onClick={() => setOpen(open === m.id ? null : m.id)} className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left">
                   <span className="rounded-lg bg-zinc-950 px-2 py-1 text-xs font-bold text-orange-400">{MODE_LABEL[m.mode]}</span>
+                  {m.mode === 'class' && <span className="text-sm font-semibold text-zinc-100">{m.title || m.code}</span>}
                   <span className="text-sm text-zinc-300">{variantLabel(m.contentType, m.variant)}</span>
-                  <span className="text-xs text-zinc-500">{m.players.length} o'yinchi · {fmtDate(m.startedAt)}</span>
+                  <span className="text-xs text-zinc-500">{m.players.length} o'yinchi · {fmtDate(m.startedAt)}{m.mode === 'class' && m.host?.fullName ? ` · Mentor: ${m.host.fullName}` : ''}</span>
                   <span className="ml-auto text-sm text-zinc-200">🏆 {winner ?? '—'}</span>
                   <ChevronDown className={`h-4 w-4 text-zinc-500 transition-transform ${open === m.id ? 'rotate-180' : ''}`} />
                 </button>
@@ -172,7 +173,7 @@ function Results({ onStudent }: { onStudent: (s: { id: string; name: string }) =
       <div className="flex flex-wrap gap-2">
         <input value={f.search} onChange={(e) => set('search', e.target.value)} placeholder="O'quvchi ismi" className={`${sel} w-44`} aria-label="Qidiruv" />
         <select value={f.mode} onChange={(e) => set('mode', e.target.value)} className={sel} aria-label="Rejim">
-          <option value="">Barcha rejimlar</option><option value="solo">Mashq</option><option value="duel">Duel</option><option value="ffa">4 kishilik</option><option value="team">Jamoaviy</option>
+          <option value="">Barcha rejimlar</option><option value="solo">Mashq</option><option value="duel">Duel</option><option value="ffa">4 kishilik</option><option value="team">Jamoaviy</option><option value="class">Sinf musobaqasi</option>
         </select>
         <select value={f.contentType} onChange={(e) => set('contentType', e.target.value)} className={sel} aria-label="Turi">
           <option value="">Matn va kod</option><option value="text">Matn</option><option value="code">Kod</option>
@@ -246,10 +247,10 @@ function Live() {
             <div key={r.code} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
               <div className="mb-2 flex items-center gap-2">
                 <span className="font-mono font-black tracking-widest text-zinc-100">{r.code}</span>
-                <span className="text-xs text-zinc-400">{MODE_LABEL[r.mode]} · {variantLabel(r.contentType, r.variant)}</span>
+                <span className="min-w-0 truncate text-xs text-zinc-400">{r.mode === 'class' ? `${r.title || MODE_LABEL.class} · ${r.host}` : MODE_LABEL[r.mode]} · {variantLabel(r.contentType, r.variant)}</span>
                 <span className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold ${r.status === 'running' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>{ST[r.status]}</span>
               </div>
-              <ul className="space-y-1.5">
+              <ul className="max-h-80 space-y-1.5 overflow-y-auto pr-1">
                 {r.players.map((p: any, i: number) => (
                   <li key={i} className="text-sm">
                     <div className="flex justify-between text-zinc-300"><span>{p.fullName}{p.team ? ` (${p.team})` : ''}{p.left ? ' — chiqdi' : ''}</span><span className="text-xs text-zinc-500">{p.finished ? '✓' : `${Math.round((p.pos / Math.max(r.textLength, 1)) * 100)}%`}</span></div>

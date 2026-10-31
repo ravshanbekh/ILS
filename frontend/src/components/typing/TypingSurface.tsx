@@ -127,6 +127,8 @@ export default function TypingSurface(props: Props) {
     em: {} as Record<string, number>,
     done: false,
     started: false,
+    /** Tugatilgan payt — shundan keyin vaqt (va WPM) muzlaydi */
+    endAt: 0,
   });
   const hl = useMemo(() => (isCode ? highlight(text) : []), [text, isCode]);
   const cb = useRef({ onStart, onProgress, onFinish, onRestart, onNewText });
@@ -144,7 +146,7 @@ export default function TypingSurface(props: Props) {
   };
 
   const reset = useCallback(() => {
-    E.current = { st: new Array(text.length).fill(''), pos: 0, t0: 0, keys: 0, good: 0, errs: 0, combo: 0, best: 0, samples: [], em: {}, done: false, started: false };
+    E.current = { st: new Array(text.length).fill(''), pos: 0, t0: 0, keys: 0, good: 0, errs: 0, combo: 0, best: 0, samples: [], em: {}, done: false, started: false, endAt: 0 };
     skipIndent();
     rerender();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,7 +160,9 @@ export default function TypingSurface(props: Props) {
     const e = E.current;
     const from = startAt ?? e.t0;
     if (!from) return 0;
-    const ms = Date.now() - from;
+    // Tugagach sahifa boshqa sabab bilan qayta chizilsa ham (bellashuvda xona
+    // holati kelib turadi) vaqt o'smasin — aks holda WPM ko'z oldida kamayardi
+    const ms = (e.endAt || Date.now()) - from;
     return kind === 'timed' ? Math.min(ms, durationSec * 1000) : Math.max(ms, 0);
   };
 
@@ -183,6 +187,7 @@ export default function TypingSurface(props: Props) {
     const e = E.current;
     if (e.done) return;
     e.done = true;
+    e.endAt = Date.now();
     const l = live();
     const q = e.samples.slice(2);
     const mu = q.reduce((a, b) => a + b, 0) / (q.length || 1);
