@@ -67,6 +67,22 @@ Socket hodisalari (mentor): `room:create {mode:'class', title, contentType, vari
 - **Shubhali natijalar:** odamdan tez (> 220 wpm) yoki imkonsiz sanoqli natija `flagged` deb belgilanadi. U saqlanadi va admin ko'radi, lekin reytingga kirmaydi. Bellashuvda shubhali o'yinchi bo'lsa, ELO hech kimga hisoblanmaydi.
 - **Matn reytingi** shartlari: aniqlik ≥ 85%, faqat faol o'quvchilar.
 
+## Natija yo'qolmasligi (mashq)
+
+Javob yo'lda yo'qolishi mumkin: internet uzilishi, proxy'ning 502 xatosi, Cloudflare.
+
+- **Server:** `finishSolo` bir sessiya uchun bitta yozuv yaratadi.
+  - Saqlangan natija takroriy so'rovga ham o'sha holida qaytadi, yangi sanoqlar e'tiborga olinmaydi.
+  - Saqlash xato bilan tugasa, sessiya o'chmaydi va keyingi urinish qayta yozadi.
+  - Sessiya muddati 2 soat, bitta o'quvchida 10 tagacha.
+- **Brauzer** (`SoloPractice.tsx`):
+  - Aloqa xatosi, 5xx, 408 va 429 da 1, 2 va 4 soniyadan keyin jim qayta urinadi. Bitta so'rov chegarasi 15 s.
+  - Baribir o'xshamasa, natija `localStorage` navbatiga (`ils-typing-pending`) tushadi va ekranda sabab (HTTP kodi) hamda **Qayta saqlash** tugmasi chiqadi.
+  - Navbat sahifa ochilganda, `online` hodisasida va har 30 soniyada yuboriladi.
+  - Server rad etgan yozuv (4xx) navbatdan chiqariladi.
+
+**Cheklov:** sessiyalar server xotirasida. Backend qayta ishga tushsa (deploy), tugallanmagan sessiyadagi natijani saqlab bo'lmaydi va o'quvchiga "sessiya eskirgan" xabari chiqadi.
+
 ## ELO
 
 Boshlang'ich reyting — 1000.
@@ -100,9 +116,10 @@ Xona holati server xotirasida turadi va bitta backend konteyneri uchun mo'ljalla
 cd backend && npm run e2e:typing
 ```
 
-Sinov lokal bazada va haqiqiy socketlar bilan o'tadi (92 tekshiruv):
+Sinov lokal bazada va haqiqiy socketlar bilan o'tadi (98 tekshiruv):
 
 - mashq va shubhali natijalar;
+- takroriy va bir vaqtdagi saqlash, xatodan keyin qayta saqlash;
 - kirish qoidalari;
 - duel, 4 kishilik va jamoaviy o'yin parallel;
 - firibgar o'yinchi;

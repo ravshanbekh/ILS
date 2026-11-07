@@ -105,7 +105,27 @@ async function main() {
     });
     check('15 s mashqni darhol yuborish → shubhali (flagged)', early.json?.data?.result?.flagged === true, early.json?.data?.result?.flagReason);
     const again = await api(S[0].token, 'POST', '/solo/finish', { sessionId: st.json.data.sessionId, elapsedMs: 15000, counts: { correctChars: 1, totalKeys: 1, errors: 0, maxCombo: 1 } });
-    check('sessiya bir martalik', again.status === 400);
+    check('takroriy yuborish: o\'sha natija qaytadi, yangi sanoqlar e\'tiborsiz', again.status === 200 && again.json.data.result.id === early.json.data.result.id && again.json.data.result.wpm === early.json.data.result.wpm);
+    check('takroriy yuborish ikkinchi yozuv yaratmaydi', (await prisma.typingResult.count({ where: { userId: S[0].id } })) === 1);
+    const foreign = await api(S[1].token, 'POST', '/solo/finish', { sessionId: st.json.data.sessionId, elapsedMs: 15000, counts: { correctChars: 1, totalKeys: 1, errors: 0, maxCombo: 1 } });
+    check('boshqa o\'quvchining sessiyasi rad etiladi', foreign.status === 400);
+
+    // Javob yo'qolgan holat: bir vaqtda ikkita so'rov — bitta yozuv, bitta natija
+    const dbl = await api(S[3].token, 'POST', '/solo/start', { contentType: 'text', variant: 'en', durationSec: 15 });
+    const dblBody = { sessionId: dbl.json.data.sessionId, elapsedMs: 15000, counts: { correctChars: 50, totalKeys: 50, errors: 0, maxCombo: 50 } };
+    const [d1, d2] = await Promise.all([api(S[3].token, 'POST', '/solo/finish', dblBody), api(S[3].token, 'POST', '/solo/finish', dblBody)]);
+    check('bir vaqtdagi 2 so\'rov: bitta natija', d1.json?.data?.result?.id && d1.json.data.result.id === d2.json?.data?.result?.id);
+    check('bir vaqtdagi 2 so\'rov: bazada bitta yozuv', (await prisma.typingResult.count({ where: { userId: S[3].id } })) === 1);
+
+    // Saqlash muvaffaqiyatsiz bo'lsa sessiya yonib ketmaydi — qayta urinish yozadi
+    const svc = await import('../src/modules/typing/typing.service');
+    const brk = await api(S[4].token, 'POST', '/solo/start', { contentType: 'text', variant: 'en', durationSec: 15 });
+    const brkId = brk.json.data.sessionId;
+    const failed = await Promise.resolve(svc.finishSolo(S[4].id, brkId, { correctChars: 50, totalKeys: 50, errors: 0, maxCombo: 50 }, -1)).then(() => null, (e: Error) => e);
+    check('xato bilan tugagan saqlash', failed instanceof Error, failed?.message);
+    const retried = await api(S[4].token, 'POST', '/solo/finish', { sessionId: brkId, elapsedMs: 15000, counts: { correctChars: 50, totalKeys: 50, errors: 0, maxCombo: 50 } });
+    check('xatodan keyin o\'sha sessiya bilan saqlanadi', retried.status === 200 && !!retried.json?.data?.result?.id, JSON.stringify(retried.json?.error));
+    await prisma.typingResult.deleteMany({ where: { userId: { in: [S[3].id, S[4].id] } } }); // keyingi bo'limlarga ta'sir qilmasin
     const code = await api(S[1].token, 'POST', '/solo/start', { contentType: 'code', variant: 'Python' });
     const codeFin = await api(S[1].token, 'POST', '/solo/finish', {
       sessionId: code.json.data.sessionId, elapsedMs: 30000,

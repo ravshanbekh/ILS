@@ -54,7 +54,9 @@ function sanitizeCounts(raw: any): RawCounts {
   };
 }
 
-// ── Mashq sessiyalari (xotirada, 20 daqiqa) ──────────────────────────────────
+// ── Mashq sessiyalari (xotirada, 2 soat) ─────────────────────────────────────
+
+type SoloFinish = Awaited<ReturnType<typeof saveSolo>>;
 
 interface SoloSession {
   id: string;
@@ -64,9 +66,14 @@ interface SoloSession {
   durationSec: number; // matn: tanlangan vaqt; kod: 0 (oxirigacha)
   text: string;
   issuedAt: number;
+  /** Saqlash (bir marta): takroriy so'rov shu natijani oladi, ikkinchi yozuv paydo bo'lmaydi */
+  finish?: Promise<SoloFinish>;
 }
 
-const SESSION_TTL_MS = 20 * 60 * 1000;
+// Matn sahifa ochilganda beriladi, o'quvchi esa keyinroq yozishi mumkin — muddat
+// qisqa bo'lsa, yozib bo'lgan natijasi "sessiya eskirgan" bilan yo'qolardi.
+const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
+const MAX_SESSIONS_PER_USER = 10;
 const sessions = new Map<string, SoloSession>();
 
 function gcSessions() {
@@ -79,9 +86,9 @@ export function startSolo(
   opts: { contentType: ContentType; variant?: string; durationSec?: number; punctuation?: boolean; numbers?: boolean }
 ) {
   gcSessions();
-  // Bir o'quvchida bir vaqtning o'zida ko'pi bilan 5 ta ochiq sessiya
+  // Bir o'quvchida cheklangan son — Esc bilan yangi matn olaverish xotirani to'ldirmasin
   const mine = [...sessions.values()].filter((s) => s.userId === userId).sort((a, b) => a.issuedAt - b.issuedAt);
-  while (mine.length >= 5) sessions.delete(mine.shift()!.id);
+  while (mine.length >= MAX_SESSIONS_PER_USER) sessions.delete(mine.shift()!.id);
 
   let s: SoloSession;
   if (opts.contentType === 'code') {
@@ -99,11 +106,28 @@ export function startSolo(
   return { sessionId: s.id, contentType: s.contentType, variant: s.variant, durationSec: s.durationSec, text: s.text };
 }
 
-export async function finishSolo(userId: string, sessionId: string, rawCounts: unknown, clientElapsedMs: unknown) {
+/**
+ * Bir sessiya — bitta natija, lekin so'rov takrorlanishi mumkin: javob yo'lda
+ * yo'qolsa (internet, proxy 502) mijoz qayta yuboradi. Ilgari sessiya saqlashdan
+ * OLDIN o'chirilardi, shuning uchun bitta uzilish natijani butunlay yo'qotardi.
+ *   - saqlangan bo'lsa — o'sha natija qaytadi (yangi sanoqlar e'tiborga olinmaydi);
+ *   - saqlash ketayotgan bo'lsa — o'shani kutadi;
+ *   - saqlash muvaffaqiyatsiz bo'lsa — keyingi urinish qayta yozadi.
+ */
+export function finishSolo(userId: string, sessionId: string, rawCounts: unknown, clientElapsedMs: unknown) {
   const s = sessions.get(String(sessionId));
   if (!s || s.userId !== userId) throw ApiError.badRequest('Mashq sessiyasi topilmadi yoki eskirgan — qaytadan boshlang');
-  sessions.delete(s.id); // bir martalik
+  if (!s.finish) {
+    s.finish = saveSolo(s, rawCounts, clientElapsedMs).catch((e) => {
+      s.finish = undefined;
+      throw e;
+    });
+  }
+  return s.finish;
+}
 
+async function saveSolo(s: SoloSession, rawCounts: unknown, clientElapsedMs: unknown) {
+  const { userId } = s;
   const c = sanitizeCounts(rawCounts);
   const serverWindow = Date.now() - s.issuedAt + 1500; // tarmoq kechikishi uchun zaxira
   let elapsed = Math.floor(Number(clientElapsedMs));

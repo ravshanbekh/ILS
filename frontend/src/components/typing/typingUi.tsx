@@ -16,6 +16,18 @@ export function errMsg(e: any, fallback: string) {
   return typeof err === 'string' ? err : err?.message ?? fallback;
 }
 
+/** Javob kelmadi, proxy/server xatosi yoki limit — keyinroq qayta yuborish mantiqli */
+export const isTransientError = (e: any) => {
+  const st = e?.response?.status;
+  return !st || st >= 500 || st === 408 || st === 429;
+};
+
+/** Saqlanmaganlik sababi: umumiy "xatolik" o'rniga aniq holat (keyingi tashxis uchun ham) */
+export const saveFailureCause = (e: any) => {
+  const st = e?.response?.status;
+  return st ? `server javobi: HTTP ${st}` : 'internet yoki server bilan aloqa uzildi';
+};
+
 /** Tezlik grafigi (har soniyadagi wpm) — CodeType chart() */
 export function SpeedChart({ samples }: { samples: number[] }) {
   if (samples.length < 2) return null;

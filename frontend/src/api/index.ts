@@ -881,7 +881,9 @@ export const typingApi = {
   catalog: () => api.get('/typing/catalog'),
   startSolo: (data: { contentType: 'text' | 'code'; variant?: string; durationSec?: number; punctuation?: boolean; numbers?: boolean }) =>
     api.post('/typing/solo/start', data),
-  finishSolo: (data: { sessionId: string; elapsedMs: number; counts: TypingCounts }) => api.post('/typing/solo/finish', data),
+  // timeout: osilib qolgan so'rov abadiy "saqlanmoqda" bo'lib turmasin — qayta urinish SoloPractice'da
+  finishSolo: (data: { sessionId: string; elapsedMs: number; counts: TypingCounts }) =>
+    api.post('/typing/solo/finish', data, { timeout: 15_000 }),
   leaderboard: (params: { category: TypingCategory; period?: TypingPeriod; groupId?: string; limit?: number }) =>
     api.get('/typing/leaderboard', { params }),
   myStats: () => api.get('/typing/me/stats'),

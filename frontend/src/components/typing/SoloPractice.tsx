@@ -2,12 +2,12 @@
  * Mashq (yakka) — matn yoki kod. Matnni server beradi, natijani server
  * hisoblaydi va saqlaydi (reytingga kiradi).
  */
-import { useCallback, useEffect, useState } from 'react';
-import { Loader2, RotateCcw, Volume2, VolumeX, Keyboard as KeyboardIcon, Trophy, AlertTriangle } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { CloudUpload, Loader2, RotateCcw, Volume2, VolumeX, Keyboard as KeyboardIcon, Trophy, AlertTriangle } from 'lucide-react';
 import { typingApi } from '@/api';
 import TypingSurface, { type EngineResult } from './TypingSurface';
 import { SOUND_PROFILES, type SoundProfile } from './typingSound';
-import { SpeedChart, errMsg } from './typingUi';
+import { SpeedChart, errMsg, isTransientError, saveFailureCause } from './typingUi';
 
 const CODE_LANGS = ['Python', 'JavaScript', 'TypeScript', 'C++', 'Java', 'C#', 'Go', 'Rust', 'PHP', 'Kotlin', 'HTML', 'CSS', 'SQL', 'Bash', 'React', 'Tasodifiy'];
 const SRC = [
@@ -45,13 +45,55 @@ interface Session {
   text: string;
 }
 
+/**
+ * Saqlanmagan natijalar navbati. Javob yo'lda yo'qolsa (internet, proxy 502)
+ * natija tashlab yuborilmaydi: shu yerda turadi va aloqa tiklanganda qayta
+ * yuboriladi. Server takroriy so'rovni ikkinchi yozuv qilib saqlamaydi.
+ */
+interface PendingSave {
+  sessionId: string;
+  elapsedMs: number;
+  counts: EngineResult['counts'];
+  at: number;
+}
+const PENDING_KEY = 'ils-typing-pending';
+const PENDING_TTL_MS = 2 * 60 * 60 * 1000; // serverdagi sessiya muddati bilan bir xil
+const PENDING_MAX = 10;
+const RETRY_DELAYS_MS = [1000, 2000, 4000];
+const RETRY_INTERVAL_MS = 30_000;
+
+function readPending(): PendingSave[] {
+  try {
+    const rows = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]') as PendingSave[];
+    return rows.filter((p) => Date.now() - p.at < PENDING_TTL_MS).slice(-PENDING_MAX);
+  } catch {
+    return [];
+  }
+}
+function writePending(rows: PendingSave[]) {
+  try {
+    if (rows.length) localStorage.setItem(PENDING_KEY, JSON.stringify(rows));
+    else localStorage.removeItem(PENDING_KEY);
+  } catch {
+    /* private rejim — navbat faqat shu sahifa uchun yo'qoladi */
+  }
+}
+
+const NOT_SAVED_YET = (cause: string) => `Natija hozircha saqlanmadi (${cause}). U shu brauzerda turibdi va aloqa tiklanganda o'zi yuboriladi.`;
+
 export default function SoloPractice({ onSaved }: { onSaved?: () => void }) {
   const [o, setO] = useState<Opts>(loadOpts);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ engine: EngineResult; server: any; isRecord: boolean; previousBest: number | null } | null>(null);
+  const [result, setResult] = useState<{ sessionId: string; engine: EngineResult; server: any; isRecord: boolean; previousBest: number | null; unsaved: boolean } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingCount, setPendingCount] = useState(() => readPending().length);
+  const [flushing, setFlushing] = useState(false);
+  const flushBusy = useRef(false);
+  const shownSession = useRef<string | null>(null); // ekrandagi natija kartasi qaysi sessiyaniki
+  const savedCb = useRef(onSaved); // ota har chizilganda yangi funksiya beradi — flush qayta ishga tushmasin
+  savedCb.current = onSaved;
 
   const set = (patch: Partial<Opts>) => {
     const next = { ...o, ...patch };
@@ -67,6 +109,7 @@ export default function SoloPractice({ onSaved }: { onSaved?: () => void }) {
     setLoading(true);
     setError(null);
     setResult(null);
+    shownSession.current = null;
     try {
       const res = await typingApi.startSolo(
         opts.contentType === 'code'
@@ -87,17 +130,90 @@ export default function SoloPractice({ onSaved }: { onSaved?: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [o.contentType, o.durationSec, o.src, o.lang, o.punctuation, o.numbers]);
 
+  /** Navbatdagi natijalarni yuboradi; aloqa yo'q bo'lsa to'xtab, keyingi safar davom etadi */
+  const flushPending = useCallback(async () => {
+    if (flushBusy.current) return;
+    flushBusy.current = true;
+    setFlushing(true);
+    try {
+      for (const item of readPending()) {
+        const drop = () => {
+          writePending(readPending().filter((p) => p.sessionId !== item.sessionId));
+          setPendingCount(readPending().length);
+        };
+        const isShown = shownSession.current === item.sessionId;
+        try {
+          const res = await typingApi.finishSolo({ sessionId: item.sessionId, elapsedMs: item.elapsedMs, counts: item.counts });
+          const d = res.data.data;
+          drop();
+          if (isShown) {
+            setResult((cur) => (cur ? { ...cur, server: d.result, isRecord: d.isRecord, previousBest: d.previousBest, unsaved: false } : cur));
+            setError(null);
+          }
+          savedCb.current?.();
+        } catch (e) {
+          if (isTransientError(e)) {
+            if (isShown) setError(NOT_SAVED_YET(saveFailureCause(e)));
+            break;
+          }
+          // Server rad etdi (masalan, sessiya eskirgan) — qayta yuborishdan foyda yo'q
+          drop();
+          if (isShown) {
+            setResult((cur) => (cur ? { ...cur, unsaved: false } : cur));
+            setError(errMsg(e, 'Natijani saqlab bo\'lmadi'));
+          }
+        }
+      }
+    } finally {
+      flushBusy.current = false;
+      setFlushing(false);
+    }
+  }, []);
+
+  // Oldingi tashrifdan qolganlari ham, aloqa qaytgani ham shu yerda ushlanadi
+  useEffect(() => {
+    void flushPending();
+    const onOnline = () => void flushPending();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [flushPending]);
+  useEffect(() => {
+    if (!pendingCount) return;
+    const id = window.setInterval(() => void flushPending(), RETRY_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [pendingCount, flushPending]);
+
   const onFinish = async (r: EngineResult) => {
     if (!session) return;
+    const payload = { sessionId: session.sessionId, elapsedMs: Math.max(1, Math.round(r.elapsedMs)), counts: r.counts };
     setSaving(true);
     try {
-      const res = await typingApi.finishSolo({ sessionId: session.sessionId, elapsedMs: Math.max(1, Math.round(r.elapsedMs)), counts: r.counts });
-      const d = res.data.data;
-      setResult({ engine: r, server: d.result, isRecord: d.isRecord, previousBest: d.previousBest });
-      onSaved?.();
+      // Qisqa uzilishni o'quvchi sezmasin: bir necha marta jim qayta uriniladi
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const res = await typingApi.finishSolo(payload);
+          const d = res.data.data;
+          shownSession.current = payload.sessionId;
+          setResult({ sessionId: payload.sessionId, engine: r, server: d.result, isRecord: d.isRecord, previousBest: d.previousBest, unsaved: false });
+          onSaved?.();
+          return;
+        } catch (e) {
+          if (!isTransientError(e) || attempt >= RETRY_DELAYS_MS.length) throw e;
+          await new Promise((done) => window.setTimeout(done, RETRY_DELAYS_MS[attempt]));
+        }
+      }
     } catch (e) {
-      setResult({ engine: r, server: null, isRecord: false, previousBest: null });
-      setError(errMsg(e, 'Natijani saqlab bo\'lmadi'));
+      shownSession.current = payload.sessionId;
+      const transient = isTransientError(e);
+      setResult({ sessionId: payload.sessionId, engine: r, server: null, isRecord: false, previousBest: null, unsaved: transient });
+      if (transient) {
+        const rows = [...readPending(), { ...payload, at: Date.now() }].slice(-PENDING_MAX);
+        writePending(rows);
+        setPendingCount(rows.length);
+        setError(NOT_SAVED_YET(saveFailureCause(e)));
+      } else {
+        setError(errMsg(e, 'Natijani saqlab bo\'lmadi'));
+      }
     } finally {
       setSaving(false);
     }
@@ -191,12 +307,22 @@ export default function SoloPractice({ onSaved }: { onSaved?: () => void }) {
         </div>
       )}
 
+      {pendingCount > 0 && !result?.unsaved && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-400">
+          <CloudUpload className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1">{pendingCount} ta natija hali saqlanmagan — aloqa tiklanganda o'zi yuboriladi.</span>
+          <button onClick={() => void flushPending()} disabled={flushing} className="rounded-lg border border-amber-500/40 px-3 py-1 text-xs font-semibold hover:bg-amber-500/10 disabled:opacity-50">
+            {flushing ? 'Yuborilmoqda…' : 'Hozir yuborish'}
+          </button>
+        </div>
+      )}
+
       {loading || !session ? (
         <div className="flex h-40 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950">
           <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
         </div>
       ) : result ? (
-        <ResultCard result={result} contentType={session.contentType} onAgain={() => void start(o)} />
+        <ResultCard result={result} contentType={session.contentType} onAgain={() => void start(o)} onRetrySave={() => void flushPending()} retrying={flushing} />
       ) : (
         <>
           <TypingSurface
@@ -227,10 +353,14 @@ function ResultCard({
   result,
   contentType,
   onAgain,
+  onRetrySave,
+  retrying,
 }: {
-  result: { engine: EngineResult; server: any; isRecord: boolean; previousBest: number | null };
+  result: { engine: EngineResult; server: any; isRecord: boolean; previousBest: number | null; unsaved: boolean };
   contentType: string;
   onAgain: () => void;
+  onRetrySave: () => void;
+  retrying: boolean;
 }) {
   const s = result.server;
   const e = result.engine;
@@ -269,7 +399,7 @@ function ResultCard({
             <AlertTriangle className="h-3.5 w-3.5" /> Tekshiruvda: reytingga kirmaydi ({s.flagReason})
           </span>
         )}
-        {!s && <span className="text-xs text-red-400">Natija serverga saqlanmadi</span>}
+        {!s && <span className="text-xs text-red-400">{result.unsaved ? 'Natija hali serverga yetib bormadi' : 'Natija serverga saqlanmadi'}</span>}
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {cells.map(([v, label], i) => (
@@ -289,6 +419,11 @@ function ResultCard({
         <button onClick={onAgain} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-600">
           <RotateCcw className="h-4 w-4" /> Yana urinish
         </button>
+        {result.unsaved && (
+          <button onClick={onRetrySave} disabled={retrying} className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-2.5 text-sm font-bold text-amber-400 hover:bg-amber-500/20 disabled:opacity-50">
+            {retrying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />} Qayta saqlash
+          </button>
+        )}
         <span className="self-center text-xs text-zinc-500">Enter / Tab — yangi {contentType === 'code' ? 'kod' : 'matn'}</span>
       </div>
     </div>
