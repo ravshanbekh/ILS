@@ -44,26 +44,33 @@ export const clientIp = (req: Request) => String(req.headers['cf-connecting-ip']
 /**
  * Agent kaliti (ils_ak_…) uchun Bearer tekshiruvi. OAuth tokenlarida `next('route')`
  * emas — `null` qaytaradi va chaqiruvchi SDK tekshiruviga o'tadi.
- * Javob formati: MCP mijozlari kutgan OAuth xatosi + WWW-Authenticate.
+ * Javob tanasi: /mcp — MCP mijozlari kutgan OAuth xatosi; REST — panel
+ * formati ({ success:false, error:{ message, code } }). Ikkalasida WWW-Authenticate.
  */
-export async function agentKeyAuth(req: Request, res: Response, requiredScope: string): Promise<'ok' | 'not_agent_key' | 'rejected'> {
+export async function agentKeyAuth(
+  req: Request,
+  res: Response,
+  requiredScope: string,
+  format: 'oauth' | 'rest' = 'oauth'
+): Promise<'ok' | 'not_agent_key' | 'rejected'> {
   const h = req.headers.authorization ?? '';
   const token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
   if (!isAgentKey(token)) return 'not_agent_key';
+  const reject = (status: number, code: string, description: string, header: string) => {
+    res.status(status).set('WWW-Authenticate', header);
+    res.json(format === 'rest' ? { success: false, error: { message: description, code } } : { error: code, error_description: description });
+    return 'rejected' as const;
+  };
   try {
     const auth = await verifyAgentKey(token, clientIp(req));
     if (!auth.scopes.includes(requiredScope)) {
-      res.status(403).set('WWW-Authenticate', `Bearer error="insufficient_scope", scope="${requiredScope}"`);
-      res.json({ error: 'insufficient_scope', error_description: 'API key lacks required scope' });
-      return 'rejected';
+      return reject(403, 'insufficient_scope', 'API key lacks required scope', `Bearer error="insufficient_scope", scope="${requiredScope}"`);
     }
     (req as any).auth = auth;
     return 'ok';
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'API key check failed';
-    res.status(401).set('WWW-Authenticate', `Bearer error="invalid_token", error_description="${msg.replace(/[^\x20-\x7e]/g, '').replace(/"/g, "'")}"`);
-    res.json({ error: 'invalid_token', error_description: msg });
-    return 'rejected';
+    return reject(401, 'invalid_token', msg, `Bearer error="invalid_token", error_description="${msg.replace(/[^\x20-\x7e]/g, '').replace(/"/g, "'")}"`);
   }
 }
 

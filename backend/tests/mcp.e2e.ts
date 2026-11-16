@@ -631,7 +631,7 @@ async function main() {
     const noAuth = await agentRest(null, 'GET', '/whoami');
     check('REST: kalitsiz → 401', noAuth.status === 401 && noAuth.json?.success === false);
     const badKey = await agentRest('ils_ak_' + 'x'.repeat(43), 'GET', '/whoami');
-    check('REST: soxta kalit → 401 + WWW-Authenticate', badKey.status === 401 && (badKey.headers.get('www-authenticate') ?? '').includes('invalid_token'));
+    check('REST: soxta kalit → 401 + WWW-Authenticate, REST formatida', badKey.status === 401 && (badKey.headers.get('www-authenticate') ?? '').includes('invalid_token') && badKey.json?.success === false && badKey.json?.error?.code === 'invalid_token');
     const rw = await agentRest(RK, 'GET', '/whoami');
     check('REST whoami', rw.status === 200 && rw.json.data.actingAs.userId === admin.id && rw.json.data.canWrite === false && rw.json.data.tools === rNames.length);
     const rt = await agentRest(RK, 'GET', '/tools');

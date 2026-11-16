@@ -81,7 +81,7 @@ export function createAgentRouter() {
   // Kirish: agent kaliti (ils_ak_…) yoki MCP OAuth tokeni
   router.use(async (req: Request, res: Response, next) => {
     try {
-      const r = await agentKeyAuth(req, res, mcpConfig.scopes.read);
+      const r = await agentKeyAuth(req, res, mcpConfig.scopes.read, 'rest');
       if (r === 'ok') {
         (req as any).actor = actorFromAuth((req as any).auth, 'agent_rest');
         return next();
