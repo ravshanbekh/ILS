@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Copy, Check, Loader2, Trash2, ShieldCheck, Eye, PencilLine, RefreshCw, AlertCircle, Activity, ChevronDown } from 'lucide-react';
 import { mcpApi, type McpConnection, type McpEvent } from '@/api';
+import AgentKeysSection from './AgentKeysSection';
 
 /**
  * Sozlamalar → Claude (MCP).
@@ -96,7 +97,7 @@ export default function McpConnectorSection() {
   };
 
   const revokeAll = async () => {
-    if (!confirm('Barcha Claude ulanishlarini uzasizmi? Har bir ulanish qayta login talab qiladi.')) return;
+    if (!confirm('Barcha Claude ulanishlarini VA tashqi agent kalitlarini to\'xtatasizmi? Har bir ulanish qayta login, agentlar esa yangi kalit talab qiladi.')) return;
     setBusy('all');
     try {
       await mcpApi.revokeAll();
@@ -255,6 +256,9 @@ export default function McpConnectorSection() {
           </ul>
         )}
       </div>
+
+      {/* Tashqi AI agentlar — OAuth'siz doimiy kalit (MCP yoki REST) */}
+      <AgentKeysSection />
 
       {/* Diagnostika: ulanish yiqilsa qaysi qadamda ekanini ko'rsatadi */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-950">

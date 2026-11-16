@@ -5,7 +5,8 @@ import { mcpConfig } from './config';
 
 /**
  * MCP so'rovini kim va qanday huquq bilan bajarayotgani.
- * OAuth orqali: token egasi (admin). stdio (lokal) orqali: jarayon egasi.
+ * OAuth orqali: token egasi (admin). Agent kaliti orqali: kalit egasi (admin),
+ * /mcp yoki REST (/api/agent/v1). stdio (lokal) orqali: jarayon egasi.
  */
 export interface McpActor {
   userId: string | null;
@@ -14,7 +15,24 @@ export interface McpActor {
   scopes: string[];
   clientId: string;
   clientName: string | null;
-  via: 'oauth' | 'stdio';
+  via: 'oauth' | 'agent_key' | 'agent_rest' | 'stdio';
+}
+
+/** Bearer tekshiruvidan (OAuth token yoki agent kaliti) keyin req.auth → actor */
+export function actorFromAuth(
+  auth: { clientId: string; scopes: string[]; extra?: Record<string, unknown> },
+  via: McpActor['via']
+): McpActor {
+  const extra = auth.extra as { userId: string; fullName: string; role: string; clientName: string | null };
+  return {
+    userId: extra.userId,
+    fullName: extra.fullName,
+    role: extra.role,
+    scopes: auth.scopes,
+    clientId: auth.clientId,
+    clientName: extra.clientName,
+    via,
+  };
 }
 
 export const canWrite = (actor: McpActor) => actor.scopes.includes(mcpConfig.scopes.write);

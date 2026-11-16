@@ -54,6 +54,7 @@ import lessonObservationsRoutes from './modules/lesson-observations/lesson-obser
 import typingRoutes from './modules/typing/typing.routes';
 import { initTypingGateway } from './modules/typing/typing.rooms';
 import { createMcpRouter, mcpDisabled } from './mcp/http';
+import { createAgentRouter } from './mcp/agent.routes';
 import mcpConnectionsRoutes from './mcp/connections.routes';
 import { mcpConfig } from './mcp/config';
 
@@ -127,6 +128,8 @@ app.get('/api/health', (_req, res) => {
 // MCP_ENABLED=false — favqulodda o'chirish (yo'llar 404 qaytaradi)
 if (mcpConfig.enabled) app.use(createMcpRouter());
 else app.use(mcpDisabled);
+// Tashqi AI agent uchun REST (agent kaliti bilan, MCP amallarining o'zi); batafsil: docs/agent-api.md
+if (mcpConfig.enabled) app.use('/api/agent/v1', createAgentRouter());
 app.use('/api/mcp', mcpConnectionsRoutes);
 
 // API routes

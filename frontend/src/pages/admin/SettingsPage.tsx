@@ -516,8 +516,8 @@ export default function SettingsPage() {
             id="mcp"
             icon={<Sparkles className="w-5 h-5 text-white" />}
             iconBg="bg-gradient-to-br from-orange-500 to-amber-600"
-            title="Claude (MCP connector)"
-            subtitle="Tizim ma'lumotlarini Claude orqali tahlil qilish va boshqarish"
+            title="Claude va AI agentlar (MCP / API)"
+            subtitle="Claude connector va tashqi AI agentlar uchun kalitlar — tahlil va boshqarish"
             openId={openSection}
             onToggle={toggleSection}
           >

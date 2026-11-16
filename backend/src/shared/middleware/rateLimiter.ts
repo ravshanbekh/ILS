@@ -14,7 +14,8 @@ export const apiLimiter = rateLimit({
   // Ommaviy test (havola + ism-familiya) o'z chegaralariga ega va ishtirokchi
   // bo'yicha sanaydi (quiz-test.routes.ts). Bu umumiy IP chegarasi esa bitta
   // Wi-Fi'dagi butun sinfni bitta odam deb sanab, javoblarni saqlatmasdi.
-  skip: (req) => /^\/quiz-tests\/(public|attempt)\//.test(req.path),
+  // Agent REST (/api/agent/v1) — kalit bo'yicha o'z chegarasi bor (mcp/agent.routes.ts).
+  skip: (req) => /^\/quiz-tests\/(public|attempt)\//.test(req.path) || /^\/agent\/v1\//.test(req.path),
 });
 
 // Login uchun maxsus limiter (qattiqroq)

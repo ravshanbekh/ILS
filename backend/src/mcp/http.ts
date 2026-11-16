@@ -34,8 +34,38 @@ import { mcpConfig, SUPPORTED_SCOPES } from './config';
 import { IlsOAuthProvider, McpTokenExtra } from './oauth/provider';
 import { renderConsentPage, renderErrorPage, verifyConsentRequest } from './oauth/pages';
 import { createMcpServer } from './server';
-import { McpActor } from './context';
+import { actorFromAuth } from './context';
 import { mcpEventLogger, basicClientAuthToBody } from './events';
+import { isAgentKey, verifyAgentKey, AGENT_CLIENT_PREFIX } from './agentKeys';
+
+/** Haqiqiy mijoz IP (Cloudflare → nginx → backend); faqat ko'rsatish/jurnal uchun */
+export const clientIp = (req: Request) => String(req.headers['cf-connecting-ip'] ?? req.ip ?? '').slice(0, 64) || null;
+
+/**
+ * Agent kaliti (ils_ak_…) uchun Bearer tekshiruvi. OAuth tokenlarida `next('route')`
+ * emas — `null` qaytaradi va chaqiruvchi SDK tekshiruviga o'tadi.
+ * Javob formati: MCP mijozlari kutgan OAuth xatosi + WWW-Authenticate.
+ */
+export async function agentKeyAuth(req: Request, res: Response, requiredScope: string): Promise<'ok' | 'not_agent_key' | 'rejected'> {
+  const h = req.headers.authorization ?? '';
+  const token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
+  if (!isAgentKey(token)) return 'not_agent_key';
+  try {
+    const auth = await verifyAgentKey(token, clientIp(req));
+    if (!auth.scopes.includes(requiredScope)) {
+      res.status(403).set('WWW-Authenticate', `Bearer error="insufficient_scope", scope="${requiredScope}"`);
+      res.json({ error: 'insufficient_scope', error_description: 'API key lacks required scope' });
+      return 'rejected';
+    }
+    (req as any).auth = auth;
+    return 'ok';
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'API key check failed';
+    res.status(401).set('WWW-Authenticate', `Bearer error="invalid_token", error_description="${msg.replace(/[^\x20-\x7e]/g, '').replace(/"/g, "'")}"`);
+    res.json({ error: 'invalid_token', error_description: msg });
+    return 'rejected';
+  }
+}
 
 // Taymingni tenglashtirish uchun: login topilmasa ham bcrypt ishlaydi
 const DUMMY_HASH = '$2a$12$BtyX2urLv3wsEzMDPeiah.7eJ0KAr4ZqkPa2l90CJOQwLltqvXXui';
@@ -210,11 +240,22 @@ export function createMcpRouter() {
   }) as unknown as (req: Request, res: Response, next: NextFunction) => Promise<void>;
   // SDK middleware'i o'z catch'i ichida ham xato tashlashi mumkin (masalan,
   // sarlavhaga ASCII bo'lmagan matn) — unda so'rov javobsiz osilib qolardi.
-  const bearer = (req: Request, res: Response, next: NextFunction) =>
-    Promise.resolve(sdkBearer(req, res, next)).catch((e) => {
+  // Agent kaliti (ils_ak_…) — alohida tekshiruv, OAuth tokenlari — SDK.
+  const bearer = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const r = await agentKeyAuth(req, res, mcpConfig.scopes.read);
+      if (r === 'ok') return next();
+      if (r === 'rejected') return;
+    } catch (e) {
+      logger.error(`MCP agent kaliti xatosi: ${e instanceof Error ? e.message : e}`);
+      if (!res.headersSent) res.status(401).json({ error: 'invalid_token', error_description: 'API key check failed' });
+      return;
+    }
+    return Promise.resolve(sdkBearer(req, res, next)).catch((e) => {
       logger.error(`MCP bearer xatosi: ${e instanceof Error ? e.message : e}`);
       if (!res.headersSent) res.status(401).json({ error: 'invalid_token', error_description: 'Token check failed' });
     });
+  };
 
   const mcpLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -227,17 +268,8 @@ export function createMcpRouter() {
   });
 
   router.post(paths.mcp, bearer as any, mcpLimiter, async (req: Request, res: Response) => {
-    const auth = (req as any).auth as { clientId: string; scopes: string[]; extra?: McpTokenExtra };
-    const extra = auth.extra!;
-    const actor: McpActor = {
-      userId: extra.userId,
-      fullName: extra.fullName,
-      role: extra.role,
-      scopes: auth.scopes,
-      clientId: auth.clientId,
-      clientName: extra.clientName,
-      via: 'oauth',
-    };
+    const auth = (req as any).auth as { clientId: string; scopes: string[]; extra?: Record<string, unknown> };
+    const actor = actorFromAuth(auth, auth.clientId.startsWith(AGENT_CLIENT_PREFIX) ? 'agent_key' : 'oauth');
     const server = createMcpServer(actor);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     res.on('close', () => {

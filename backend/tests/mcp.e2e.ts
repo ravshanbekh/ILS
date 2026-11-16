@@ -3,7 +3,8 @@
  *
  * Claude (claude.ai) qiladigan hamma narsani ketma-ket bajaradi:
  *   metama'lumot → DCR → login sahifasi → approve → PKCE token → /mcp amallari
- *   → yozish amallari → refresh rotation → o'g'irlangan refresh → uzish.
+ *   → yozish amallari → refresh rotation → o'g'irlangan refresh → uzish
+ *   → tashqi agent kaliti (panel, /mcp, REST /api/agent/v1, bekor qilish).
  *
  * Faqat MCP router'i ko'tariladi (bot, cron ishga tushmaydi). Fixture'lar
  * "mcpe2e-" belgisi bilan yaratiladi va oxirida o'chiriladi.
@@ -38,6 +39,7 @@ async function main() {
   const { default: prisma } = await import('../src/config/database');
   const { createMcpRouter } = await import('../src/mcp/http');
   const { default: connectionsRoutes } = await import('../src/mcp/connections.routes');
+  const { createAgentRouter } = await import('../src/mcp/agent.routes');
   const { errorHandler } = await import('../src/shared/middleware/errorHandler');
   const { env } = await import('../src/config/env');
   const bcrypt = (await import('bcryptjs')).default;
@@ -49,6 +51,7 @@ async function main() {
   app.use(express.urlencoded({ extended: true }));
   app.use(createMcpRouter());
   app.use('/api/mcp', connectionsRoutes);
+  app.use('/api/agent/v1', createAgentRouter());
   app.use(errorHandler);
   const server = app.listen(PORT);
 
@@ -570,6 +573,118 @@ async function main() {
 
     const getMcp = await fetch(`${BASE}/mcp`, { headers: { Authorization: `Bearer ${pTok.access_token}` } });
     check('GET /mcp → 401/405 (SSE yo\'q)', getMcp.status === 405 || getMcp.status === 401);
+
+    // ── 10. Tashqi AI agent kaliti (OAuth'siz) ────────────────────────────────
+    console.log('\n10) Tashqi agent kaliti: panel, /mcp, REST');
+    const tvNow = (await prisma.user.findUnique({ where: { id: admin.id }, select: { tokenVersion: true } }))!.tokenVersion;
+    const aj = jwt.sign({ userId: admin.id, role: 'admin', login: admin.login, tv: tvNow }, env.JWT_SECRET);
+    const panel = async (method: string, path: string, body?: unknown, token = aj) => {
+      const r = await fetch(`${BASE}/api/mcp${path}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      return { status: r.status, json: (await r.json().catch(() => null)) as any };
+    };
+    const agentRest = async (key: string | null, method: string, path: string, body?: unknown) => {
+      const r = await fetch(`${BASE}/api/agent/v1${path}`, {
+        method,
+        headers: { ...(key ? { Authorization: `Bearer ${key}` } : {}), 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      return { status: r.status, json: (await r.json().catch(() => null)) as any, headers: r.headers };
+    };
+
+    check('ustoz kalit yarata olmaydi', (await panel('POST', '/agent-keys', { name: 'X agent', access: 'write' }, teacherJwt)).status === 403);
+    check('qisqa nom rad etiladi', (await panel('POST', '/agent-keys', { name: 'x', access: 'read' })).status === 400);
+    check('ruxsat etilmagan muddat rad etiladi', (await panel('POST', '/agent-keys', { name: 'Agent', access: 'read', expiresInDays: 7 })).status === 400);
+    const rk = await panel('POST', '/agent-keys', { name: 'Tahlil agenti', access: 'read', expiresInDays: 30 });
+    const wk = await panel('POST', '/agent-keys', { name: 'Boshqaruv agenti', access: 'write', expiresInDays: null });
+    const RK: string = rk.json?.data?.key;
+    const WK: string = wk.json?.data?.key;
+    check('kalit yaratildi (201, ils_ak_ + 43 belgi)', rk.status === 201 && /^ils_ak_[A-Za-z0-9_-]{43}$/.test(RK) && wk.status === 201, rk.json?.error?.message);
+    check('muddat: 30 kun / muddatsiz', !!rk.json.data.expiresAt && wk.json.data.expiresAt === null);
+    const keyRow = await prisma.mcpAgentKey.findUnique({ where: { id: rk.json.data.id } });
+    check('bazada kalitning o\'zi yo\'q — faqat SHA-256', !!keyRow && keyRow.keyHash !== RK && keyRow.keyHash.length === 64 && !JSON.stringify(keyRow).includes(RK));
+    const kl = await panel('GET', '/agent-keys');
+    const listed = kl.json?.data?.keys?.find((k: any) => k.id === rk.json.data.id);
+    check('ro\'yxatda: faol, prefiks, egasi; kalit va xesh yo\'q', listed?.status === 'active' && RK.startsWith(listed.prefix) && listed.owner.id === admin.id && !('key' in listed) && !('keyHash' in listed));
+    check('ro\'yxatda REST va MCP manzillari', kl.json?.data?.restUrl === `${BASE}/api/agent/v1` && kl.json?.data?.mcpUrl === `${BASE}/mcp`);
+
+    // MCP (/mcp) — agent kaliti bilan
+    const kInit = await rpc(RK, 'initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'n8n', version: '1' } });
+    check('/mcp initialize — agent kaliti bilan', kInit.status === 200 && kInit.json?.result?.serverInfo?.name === 'it-live-score');
+    const rNames: string[] = ((await rpc(RK, 'tools/list')).json?.result?.tools ?? []).map((t: any) => t.name);
+    const wNames: string[] = ((await rpc(WK, 'tools/list')).json?.result?.tools ?? []).map((t: any) => t.name);
+    check('o\'qish kaliti: yozish amallari yo\'q', rNames.includes('ils_overview') && !rNames.includes('ils_record_change'), `${rNames.length} ta`);
+    check('boshqaruv kaliti: to\'liq ro\'yxat', wNames.includes('ils_record_change') && wNames.includes('ils_create_user') && wNames.length > rNames.length, `${wNames.length} ta`);
+    const kWho = await call(RK, 'ils_whoami');
+    check('agent admin nomidan ishlaydi', kWho.data?.user?.id === admin.id && kWho.data?.canWrite === false);
+    const adminEdit = await call(WK, 'ils_update_user', { userId: admin.id, fullName: 'Buzilgan' });
+    check('agent kaliti ham admin akkauntga tega olmaydi', adminEdit.isError, adminEdit.text.slice(0, 80));
+    const mcpUp = await call(WK, 'ils_update_group', { groupId: group.id, name: `${tag}-G1M`.slice(0, 50) });
+    check('/mcp yozish amali agent kaliti bilan', !mcpUp.isError, mcpUp.text.slice(0, 80));
+    const viaMcp = await prisma.auditLog.findFirst({ where: { userId: admin.id, action: 'mcp.update_group' }, orderBy: { createdAt: 'desc' } });
+    check('audit: via=agent_key, mijoz nomi', (viaMcp?.details as any)?.via === 'agent_key' && (viaMcp?.details as any)?.clientName === 'Agent: Boshqaruv agenti', String(JSON.stringify(viaMcp?.details ?? null)).slice(0, 120));
+
+    // REST (/api/agent/v1)
+    const noAuth = await agentRest(null, 'GET', '/whoami');
+    check('REST: kalitsiz → 401', noAuth.status === 401 && noAuth.json?.success === false);
+    const badKey = await agentRest('ils_ak_' + 'x'.repeat(43), 'GET', '/whoami');
+    check('REST: soxta kalit → 401 + WWW-Authenticate', badKey.status === 401 && (badKey.headers.get('www-authenticate') ?? '').includes('invalid_token'));
+    const rw = await agentRest(RK, 'GET', '/whoami');
+    check('REST whoami', rw.status === 200 && rw.json.data.actingAs.userId === admin.id && rw.json.data.canWrite === false && rw.json.data.tools === rNames.length);
+    const rt = await agentRest(RK, 'GET', '/tools');
+    check('REST tools: nom + JSON Schema', rt.json?.data?.length === rNames.length && rt.json.data.every((t: any) => t.inputSchema?.type === 'object'));
+    const ro = await agentRest(WK, 'GET', '/tools?format=openai');
+    check('REST tools?format=openai', ro.json?.data?.length === wNames.length && ro.json.data[0].type === 'function' && !!ro.json.data[0].function.parameters);
+    const rlg = await agentRest(RK, 'POST', '/tools/ils_list_groups', { search: tag });
+    check('REST amal: ils_list_groups', rlg.status === 200 && rlg.json?.success === true && rlg.json.data?.total >= 2 && rlg.json.data.groups.some((g: any) => g.id === group2.id), JSON.stringify(rlg.json).slice(0, 120));
+    const rbad = await agentRest(RK, 'POST', '/tools/ils_group_report', { groupId: 'emas-uuid' });
+    check('REST: noto\'g\'ri argument → 400', rbad.status === 400 && rbad.json?.success === false, rbad.json?.error?.message?.slice(0, 80));
+    const rno = await agentRest(RK, 'POST', '/tools/ils_create_group', { name: 'X' });
+    check('REST: o\'qish kaliti yozish amalini topmaydi → 404', rno.status === 404 && /boshqarish/.test(rno.json?.error?.hint ?? ''));
+    const rnone = await agentRest(WK, 'POST', '/tools/yoq_amal', {});
+    check('REST: noma\'lum amal → 404', rnone.status === 404);
+    const rup = await agentRest(WK, 'POST', '/tools/ils_update_group', { groupId: group2.id, name: `${tag}-G2R`.slice(0, 50) });
+    check('REST yozish: ils_update_group', rup.status === 200 && rup.json?.success === true, JSON.stringify(rup.json).slice(0, 120));
+    const g2 = await prisma.group.findUnique({ where: { id: group2.id } });
+    check('… bazada o\'zgardi', g2?.name === `${tag}-G2R`.slice(0, 50));
+    const restAudit = await prisma.auditLog.findFirst({ where: { userId: admin.id, action: 'mcp.update_group' }, orderBy: { createdAt: 'desc' } });
+    check('REST audit: via=agent_rest', (restAudit?.details as any)?.via === 'agent_rest');
+    const radm = await agentRest(WK, 'POST', '/tools/ils_update_user', { userId: admin.id, fullName: 'Buzilgan' });
+    check('REST: admin himoyasi → 422', radm.status === 422 && radm.json?.success === false);
+    const oa = await agentRest(WK, 'GET', '/openapi.json');
+    check('openapi.json (3.1, har amal — operationId)', oa.json?.openapi === '3.1.0' && !!oa.json.paths['/tools/ils_record_change']?.post && oa.json.paths['/tools/ils_whoami'].post.operationId === 'ils_whoami' && oa.json.servers[0].url === `${BASE}/api/agent/v1`);
+    check('RateLimit sarlavhalari (kalit bo\'yicha)', !!rlg && (await agentRest(RK, 'GET', '/whoami')).headers.get('ratelimit-limit') === '240');
+    await new Promise((r) => setTimeout(r, 300));
+    const used = await prisma.mcpAgentKey.findUnique({ where: { id: rk.json.data.id } });
+    check('oxirgi foydalanish yozildi', !!used?.lastUsedAt && !!used.lastUsedIp);
+
+    // Bekor qilish, muddat, egasi o'zgarishi, favqulodda uzish
+    check('kalitni bekor qilish', (await panel('DELETE', `/agent-keys/${rk.json.data.id}`)).status === 200);
+    check('… /mcp → 401', (await rpc(RK, 'tools/list')).status === 401);
+    check('… REST → 401', (await agentRest(RK, 'GET', '/whoami')).status === 401);
+    check('ikkinchi marta bekor qilish → 404', (await panel('DELETE', `/agent-keys/${rk.json.data.id}`)).status === 404);
+    const ek = await panel('POST', '/agent-keys', { name: 'Muddatli', access: 'read', expiresInDays: 30 });
+    await prisma.mcpAgentKey.update({ where: { id: ek.json.data.id }, data: { expiresAt: new Date(Date.now() - 1000) } });
+    check('muddati tugagan kalit → 401', (await agentRest(ek.json.data.key, 'GET', '/whoami')).status === 401);
+    let limitHit: any = null;
+    for (let i = 0; i < 25 && !limitHit; i++) {
+      const r = await panel('POST', '/agent-keys', { name: `Limit ${i}`, access: 'read' });
+      if (r.status === 400) limitHit = r;
+    }
+    check('faol kalitlar chegarasi (20)', !!limitHit && /20/.test(limitHit.json?.error?.message ?? ''));
+    await prisma.mcpAgentKey.updateMany({ where: { userId: admin.id, name: { startsWith: 'Limit ' } }, data: { revokedAt: new Date() } });
+    const rv = await panel('DELETE', '/connections');
+    check('"Hammasini uzish" agent kalitlarini ham to\'xtatadi', rv.status === 200 && rv.json?.data?.agentKeys >= 1 && (await agentRest(WK, 'GET', '/whoami')).status === 401);
+    const ok2 = await panel('POST', '/agent-keys', { name: 'Parol testi', access: 'write' });
+    check('yangi kalit ishlaydi', (await agentRest(ok2.json.data.key, 'GET', '/whoami')).status === 200);
+    await prisma.user.update({ where: { id: admin.id }, data: { tokenVersion: { increment: 1 } } });
+    check('admin paroli almashsa kalit o\'ladi', (await agentRest(ok2.json.data.key, 'GET', '/whoami')).status === 401);
+    const aj2 = jwt.sign({ userId: admin.id, role: 'admin', login: admin.login, tv: tvNow + 1 }, env.JWT_SECRET);
+    const st = (await panel('GET', '/agent-keys', undefined, aj2)).json?.data?.keys?.find((k: any) => k.id === ok2.json.data.id);
+    check('ro\'yxatda holat: owner_changed', st?.status === 'owner_changed');
   } finally {
     // ── Tozalash ──────────────────────────────────────────────────────────────
     // MCP orqali yaratilganlar ham (ils_create_user) — prefiks bo'yicha

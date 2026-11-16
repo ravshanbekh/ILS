@@ -6,12 +6,19 @@
  *
  * "Ulanish" = bitta mijoz (masalan claude.ai) + bitta foydalanuvchi bo'yicha
  * hali bekor qilinmagan va refresh muddati tugamagan tokenlar.
+ *
+ * Tashqi AI agent kalitlari (agentKeys.ts):
+ *   GET    /api/mcp/agent-keys         — ro'yxat (kalitning o'zi yo'q)
+ *   POST   /api/mcp/agent-keys         — yangi kalit; javobda BIR MARTA to'liq kalit
+ *   DELETE /api/mcp/agent-keys/:id     — bekor qilish
  */
 import { Router } from 'express';
+import { z } from 'zod';
 import prisma from '../config/database';
 import { authenticate, roleGuard } from '../shared/middleware/auth.middleware';
 import { mcpConfig, SUPPORTED_SCOPES } from './config';
 import { recentMcpEvents } from './events';
+import { createAgentKey, listAgentKeys, MAX_ACTIVE_KEYS, AGENT_KEY_EXPIRY_DAYS } from './agentKeys';
 
 const router = Router();
 router.use(authenticate, roleGuard('admin'));
@@ -102,13 +109,96 @@ router.delete('/connections/:id', async (req, res, next) => {
   }
 });
 
+// Favqulodda: Claude ulanishlari HAM agent kalitlari — hammasi to'xtaydi
 router.delete('/connections', async (req, res, next) => {
   try {
-    const r = await prisma.mcpOAuthToken.updateMany({ where: { revokedAt: null }, data: { revokedAt: new Date() } });
+    const now = new Date();
+    const r = await prisma.mcpOAuthToken.updateMany({ where: { revokedAt: null }, data: { revokedAt: now } });
+    const k = await prisma.mcpAgentKey.updateMany({ where: { revokedAt: null }, data: { revokedAt: now } });
     await prisma.auditLog.create({
-      data: { userId: req.user!.userId, action: 'mcp.all_connections_revoked', targetType: 'mcp_client', details: { tokens: r.count } },
+      data: { userId: req.user!.userId, action: 'mcp.all_connections_revoked', targetType: 'mcp_client', details: { tokens: r.count, agentKeys: k.count } },
     });
-    res.json({ success: true, data: { revoked: r.count } });
+    res.json({ success: true, data: { revoked: r.count, agentKeys: k.count } });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ── Tashqi AI agent kalitlari ────────────────────────────────────────────────
+
+router.get('/agent-keys', async (_req, res, next) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        keys: await listAgentKeys(),
+        mcpUrl: mcpConfig.resourceUrl.href,
+        restUrl: `${mcpConfig.baseUrl}/api/agent/v1`,
+        expiryOptions: AGENT_KEY_EXPIRY_DAYS,
+        maxActive: MAX_ACTIVE_KEYS,
+      },
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+const createKeySchema = z.object({
+  name: z.string().trim().min(2, 'Nom kamida 2 belgi').max(100),
+  access: z.enum(['read', 'write']),
+  // null — muddatsiz (faqat qo'lda bekor qilinadi)
+  expiresInDays: z
+    .number()
+    .int()
+    .nullable()
+    .default(90)
+    .refine((d) => d === null || (AGENT_KEY_EXPIRY_DAYS as readonly number[]).includes(d), `Muddat: ${AGENT_KEY_EXPIRY_DAYS.join(', ')} kun yoki muddatsiz`),
+});
+
+router.post('/agent-keys', async (req, res, next) => {
+  try {
+    const p = createKeySchema.safeParse(req.body ?? {});
+    if (!p.success) {
+      return res.status(400).json({ success: false, error: { message: p.error.errors.map((e) => e.message).join('; ') } });
+    }
+    const active = await prisma.mcpAgentKey.count({
+      where: { revokedAt: null, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+    });
+    if (active >= MAX_ACTIVE_KEYS) {
+      return res.status(400).json({ success: false, error: { message: `Faol kalitlar ${MAX_ACTIVE_KEYS} tadan oshmasin — keraksizini bekor qiling` } });
+    }
+    const { key, row } = await createAgentKey({
+      userId: req.user!.userId,
+      name: p.data.name,
+      write: p.data.access === 'write',
+      expiresInDays: p.data.expiresInDays,
+    });
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.userId,
+        action: 'mcp.agent_key_created',
+        targetType: 'mcp_agent_key',
+        targetId: row.id,
+        details: { name: row.name, prefix: row.prefix, scopes: row.scopes, expiresAt: row.expiresAt },
+      },
+    });
+    // Kalit faqat shu javobda — bazada xeshi bor, qayta ko'rsatib bo'lmaydi
+    res.status(201).json({ success: true, data: { ...row, key } });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.delete('/agent-keys/:id', async (req, res, next) => {
+  try {
+    const id = String(req.params.id);
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ success: false, error: { message: 'Noto\'g\'ri ID' } });
+    const r = await prisma.mcpAgentKey.updateMany({ where: { id, revokedAt: null }, data: { revokedAt: new Date() } });
+    if (!r.count) return res.status(404).json({ success: false, error: { message: 'Faol kalit topilmadi' } });
+    await prisma.auditLog.create({
+      data: { userId: req.user!.userId, action: 'mcp.agent_key_revoked', targetType: 'mcp_agent_key', targetId: id, details: {} },
+    });
+    res.json({ success: true, data: { revoked: true } });
   } catch (e) {
     next(e);
   }

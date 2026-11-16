@@ -46,7 +46,7 @@ export async function guarded(
       'Bu ulanishga faqat o\'qish huquqi berilgan. Boshqarish uchun connector\'ni uzib, qayta ulang va "O\'qish va boshqarish" ni tanlang.'
     );
   }
-  if (!actor.userId) return fail('Yozish amallari faqat OAuth (admin) ulanishida ishlaydi.');
+  if (!actor.userId) return fail('Yozish amallari faqat admin nomidan ulanishda (OAuth yoki agent kaliti) ishlaydi.');
   try {
     const result = await run();
     await audit(actor, tool, { args, ok: true }, target);

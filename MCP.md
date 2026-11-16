@@ -39,6 +39,16 @@ Boshqa mijozlar:
 
 Huquqni o'zgartirish uchun connector'ni uzing (Disconnect) va qayta ulang.
 
+### Tashqi AI agent (doimiy kalit, OAuth'siz)
+
+Login sahifasidan o'ta olmaydigan agentlar uchun admin panelda kalit yaratadi: **Sozlamalar → Claude va AI agentlar → Tashqi AI agent**. Bunday agentlar: o'z serveridagi bot, n8n, OpenAI/Claude API, LangChain.
+
+- Kalit `ils_ak_…` ko'rinishida, `Authorization: Bearer` sarlavhasida yuboriladi.
+- U shu `/mcp` ga ham, oddiy REST'ga ham (`/api/agent/v1`: amallar ro'yxati, `POST /tools/{nom}`, OpenAI formati, `openapi.json`) ishlaydi.
+- Amallar va cheklovlar yuqoridagilar bilan bir xil. Agent kalit egasi (admin) nomidan ishlaydi, auditda `via: agent_key | agent_rest` bo'lib ko'rinadi.
+
+To'liq qo'llanma, misollar va xatolar jadvali: **[docs/agent-api.md](docs/agent-api.md)**.
+
 ## Amallar
 
 ### O'qish va tahlil (`ils:read`)

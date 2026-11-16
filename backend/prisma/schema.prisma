@@ -121,6 +121,7 @@ model User {
   quizAnswersReviewed       QuizTestAnswer[]      @relation("QuizAnswerReviewer")
   mcpOAuthCodes             McpOAuthCode[]        @relation("McpOAuthCodeUser")
   mcpOAuthTokens            McpOAuthToken[]       @relation("McpOAuthTokenUser")
+  mcpAgentKeys              McpAgentKey[]         @relation("McpAgentKeyUser")
   typingResults             TypingResult[]        @relation("TypingResultUser")
   typingMatchesHosted       TypingMatch[]         @relation("TypingMatchHost")
   typingMatchPlayers        TypingMatchPlayer[]   @relation("TypingMatchPlayerUser")
@@ -1583,6 +1584,31 @@ model McpOAuthToken {
 
   @@index([userId])
   @@map("mcp_oauth_tokens")
+}
+
+/// Tashqi AI agent kaliti (OAuth'siz, doimiy Bearer). Admin panelda yaratadi,
+/// kalit faqat bir marta ko'rsatiladi — bazada SHA-256 xeshi. Agent shu admin
+/// NOMIDAN ishlaydi: admin nofaol/rolsiz bo'lsa yoki paroli almashsa
+/// (token_version) kalit o'ladi. /mcp va /api/agent/v1 qabul qiladi.
+model McpAgentKey {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @db.VarChar(100)
+  keyHash      String    @unique @map("key_hash") @db.VarChar(64)
+  /// Ko'rsatish uchun boshi, masalan "ils_ak_Xy7Q" (to'liq kalit saqlanmaydi)
+  prefix       String    @db.VarChar(20)
+  userId       String    @map("user_id") @db.Uuid
+  scopes       String[]
+  tokenVersion Int       @map("token_version")
+  expiresAt    DateTime? @map("expires_at")
+  revokedAt    DateTime? @map("revoked_at")
+  lastUsedAt   DateTime? @map("last_used_at")
+  lastUsedIp   String?   @map("last_used_ip") @db.VarChar(64)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user User @relation("McpAgentKeyUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mcp_agent_keys")
 }
 
 /// Adminning PDF shaklidagi dars kuzatuvi. Ismlar va guruh nomi snapshot

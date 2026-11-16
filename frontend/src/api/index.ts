@@ -854,7 +854,30 @@ export const mcpApi = {
     ),
   revoke: (id: string) => api.delete(`/mcp/connections/${encodeURIComponent(id)}`),
   revokeAll: () => api.delete('/mcp/connections'),
+  // Tashqi AI agent kalitlari (OAuth'siz Bearer) — /mcp va /api/agent/v1
+  getAgentKeys: () =>
+    api.get<{ success: boolean; data: { keys: McpAgentKey[]; mcpUrl: string; restUrl: string; expiryOptions: number[]; maxActive: number } }>(
+      '/mcp/agent-keys'
+    ),
+  createAgentKey: (data: { name: string; access: 'read' | 'write'; expiresInDays: number | null }) =>
+    api.post<{ success: boolean; data: McpAgentKey & { key: string } }>('/mcp/agent-keys', data),
+  revokeAgentKey: (id: string) => api.delete(`/mcp/agent-keys/${id}`),
 };
+
+export interface McpAgentKey {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  canWrite: boolean;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  lastUsedAt: string | null;
+  lastUsedIp: string | null;
+  createdAt: string;
+  owner: { id: string; fullName: string; login: string };
+  status: 'active' | 'expired' | 'revoked' | 'owner_changed';
+}
 
 // ─── O'yinlar: "Tez yozish" ─────────────────────────────────────────────────
 export type TypingCategory = 'text' | 'code' | 'battle';
