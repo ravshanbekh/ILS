@@ -14,7 +14,7 @@ Agent ──HTTPS──▶ itlivescore.uz ─┬─ POST /mcp               (MCP
   Authorization:                 └─ /api/agent/v1/*          (oddiy REST + OpenAPI)
   Bearer ils_ak_…                          │
                                            ▼
-                       bir xil 45 ta amal (MCP amallari): o'qish, tahlil, SQL,
+                       bir xil 46 ta amal (MCP amallari): o'qish, tahlil, SQL,
                        boshqarish, qo'lda tuzatish + undo → panel servislari
                        → audit_logs (kim, qaysi kalit, nima qildi)
 ```
@@ -36,7 +36,7 @@ Ikkala yo'lda ham amallar, argumentlar, cheklovlar va natija bir xil. MCP amali 
    - **Nom** — keyin auditda shu nom ko'rinadi, masalan `Sotuv bot (n8n)`.
    - **Huquq:**
      - *Faqat o'qish* — 16 ta amal: hisobotlar, qidiruv, SQL tahlil.
-     - *O'qish + boshqarish* — 45 ta amal: guruh, o'quvchi, baholash, muzlatish, istalgan yozuvni tuzatish va hokazo.
+     - *O'qish + boshqarish* — 46 ta amal: guruh, o'quvchi, baholash, muzlatish, istalgan yozuvni tuzatish va hokazo.
    - **Muddat:** 30, 90, 180, 365 kun yoki muddatsiz.
 3. **Kalit yaratish** ni bosing. Kalit `ils_ak_` bilan boshlanadi (jami 50 belgi). U **faqat shu yerda bir marta** ko'rinadi: bazada faqat SHA-256 xeshi saqlanadi, qayta ko'rsatib bo'lmaydi. Yo'qotsangiz, bekor qilib yangisini yarating.
 4. Shu oynada tayyor namunalar bor: MCP mijoz konfiguratsiyasi, `curl` va OpenAI formati.

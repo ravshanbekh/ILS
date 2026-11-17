@@ -213,6 +213,13 @@ export const PERMISSIONS = {
     category: 'Imtihon',
     legacyRoles: [], // ilgari faqat admin — qo'lda beriladi
   },
+  student_access_block: {
+    label: "O'quvchi kirishini yopish/ochish",
+    description:
+      "To'lov kechikkan yoki boshqa sabab bilan o'quvchining tizimga kirishini vaqtincha yopish va qayta ochish. O'qituvchi faqat o'z guruhidagi o'quvchiga qo'llay oladi. O'quvchi guruhda va reytingda qoladi — boshqalarga ko'rinmaydi",
+    category: 'Guruh',
+    legacyRoles: ['teacher'],
+  },
   quiz_tests: {
     label: 'Test paneli',
     description:

@@ -22,6 +22,7 @@ import lessonSessionsService from '../../modules/lesson-sessions/lesson-sessions
 import shopService from '../../modules/shop/shop.service';
 import trashService from '../../modules/trash/trash.service';
 import milestonesService from '../../modules/milestones/milestones.service';
+import studentAccessService, { BLOCK_REASONS } from '../../modules/student-access/student-access.service';
 import { safeSendToParent } from '../../modules/bot/bot.notifications';
 import { createUserSchema, updateUserSchema } from '../../modules/users/users.validation';
 import { PERMISSIONS } from '../../shared/constants/permissions';
@@ -199,6 +200,29 @@ export function registerManageTools(server: McpServer, actor: McpActor) {
         await assertNotAdminTarget(userId, actor);
         const res = await permissionsService.setUserPermissions(userId, permissions, actor.userId!);
         return { done: true, result: res, now: await permissionsService.getUserPermissions(userId) };
+      })
+  );
+
+  // ── Kirishni yopish/ochish (to'lov va h.k.) ────────────────────────────────
+  server.registerTool(
+    'ils_set_student_access',
+    {
+      title: 'O\'quvchi kirishini yopish/ochish',
+      description:
+        'O\'quvchining tizimga kirishini vaqtincha yopadi (blocked: true — masalan to\'lov kechikkan) yoki qayta ochadi (blocked: false). O\'quvchi guruh va reytingda qoladi, ochiq sessiyalari darhol tugaydi; unga sababsiz betaraf xabar ko\'rsatiladi. Kirishi yopilganlar: SQL `users.access_blocked_at IS NOT NULL`.' +
+        CONFIRM_NOTE,
+      inputSchema: {
+        studentId: uuid('O\'quvchi'),
+        blocked: z.boolean(),
+        reason: z.enum(BLOCK_REASONS).default('payment').describe('payment — to\'lov, other — boshqa sabab (faqat yopishda)'),
+        note: z.string().max(200).optional(),
+      },
+      annotations: DESTRUCTIVE,
+    },
+    async ({ studentId, blocked, reason, note }) =>
+      guarded(actor, blocked ? 'block_student_access' : 'unblock_student_access', { studentId, reason, note }, { type: 'user', id: studentId }, async () => {
+        const who = { userId: actor.userId!, role: actor.role };
+        return blocked ? studentAccessService.block(who, studentId, reason, note) : studentAccessService.unblock(who, studentId);
       })
   );
 

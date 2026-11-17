@@ -3,8 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
 import { usePermissionStore } from '@/stores/permissionStore';
-import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi, monitoringApi, freezesApi, botApi } from '@/api';
-import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain, RefreshCw, Snowflake, LogOut, X, Sparkles, ClipboardCheck, ExternalLink, Copy, Check } from 'lucide-react';
+import { groupsApi, normativesApi, exportApi, categoriesApi, usersApi, rankingsApi, monitoringApi, freezesApi, botApi, studentAccessApi, type StudentAccessStatus } from '@/api';
+import { Loader2, ArrowLeft, Download, Users, Target, Star, Medal, UserPlus, Trash2, PlusCircle, CheckCircle, Search, GraduationCap, Brain, RefreshCw, Snowflake, LogOut, X, Sparkles, ClipboardCheck, ExternalLink, Copy, Check, Lock } from 'lucide-react';
+import StudentAccessToggle from '@/components/shared/StudentAccessToggle';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import LessonGradingPanel from '@/components/shared/LessonGradingPanel';
 import HomeworkAssignCard from '@/components/shared/HomeworkAssignCard';
@@ -50,6 +51,10 @@ export default function GroupDetailPage() {
 
   // Student Action Modal state (Transfer / Freeze / Remove)
   const can = usePermissionStore((s) => s.can);
+  usePermissionStore((s) => s.permissions); // ruxsatlar yuklanganda qayta chizilsin (can o'zgarmaydi)
+  const canAccessBlock = can('student_access_block');
+  // Kirishi yopilgan o'quvchilar — alohida so'rov: guruh javobini o'quvchilar ham oladi
+  const [accessMap, setAccessMap] = useState<Record<string, StudentAccessStatus>>({});
   const canTransfer = can('transfer_student');
   const canFreeze = can('freeze_student');
   const canRemove = can('remove_student');
@@ -168,6 +173,14 @@ export default function GroupDetailPage() {
   useEffect(() => {
     fetchGroupData();
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !canAccessBlock) return;
+    studentAccessApi
+      .groupStatus(id)
+      .then((r) => setAccessMap(r.data.data))
+      .catch(() => setAccessMap({}));
+  }, [id, canAccessBlock]);
 
   useEffect(() => {
     botApi.getInfo().then((res) => setBotInfo(res.data.data)).catch(() => {});
@@ -698,6 +711,9 @@ export default function GroupDetailPage() {
                           >
                             {student.fullName}
                           </span>
+                          {accessMap[student.id]?.blocked && (
+                            <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-500" aria-label="Kirish yopiq" />
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 font-mono text-blue-400 text-sm">{student.login}</td>
@@ -735,8 +751,22 @@ export default function GroupDetailPage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex justify-end">
-                          <button 
+                        <div className="flex justify-end gap-2">
+                          {canAccessBlock && (
+                            <StudentAccessToggle
+                              student={student}
+                              status={accessMap[student.id]}
+                              onChange={(sid, st) =>
+                                setAccessMap((m) => {
+                                  const next = { ...m };
+                                  if (st.blocked) next[sid] = st;
+                                  else delete next[sid];
+                                  return next;
+                                })
+                              }
+                            />
+                          )}
+                          <button
                             onClick={() => handleOpenActionModal(student)}
                             className="p-2 rounded-lg bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-zinc-700 transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs font-medium"
                             title="O'quvchini boshqa guruhga o'tkazish, muzlatish yoki chiqarish"

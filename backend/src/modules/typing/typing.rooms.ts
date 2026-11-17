@@ -163,9 +163,10 @@ export function initTypingGateway(io: SocketIOServer) {
       const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string; tv?: number };
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        select: { id: true, fullName: true, role: true, isActive: true, tokenVersion: true },
+        select: { id: true, fullName: true, role: true, isActive: true, tokenVersion: true, accessBlockedAt: true },
       });
-      if (!user || !user.isActive || (decoded.tv ?? 0) !== user.tokenVersion) return next(new Error('AUTH_INVALID'));
+      // accessBlockedAt — kirishi vaqtincha yopilgan o'quvchi (modules/student-access)
+      if (!user || !user.isActive || user.accessBlockedAt || (decoded.tv ?? 0) !== user.tokenVersion) return next(new Error('AUTH_INVALID'));
       if (user.role !== 'student' && !MENTOR_ROLES.includes(user.role)) return next(new Error('STUDENTS_ONLY'));
       socket.data.userId = user.id;
       socket.data.fullName = user.fullName;

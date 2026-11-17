@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../../config/env';
 import { ApiError } from './errorHandler';
 import prisma from '../../config/database';
+import { STUDENT_ACCESS_BLOCKED_MESSAGE } from '../constants/studentAccess';
 
 export interface JwtPayload {
   userId: string;
@@ -40,11 +41,16 @@ export const authenticate = async (
     // Foydalanuvchi hali ham active ekanligini va tokeni bekor qilinmaganini tekshirish
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { isActive: true, tokenVersion: true },
+      select: { isActive: true, tokenVersion: true, accessBlockedAt: true },
     });
 
     if (!user || !user.isActive) {
       throw ApiError.unauthorized('Foydalanuvchi faol emas');
+    }
+    // Kirishi vaqtincha yopilgan o'quvchi (modules/student-access). Yopilganda
+    // tokenVersion ham oshadi — bu ikkinchi himoya qatlami.
+    if (user.accessBlockedAt) {
+      throw ApiError.unauthorized(STUDENT_ACCESS_BLOCKED_MESSAGE);
     }
 
     // Token bekor qilinganmi? Parol o'zgarganda yoki "barcha qurilmalardan

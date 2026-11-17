@@ -62,6 +62,16 @@ model User {
   // eski tokenlardagi raqam mos kelmay qoladi va ular darrov ishlamaydi.
   tokenVersion Int @default(0) @map("token_version")
 
+  // Kirishni vaqtincha yopish (masalan, to'lov kechikkan o'quvchi) — mentor
+  // bitta tugma bilan yopadi/ochadi. isActive'dan farqi: o'quvchi guruhda,
+  // reytingda, baholarda qoladi (hech kimga sezilmaydi), faqat tizimga kira
+  // olmaydi. Batafsil: modules/student-access.
+  accessBlockedAt   DateTime? @map("access_blocked_at")
+  accessBlockedById String?   @map("access_blocked_by_id") @db.Uuid
+  /// payment | other
+  accessBlockReason String?   @map("access_block_reason") @db.VarChar(20)
+  accessBlockNote   String?   @map("access_block_note") @db.VarChar(200)
+
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations

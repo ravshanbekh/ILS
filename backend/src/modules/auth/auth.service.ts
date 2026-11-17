@@ -6,6 +6,7 @@ import { ApiError } from '../../shared/middleware/errorHandler';
 import { LoginInput } from './auth.validation';
 import { JwtPayload } from '../../shared/middleware/auth.middleware';
 import logger from '../../shared/utils/logger';
+import { BLOCKED_MESSAGE } from '../student-access/student-access.service';
 
 class AuthService {
   /**
@@ -27,6 +28,12 @@ class AuthService {
     const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
     if (!isPasswordValid) {
       throw ApiError.unauthorized('Login yoki parol noto\'g\'ri');
+    }
+
+    // Kirishi vaqtincha yopilgan (masalan to'lov) — parol tekshirilgandan KEYIN:
+    // holatni faqat egasi ko'radi, sabab esa umuman aytilmaydi
+    if (user.accessBlockedAt) {
+      throw ApiError.forbidden(BLOCKED_MESSAGE);
     }
 
     // Token yaratish. tv — token versiyasi: parol o'zgarsa yoki admin
@@ -81,11 +88,14 @@ class AuthService {
       // Foydalanuvchi hali active ekanligini tekshirish
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        select: { id: true, role: true, login: true, isActive: true, tokenVersion: true },
+        select: { id: true, role: true, login: true, isActive: true, tokenVersion: true, accessBlockedAt: true },
       });
 
       if (!user || !user.isActive) {
         throw ApiError.unauthorized('Foydalanuvchi topilmadi yoki faol emas');
+      }
+      if (user.accessBlockedAt) {
+        throw ApiError.unauthorized(BLOCKED_MESSAGE);
       }
 
       // Bekor qilingan refresh token bilan yangi token olib bo'lmasin —

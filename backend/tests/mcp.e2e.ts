@@ -373,7 +373,12 @@ async function main() {
     // ── 7b. To'liq boshqaruv: domen amallari ─────────────────────────────────
     console.log('\n7b) To\'liq boshqaruv — domen amallari');
     const W = writeTok.access_token;
-    check('amallar soni: 16 o\'qish + 29 boshqarish', wnames.length === 45, `${wnames.length} ta`);
+    check('amallar soni: 16 o\'qish + 30 boshqarish', wnames.length === 46, `${wnames.length} ta`);
+    const acc = await call(W, 'ils_set_student_access', { studentId: students[2].id, blocked: true, reason: 'payment', note: 'MCP' });
+    const accRow = await prisma.user.findUnique({ where: { id: students[2].id }, select: { accessBlockedAt: true, accessBlockReason: true } });
+    check('ils_set_student_access: kirish yopildi', !acc.isError && acc.data?.blocked === true && !!accRow?.accessBlockedAt && accRow.accessBlockReason === 'payment', acc.text.slice(0, 100));
+    const acc2 = await call(W, 'ils_set_student_access', { studentId: students[2].id, blocked: false });
+    check('… va qayta ochildi', !acc2.isError && (await prisma.user.findUnique({ where: { id: students[2].id } }))?.accessBlockedAt === null);
     const pendingSub = await prisma.submission.findFirst({ where: { studentId: students[1].id, normativeId: norms[0].id } });
     const cs = await call(W, 'ils_check_submission', { submissionId: pendingSub!.id, result: 'blue', comment: 'MCP orqali' });
     check('ils_check_submission', cs.data?.checked === true && cs.data.submission.result === 'blue', cs.text.slice(0, 100));

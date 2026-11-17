@@ -233,6 +233,24 @@ export const settingsApi = {
   testGemini: () => api.post('/settings/gemini/test'),
 };
 
+// ─── O'quvchi kirishini yopish/ochish (to'lov va h.k.) ─────────────────────
+export interface StudentAccessStatus {
+  blocked: boolean;
+  blockedAt?: string;
+  reason?: 'payment' | 'other' | null;
+  note?: string | null;
+  blockedBy?: { id: string; fullName: string | null } | null;
+}
+export const studentAccessApi = {
+  /** Guruhdagi kirishi yopilganlar: { [studentId]: holat } */
+  groupStatus: (groupId: string) =>
+    api.get<{ success: boolean; data: Record<string, StudentAccessStatus> }>(`/student-access/group/${groupId}`),
+  blocked: () => api.get('/student-access/blocked'),
+  block: (studentId: string, data: { reason: 'payment' | 'other'; note?: string | null }) =>
+    api.post<{ success: boolean; data: StudentAccessStatus }>(`/student-access/${studentId}/block`, data),
+  unblock: (studentId: string) => api.post(`/student-access/${studentId}/unblock`),
+};
+
 export const freezesApi = {
   // Muzlatish (admin, administrator, sotuv_operatori, kassir)
   freeze: (data: {

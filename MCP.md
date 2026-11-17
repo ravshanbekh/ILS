@@ -22,7 +22,7 @@ claude.ai ──HTTPS──▶ Cloudflare ──▶ server nginx ──▶ front
    - URL: `https://itlivescore.uz/mcp`. Bu manzil panelda ham bor: **Sozlamalar → Claude (MCP connector)**.
    - *Advanced settings* bo'sh qoladi, chunki Claude o'zini avtomatik ro'yxatdan o'tkazadi.
 2. **Connect** ni bosing. IT Live Score sahifasi ochiladi: admin login va parolini kiriting, keyin huquqni tanlang:
-   - **To'liq boshqaruv** (`ils:read ils:write`): standart tanlov, 45 amal.
+   - **To'liq boshqaruv** (`ils:read ils:write`): standart tanlov, 46 amal.
    - **Faqat o'qish va tahlil** (`ils:read`).
 
    Huquqni mijoz emas, admin tanlaydi. claude.ai ulanishda ham, token yangilanishida ham faqat `ils:read` so'raydi, lekin admin bergan huquq saqlanib qoladi.
@@ -72,7 +72,7 @@ To'liq qo'llanma, misollar va xatolar jadvali: **[docs/agent-api.md](docs/agent-
 | `ils_get_record` | Istalgan jadvaldan bitta yozuv, barcha ustunlari bilan (maxfiylar yashirilgan) |
 | `ils_get_permissions` | Xodim ruxsatlari katalogi va xodimning hozirgi ruxsatlari |
 
-### Boshqarish (`ils:write`) — 29 amal
+### Boshqarish (`ils:write`) — 30 amal
 
 Bu amallar faqat yozish huquqi bilan ulanganda ko'rinadi. Hammasi panel servislari orqali ishlaydi.
 
@@ -86,6 +86,7 @@ Bu amallar faqat yozish huquqi bilan ulanganda ko'rinadi. Hammasi panel servisla
 | Darslar | `ils_grade_lesson` (uy vazifasi, faollik, coin; muddatdan keyin ham), `ils_unlock_lesson` |
 | Bosqichlar | `ils_set_milestone_date`, `ils_mark_milestone_held` |
 | Muzlatish | `ils_freeze_student`, `ils_unfreeze` ⚠️ |
+| Kirishni yopish | `ils_set_student_access` ⚠️ (to'lov va h.k.: o'quvchi kira olmaydi, guruhda qoladi; qayta ochish) |
 | Murojaatlar | `ils_reply_appeal` 📨, `ils_set_appeal_status` |
 | Do'kon | `ils_shop_order` (fulfill / cancel — bekor qilinsa coin qaytadi) |
 | Xabar | `ils_send_notification` (panel ichida: foydalanuvchilar, guruh yoki rol) |
@@ -231,7 +232,7 @@ claude mcp add it-live-local -- node "<to'liq yo'l>/backend/dist/mcp/main.js"
 cd backend
 npm run test:mcp   # build + unit: SQL validator, redaction, redirect allowlist, imzo, huquq bo'yicha amallar
 npm run smoke:mcp  # stdio jarayoni: amallar ro'yxati + jonli so'rov (lokal baza)
-npm run e2e:mcp    # to'liq OAuth oqimi + 45 amal + qo'lda tuzatish/undo + SQL himoyasi + rotation + uzish (143 tekshiruv)
+npm run e2e:mcp    # to'liq OAuth oqimi + 46 amal + qo'lda tuzatish/undo + SQL himoyasi + rotation + uzish (196 tekshiruv)
 ```
 
 `e2e:mcp` lokal bazada `mcpe2e-` belgili fixture'lar yaratadi va oxirida o'chiradi. Uni prod bazaga qarshi **ishga tushirmang**.

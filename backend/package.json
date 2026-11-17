@@ -16,7 +16,8 @@
     "test:mcp": "npm run build && node --test tests/mcp.unit.test.js",
     "smoke:mcp": "node tests/mcp.stdio.smoke.js",
     "e2e:mcp": "tsx tests/mcp.e2e.ts",
-    "e2e:typing": "tsx tests/typing.e2e.ts"
+    "e2e:typing": "tsx tests/typing.e2e.ts",
+    "e2e:student-access": "tsx tests/student-access.e2e.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
