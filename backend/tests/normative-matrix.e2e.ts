@@ -8,6 +8,7 @@
  * Ishlatish (backend papkasidan, LOKAL baza bilan):  npm run e2e:normative-matrix
  */
 import http from 'http';
+import { formatDuration } from '../src/modules/normative-matrix/normative-matrix.excel';
 
 const PORT = Number(process.env.NM_E2E_PORT || 5095);
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -82,11 +83,11 @@ async function main() {
         { groupId: gC.id, normativeId: N[0].id },
       ],
     });
-    const sub = (studentId: string, normativeId: string, result: any, score: number, groupId: string | null = null) =>
-      prisma.submission.create({ data: { studentId, normativeId, groupId, youtubeUrl: 'https://youtu.be/x', status: result ? 'checked' : 'pending', result, score } });
+    const sub = (studentId: string, normativeId: string, result: any, score: number, groupId: string | null = null, youtubeUrl = 'https://youtu.be/x') =>
+      prisma.submission.create({ data: { studentId, normativeId, groupId, youtubeUrl, status: result ? 'checked' : 'pending', result, score } });
     await sub(s1.id, N[0].id, 'green', 40, gB.id); // eskirgan groupId — o'quvchi bo'yicha olinishi kerak
     await sub(s1.id, N[1].id, 'blue', 30);
-    await sub(s2.id, N[0].id, 'red', 5);
+    await sub(s2.id, N[0].id, 'red', 5, null, 'javascript:alert(1)'); // xavfli havola — o'tkazilmasligi kerak
     await sub(s2.id, N[1].id, null, 0);
     await sub(s3.id, N[1].id, 'green', 40);
     await prisma.userPermission.create({ data: { userId: admr.id, permission: 'normative_matrix_all' } });
@@ -108,7 +109,9 @@ async function main() {
     const myNorms = a.normatives.filter((n: any) => ids.norms.includes(n.id));
     check('normativlar: birlashma, raqam bo\'yicha', myNorms.map((n: any) => n.taskNumber).join() === '9301,9302,9303');
     check('guruh normativlari (biriktirilgan)', A.teachers.find((t: any) => t.fullName === 'Aziz Mentor').groups[0].normativeIds.sort().join() === [N[1].id, N[2].id].sort().join());
-    check('katak: qo\'lladi (eskirgan groupId bo\'lsa ham)', a.cells[s1.id]?.[N[0].id]?.join() === 'g,40');
+    check('katak: qo\'lladi (eskirgan groupId bo\'lsa ham)', a.cells[s1.id]?.[N[0].id]?.join() === 'g,40,https://youtu.be/x');
+    check('isbot havolasi: javascript: sxemasi bo\'sh qatorga aylanadi', a.cells[s2.id]?.[N[0].id]?.[2] === '');
+    check('vaqt soniyada: 2 → 2 sek, 150 → 2 daq 30 sek, 180 → 3 daq', formatDuration(2) === '2 sek' && formatDuration(150) === '2 daq 30 sek' && formatDuration(180) === '3 daq');
     check('katak: biladi / bilmaydi / tekshirilmoqda', a.cells[s1.id]?.[N[1].id]?.[0] === 'b' && a.cells[s2.id]?.[N[0].id]?.[0] === 'r' && a.cells[s2.id]?.[N[1].id]?.[0] === 'p');
     check('topshirmagan — katak yo\'q', !a.cells[s3.id]?.[N[2].id]);
 
@@ -146,7 +149,9 @@ async function main() {
     check('2-qator: guruh ustuni va o\'quvchi ismi', String(ws.getCell(2, 6).value).startsWith(`${tag}-A`) && ws.getCell(2, 7).value === 'Oquvchi A1');
     const row = (task: number) => { for (let r = 3; r <= ws.rowCount; r++) if (ws.getCell(r, 1).value === task) return r; return -1; };
     const r1 = row(9301);
-    check('katak belgilari: A1 ✔ (qo\'lladi), A2 ✘', ws.getCell(r1, 7).value === '✔' && ws.getCell(r1, 8).value === '✘');
+    const v7: any = ws.getCell(r1, 7).value;
+    check('katak belgilari: A1 ✔ video havolasi bilan, A2 ✘ (xavfli havola — oddiy matn)', v7?.text === '✔' && v7?.hyperlink === 'https://youtu.be/x' && ws.getCell(r1, 8).value === '✘');
+    check('Vaqti ustuni soniyada: 2 sek', ws.getCell(r1, 4).value === '2 sek', String(ws.getCell(r1, 4).value));
     check('foiz: N1 — 1/2 (A) + 0/1 (C) = 33%', Math.abs(Number(ws.getCell(r1, 5).value) - 1 / 3) < 0.001, String(ws.getCell(r1, 5).value));
     check('qotirilgan ustun/qator', (ws.views[0] as any)?.xSplit === 5 && (ws.views[0] as any)?.ySplit === 2);
   } finally {

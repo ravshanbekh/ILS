@@ -258,7 +258,8 @@ export interface MatrixData {
   scope: 'all' | 'own';
   normatives: MatrixNormative[];
   teachers: { id: string | null; fullName: string; groups: MatrixGroup[] }[];
-  cells: Record<string, Record<string, [MatrixCode, number]>>;
+  /** [kod, ball, isbot videosi havolasi ('' — yo'q)] */
+  cells: Record<string, Record<string, [MatrixCode, number, string]>>;
 }
 export interface MatrixFiltersQuery {
   teacherId?: string;

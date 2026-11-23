@@ -27,7 +27,8 @@ Ruxsatni Sozlamalar → Ruxsatlar bo'limida istalgan foydalanuvchiga berish mumk
 - **1-qator:** mentor ismi (o'z ustunlari ustidan cho'zilgan; aylantirganda ko'rinib turadi).
 - **2-qator:** qizil guruh ustuni (bosilsa guruh sahifasi) + o'quvchi ismlari vertikal
   (bosilsa o'quvchi profili).
-- **Chap ustunlar:** N, Normativ (havola bilan), Vaqti, Foiz.
+- **Chap ustunlar:** N, Normativ (havola bilan; ostida qanday bajarish — tavsif), Vaqti, Foiz.
+  Vaqt bazada **soniyada** saqlanadi: `30` → "30 sek", `150` → "2 daq 30 sek", `180` → "3 daq".
   Mobil ekranda Vaqti/Foiz yashiriladi — ular normativ nomi tooltip'ida.
 - **Pastki qator:** har bir o'quvchining bajarish foizi.
 
@@ -41,6 +42,10 @@ Ruxsatni Sozlamalar → Ruxsatlar bo'limida istalgan foydalanuvchiga berish mumk
 | chiziqli | guruhga biriktirilmagan normativ | — |
 
 **Foiz** = (qo'lladi + biladi) / biriktirilgan normativlar soni.
+
+**Isbot:** belgi (✔/✘/⏳) bosilsa o'quvchi yuborgan YouTube video yangi oynada ochiladi.
+Faqat `http(s)` havolalar o'tkaziladi (`javascript:` va h.k. bo'sh qatorga aylanadi).
+Excel'da ham belgi shu videoga havola.
 
 ## Filtrlar
 
@@ -68,11 +73,11 @@ Javob shakli (`data`):
   "scope": "all | own",
   "normatives": [{ "id", "taskNumber", "title", "description", "timeLimit", "url", "maxScore", "category" }],
   "teachers": [{ "id", "fullName", "groups": [{ "id", "name", "graduated", "normativeIds": [], "students": [{ "id", "fullName", "login" }] }] }],
-  "cells": { "<studentId>": { "<normativeId>": ["g|b|r|p", score] } }
+  "cells": { "<studentId>": { "<normativeId>": ["g|b|r|p", score, "https://youtu.be/…" | ""] } }
 }
 ```
 
-Kataklar ixcham kodlangan (90 o'quvchi × 11 normativ ≈ 1 000 katak bir necha KB).
+Kataklar ixcham kodlangan (kod, ball, isbot havolasi).
 
 **Muhim:** natijalar `submission.groupId` bo'yicha EMAS, o'quvchining hozirgi guruhi
 bo'yicha joylanadi — o'quvchi boshqa guruhga o'tkazilganda eski `groupId` eskirib qoladi.
@@ -86,5 +91,5 @@ foizi. "Izoh" varag'ida belgilar tushuntirilgan.
 ## Testlar
 
 ```bash
-cd backend && npm run e2e:normative-matrix   # 29 tekshiruv: ruxsat, doira, filtrlar, kataklar, Excel
+cd backend && npm run e2e:normative-matrix   # 32 tekshiruv: ruxsat, doira, filtrlar, kataklar, Excel
 ```

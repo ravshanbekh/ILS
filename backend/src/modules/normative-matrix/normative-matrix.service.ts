@@ -22,6 +22,14 @@ import { ApiError } from '../../shared/middleware/errorHandler';
 import { hasPermission } from '../../shared/middleware/permission.middleware';
 
 export type CellCode = 'g' | 'b' | 'r' | 'p';
+/** [kod, ball, isbot videosi ('' — yo'q yoki xavfli havola)] */
+export type MatrixCell = [CellCode, number, string];
+
+/** Faqat http(s) havola — panelda <a href>, Excel'da hyperlink bo'ladi */
+export const safeUrl = (u: string | null | undefined): string => {
+  const t = (u ?? '').trim();
+  return /^https?:\/\/[^\s]+$/i.test(t) ? t : '';
+};
 export type GroupStatus = 'active' | 'graduated' | 'all';
 
 export interface MatrixFilters {
@@ -107,17 +115,18 @@ export async function buildMatrix(actor: Actor, f: MatrixFilters) {
     a.id === null ? 1 : b.id === null ? -1 : a.fullName.localeCompare(b.fullName, 'uz')
   );
 
-  // Kataklar: o'quvchi × normativ → [kod, ball]
+  // Kataklar: o'quvchi × normativ → [kod, ball, isbot videosi]. Havola faqat http(s) —
+  // u <a href> ga tushadi, javascript: kabi sxemalar o'tkazilmaydi
   const studentIds = [...new Set(groups.flatMap((g) => g.groupStudents.map((s) => s.student.id)))];
-  const cells: Record<string, Record<string, [CellCode, number]>> = {};
+  const cells: Record<string, Record<string, MatrixCell>> = {};
   if (studentIds.length && normatives.length) {
     const subs = await prisma.submission.findMany({
       where: { studentId: { in: studentIds }, normativeId: { in: normatives.map((n) => n.id) } },
-      select: { studentId: true, normativeId: true, status: true, result: true, score: true },
+      select: { studentId: true, normativeId: true, status: true, result: true, score: true, youtubeUrl: true },
     });
     for (const s of subs) {
       const code: CellCode = s.status === 'pending' || !s.result ? 'p' : s.result === 'green' ? 'g' : s.result === 'blue' ? 'b' : 'r';
-      (cells[s.studentId] ??= {})[s.normativeId] = [code, s.score];
+      (cells[s.studentId] ??= {})[s.normativeId] = [code, s.score, safeUrl(s.youtubeUrl)];
     }
   }
 

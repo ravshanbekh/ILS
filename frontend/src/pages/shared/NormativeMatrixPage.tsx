@@ -19,6 +19,7 @@ import Header from '@/components/layout/Header';
 import { normativeMatrixApi, type MatrixData, type MatrixFiltersQuery, type MatrixGroup, type MatrixNormative, type MatrixCode } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
 import { downloadBlob } from '@/utils';
+import { formatDuration } from '@/utils/duration';
 
 type Status = 'active' | 'graduated' | 'all';
 type Col =
@@ -191,7 +192,7 @@ export default function NormativeMatrixPage() {
     const state = !c.assigned.has(n.id)
       ? 'guruhga biriktirilmagan'
       : cell
-        ? `${CODE_META[cell[0]].label}${cell[0] !== 'p' ? ` · ${cell[1]} / ${n.maxScore} ball` : ''}`
+        ? `${CODE_META[cell[0]].label}${cell[0] !== 'p' ? ` · ${cell[1]} / ${n.maxScore} ball` : ''}${cell[2] ? ' · bosing — video' : ''}`
         : 'topshirmagan';
     const r = td.getBoundingClientRect();
     setTip({ x: r.left + r.width / 2, y: r.top, text: [`${c.student.fullName} · ${c.group.name}`, `${n.taskNumber}. ${n.title}`, state] });
@@ -297,6 +298,7 @@ export default function NormativeMatrixPage() {
             ))}
             <span className="inline-flex items-center gap-1"><span className="h-5 w-5 rounded border border-zinc-800" /> topshirmagan</span>
             <span className="inline-flex items-center gap-1"><span className="ils-na h-5 w-5 rounded" /> biriktirilmagan</span>
+            <span className="inline-flex items-center gap-1 text-zinc-400"><ExternalLink className="h-3.5 w-3.5" /> belgini bosing — isbot videosi ochiladi</span>
           </span>
         </div>
 
@@ -450,7 +452,7 @@ const MatrixRow = memo(function MatrixRow({
       <td
         className="sticky z-10 border-b border-r border-zinc-800 ils-nm-title px-2 py-1.5 align-top"
         style={{ left: L.left.title }}
-        title={L.compact ? `Bajarish: ${pctText(pct)}${n.timeLimit ? ` · ${n.timeLimit} daq` : ''}` : undefined}
+        title={L.compact ? `Bajarish: ${pctText(pct)}${n.timeLimit ? ` · ${formatDuration(n.timeLimit)}` : ''}` : undefined}
       >
         <div className="flex items-start gap-1">
           <span className="line-clamp-2 text-xs font-semibold leading-snug text-zinc-100" title={n.description ? `${n.title}\n\n${n.description}` : n.title}>
@@ -462,11 +464,17 @@ const MatrixRow = memo(function MatrixRow({
             </a>
           )}
         </div>
-        {n.category && <div className="mt-0.5 text-[10px] text-zinc-500">{n.category.name}</div>}
+        {n.description ? (
+          <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-zinc-400" title={n.category ? `${n.category.name}\n\n${n.description}` : n.description}>
+            {n.description}
+          </div>
+        ) : (
+          n.category && <div className="mt-0.5 text-[10px] text-zinc-500">{n.category.name}</div>
+        )}
       </td>
       {!L.compact && (
         <td className="sticky z-10 border-b border-r border-zinc-800 ils-nm-time px-1 text-center text-[11px]" style={{ left: L.left.time }}>
-          {n.timeLimit ? `${n.timeLimit} daq` : '—'}
+          {formatDuration(n.timeLimit)}
         </td>
       )}
       {!L.compact && (
@@ -485,7 +493,14 @@ const MatrixRow = memo(function MatrixRow({
         const meta = cell ? CODE_META[cell[0]] : null;
         return (
           <td key={ci} data-c={`${ci}:${ni}`} className={`h-8 border-b border-r border-zinc-800 p-0 text-center text-sm font-bold group-hover/row:bg-white/[0.03] ${meta?.cls ?? ''}`}>
-            {meta?.mark}
+            {cell?.[2] ? (
+              // Isbot: belgi bosilsa o'quvchi yuborgan YouTube video yangi oynada ochiladi
+              <a href={cell[2]} target="_blank" rel="noopener noreferrer" className="flex h-8 w-full items-center justify-center hover:brightness-150 hover:underline" aria-label={`${c.student.fullName}: ${meta!.label} — videoni ochish`}>
+                {meta!.mark}
+              </a>
+            ) : (
+              meta?.mark
+            )}
           </td>
         );
       })}

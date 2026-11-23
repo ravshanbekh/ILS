@@ -1,6 +1,15 @@
 import ExcelJS from 'exceljs';
 import { buildMatrix, MatrixFilters } from './normative-matrix.service';
 
+/** Vaqt soniyada saqlanadi (frontend utils/duration bilan bir xil): 30 → "30 sek", 150 → "2 daq 30 sek" */
+export const formatDuration = (sec: number | null | undefined): string => {
+  if (!sec || sec <= 0) return '';
+  const s = Math.round(sec);
+  if (s < 60) return `${s} sek`;
+  const m = Math.floor(s / 60);
+  return s % 60 ? `${m} daq ${s % 60} sek` : `${m} daq`;
+};
+
 /**
  * Normativ natijalari — Excel (panel bilan bir xil joylashuv):
  *   1-qator: mentor (o'quvchilari ustidan birlashtirilgan)
@@ -126,14 +135,15 @@ export async function buildMatrixWorkbook(actor: { userId: string; role: string 
       assigned++;
       const cell = m.cells[cl.student.id]?.[n.id];
       if (!cell) return;
-      const [code, score] = cell;
+      const [code, score, url] = cell;
       if (code === 'g' || code === 'b') done++;
-      c.value = MARK[code];
+      // Belgi bosilsa o'quvchining isbot videosi ochiladi (sahifadagidek)
+      c.value = url ? { text: MARK[code], hyperlink: url, tooltip: 'Isbot videosi' } : MARK[code];
       c.font = { bold: true, size: 11, color: { argb: code === 'g' ? C.greenFg : code === 'b' ? C.blueFg : code === 'r' ? C.redFg : C.amberFg } };
       c.fill = fill(code === 'g' ? C.green : code === 'b' ? C.blue : code === 'p' ? C.amber : C.white);
       if (code !== 'p') c.note = `${cl.student.fullName}: ${score} ball`;
     });
-    const left = [n.taskNumber, n.title, n.description ?? '', n.timeLimit ? `${n.timeLimit} daq` : '', assigned ? done / assigned : null];
+    const left = [n.taskNumber, n.title, n.description ?? '', n.timeLimit ? formatDuration(n.timeLimit) : '', assigned ? done / assigned : null];
     left.forEach((v, i) => {
       const c = r.getCell(i + 1);
       c.value = v as any;
