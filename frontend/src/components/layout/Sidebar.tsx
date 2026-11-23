@@ -7,7 +7,7 @@ import {
   PanelLeftClose, PanelLeftOpen,
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
   Gift, Package, Coins
-, CalendarClock, UserCircle, FileText, Gamepad2} from 'lucide-react';
+, CalendarClock, UserCircle, FileText, Gamepad2, Grid3x3} from 'lucide-react';
 import BrandLogo from '@/components/brand/BrandLogo';
 import { getNavGroups } from './CategorySubHeader';
 import type { NavCategoryGroup } from './CategorySubHeader';
@@ -76,6 +76,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   const canHomeworkManage = can('homework_manage');
   const canExams = can('exam_create') || can('exam_edit') || can('exam_delete');
   const canQuizTests = can('quiz_tests');
+  const canNormativeMatrix = can('normative_matrix_all');
 
   // Rol guruhlari + ruxsatga qarab qo'shiladigan bandlar (CategorySubHeader
   // bilan bitta manba — getNavGroups)
@@ -141,6 +142,10 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
       : []),
     ...(canQuizTests
       ? [{ to: `/viewer/${user!.role}/quiz-tests`, icon: ClipboardList, label: 'Test paneli' }]
+      : []),
+    // Normativ natijalari paneli — barcha guruhlar (qo'lda beriladigan ruxsat)
+    ...(canNormativeMatrix
+      ? [{ to: `/viewer/${user!.role}/normative-matrix`, icon: Grid3x3, label: 'Normativ natijalari' }]
       : []),
     // Nazorat — qo'lda beriladigan ruxsat
     ...(canSupportOversight

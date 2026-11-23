@@ -233,6 +233,55 @@ export const settingsApi = {
   testGemini: () => api.post('/settings/gemini/test'),
 };
 
+// ─── Normativ natijalari paneli (mentor → guruh → o'quvchi jadvali) ────────
+export type MatrixCode = 'g' | 'b' | 'r' | 'p';
+export interface MatrixNormative {
+  id: string;
+  taskNumber: number;
+  title: string;
+  description: string | null;
+  timeLimit: number | null;
+  url: string | null;
+  maxScore: number;
+  isActive: boolean;
+  category: { id: string; name: string } | null;
+}
+export interface MatrixGroup {
+  id: string;
+  name: string;
+  graduated: boolean;
+  normativeIds: string[];
+  students: { id: string; fullName: string; login: string }[];
+}
+export interface MatrixData {
+  generatedAt: string;
+  scope: 'all' | 'own';
+  normatives: MatrixNormative[];
+  teachers: { id: string | null; fullName: string; groups: MatrixGroup[] }[];
+  cells: Record<string, Record<string, [MatrixCode, number]>>;
+}
+export interface MatrixFiltersQuery {
+  teacherId?: string;
+  groupId?: string;
+  status?: 'active' | 'graduated' | 'all';
+  categoryId?: string;
+}
+export const normativeMatrixApi = {
+  options: () =>
+    api.get<{
+      success: boolean;
+      data: {
+        scope: 'all' | 'own';
+        teachers: { id: string; fullName: string }[];
+        hasUnassigned: boolean;
+        groups: { id: string; name: string; teacherId: string | null; graduated: boolean }[];
+        categories: { id: string; name: string }[];
+      };
+    }>('/normative-matrix/options'),
+  get: (params: MatrixFiltersQuery) => api.get<{ success: boolean; data: MatrixData }>('/normative-matrix', { params, timeout: 60_000 }),
+  excel: (params: MatrixFiltersQuery) => api.get('/normative-matrix/excel', { params, responseType: 'blob', timeout: 120_000 }),
+};
+
 // ─── O'quvchi kirishini yopish/ochish (to'lov va h.k.) ─────────────────────
 export interface StudentAccessStatus {
   blocked: boolean;

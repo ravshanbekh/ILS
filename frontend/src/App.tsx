@@ -81,6 +81,7 @@ const GameHubPage = lazyWithReload(() => import('@/pages/student/game/GameHubPag
 const TypingGamePage = lazyWithReload(() => import('@/pages/student/game/TypingGamePage'));
 const TypingGamesAdminPage = lazyWithReload(() => import('@/pages/admin/TypingGamesPage'));
 const TypingContestPage = lazyWithReload(() => import('@/pages/shared/TypingContestPage'));
+const NormativeMatrixPage = lazyWithReload(() => import('@/pages/shared/NormativeMatrixPage'));
 const PermissionsPage = lazyWithReload(() => import('@/pages/admin/PermissionsPage'));
 
 /** Sahifa yuklanayotgan paytdagi ko'rsatkich */
@@ -230,6 +231,7 @@ export default function App() {
               <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/rankings" element={<AdminRankingsPage />} />
+              <Route path="/admin/normative-matrix" element={<NormativeMatrixPage />} />
               <Route path="/admin/frozen-students" element={<FrozenStudentsPage />} />
               <Route path="/admin/monitoring" element={<MonitoringPage />} />
               <Route path="/admin/milestones" element={<MilestonesControlPage />} />
@@ -290,6 +292,7 @@ export default function App() {
               <Route path="/teacher/exams" element={<ExamsPage />} />
               <Route path="/teacher/live-quiz" element={<LiveQuizPage />} />
               <Route path="/teacher/typing-contest" element={<TypingContestPage />} />
+              <Route path="/teacher/normative-matrix" element={<NormativeMatrixPage />} />
               <Route path="/teacher/quiz-tests" element={<QuizTestsPage />} />
               <Route path="/teacher/quiz-tests/:id" element={<QuizTestDetailPage />} />
               {/* Faqat "homework_manage" ruxsati berilgan o'qituvchiga menyuda chiqadi */}
@@ -338,6 +341,7 @@ export default function App() {
               <Route path="/viewer/:role/users" element={<UsersPage />} />
               <Route path="/viewer/:role/student/:id" element={<StudentProfilePage />} />
               <Route path="/viewer/:role/rankings" element={<StudentRankingPage />} />
+              <Route path="/viewer/:role/normative-matrix" element={<NormativeMatrixPage />} />
               <Route path="/viewer/:role/frozen-students" element={<FrozenStudentsPage />} />
               <Route path="/viewer/:role/monitoring" element={<MonitoringPage />} />
               <Route path="/viewer/:role/teacher-rating" element={<TeacherRatingPage />} />

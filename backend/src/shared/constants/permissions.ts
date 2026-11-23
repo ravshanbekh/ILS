@@ -149,6 +149,13 @@ export const PERMISSIONS = {
     // Hozir kirish huquqi bor rollar ro'yxati — hech kimning ishi buzilmasin.
     legacyRoles: ['administrator', 'filial_rahbari', 'nazoratchi', 'hr_rahbari', 'sotuv_operatori'],
   },
+  normative_matrix_all: {
+    label: 'Normativ natijalari paneli — barcha guruhlar',
+    description:
+      "Barcha mentorlar, guruhlar va o'quvchilarning normativ natijalarini bitta jadvalda ko'rish va Excel'ga yuklash. Ruxsatsiz o'qituvchi faqat o'z guruhlarini ko'radi",
+    category: 'Hisobot',
+    legacyRoles: ['administrator', 'filial_rahbari', 'nazoratchi', 'hr_rahbari'],
+  },
   view_rankings: {
     label: "Barcha guruhlar reytingini ko'rish",
     description: "O'z guruhlaridan tashqari guruhlarning reytingini ham ko'rish",

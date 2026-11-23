@@ -5,7 +5,7 @@ import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
   Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid,
-  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle, Keyboard, Gamepad2, ClipboardPenLine, Medal
+  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle, Keyboard, Gamepad2, ClipboardPenLine, Medal, Grid3x3
 } from 'lucide-react';
 
 export interface SubNavItem {
@@ -54,6 +54,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/submissions', label: 'Topshiriqlar', icon: ClipboardCheck },
       { to: '/admin/stats', label: 'Statistika', icon: BarChart3 },
       { to: '/admin/rankings', label: "O'quvchilar reytingi", icon: Trophy },
+      { to: '/admin/normative-matrix', label: 'Normativ natijalari', icon: Grid3x3 },
       { to: '/admin/student-categories', label: 'Natija kategoriyalari', icon: LayoutGrid },
     ]
   },
@@ -139,6 +140,7 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
       { to: '/teacher/normatives', label: 'Normativlar', icon: BookOpen },
       { to: '/teacher/pending', label: 'Tekshirish', icon: ClipboardCheck },
       { to: '/teacher/rankings', label: "O'quvchilar reytingi", icon: Trophy },
+      { to: '/teacher/normative-matrix', label: 'Normativ natijalari', icon: Grid3x3 },
       { to: '/teacher/student-categories', label: 'Natija kategoriyalari', icon: LayoutGrid },
     ]
   },

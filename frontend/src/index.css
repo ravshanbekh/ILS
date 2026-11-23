@@ -1238,6 +1238,37 @@ img.ios-img-in:not([class*="animate-"]) {
   @media (prefers-reduced-motion: reduce) {
     .ils-chip-in { animation: none; }
   }
+  /* Normativ natijalari jadvali: pastdan yuqoriga o'qiladigan vertikal ism
+     (Excel'dagi "matnni 90° burish") va guruhga biriktirilmagan katak */
+  .ils-vertical {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+  .ils-na {
+    background-image: repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--foreground) 7%, transparent) 0 3px,
+      transparent 3px 7px
+    );
+  }
+  /* Natija kataklari va chap ustunlar. Aniq ranglar ataylab: loyiha palitrasi
+     blue-* ni brend rangiga, sky-950 ni esa umuman qayta belgilamaydi —
+     ikkala mavzuda ham ✔ qo'lladi = yashil, ✔ biladi = KO'K, ✘ = qizil.
+     Fon zinc-950 bilan aralashtiriladi (u light'da oq, dark'da to'q),
+     shuning uchun sticky ustunlar shaffof emas va ikkala mavzuga mos. */
+  .ils-nm-g { background-color: rgb(16 185 129 / 0.2); color: #34d399; }
+  .ils-nm-b { background-color: rgb(59 130 246 / 0.25); color: #60a5fa; }
+  .ils-nm-r { color: #ef4444; }
+  .ils-nm-p { background-color: rgb(245 158 11 / 0.12); color: #fbbf24; }
+  .ils-nm-title { background-color: color-mix(in srgb, #0ea5e9 14%, var(--color-zinc-950)); }
+  .ils-nm-num { color: #7dd3fc; }
+  .ils-nm-time { background-color: color-mix(in srgb, #f59e0b 12%, var(--color-zinc-950)); color: #fcd34d; }
+  :root[data-theme="light"] .ils-nm-g { background-color: rgb(16 185 129 / 0.18); color: #047857; }
+  :root[data-theme="light"] .ils-nm-b { background-color: rgb(59 130 246 / 0.18); color: #1d4ed8; }
+  :root[data-theme="light"] .ils-nm-r { color: #dc2626; }
+  :root[data-theme="light"] .ils-nm-p { background-color: rgb(245 158 11 / 0.16); color: #b45309; }
+  :root[data-theme="light"] .ils-nm-num { color: #0369a1; }
+  :root[data-theme="light"] .ils-nm-time { color: #92400e; }
 }
 @layer utilities {
   /* Inputlar kabi: dekorativ border-zinc-800 emas, aniq ko'rinadigan chegara */
