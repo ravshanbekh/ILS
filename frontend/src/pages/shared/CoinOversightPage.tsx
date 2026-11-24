@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import Header from '@/components/layout/Header';
-import { coinsApi } from '@/api';
+import { coinsApi, type EventAward } from '@/api';
 import { usePermissionStore } from '@/stores/permissionStore';
-import { Loader2, Coins, AlertTriangle, Settings, Users, ChevronRight, X } from 'lucide-react';
+import { Loader2, Coins, AlertTriangle, Settings, Users, ChevronRight, X, Trophy } from 'lucide-react';
 
 interface TeacherStat {
   teacherId: string;
   teacherName: string;
+  /** teacher bo'lmasa (masalan kurator tadbir coini bergan) — yorliq ko'rsatiladi */
+  role?: string;
   total: number;
   awardsCount: number;
   overLimit: boolean;
@@ -37,11 +39,13 @@ export default function CoinOversightPage() {
   const can = usePermissionStore((s) => s.can);
   const canEditSettings = can('coin_settings');
 
-  const [tab, setTab] = useState<'teachers' | 'students'>('teachers');
+  const [tab, setTab] = useState<'teachers' | 'students' | 'events'>('teachers');
   const [period, setPeriod] = useState<Period>('today');
 
   const [teachers, setTeachers] = useState<TeacherStat[]>([]);
   const [students, setStudents] = useState<StudentStat[]>([]);
+  const [events, setEvents] = useState<EventAward[]>([]);
+  const [openEvent, setOpenEvent] = useState<string | null>(null);
   const [dailyLimit, setDailyLimit] = useState<number>(100);
   const [loading, setLoading] = useState(true);
 
@@ -60,9 +64,12 @@ export default function CoinOversightPage() {
         const res = await coinsApi.getTeacherStats(period);
         setTeachers(res.data.data.teachers);
         setDailyLimit(res.data.data.dailyLimit);
-      } else {
+      } else if (tab === 'students') {
         const res = await coinsApi.getStudentStats({ period });
         setStudents(res.data.data.students);
+      } else {
+        const res = await coinsApi.getEventAwards(period);
+        setEvents(res.data.data.awards);
       }
     } finally {
       setLoading(false);
@@ -154,6 +161,14 @@ export default function CoinOversightPage() {
             >
               O'quvchilar
             </button>
+            <button
+              onClick={() => setTab('events')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                tab === 'events' ? 'bg-blue-600 border-blue-600 text-white' : 'border-zinc-800 text-zinc-400 hover:text-white'
+              }`}
+            >
+              Tadbir coinlari
+            </button>
           </div>
 
           <div className="flex gap-2">
@@ -190,7 +205,12 @@ export default function CoinOversightPage() {
               <tbody>
                 {teachers.map((t) => (
                   <tr key={t.teacherId} className="border-b border-zinc-900">
-                    <td className="px-5 py-3 text-white font-medium">{t.teacherName}</td>
+                    <td className="px-5 py-3 text-white font-medium">
+                      {t.teacherName}
+                      {t.role && t.role !== 'teacher' && (
+                        <span className="ml-2 rounded border border-sky-500/30 px-1.5 py-0.5 text-[10px] font-semibold text-sky-400">{t.role === 'kurator' ? 'kurator' : t.role}</span>
+                      )}
+                    </td>
                     <td className="px-5 py-3">
                       <span className="flex items-center gap-1.5 text-amber-400 font-bold">
                         <Coins className="w-4 h-4" /> {t.total}
@@ -219,6 +239,37 @@ export default function CoinOversightPage() {
                 ))}
               </tbody>
             </table>
+          ) : tab === 'events' ? (
+            events.length === 0 ? (
+              <p className="px-5 py-10 text-center text-sm text-zinc-500">Bu davrda tadbir coini berilmagan</p>
+            ) : (
+              <div className="divide-y divide-zinc-900">
+                {events.map((ev) => {
+                  const key = `${ev.giverId}|${ev.at}|${ev.reason}`;
+                  const open = openEvent === key;
+                  return (
+                    <div key={key}>
+                      <button type="button" onClick={() => setOpenEvent(open ? null : key)} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-white/[0.02]">
+                        <Trophy className="h-4 w-4 shrink-0 text-amber-400" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-white">{ev.reason}</span>
+                          <span className="block text-xs text-zinc-500">
+                            {new Date(ev.at).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · {ev.giverName}
+                            {ev.giverRole && ev.giverRole !== 'teacher' && <span className="text-sky-400"> ({ev.giverRole})</span>}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-xs text-zinc-400">{ev.amount} × {ev.students.length} bola</span>
+                        <span className="flex shrink-0 items-center gap-1 font-bold text-amber-400"><Coins className="h-4 w-4" /> {ev.total}</span>
+                        <ChevronRight className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? 'rotate-90' : ''}`} />
+                      </button>
+                      {open && (
+                        <p className="px-12 pb-3 text-xs text-zinc-400">{ev.students.map((s) => s.fullName).join(', ')}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )
           ) : (
             <table className="w-full text-sm">
               <thead>

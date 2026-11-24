@@ -926,6 +926,40 @@ export const permissionsApi = {
 };
 
 // ============ GAMIFIKATSIYA — COIN ============
+export interface EventCoinContext {
+  scope: 'own' | 'all';
+  dailyLimit: number;
+  givenToday: number;
+  maxAmount: number;
+  maxStudents: number;
+}
+export interface EventCoinStudent {
+  id: string;
+  fullName: string;
+  login: string;
+  groups: string[];
+}
+export interface EventAwardResult {
+  awarded: number;
+  amount: number;
+  total: number;
+  reason: string;
+  at: string;
+  students: { id: string; fullName: string; balance: number }[];
+  givenToday: number;
+  dailyLimit: number;
+  overLimit: boolean;
+}
+export interface EventAward {
+  at: string;
+  giverId: string;
+  giverName: string;
+  giverRole: string;
+  reason: string;
+  amount: number;
+  total: number;
+  students: { id: string; fullName: string }[];
+}
 export const coinsApi = {
   getBalance: (studentId: string) => api.get(`/coins/balance/${studentId}`),
 
@@ -941,6 +975,15 @@ export const coinsApi = {
   // Bitta o'qituvchi qaysi o'quvchilarga qancha qo'ygan
   getTeacherBreakdown: (teacherId: string, period?: string) =>
     api.get(`/coins/teacher-breakdown/${teacherId}`, { params: { period } }),
+
+  // Tadbir (chempionat) coini — dars sessiyasisiz, `event_coins` ruxsati
+  eventContext: () => api.get<{ success: boolean; data: EventCoinContext }>('/coins/event-award/context'),
+  eventStudents: (q = '') =>
+    api.get<{ success: boolean; data: { scope: 'own' | 'all'; students: EventCoinStudent[] } }>('/coins/event-award/students', { params: q ? { q } : {} }),
+  awardEvent: (data: { studentIds: string[]; amount: number; reason: string }) =>
+    api.post<{ success: boolean; data: EventAwardResult }>('/coins/event-award', data),
+  getEventAwards: (period?: string) =>
+    api.get<{ success: boolean; data: { period: string; total: number; awards: EventAward[] } }>('/coins/event-awards', { params: { period } }),
 
   getSettings: () => api.get('/coins/settings'),
 

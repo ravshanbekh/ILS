@@ -113,6 +113,13 @@ export const PERMISSIONS = {
     category: 'Nazorat',
     legacyRoles: ['filial_rahbari', 'nazoratchi', 'administrator', 'hr_rahbari'],
   },
+  event_coins: {
+    label: 'Tadbir uchun coin berish (chempionat)',
+    description:
+      "Dars sessiyasisiz — chempionat yoki boshqa tadbir uchun tanlangan o'quvchilarga coin berish (sabab majburiy, kunlik chegaraga kiradi). Kurator faqat o'z faol o'quvchilariga, admin va \"Coin nazorati\" egasi — istalgan faol o'quvchiga",
+    category: 'Gamifikatsiya',
+    legacyRoles: [], // hech kimga avtomatik berilmaydi — admin qo'lda beradi (docs/event-coins.md)
+  },
   coin_settings: {
     label: "Coin kunlik chegarasini o'zgartirish",
     description: "Bitta o'qituvchi bir kunda necha coin bera olishini belgilash",

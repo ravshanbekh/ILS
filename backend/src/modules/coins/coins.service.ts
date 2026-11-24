@@ -90,7 +90,7 @@ class CoinsService {
    * Bugun shu o'qituvchi jami necha coin berganini tekshiradi; sozlangan kunlik
    * chegaradan oshsa admin/kassirga (in-app + bot) bildirishnoma yuboradi — kuniga bitta marta.
    */
-  private async checkTeacherLimit(teacherId: string) {
+  async checkTeacherLimit(teacherId: string) {
     const { coinDailyLimitPerTeacher } = await settingsService.getCoinSettings();
     if (!coinDailyLimitPerTeacher || coinDailyLimitPerTeacher <= 0) return;
 
@@ -146,9 +146,21 @@ class CoinsService {
 
     const { coinDailyLimitPerTeacher } = await settingsService.getCoinSettings();
 
+    // Barcha o'qituvchilar + shu davrda coin bergan boshqa xodimlar (masalan
+    // kurator tadbir coini bergan bo'lsa) — aks holda ular nazoratda ko'rinmasdi
+    const givers = await prisma.coinTransaction.findMany({
+      where: { teacherId: { not: null }, amount: { gt: 0 }, createdAt: { gte: since } },
+      distinct: ['teacherId'],
+      select: { teacherId: true },
+    });
     const teachers = await prisma.user.findMany({
-      where: { role: 'teacher', isActive: true },
-      select: { id: true, fullName: true },
+      where: {
+        OR: [
+          { role: 'teacher', isActive: true },
+          { id: { in: givers.map((g) => g.teacherId as string) }, role: { not: 'student' } },
+        ],
+      },
+      select: { id: true, fullName: true, role: true },
     });
 
     // Barcha o'qituvchilar bo'yicha yig'indi — bitta guruhlangan so'rovda
@@ -168,6 +180,7 @@ class CoinsService {
       return {
         teacherId: t.id,
         teacherName: t.fullName,
+        role: t.role,
         total: agg.total,
         awardsCount: agg.count,
         overLimit: period === 'today' && coinDailyLimitPerTeacher > 0 && agg.total > coinDailyLimitPerTeacher,

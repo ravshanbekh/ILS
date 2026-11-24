@@ -87,6 +87,7 @@ const CuratorStudentDetailPage = lazyWithReload(() => import('@/pages/curator/Cu
 const CuratorSchedulePage = lazyWithReload(() => import('@/pages/curator/CuratorSchedulePage'));
 const CuratorProgramPage = lazyWithReload(() => import('@/pages/curator/CuratorProgramPage'));
 const StudentCuratorPage = lazyWithReload(() => import('@/pages/student/StudentCuratorPage'));
+const EventCoinsPage = lazyWithReload(() => import('@/pages/shared/EventCoinsPage'));
 const PermissionsPage = lazyWithReload(() => import('@/pages/admin/PermissionsPage'));
 
 /** Sahifa yuklanayotgan paytdagi ko'rsatkich */
@@ -241,6 +242,7 @@ export default function App() {
               <Route path="/admin/curators/:id" element={<CuratorStudentDetailPage />} />
               <Route path="/admin/curator-schedule" element={<CuratorSchedulePage />} />
               <Route path="/admin/curator-program" element={<CuratorProgramPage />} />
+              <Route path="/admin/event-coins" element={<EventCoinsPage />} />
               <Route path="/admin/frozen-students" element={<FrozenStudentsPage />} />
               <Route path="/admin/monitoring" element={<MonitoringPage />} />
               <Route path="/admin/milestones" element={<MilestonesControlPage />} />
@@ -356,6 +358,7 @@ export default function App() {
               <Route path="/viewer/:role/curators/:id" element={<CuratorStudentDetailPage />} />
               <Route path="/viewer/:role/curator-schedule" element={<CuratorSchedulePage />} />
               <Route path="/viewer/:role/curator-program" element={<CuratorProgramPage />} />
+              <Route path="/viewer/:role/event-coins" element={<EventCoinsPage />} />
               <Route path="/viewer/:role/frozen-students" element={<FrozenStudentsPage />} />
               <Route path="/viewer/:role/monitoring" element={<MonitoringPage />} />
               <Route path="/viewer/:role/teacher-rating" element={<TeacherRatingPage />} />

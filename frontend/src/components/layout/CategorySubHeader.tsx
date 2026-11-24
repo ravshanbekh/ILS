@@ -99,6 +99,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/shop-items', label: "Do'kon boshqaruvi", icon: Gift },
       { to: '/admin/shop-orders', label: 'Buyurtmalar', icon: Package },
       { to: '/admin/coin-oversight', label: 'Coin nazorati', icon: Coins },
+      { to: '/admin/event-coins', label: 'Tadbir coini', icon: Trophy },
       { to: '/admin/games', label: "Tez yozish o'yini", icon: Keyboard },
       { to: '/admin/typing-contest', label: 'Tez yozish musobaqasi', icon: Medal },
     ]

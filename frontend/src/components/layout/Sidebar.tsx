@@ -80,6 +80,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   const canQuizTests = can('quiz_tests');
   const canNormativeMatrix = can('normative_matrix_all');
   const canCuratorOversight = can('curator_oversight');
+  const canEventCoins = can('event_coins');
 
   // O'quvchi: kuratori bo'lsa "Kuratorim" bandi chiqadi (bir marta so'raladi)
   const hasCurator = useCuratorFlag((s) => s.hasCurator);
@@ -119,6 +120,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     { to: `/viewer/nazoratchi/checklist-stats`, icon: BarChart3, label: 'Cheklist Hisobot' },
     { to: `/viewer/nazoratchi/checklist-manage`, icon: ClipboardList, label: 'Cheklist Boshqaruv' },
     ...curatorLinks,
+    ...(canEventCoins ? [{ to: `/viewer/nazoratchi/event-coins`, icon: Trophy, label: 'Tadbir coini' }] : []),
   ] : [];
 
   const viewerLinks = isViewer && user?.role !== 'nazoratchi' ? [
@@ -150,6 +152,10 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
       : []),
     ...(canCoinOversight
       ? [{ to: `/viewer/${user!.role}/coin-oversight`, icon: Coins, label: 'Coin nazorati' }]
+      : []),
+    // Tadbir (chempionat) coini — qo'lda beriladigan ruxsat
+    ...(canEventCoins
+      ? [{ to: `/viewer/${user!.role}/event-coins`, icon: Trophy, label: 'Tadbir coini' }]
       : []),
     // Assistent o'z qabul soatlarini boshqaradi
     ...(['assistant', 'robototexnika_ustoz'].includes(user!.role)
