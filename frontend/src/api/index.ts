@@ -300,12 +300,13 @@ export interface CuratorProgressSummary {
   done: number;
   missed: number;
   total: number;
-  next: { id: string; n: number; title: string; week: number; weekTitle: string } | null;
+  next: { id: string; n: number; code: string; title: string; week: number; weekTitle: string } | null;
   lastDate: string | null;
 }
 export interface CuratorLessonContent {
   fact?: string | null;
   steps?: string[];
+  prep?: string[];
   wow?: string | null;
   artifact?: string | null;
   homework?: string | null;
@@ -315,9 +316,11 @@ export interface CuratorLessonContent {
 export interface CuratorLesson {
   id: string;
   n: number;
+  code: string;
   week: number;
   weekTitle: string;
-  kind: 'A' | 'B' | string;
+  /** A — wow, C — chempionat, Z — zaxira */
+  kind: 'A' | 'C' | 'Z' | string;
   title: string;
   goal: string | null;
   content: CuratorLessonContent;
@@ -355,6 +358,7 @@ export interface CuratorStudentDetail {
   program: {
     lessonId: string;
     n: number;
+    code: string;
     week: number;
     weekTitle: string;
     kind: string;
@@ -379,7 +383,7 @@ export interface CuratorStudentDetail {
     }[];
     normativeList: { id: string; taskNumber: number; title: string; code: 'g' | 'b' | 'r' | 'p' | null; score: number | null; url: string | null; date: string | null }[];
   };
-  bookings: { id: string; date: string; time: string; status: BookingStatus; lesson: { n: number; title: string } | null }[];
+  bookings: { id: string; date: string; time: string; status: BookingStatus; lesson: { n: number; code: string | null; title: string } | null }[];
 }
 export interface CuratorSlot {
   id: string;
@@ -392,7 +396,7 @@ export interface CuratorSlot {
   isOpen: boolean;
   isPast: boolean;
   note: string | null;
-  lesson: { id: string; n: number; title: string } | null;
+  lesson: { id: string; n: number; code: string | null; title: string } | null;
   students: { bookingId: string; studentId: string; fullName: string; status: BookingStatus }[];
 }
 export interface CuratorDay {
@@ -424,8 +428,8 @@ export interface StudentCuratorInfo {
   timeline: CuratorTimeline;
   curator: { id: string; fullName: string; avatarUrl: string | null; bio: string | null };
   progress: CuratorProgressSummary;
-  program: { n: number; week: number; weekTitle: string; kind: string; title: string; goal: string | null; state: CuratorLessonState; date: string | null }[];
-  bookings: { id: string; date: string; time: string; status: BookingStatus; lesson: { n: number; title: string } | null; canCancel: boolean }[];
+  program: { n: number; code: string; week: number; weekTitle: string; kind: string; title: string; goal: string | null; state: CuratorLessonState; date: string | null }[];
+  bookings: { id: string; date: string; time: string; status: BookingStatus; lesson: { n: number; code: string | null; title: string } | null; canCancel: boolean }[];
 }
 export interface StudentCuratorSlot {
   slotId: string;
@@ -434,7 +438,7 @@ export interface StudentCuratorSlot {
   capacity: number;
   booked: number;
   free: number;
-  lesson: { n: number; title: string } | null;
+  lesson: { n: number; code: string | null; title: string } | null;
   isMine: boolean;
   myBookingId: string | null;
   myStatus: BookingStatus | null;

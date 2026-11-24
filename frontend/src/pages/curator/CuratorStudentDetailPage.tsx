@@ -12,6 +12,8 @@ import DateInput from '@/components/shared/DateInput';
 import { apiErrorText, curatorApi, type CuratorHomework, type CuratorListItem, type CuratorStatus, type CuratorStudentDetail } from '@/api';
 import {
   HOMEWORK_LABEL,
+  KindBadge,
+  lessonLabel,
   LESSON_STATE,
   Modal,
   ProgramProgress,
@@ -183,9 +185,9 @@ export default function CuratorStudentDetailPage() {
                         title={l.note ?? undefined}
                       >
                         <span className="font-semibold">
-                          {l.n}. {l.title}
+                          {lessonLabel(l)}
                         </span>
-                        {l.kind === 'B' && <span className="ml-1 text-amber-400">★</span>}
+                        <KindBadge kind={l.kind} />
                         {l.state !== 'kutilmoqda' && (
                           <span className="block text-[10px] opacity-80">
                             {shortDate(l.date)}
@@ -295,7 +297,7 @@ export default function CuratorStudentDetailPage() {
                   <span className="w-28 shrink-0 text-zinc-300">
                     {shortDate(b.date)}, {b.time.slice(0, 5)}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-zinc-400">{b.lesson ? `${b.lesson.n}. ${b.lesson.title}` : "mashg'ulot belgilanmagan"}</span>
+                  <span className="min-w-0 flex-1 truncate text-zinc-400">{b.lesson ? lessonLabel(b.lesson) : "mashg'ulot belgilanmagan"}</span>
                   <span className={BOOKING_LABEL[b.status]?.cls}>{BOOKING_LABEL[b.status]?.label}</span>
                 </li>
               ))}
@@ -358,7 +360,7 @@ function MarkModal({ enrollmentId, item, onClose, onSaved }: { enrollmentId: str
   };
 
   return (
-    <Modal title={`${item.n}. ${item.title}`} onClose={onClose}>
+    <Modal title={lessonLabel(item)} onClose={onClose}>
       <div className="space-y-3">
         <p className="text-xs text-zinc-500">
           {item.week}-hafta · {item.weekTitle}

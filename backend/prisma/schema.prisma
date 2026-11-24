@@ -1810,11 +1810,13 @@ model CuratorStudent {
 /// Kuratorning 2 oylik dasturi — barcha kuratorlar uchun umumiy (admin tahrirlaydi)
 model CuratorLesson {
   id        String   @id @default(uuid()) @db.Uuid
-  /// Tartib raqami (1..24)
+  /// Tartib raqami: 1..24 — asosiy oqim (hafta bo'yicha), 101.. — zaxira
   n         Int      @unique
+  /// Qo'llanmadagi belgi: "1".."16" (wow), "C1".."C8" (chempionat), "Z1".."Z8" (zaxira)
+  code      String?  @db.VarChar(8)
   week      Int
   weekTitle String   @map("week_title") @db.VarChar(120)
-  /// A — asosiy, B — yulduzcha (qo'shimcha) mashg'ulot
+  /// A — "wow" mashg'ulot (mini-guruh), C — chempionat kuni (butun oqim), Z — zaxira (progressga kirmaydi)
   kind      String   @default("A") @db.VarChar(2)
   title     String   @db.VarChar(200)
   goal      String?  @db.VarChar(500)

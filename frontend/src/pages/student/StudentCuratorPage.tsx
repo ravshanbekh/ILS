@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CalendarClock, Check, Loader2, Sparkles, Users, X } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { apiErrorText, curatorApi, type StudentCuratorInfo, type StudentCuratorSlot } from '@/api';
-import { LESSON_STATE, ProgramProgress, TimelineBar, shortDate } from '@/pages/curator/curatorCommon';
+import { KindBadge, LESSON_STATE, ProgramProgress, TimelineBar, lessonLabel, shortDate } from '@/pages/curator/curatorCommon';
 
 const WEEKDAYS = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
 const weekday = (iso: string) => WEEKDAYS[new Date(`${iso}T00:00:00Z`).getUTCDay()];
@@ -137,7 +137,7 @@ export default function StudentCuratorPage() {
                   <span className="text-sky-300">
                     {shortDate(b.date)} ({weekday(b.date)}), <b>{b.time}</b>
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-xs text-zinc-400">{b.lesson ? `${b.lesson.n}. ${b.lesson.title}` : ''}</span>
+                  <span className="min-w-0 flex-1 truncate text-xs text-zinc-400">{b.lesson ? lessonLabel(b.lesson) : ''}</span>
                   <button
                     type="button"
                     disabled={busy === b.id}
@@ -167,7 +167,7 @@ export default function StudentCuratorPage() {
                         type="button"
                         disabled={!s.canBook || busy === s.slotId}
                         onClick={() => run(s.slotId, () => curatorApi.book(s.slotId), `Yozildingiz: ${shortDate(s.date)}, ${s.time}`)}
-                        title={s.lesson ? `${s.lesson.n}. ${s.lesson.title}` : undefined}
+                        title={s.lesson ? lessonLabel(s.lesson) : undefined}
                         className={`rounded-lg border px-2 py-2 text-left transition-colors ${
                           s.isMine
                             ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
@@ -203,9 +203,9 @@ export default function StudentCuratorPage() {
                   {wk.items.map((l) => (
                     <div key={l.n} className={`rounded-md border px-2 py-1.5 text-xs ${LESSON_STATE[l.state].cls}`} title={l.goal ?? undefined}>
                       <span className="font-semibold">
-                        {l.n}. {l.title}
+                        {lessonLabel(l)}
                       </span>
-                      {l.kind === 'B' && <span className="ml-1 text-amber-400">★</span>}
+                      <KindBadge kind={l.kind} />
                       {l.date && <span className="block text-[10px] opacity-80">{shortDate(l.date)}</span>}
                     </div>
                   ))}

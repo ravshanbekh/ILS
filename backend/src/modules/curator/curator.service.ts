@@ -115,61 +115,69 @@ async function closeExpired() {
 }
 
 // ════════════════════════════════════════════════════════════════════════
-//  DASTUR (24 mashg'ulot)
+//  DASTUR — gibrid model (2026-11-24): har hafta 2 ta "wow" + 1 ta chempionat
 // ════════════════════════════════════════════════════════════════════════
+
+/** Joriy seed versiyasi — content.seed ga yoziladi */
+const SEED_VERSION = 'v2';
 
 interface SeedLesson {
   n: number;
+  code: string;
   week: number;
   weekTitle: string;
-  kind: string;
+  kind: 'A' | 'C' | 'Z';
   title: string;
   goal?: string | null;
-  fact?: string | null;
-  steps?: string[];
-  wow?: string | null;
-  artifact?: string | null;
-  homework?: string | null;
-  tools?: { name: string; url: string }[];
-  fallback?: string | null;
+  content: Record<string, unknown>;
 }
 
-/**
- * Dastur bo'sh bo'lsa — "Demo-mentor qo'llanmasi"dagi 24 mashg'ulot bilan
- * to'ldiradi. Bir marta: admin keyin tahrirlagan matn qayta yozilmaydi.
- */
-export async function ensureProgram(): Promise<number> {
-  const count = await prisma.curatorLesson.count();
-  if (count > 0) return 0;
-  const rows = (programSeed as SeedLesson[]).map((s) => ({
+const seedRows = () =>
+  (programSeed as SeedLesson[]).map((s) => ({
     n: s.n,
+    code: s.code,
     week: s.week,
     weekTitle: s.weekTitle,
-    kind: s.kind === 'B' ? 'B' : 'A',
+    kind: s.kind,
     title: s.title,
     goal: s.goal ?? null,
-    content: {
-      fact: s.fact ?? null,
-      steps: s.steps ?? [],
-      wow: s.wow ?? null,
-      artifact: s.artifact ?? null,
-      homework: s.homework ?? null,
-      tools: s.tools ?? [],
-      fallback: s.fallback ?? null,
-    },
+    content: s.content as any,
   }));
-  const r = await prisma.curatorLesson.createMany({ data: rows, skipDuplicates: true });
-  logger.info(`Kurator dasturi to'ldirildi: ${r.count} ta mashg'ulot`);
+
+/**
+ * Dastur "Demo-mentor qo'llanmasi"dan (gibrid model: 16 ta wow 1–16, 8 ta
+ * chempionat C1–C8, 8 ta zaxira Z1–Z8) to'ldiriladi:
+ *   - jadval bo'sh bo'lsa — bir marta;
+ *   - eski (v1, 24 mashg'ulot) seed hali TEGILMAGAN bo'lsa (hech biri tahrirlanmagan,
+ *     belgi yoki jadvalga bog'lanmagan) — yangisiga almashtiriladi.
+ * Admin tahrirlagan yoki ishlatilayotgan dastur hech qachon qayta yozilmaydi.
+ */
+export async function ensureProgram(): Promise<number> {
+  const existing = await prisma.curatorLesson.findMany({ select: { id: true, content: true, createdAt: true, updatedAt: true } });
+  if (existing.length > 0) {
+    const isOldSeed = existing.every((l) => (l.content as any)?.seed !== SEED_VERSION);
+    if (!isOldSeed) return 0;
+    const edited = existing.some((l) => l.updatedAt.getTime() - l.createdAt.getTime() > 1000);
+    const [used, slots] = await Promise.all([prisma.curatorProgress.count(), prisma.curatorSlot.count({ where: { lessonId: { not: null } } })]);
+    if (edited || used > 0 || slots > 0) return 0;
+    await prisma.$transaction([prisma.curatorLesson.deleteMany({}), prisma.curatorLesson.createMany({ data: seedRows() })]);
+    logger.info(`Kurator dasturi gibrid modelga (${SEED_VERSION}) yangilandi: ${existing.length} → ${seedRows().length}`);
+    return seedRows().length;
+  }
+  const r = await prisma.curatorLesson.createMany({ data: seedRows(), skipDuplicates: true });
+  logger.info(`Kurator dasturi to'ldirildi: ${r.count} ta element`);
   return r.count;
 }
 
+/** 2 oylik progressga kiradigan elementlar — wow va chempionat (zaxira kirmaydi) */
 async function activeLessons() {
-  return prisma.curatorLesson.findMany({ where: { isActive: true }, orderBy: { n: 'asc' } });
+  return prisma.curatorLesson.findMany({ where: { isActive: true, kind: { not: 'Z' } }, orderBy: { n: 'asc' } });
 }
 
-const lessonShape = (l: { id: string; n: number; week: number; weekTitle: string; kind: string; title: string; goal: string | null; content: any; isActive: boolean }) => ({
+const lessonShape = (l: { id: string; n: number; code: string | null; week: number; weekTitle: string; kind: string; title: string; goal: string | null; content: any; isActive: boolean }) => ({
   id: l.id,
   n: l.n,
+  code: l.code ?? String(l.n),
   week: l.week,
   weekTitle: l.weekTitle,
   kind: l.kind,
@@ -194,9 +202,10 @@ export async function listProgram(includeInactive: boolean) {
 
 export interface LessonInput {
   n?: number;
+  code?: string;
   week?: number;
   weekTitle?: string;
-  kind?: 'A' | 'B';
+  kind?: 'A' | 'C' | 'Z';
   title?: string;
   goal?: string | null;
   content?: Record<string, unknown>;
@@ -314,7 +323,7 @@ async function mainStatsFor(studentIds: string[]): Promise<Map<string, MainStats
 // ════════════════════════════════════════════════════════════════════════
 
 function progressSummary(
-  lessons: { id: string; n: number; title: string; week: number; weekTitle: string }[],
+  lessons: { id: string; n: number; code: string | null; title: string; week: number; weekTitle: string }[],
   progress: { lessonId: string; attended: boolean; date: Date }[],
 ) {
   const done = new Set(progress.filter((p) => p.attended).map((p) => p.lessonId));
@@ -325,7 +334,7 @@ function progressSummary(
     done: lessons.filter((l) => done.has(l.id)).length,
     missed,
     total: lessons.length,
-    next: next ? { id: next.id, n: next.n, title: next.title, week: next.week, weekTitle: next.weekTitle } : null,
+    next: next ? { id: next.id, n: next.n, code: next.code ?? String(next.n), title: next.title, week: next.week, weekTitle: next.weekTitle } : null,
     lastDate: last ? toDateOnlyString(last.date) : null,
   };
 }
@@ -427,7 +436,7 @@ export async function getStudentDetail(actor: Actor, enrollmentId: string) {
     mainStatsFor([cs.studentId]),
     prisma.curatorBooking.findMany({
       where: { studentId: cs.studentId, slot: { curatorId: cs.curatorId } },
-      include: { slot: { select: { date: true, startMinute: true, lesson: { select: { n: true, title: true } } } } },
+      include: { slot: { select: { date: true, startMinute: true, lesson: { select: { n: true, code: true, title: true } } } } },
       orderBy: [{ slot: { date: 'desc' } }, { slot: { startMinute: 'desc' } }],
       take: 30,
     }),
@@ -505,6 +514,7 @@ export async function getStudentDetail(actor: Actor, enrollmentId: string) {
       return {
         lessonId: l.id,
         n: l.n,
+        code: l.code ?? String(l.n),
         week: l.week,
         weekTitle: l.weekTitle,
         kind: l.kind,
@@ -774,7 +784,7 @@ export async function listCurators(actor: Actor) {
 // ════════════════════════════════════════════════════════════════════════
 
 const slotInclude = {
-  lesson: { select: { id: true, n: true, title: true } },
+  lesson: { select: { id: true, n: true, code: true, title: true } },
   bookings: {
     orderBy: { createdAt: 'asc' as const },
     include: { student: { select: { id: true, fullName: true } } },
@@ -1017,7 +1027,7 @@ export async function studentMe(studentId: string) {
   const done = new Map(cs.progress.map((p) => [p.lessonId, p]));
   const bookings = await prisma.curatorBooking.findMany({
     where: { studentId, slot: { curatorId: cs.curatorId } },
-    include: { slot: { select: { date: true, startMinute: true, lesson: { select: { n: true, title: true } } } } },
+    include: { slot: { select: { date: true, startMinute: true, lesson: { select: { n: true, code: true, title: true } } } } },
     orderBy: [{ slot: { date: 'desc' } }, { slot: { startMinute: 'desc' } }],
     take: 20,
   });
@@ -1034,6 +1044,7 @@ export async function studentMe(studentId: string) {
         const p = done.get(l.id);
         return {
           n: l.n,
+          code: l.code ?? String(l.n),
           week: l.week,
           weekTitle: l.weekTitle,
           kind: l.kind,
@@ -1069,7 +1080,7 @@ export async function studentAvailable(studentId: string, fromStr?: string) {
     where: { curatorId: cs.curatorId, date: { gte: from, lt: to } },
     orderBy: [{ date: 'asc' }, { startMinute: 'asc' }],
     include: {
-      lesson: { select: { n: true, title: true } },
+      lesson: { select: { n: true, code: true, title: true } },
       bookings: { where: { status: { not: 'bekor' } }, select: { id: true, studentId: true, status: true } },
     },
   });
