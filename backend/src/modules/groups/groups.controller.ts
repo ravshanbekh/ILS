@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import prisma from '../../config/database';
 import groupsService from './groups.service';
 import { createGroupSchema, updateGroupSchema, addStudentSchema, addStudentsSchema } from './groups.validation';
 import { getPagination } from '../../shared/utils/pagination';
@@ -189,6 +190,11 @@ class GroupsController {
    */
   async graduate(req: Request, res: Response, next: NextFunction) {
     try {
+      // O'qituvchi faqat O'Z guruhini "bitirdi" deb belgilaydi (boshqasi — 404, IDOR)
+      if (req.user?.role === 'teacher') {
+        const own = await prisma.group.findFirst({ where: { id: req.params.id, teacherId: req.user.userId }, select: { id: true } });
+        if (!own) throw ApiError.notFound('Guruh topilmadi');
+      }
       const group = await groupsService.graduate(req.params.id, req.user?.userId);
       res.json({ success: true, data: group });
     } catch (error) {

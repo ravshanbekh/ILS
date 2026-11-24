@@ -206,6 +206,16 @@ async function main() {
     check('audit jurnalida', (await prisma.auditLog.count({ where: { action: 'SET_GROUP_START_DATE', targetId: gF.id } })) === 2);
     check('xato javobida stack yo\'q', !JSON.stringify((await call(t1.token, 'PATCH', `/groups/${gF.id}/start-date`, { startDate: '2026-10-05' })).json).includes('    at '));
     check('seed: versiya va 35 ta', seed.normatives.length === 35);
+
+    console.log('\n7) Guruh bitirdi');
+    check("boshqa o'qituvchi guruhini bitirgan qila olmaydi → 404", (await call(t2.token, 'POST', `/groups/${gF.id}/graduate`)).status === 404);
+    check("o'quvchi → 403", (await call(s1.token, 'POST', `/groups/${gN.id}/graduate`)).status === 403);
+    const gr = await call(t2.token, 'POST', `/groups/${gN.id}/graduate`);
+    const gNa = await prisma.group.findUnique({ where: { id: gN.id } });
+    check("o'qituvchi o'z guruhini 'bitirdi' deb belgiladi (arxiv, nofaol)", gr.status === 200 && !!gNa?.graduatedAt && gNa.isActive === false);
+    check('bitirgan guruh bildirishnomadan chiqdi', (await call(t2.token, 'GET', '/groups/start-date/missing')).json.data.length === 0);
+    check("o'qituvchi arxivdan qaytara olmaydi → 403", (await call(t2.token, 'POST', `/groups/${gN.id}/ungraduate`)).status === 403);
+    check('admin qaytaradi', (await call(admin.token, 'POST', `/groups/${gN.id}/ungraduate`)).status === 200);
   } finally {
     const created = await prisma.user.findMany({ where: { login: { startsWith: tag } }, select: { id: true } });
     const all = [...new Set([...ids.users, ...created.map((u) => u.id)])];

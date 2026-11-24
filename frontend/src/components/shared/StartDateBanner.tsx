@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarX2, Check, Loader2 } from 'lucide-react';
+import { CalendarX2, Check, GraduationCap, Loader2 } from 'lucide-react';
 import { apiErrorText, groupsApi } from '@/api';
 import DateInput from '@/components/shared/DateInput';
 import { useAuthStore } from '@/stores/authStore';
@@ -23,6 +23,8 @@ export default function StartDateBanner() {
   const [saving, setSaving] = useState<string | null>(null);
   const [err, setErr] = useState('');
   const [all, setAll] = useState(false);
+  // "Guruh bitirgan" — tasdiqlash so'raladigan guruh
+  const [grad, setGrad] = useState<Missing | null>(null);
 
   useEffect(() => {
     if (user?.role !== 'teacher') return;
@@ -55,6 +57,22 @@ export default function StartDateBanner() {
     }
   };
 
+  // Guruh kursni tugatgan bo'lsa — sana so'ralmaydi: guruh "bitirgan" arxiviga o'tadi
+  const graduate = async (g: Missing) => {
+    setSaving(g.id);
+    setErr('');
+    try {
+      await groupsApi.graduate(g.id);
+      setItems((p) => p.filter((x) => x.id !== g.id));
+      setGrad(null);
+    } catch (e) {
+      setErr(apiErrorText(e));
+      setGrad(null);
+    } finally {
+      setSaving(null);
+    }
+  };
+
   const shown = all ? items : items.slice(0, SHOW);
   return (
     <div className="mx-4 mt-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 sm:mx-6" role="alert">
@@ -65,7 +83,8 @@ export default function StartDateBanner() {
             {items.length === 1 ? 'Guruh boshlanish sanasi kiritilmagan' : `${items.length} ta guruhning boshlanish sanasi kiritilmagan`}
           </div>
           <p className="text-xs text-amber-200/70">
-            Normativ deadline'lari va demo day/imtihon jadvali shu sanadan hisoblanadi. Guruh qachon boshlanganini kiriting — bu bildirishnoma sana kiritilmaguncha turadi.
+            Normativ deadline'lari va demo day/imtihon jadvali shu sanadan hisoblanadi. Guruh qachon boshlanganini kiriting (yoki kursni tugatgan
+            bo'lsa — "Guruh bitirgan") — bu bildirishnoma shungacha turadi.
           </p>
           <div className="mt-2 space-y-2">
             {shown.map((g) => (
@@ -89,6 +108,15 @@ export default function StartDateBanner() {
                 >
                   {saving === g.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Saqlash
                 </button>
+                <button
+                  type="button"
+                  disabled={saving === g.id}
+                  onClick={() => setGrad(g)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 px-3 py-1.5 text-sm text-amber-200 hover:bg-amber-500/10 disabled:opacity-40"
+                  title="Guruh kursni tugatgan bo'lsa — bitirganlar arxiviga o'tadi"
+                >
+                  <GraduationCap className="h-4 w-4" /> Guruh bitirgan
+                </button>
               </div>
             ))}
           </div>
@@ -100,6 +128,33 @@ export default function StartDateBanner() {
           {err && <div className="mt-2 text-xs text-red-300">{err}</div>}
         </div>
       </div>
+
+      {grad && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Guruh bitirganini tasdiqlash">
+          <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <div className="flex items-center gap-2 font-bold text-white">
+              <GraduationCap className="h-5 w-5 text-amber-400" /> {grad.name} — guruh bitirdimi?
+            </div>
+            <p className="mt-2 text-sm text-zinc-300">
+              Guruh "bitirgan guruhlar" arxiviga o'tadi: faol ro'yxatlar, reyting, deadline va jadvaldan chiqadi. O'quvchilarning natijalari
+              saqlanadi. Xato bo'lsa administrator arxivdan qaytaradi.
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button type="button" onClick={() => setGrad(null)} className="flex-1 rounded-lg border border-zinc-800 py-2.5 text-sm text-zinc-300">
+                Bekor qilish
+              </button>
+              <button
+                type="button"
+                disabled={saving === grad.id}
+                onClick={() => graduate(grad)}
+                className="flex-1 rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-zinc-950 disabled:opacity-50"
+              >
+                Ha, bitirdi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

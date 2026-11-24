@@ -358,10 +358,11 @@ export default function GroupsPage() {
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
-                    {user?.role === 'admin' && (
+                    {/* Bitirdi: admin — hammasi, o'qituvchi — o'z guruhlari (server ham tekshiradi) */}
+                    {(user?.role === 'admin' || user?.role === 'teacher') && (
                       <button
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleGraduate(g); }}
-                        title="Tamomlandi — arxivga"
+                        title="Guruh bitirdi — arxivga"
                         className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 transition-colors z-10"
                       >
                         <Archive className="w-4 h-4" />

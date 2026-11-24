@@ -35,7 +35,8 @@ router.put('/:id', roleGuard('admin', 'teacher'), permissionGuard('edit_group'),
 router.delete('/:id', roleGuard('admin', 'teacher', 'administrator'), permissionGuard('delete_group'), groupsController.delete);
 
 // Bitiruv — o'chirish EMAS. Guruh arxivga tushadi, tarixi saqlanadi.
-router.post('/:id/graduate', roleGuard('admin'), groupsController.graduate);
+// Bitirdi: admin — istalgan guruh; o'qituvchi — faqat o'z guruhi (controller tekshiradi). Qaytarish — faqat admin.
+router.post('/:id/graduate', roleGuard('admin', 'teacher'), groupsController.graduate);
 router.post('/:id/ungraduate', roleGuard('admin'), groupsController.ungraduate);
 
 // POST /api/groups/:id/students — O'quvchi qo'shish

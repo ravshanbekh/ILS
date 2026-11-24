@@ -30,6 +30,14 @@ panelining tepasida bildirishnoma turadi va **yopilmaydi**. Sana shu yerning o'z
 
 Deadline panelida sanasiz guruhlar "Guruh boshlanish sanasi kiritilmagan" ogohlantirishi bilan chiqadi.
 
+**Guruh bitirdi.** Kursni tugatgan guruh uchun sana kiritish shart emas: bildirishnomadagi
+yoki guruhlar ro'yxatidagi **"Guruh bitirgan"** tugmasi bosiladi va tasdiqlanadi.
+- Guruh "bitirgan guruhlar" arxiviga o'tadi: faol ro'yxatlar, reyting va deadline'lardan chiqadi.
+- Natijalar saqlanadi.
+- Belgilash huquqi: admin — istalgan guruh, o'qituvchi — faqat o'z guruhi
+  (boshqa guruh — 404).
+- Arxivdan qaytarish — faqat admin.
+
 ## Holatlar
 
 | Belgi | Holat | Hisob |
