@@ -10,7 +10,7 @@ import Header from '@/components/layout/Header';
 import { useAuthStore } from '@/stores/authStore';
 import DateInput from '@/components/shared/DateInput';
 import { apiErrorText, curatorApi, type CuratorDay, type CuratorLesson, type CuratorListItem, type CuratorSlot, type CuratorStudentRow } from '@/api';
-import { inputCls, todayLocal } from './curatorCommon';
+import { inputCls, lessonLabel, todayLocal } from './curatorCommon';
 
 const WEEKDAYS = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
 const MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek'];
@@ -218,7 +218,7 @@ export default function CuratorSchedulePage() {
                         <option value="">— o'zgartirmaslik —</option>
                         {lessons.map((l) => (
                           <option key={l.id} value={l.id}>
-                            {l.n}. {l.title}
+                            {lessonLabel(l)}
                           </option>
                         ))}
                       </select>
@@ -321,7 +321,7 @@ function SlotCard({
           <option value="">Mashg'ulot belgilanmagan</option>
           {lessons.map((l) => (
             <option key={l.id} value={l.id}>
-              {l.n}. {l.title}
+              {lessonLabel(l)}
             </option>
           ))}
         </select>

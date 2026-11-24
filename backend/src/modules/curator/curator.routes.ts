@@ -107,13 +107,15 @@ const lessonSchema = z.object({
   n: z.number().int().min(1).max(200).optional(),
   week: z.number().int().min(1).max(20).optional(),
   weekTitle: z.string().trim().min(1).max(120).optional(),
-  kind: z.enum(['A', 'B']).optional(),
+  code: z.string().trim().min(1).max(8).optional(),
+  kind: z.enum(['A', 'C', 'Z']).optional(),
   title: z.string().trim().min(2).max(200).optional(),
   goal: z.string().trim().max(500).nullable().optional(),
   content: z
     .object({
       fact: z.string().max(1000).nullable().optional(),
       steps: z.array(z.string().max(500)).max(20).optional(),
+      prep: z.array(z.string().max(500)).max(20).optional(),
       wow: z.string().max(500).nullable().optional(),
       artifact: z.string().max(500).nullable().optional(),
       homework: z.string().max(1000).nullable().optional(),

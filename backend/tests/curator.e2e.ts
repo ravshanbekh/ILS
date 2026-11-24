@@ -88,7 +88,8 @@ async function main() {
   const today = todayInCenter();
   const tomorrow = nextWorkDay();
 
-  let lessonTitleBackup: { id: string; title: string } | null = null;
+  // Haqiqiy dasturga tegilmaydi — tahrir sinovi o'zining vaqtinchalik elementida
+  let tempLessonId: string | null = null;
   try {
     await ensureProgram();
     const admin = await mk('admin', 'Admin');
@@ -114,14 +115,18 @@ async function main() {
     console.log('\n2) Dastur');
     const prog = await call(k1.token, 'GET', '/program');
     const lessons = prog.json.data.lessons;
-    check("24 mashg'ulot, 8 hafta, kurator tahrirlay olmaydi", lessons.length >= 24 && lessons[0].n === 1 && prog.json.data.canEdit === false, `${lessons.length}`);
+    const main = lessons.filter((l: any) => l.kind !== 'Z');
+    check("gibrid dastur: 16 wow + 8 chempionat + 8 zaxira, kurator tahrirlay olmaydi", main.filter((l: any) => l.kind === 'A').length === 16 && main.filter((l: any) => l.kind === 'C').length === 8 && lessons.filter((l: any) => l.kind === 'Z').length === 8 && prog.json.data.canEdit === false, `${lessons.length}`);
+    check("1-hafta: 1, 2, C1 tartibida", main.slice(0, 3).map((l: any) => l.code).join(',') === '1,2,C1', main.slice(0, 3).map((l: any) => l.code).join(','));
     check("mashg'ulot mazmuni (qadamlar, vazifa, vosita)", Array.isArray(lessons[0].content.steps) && lessons[0].content.steps.length > 0 && !!lessons[0].content.homework && lessons[0].content.tools.length > 0);
     check('kurator PATCH /program → 403', (await call(k1.token, 'PATCH', `/program/${lessons[0].id}`, { title: 'x' })).status === 403);
-    lessonTitleBackup = { id: lessons[0].id, title: lessons[0].title };
-    const pa = await call(admin.token, 'PATCH', `/program/${lessons[0].id}`, { title: `${lessons[0].title} (tahrir)` });
+    const cl = await call(admin.token, 'POST', '/program', { n: 190, code: 'T1', week: 8, weekTitle: 'Sinov', kind: 'Z', title: `${tag} sinov` });
+    tempLessonId = cl.json?.data?.id ?? null;
+    check("admin yangi element qo'shadi", cl.status === 200 && cl.json.data.code === 'T1');
+    const pa = await call(admin.token, 'PATCH', `/program/${tempLessonId}`, { title: `${tag} sinov (tahrir)` });
     check('admin dasturni tahrirlaydi', pa.status === 200 && pa.json.data.title.endsWith('(tahrir)'));
-    check('takroriy raqam → 409', (await call(admin.token, 'PATCH', `/program/${lessons[1].id}`, { n: 1 })).status === 409);
-    const [L1, L2, L3] = lessons;
+    check('takroriy raqam → 409', (await call(admin.token, 'PATCH', `/program/${tempLessonId}`, { n: 1 })).status === 409);
+    const [L1, L2, L3] = main;
 
     console.log("\n3) Demo'dan keyin o'quvchi qo'shish");
     const sug = await call(k1.token, 'GET', '/students/suggest-login');
@@ -196,7 +201,7 @@ async function main() {
 
     console.log('\n7) Onlayn yozilish');
     const me = (await call(t1, 'GET', '/me')).json.data.enrollment;
-    check("o'quvchi o'z kuratori va 2 oylik dasturini ko'radi", me?.curator?.fullName === 'Kurator Bir' && me.program.length === lessons.length && me.timeline.day === 1);
+    check("o'quvchi o'z kuratori va 2 oylik dasturini ko'radi", me?.curator?.fullName === 'Kurator Bir' && me.program.length === main.length && me.timeline.day === 1);
     check("kuratorsiz o'quvchi: enrollment null", (await call(loner.token, 'GET', '/me')).json.data.enrollment === null);
     const av = (await call(t1, 'GET', '/available')).json.data.slots.filter((s: any) => s.date === tomorrow);
     check('3 ta vaqt, hammasiga yozilsa bo\'ladi', av.length === 3 && av.every((s: any) => s.canBook));
@@ -235,6 +240,7 @@ async function main() {
     await call(k1.token, 'PATCH', `/bookings/${pb2.id}/attendance`, { status: 'kelmadi' });
     let d1 = (await call(k1.token, 'GET', `/students/${e1}`)).json.data;
     check("s1: 1 ta o'tildi, keyingisi 2-mashg'ulot", d1.progress.done === 1 && d1.progress.next?.n === L2.n && d1.program[0].state === 'otildi');
+    check('progress jami = 24 (zaxira kirmaydi), xaritada belgi kodi bor', d1.progress.total === 24 && d1.program.length === 24 && d1.program[2].code === 'C1', `${d1.progress.total}`);
     const d2 = (await call(k1.token, 'GET', `/students/${e2}`)).json.data;
     check("s2: kelmadi — o'tilmagan, keyingisi hali 1-mashg'ulot", d2.progress.done === 0 && d2.progress.missed === 1 && d2.program[0].state === 'kelmadi');
 
@@ -281,7 +287,7 @@ async function main() {
     check("demo sanasi tuzatilsa — qayta 'faol'", (await prisma.curatorStudent.findUnique({ where: { id: e2 } }))?.status === 'faol');
     check("nazoratchi kuratorni almashtiradi", (await call(admr.token, 'PATCH', `/students/${e4}`, { curatorId: k1.id })).status === 200);
   } finally {
-    if (lessonTitleBackup) await prisma.curatorLesson.update({ where: { id: lessonTitleBackup.id }, data: { title: lessonTitleBackup.title } });
+    if (tempLessonId) await prisma.curatorLesson.delete({ where: { id: tempLessonId } }).catch(() => {});
     const created = await prisma.user.findMany({ where: { login: { startsWith: tag } }, select: { id: true } });
     const all = [...new Set([...ids.users, ...created.map((u) => u.id)])];
     await prisma.curatorBooking.deleteMany({ where: { studentId: { in: all } } });

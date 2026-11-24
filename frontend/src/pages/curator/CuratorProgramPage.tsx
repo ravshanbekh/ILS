@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ExternalLink, Loader2, Pencil, Plus, Save } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { apiErrorText, curatorApi, type CuratorLesson } from '@/api';
-import { Modal, inputCls } from './curatorCommon';
+import { KindBadge, Modal, inputCls, lessonLabel } from './curatorCommon';
 
 export default function CuratorProgramPage() {
   const [lessons, setLessons] = useState<CuratorLesson[]>([]);
@@ -49,7 +49,10 @@ export default function CuratorProgramPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950">
-      <Header title="Kurator dasturi — 2 oy" subtitle={`${lessons.filter((l) => l.isActive).length} ta mashg'ulot · har biri ${minutes} daqiqa · 5% motivatsiya, 10% fakt, 85% amaliyot`} />
+      <Header
+        title="Kurator dasturi — 2 oy"
+        subtitle={`Har hafta 2 ta wow mashg'ulot (mini-guruh) + 1 ta chempionat (butun oqim): ${lessons.filter((l) => l.isActive && l.kind === 'A').length} wow · ${lessons.filter((l) => l.isActive && l.kind === 'C').length} chempionat · ${lessons.filter((l) => l.isActive && l.kind === 'Z').length} zaxira · har biri ${minutes} daqiqa`}
+      />
       <div className="mx-auto max-w-5xl space-y-4 p-4 sm:p-6">
         {canEdit && (
           <div className="flex justify-end">
@@ -76,10 +79,10 @@ export default function CuratorProgramPage() {
                   return (
                     <div key={l.id} className={l.isActive ? '' : 'opacity-50'}>
                       <button type="button" onClick={() => setOpen(isOpen ? null : l.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.02]" aria-expanded={isOpen}>
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-zinc-200">{l.n}</span>
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-zinc-200">{l.code ?? l.n}</span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-semibold text-zinc-100">
-                            {l.title} {l.kind === 'B' && <span className="text-amber-400">★</span>}
+                            {l.title} <KindBadge kind={l.kind} />
                             {!l.isActive && <span className="ml-1 text-xs font-normal text-zinc-500">(o'chirilgan)</span>}
                           </span>
                           {l.goal && <span className="block truncate text-xs text-zinc-500">{l.goal}</span>}
@@ -88,6 +91,15 @@ export default function CuratorProgramPage() {
                       </button>
                       {isOpen && (
                         <div className="space-y-3 px-4 pb-4 pl-14 text-sm text-zinc-300">
+                          {c.prep && c.prep.length > 0 && (
+                            <Block title="Tayyorgarlik">
+                              <ul className="list-disc space-y-0.5 pl-4">
+                                {c.prep.map((x, i) => (
+                                  <li key={i}>{x}</li>
+                                ))}
+                              </ul>
+                            </Block>
+                          )}
                           {c.fact && <Block title="Bilasanmi? (fakt)">{c.fact}</Block>}
                           {c.steps && c.steps.length > 0 && (
                             <Block title="Amaliyot">
@@ -153,13 +165,15 @@ function LessonEditor({ lesson, nextN, onClose, onSaved }: { lesson: CuratorLess
   const c = lesson?.content ?? {};
   const [f, setF] = useState({
     n: lesson?.n ?? nextN,
+    code: lesson?.code ?? '',
     week: lesson?.week ?? 8,
     weekTitle: lesson?.weekTitle ?? '',
-    kind: (lesson?.kind as 'A' | 'B') ?? 'A',
+    kind: (lesson?.kind as 'A' | 'C' | 'Z') ?? 'A',
     title: lesson?.title ?? '',
     goal: lesson?.goal ?? '',
     fact: c.fact ?? '',
     steps: (c.steps ?? []).join('\n'),
+    prep: (c.prep ?? []).join('\n'),
     wow: c.wow ?? '',
     artifact: c.artifact ?? '',
     homework: c.homework ?? '',
@@ -183,6 +197,7 @@ function LessonEditor({ lesson, nextN, onClose, onSaved }: { lesson: CuratorLess
         .map(([name, url]) => ({ name, url }));
       const payload = {
         n: f.n,
+        ...(f.code.trim() ? { code: f.code.trim() } : {}),
         week: f.week,
         weekTitle: f.weekTitle,
         kind: f.kind,
@@ -192,6 +207,7 @@ function LessonEditor({ lesson, nextN, onClose, onSaved }: { lesson: CuratorLess
         content: {
           fact: f.fact || null,
           steps: f.steps.split('\n').map((s) => s.trim()).filter(Boolean),
+          prep: f.prep.split('\n').map((s) => s.trim()).filter(Boolean),
           wow: f.wow || null,
           artifact: f.artifact || null,
           homework: f.homework || null,
@@ -219,11 +235,15 @@ function LessonEditor({ lesson, nextN, onClose, onSaved }: { lesson: CuratorLess
   );
 
   return (
-    <Modal title={lesson ? `${lesson.n}. ${lesson.title}` : "Yangi mashg'ulot"} onClose={onClose}>
+    <Modal title={lesson ? lessonLabel(lesson) : "Yangi mashg'ulot"} onClose={onClose}>
       <div className="space-y-3">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           <label className="block text-xs text-zinc-400">
-            Raqam
+            Belgi
+            <input value={f.code} onChange={set('code')} maxLength={8} placeholder="C3" className={`${inputCls} mt-1`} />
+          </label>
+          <label className="block text-xs text-zinc-400">
+            Tartib
             <input type="number" min={1} value={f.n} onChange={set('n')} className={`${inputCls} mt-1`} />
           </label>
           <label className="block text-xs text-zinc-400">
@@ -233,8 +253,9 @@ function LessonEditor({ lesson, nextN, onClose, onSaved }: { lesson: CuratorLess
           <label className="block text-xs text-zinc-400">
             Turi
             <select value={f.kind} onChange={set('kind')} className={`${inputCls} mt-1`}>
-              <option value="A">A — asosiy</option>
-              <option value="B">★ — qo'shimcha</option>
+              <option value="A">Wow mashg'ulot</option>
+              <option value="C">Chempionat</option>
+              <option value="Z">Zaxira</option>
             </select>
           </label>
         </div>
@@ -248,6 +269,7 @@ function LessonEditor({ lesson, nextN, onClose, onSaved }: { lesson: CuratorLess
         </label>
         {area('goal', 'Maqsad')}
         {area('fact', 'Ilmiy fakt')}
+        {area('prep', 'Tayyorgarlik', 3, 'har qator — bitta band')}
         {area('steps', 'Amaliyot qadamlari', 5, 'har qator — bitta qadam')}
         {area('wow', 'Wow lahza')}
         {area('artifact', 'Natija (portfolio)')}

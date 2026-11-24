@@ -2,7 +2,7 @@
 
 Kurator — yangi kelgan bola bilan **20 daqiqalik demo dars** o'tadigan xodim. Demodan
 keyin u bolani ILS'ga qo'shadi (guruhsiz), administrator bolani asosiy guruhga
-qo'shadi, kurator esa **2 oy** davomida o'z dasturi (24 mashg'ulot) bo'yicha u bilan
+qo'shadi, kurator esa **2 oy** davomida o'z dasturi (har hafta 2 ta wow mashg'ulot + 1 ta chempionat) bo'yicha u bilan
 shug'ullanadi va asosiy darslari qanday ketayotganini kuzatadi. Asosiy guruhda
 asosiy o'qituvchi avvalgidek dars beradi.
 
@@ -58,12 +58,24 @@ Har bir bola kartasida:
 
 Asosiy guruh ko'rsatkichlari faqat bola guruhga **qo'shilgan kundan keyingi** darslardan hisoblanadi.
 
-## Dastur
+## Dastur — gibrid model
 
-Boshlang'ich 24 mashg'ulot (8 hafta × 3, A — asosiy, ★ — qo'shimcha) "Demo-mentor
-qo'llanmasi — 2 oylik to'garak" dan olingan: `backend/src/modules/curator/curator-program.seed.json`.
-Server ishga tushganda jadval **bo'sh bo'lsa** bir marta to'ldiriladi — keyingi
-tahrirlar qayta yozilmaydi.
+"Demo-mentor qo'llanmasi — 2 oylik to'garak" (2026-11-24) bo'yicha har haftada:
+
+- 2 ta **"wow" mashg'ulot** (1–16) — mini-guruhda (2–3 kishi), kursda yo'q yangi IT bilim;
+- 1 ta **chempionat kuni** (C1–C8) — butun oqim (5–20 kishi), yangi kod yo'q: haftaning wow
+  mavzulari va asosiy kursdagi ko'nikmalar Live Quiz va "Sinf musobaqasi" orqali mashq qilinadi;
+- **zaxira** (Z1–Z8) — qoplash yoki vosita ishlamay qolganda. 2 oylik progressga KIRMAYDI.
+
+2 oylik progress = 24 ta element (16 wow + 8 chempionat). Ular hafta tartibida: 1, 2, C1, 3, 4, C2, ...
+`CuratorLesson.code` — qo'llanmadagi belgi ("7", "C3", "Z2"), `kind` — A / C / Z.
+
+Manba: `backend/src/modules/curator/curator-program.seed.json` (`content.seed = "v2"`). Server
+ishga tushganda:
+- dastur bo'sh bo'lsa — bir marta to'ldiriladi;
+- eski v1 (24 mashg'ulot, 16 A + 8 ★) hali **tegilmagan** bo'lsa (tahrir yo'q, progress yo'q,
+  jadvalga bog'lanmagan) — avtomatik v2 ga almashtiriladi;
+- tahrirlangan yoki ishlatilayotgan dastur hech qachon qayta yozilmaydi.
 
 ## Sahifalar
 
@@ -99,7 +111,7 @@ tahrirlar qayta yozilmaydi.
 ## Testlar
 
 ```bash
-cd backend && npm run e2e:curator   # 86 tekshiruv
+cd backend && npm run e2e:curator   # 89 tekshiruv
 ```
 
 Qamrov: kirish/ko'lam (IDOR), yaratish va tranzaksiya, dastur tahriri, asosiy guruh

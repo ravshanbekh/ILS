@@ -29,6 +29,18 @@ export const LESSON_STATE: Record<CuratorLessonState, { label: string; cls: stri
   kutilmoqda: { label: 'Kutilmoqda', cls: 'border-zinc-800 bg-zinc-900 text-zinc-400', dot: 'bg-zinc-600' },
 };
 
+/** Qo'llanmadagi belgi bilan: "7. Sezar shifri", "C3. Shifr poygasi", "Z2. Parol..." */
+export function lessonLabel(l: { code?: string | null; n: number; title: string }): string {
+  return `${l.code ?? l.n}. ${l.title}`;
+}
+
+/** Element turi: chempionat (butun oqim) yoki zaxira; oddiy "wow" mashg'ulotda belgi yo'q */
+export function KindBadge({ kind }: { kind: string }) {
+  if (kind === 'C') return <span className="ml-1 rounded bg-amber-400/15 px-1 py-px text-[10px] font-semibold text-amber-300">chempionat</span>;
+  if (kind === 'Z') return <span className="ml-1 rounded bg-zinc-700/60 px-1 py-px text-[10px] font-semibold text-zinc-300">zaxira</span>;
+  return null;
+}
+
 export const HOMEWORK_LABEL: Record<string, string> = { bajardi: 'bajardi', qisman: 'qisman', bajarmadi: 'bajarmadi' };
 
 const MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek'];
@@ -94,7 +106,7 @@ export function ProgramProgress({ p, t, compact = false }: { p: CuratorProgressS
         <p className="mt-1 truncate text-[11px] text-zinc-500">
           {p.next ? (
             <>
-              Keyingisi: <span className="text-zinc-300">{p.next.n}. {p.next.title}</span> · {p.next.week}-hafta
+              Keyingisi: <span className="text-zinc-300">{lessonLabel(p.next)}</span> · {p.next.week}-hafta
             </>
           ) : (
             <span className="text-emerald-400">Dastur to'liq o'tildi</span>
