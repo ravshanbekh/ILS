@@ -6,6 +6,8 @@
  * alohida sinab ko'rish imkoni bo'lishi kerak.
  */
 
+import { isLessonDay } from '../../shared/utils/lessonSchedule';
+
 export type LessonDayType = 'juft' | 'toq' | 'har_kuni';
 export type MilestoneType = 'demo_day' | 'imtihon';
 
@@ -33,8 +35,11 @@ function daysInMonth(year: number, monthIndex: number): number {
 /**
  * Oydagi dars kunlari.
  *
- * `juft`/`toq` — oyning KUN RAQAMI juft yoki toq (schema izohiga muvofiq:
- * "Oyning juft kunlari"), hafta kuni emas.
+ * `juft`/`toq` — HAFTA KUNI bo'yicha (markaz qoidasi, shared/utils/lessonSchedule):
+ * toq = Du/Chor/Ju, juft = Se/Pay/Sha. Ilgari bu yerda oyning kun raqami
+ * (juft/toq sana) ishlatilgan edi — dars sessiyalari va davomat esa hafta
+ * kunini ishlatardi, natijada demo day/imtihon nomzodi dars bo'lmaydigan kunga
+ * tushib qolardi. Endi hammasi bitta qoidadan.
  */
 export function lessonDaysInMonth(
   year: number,
@@ -44,9 +49,8 @@ export function lessonDaysInMonth(
   const total = daysInMonth(year, monthIndex);
   const out: Date[] = [];
   for (let d = 1; d <= total; d++) {
-    if (type === 'har_kuni' || (type === 'juft' ? d % 2 === 0 : d % 2 === 1)) {
-      out.push(utcDate(year, monthIndex, d));
-    }
+    const day = utcDate(year, monthIndex, d);
+    if (isLessonDay(type, day)) out.push(day);
   }
   return out;
 }

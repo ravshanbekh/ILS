@@ -58,6 +58,8 @@ export default function GroupDetailPage() {
   const canTransfer = can('transfer_student');
   const canFreeze = can('freeze_student');
   const canRemove = can('remove_student');
+  // Dars kuni/soatini o'zgartirish — PUT /groups/:id (edit_group ruxsati); ruxsatsiz bo'lsa faqat ko'rinadi
+  const canEditGroup = can('edit_group');
   const allowedActionTabs = ([
     canTransfer && 'transfer',
     canFreeze && 'freeze',
@@ -89,6 +91,23 @@ export default function GroupDetailPage() {
   const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
+
+  // Dars vaqti (boshlanish/tugash) — normativ deadline'i boshlanish soatiga qo'yiladi
+  const [timeSaving, setTimeSaving] = useState(false);
+  const handleSetTime = async (field: 'lessonStartMinute' | 'lessonEndMinute', value: string) => {
+    if (!id) return;
+    const m = /^(\d{2}):(\d{2})$/.exec(value);
+    const minute = m ? Number(m[1]) * 60 + Number(m[2]) : null;
+    setTimeSaving(true);
+    try {
+      await groupsApi.update(id, { [field]: minute });
+      setGroup((g: any) => (g ? { ...g, [field]: minute } : g));
+    } catch (e: any) {
+      alert(e?.response?.data?.error?.message || e?.response?.data?.message || "Saqlab bo'lmadi");
+    } finally {
+      setTimeSaving(false);
+    }
+  };
 
   const handleSetDayType = async (lessonDayType: 'juft' | 'toq' | 'har_kuni') => {
     if (!id || group?.lessonDayType === lessonDayType) return;
@@ -465,7 +484,7 @@ export default function GroupDetailPage() {
           {(['juft', 'toq', 'har_kuni'] as const).map((t) => (
             <button
               key={t}
-              disabled={dayTypeSaving}
+              disabled={dayTypeSaving || !canEditGroup}
               onClick={() => handleSetDayType(t)}
               className={`px-2 py-0.5 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 ${
                 group?.lessonDayType === t ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white'
@@ -474,7 +493,43 @@ export default function GroupDetailPage() {
               {t === 'juft' ? 'Juft' : t === 'toq' ? 'Toq' : 'Har kuni'}
             </button>
           ))}
+          <span className="text-[11px] text-zinc-500 pl-1">
+            {group?.lessonDayType === 'juft' ? 'Se · Pay · Sha' : group?.lessonDayType === 'toq' ? 'Du · Chor · Ju' : ''}
+          </span>
         </div>
+
+        {/* Dars soati */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm" title="Normativ deadline'i haftaning oxirgi dars kuni shu soatgacha">
+          <span className="text-zinc-400">Dars soati:</span>
+          {(['lessonStartMinute', 'lessonEndMinute'] as const).map((f, i) => (
+            <span key={f} className="inline-flex items-center gap-1">
+              {i === 1 && <span className="text-zinc-600">–</span>}
+              <select
+                aria-label={i === 0 ? 'Dars boshlanishi' : 'Dars tugashi'}
+                disabled={timeSaving || !canEditGroup}
+                title={canEditGroup ? undefined : "O'zgartirish uchun guruhni tahrirlash ruxsati kerak"}
+                value={group?.[f] != null ? `${String(Math.floor(group[f] / 60)).padStart(2, '0')}:${String(group[f] % 60).padStart(2, '0')}` : ''}
+                onChange={(e) => handleSetTime(f, e.target.value)}
+                className="bg-transparent text-xs font-semibold text-white border border-zinc-800 rounded-md px-1 py-0.5 disabled:opacity-50"
+              >
+                <option value="">--:--</option>
+                {Array.from({ length: 30 }, (_, k) => `${String(7 + Math.floor(k / 2)).padStart(2, '0')}:${k % 2 ? '30' : '00'}`).map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </span>
+          ))}
+        </div>
+
+        {/* Normativ deadline'lari (tizim yoqilganda ko'rinadi) */}
+        {(user?.role === 'admin' || user?.role === 'teacher') && id && (
+          <button
+            onClick={() => navigate(`/${user.role}/normative-deadlines/${id}`)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-zinc-300 hover:text-white"
+          >
+            <ClipboardCheck className="w-4 h-4 text-amber-400" /> Deadline'lar
+          </button>
+        )}
 
         {/* Telegram guruh chati */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm">

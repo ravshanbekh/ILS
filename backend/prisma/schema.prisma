@@ -182,6 +182,11 @@ model Group {
   // kurs turli guruhlarda turlicha cho'zilishi mumkin.
   durationMonths Int?      @map("duration_months")
 
+  // Dars vaqti — kun boshidan daqiqa (14:00 → 840), Toshkent vaqti.
+  // Normativ deadline'i haftaning oxirgi dars kuni shu soatga qo'yiladi.
+  lessonStartMinute Int? @map("lesson_start_minute")
+  lessonEndMinute   Int? @map("lesson_end_minute")
+
   // Telegram guruh chati (ota-onalar uchun 20:00 yig'ma xabar)
   telegramChatId        BigInt?   @map("telegram_chat_id")
   telegramChatTitle     String?   @map("telegram_chat_title") @db.VarChar(200)
@@ -205,6 +210,7 @@ model Group {
   homeworkAssignments HomeworkAssignment[]
   examGroups          ExamGroup[]
   milestones          GroupMilestone[]
+  normativeDeadlines  NormativeDeadline[]
   graduatedBy         User?                @relation("GroupGraduatedBy", fields: [graduatedById], references: [id])
 
   @@map("groups")
@@ -258,6 +264,7 @@ model Normative {
   category        Category?        @relation(fields: [categoryId], references: [id])
   groupNormatives GroupNormative[]
   submissions     Submission[]
+  deadlines       NormativeDeadline[]
 
   @@map("normatives")
 }
@@ -285,6 +292,10 @@ model Submission {
   groupId     String?          @map("group_id") @db.Uuid
   youtubeUrl  String           @map("youtube_url")
   submittedAt DateTime         @default(now()) @map("submitted_at")
+  // Birinchi marta topshirilgan payt. Qayta topshirish submittedAt ni
+  // yangilaydi, bu esa O'ZGARMAYDI — deadline shu bo'yicha hisoblanadi.
+  // Eski yozuvlarda null → submittedAt ishlatiladi.
+  firstSubmittedAt DateTime? @map("first_submitted_at")
   status      SubmissionStatus @default(pending)
   canResubmit Boolean          @default(false) @map("can_resubmit")
 
@@ -1902,4 +1913,41 @@ model CuratorBooking {
   @@unique([slotId, studentId])
   @@index([studentId])
   @@map("curator_bookings")
+}
+
+// ============ NORMATIV DEADLINE'LARI ============
+
+/// Tizim sozlamalari (kalit → JSON). settings.json fayliga emas, bazaga —
+/// fayl redeploy'da yo'qolishi mumkin.
+model AppSetting {
+  key         String   @id @db.VarChar(64)
+  value       Json
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedById String?  @map("updated_by_id") @db.Uuid
+
+  @@map("app_settings")
+}
+
+/// Guruhning normativ rejasi: qaysi normativ qaysi haftada topshirilishi kerak.
+/// Muddatning aniq payti (haftaning oxirgi dars kuni, dars soati) guruh
+/// jadvalidan har safar hisoblanadi — jadval o'zgarsa reja ham to'g'rilanadi.
+model NormativeDeadline {
+  id          String   @id @default(uuid()) @db.Uuid
+  groupId     String   @map("group_id") @db.Uuid
+  normativeId String   @map("normative_id") @db.Uuid
+  /// Hafta boshi (dushanba)
+  weekStart   DateTime @map("week_start") @db.Date
+  /// Rejadagi tartib raqami
+  seq         Int
+  /// Rejadan chiqarilgan (hisobga olinmaydi)
+  excluded    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  normative Normative @relation(fields: [normativeId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, normativeId])
+  @@index([weekStart])
+  @@map("normative_deadlines")
 }

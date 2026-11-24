@@ -59,6 +59,7 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/stats', label: 'Statistika', icon: BarChart3 },
       { to: '/admin/rankings', label: "O'quvchilar reytingi", icon: Trophy },
       { to: '/admin/normative-matrix', label: 'Normativ natijalari', icon: Grid3x3 },
+      { to: '/admin/normative-deadlines', label: "Deadline'lar", icon: CalendarClock },
       { to: '/admin/student-categories', label: 'Natija kategoriyalari', icon: LayoutGrid },
     ]
   },
@@ -145,6 +146,7 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
       { to: '/teacher/pending', label: 'Tekshirish', icon: ClipboardCheck },
       { to: '/teacher/rankings', label: "O'quvchilar reytingi", icon: Trophy },
       { to: '/teacher/normative-matrix', label: 'Normativ natijalari', icon: Grid3x3 },
+      { to: '/teacher/normative-deadlines', label: "Deadline'lar", icon: CalendarClock },
       { to: '/teacher/student-categories', label: 'Natija kategoriyalari', icon: LayoutGrid },
     ]
   },

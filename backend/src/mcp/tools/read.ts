@@ -209,7 +209,7 @@ export function registerReadTools(server: McpServer, actor: McpActor) {
             take: args.limit,
             select: {
               id: true, name: true, isActive: true, createdAt: true, graduatedAt: true,
-              startDate: true, durationMonths: true, lessonDayType: true,
+              startDate: true, durationMonths: true, lessonDayType: true, lessonStartMinute: true, lessonEndMinute: true,
               teacher: { select: { id: true, fullName: true } },
               _count: { select: { groupNormatives: true } },
               groupStudents: { where: { student: { isActive: true } }, select: { studentId: true } },
@@ -254,6 +254,8 @@ export function registerReadTools(server: McpServer, actor: McpActor) {
                 startDate: g.startDate ? tashkentDay(g.startDate) : null,
                 durationMonths: g.durationMonths,
                 lessonDays: g.lessonDayType,
+                lessonStartMinute: g.lessonStartMinute,
+                lessonEndMinute: g.lessonEndMinute,
               },
               nextMilestone: nm
                 ? {
@@ -293,7 +295,7 @@ export function registerReadTools(server: McpServer, actor: McpActor) {
           where: { id: groupId },
           select: {
             id: true, name: true, isActive: true, createdAt: true, graduatedAt: true,
-            startDate: true, durationMonths: true, lessonDayType: true, telegramChatTitle: true,
+            startDate: true, durationMonths: true, lessonDayType: true, lessonStartMinute: true, lessonEndMinute: true, telegramChatTitle: true,
             teacher: { select: { id: true, fullName: true } },
           },
         });

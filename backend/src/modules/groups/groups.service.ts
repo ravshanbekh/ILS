@@ -43,14 +43,24 @@ class GroupsService {
       prisma.group.count({ where }),
     ]);
 
+    // Jadval maydonlari ham qaytariladi: "Guruhni tahrirlash" formasi shu
+    // ro'yxatdan to'ldiriladi. Ilgari ular yo'q edi — forma bo'sh ochilib,
+    // "Saqlash" boshlanish sanasi, kurs muddati va dars kunlarini null qilib
+    // yuborardi (demo day/imtihon jadvali ham "sozlanmagan"ga tushardi).
     const formattedGroups = groups.map((g) => ({
       id: g.id,
       name: g.name,
+      teacherId: g.teacherId,
       teacher: g.teacher,
       studentsCount: g.groupStudents.length,
       normativesCount: g._count.groupNormatives,
       isActive: g.isActive,
       createdAt: g.createdAt,
+      startDate: g.startDate,
+      durationMonths: g.durationMonths,
+      lessonDayType: g.lessonDayType,
+      lessonStartMinute: g.lessonStartMinute,
+      lessonEndMinute: g.lessonEndMinute,
     }));
 
     return createPaginatedResult(formattedGroups, total, params);
@@ -200,6 +210,8 @@ class GroupsService {
         startDate: data.startDate ? new Date(`${data.startDate}T00:00:00.000Z`) : null,
         durationMonths: data.durationMonths ?? null,
         lessonDayType: data.lessonDayType ?? null,
+        lessonStartMinute: data.lessonStartMinute ?? null,
+        lessonEndMinute: data.lessonEndMinute ?? null,
       },
       include: {
         teacher: {

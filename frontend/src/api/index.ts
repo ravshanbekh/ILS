@@ -283,6 +283,143 @@ export const normativeMatrixApi = {
   excel: (params: MatrixFiltersQuery) => api.get('/normative-matrix/excel', { params, responseType: 'blob', timeout: 120_000 }),
 };
 
+// ─── Normativ deadline'lari: haftasiga N ta, muddat + qo'shimcha muddat ──────
+export type DeadlineState = 'done' | 'grace_done' | 'late_done' | 'open' | 'grace' | 'missed' | 'na';
+export interface DeadlineConfig {
+  enabled: boolean;
+  startDate: string | null;
+  perWeek: number;
+  graceDays: number;
+  startedAt: string | null;
+  startedById: string | null;
+  pausedAt: string | null;
+}
+export interface DeadlineCounts {
+  due: number;
+  done: number;
+  graceDone: number;
+  lateDone: number;
+  open: number;
+  grace: number;
+  missed: number;
+}
+export interface GroupScheduleInfo {
+  dayType: 'juft' | 'toq' | 'har_kuni' | null;
+  start: string | null;
+  end: string | null;
+}
+export interface DeadlineWeekItem {
+  normativeId: string;
+  taskNumber: number;
+  title: string;
+  dueAt: string;
+  graceEnd: string;
+}
+export interface DeadlineOverviewGroup {
+  id: string;
+  name: string;
+  teacher: { id: string; fullName: string } | null;
+  schedule: GroupScheduleInfo;
+  students: number;
+  planItems: number;
+  planEnd: string | null;
+  week: DeadlineCounts & { items: DeadlineWeekItem[] };
+  missed: number;
+  studentsWithMissed: number;
+  warnings: string[];
+}
+export type DeadlineOverview =
+  | { enabled: false; config: DeadlineConfig; canManage: boolean }
+  | {
+      enabled: true;
+      config: DeadlineConfig;
+      canManage: boolean;
+      now: string;
+      week: { start: string; end: string; isCurrent: boolean };
+      totals: { week: DeadlineCounts; missed: number; studentsWithMissed: number };
+      groups: DeadlineOverviewGroup[];
+    };
+export interface DeadlinePreview {
+  startDate: string;
+  perWeek: number;
+  totals: { groups: number; withPlan: number; students: number; withWarnings: number };
+  groups: {
+    id: string;
+    name: string;
+    teacher: { id: string; fullName: string } | null;
+    schedule: GroupScheduleInfo;
+    students: number;
+    normatives: number;
+    weeks: number;
+    firstWeek: string;
+    firstDueAt: string | null;
+    lastWeek: string | null;
+    firstWeekItems: { id: string; taskNumber: number; title: string }[];
+    warnings: string[];
+  }[];
+}
+export interface DeadlinePlanItem {
+  id: string;
+  normativeId: string;
+  taskNumber: number;
+  title: string;
+  category: string | null;
+  excluded: boolean;
+  seq: number;
+}
+export type DeadlineGroupDetail =
+  | { enabled: false; config: DeadlineConfig; canManage: boolean; group: { id: string; name: string } }
+  | {
+      enabled: true;
+      config: DeadlineConfig;
+      canManage: boolean;
+      now: string;
+      currentWeek: string;
+      group: { id: string; name: string; teacher: { id: string; fullName: string } | null; schedule: GroupScheduleInfo; warnings: string[] };
+      weeks: { weekStart: string; dueAt: string; graceEnd: string; items: DeadlinePlanItem[] }[];
+      students: {
+        id: string;
+        fullName: string;
+        login: string;
+        joinedAt: string;
+        counts: DeadlineCounts;
+        /** band ID → [holat, topshirilgan payt, isbot havolasi] */
+        cells: Record<string, [DeadlineState, string | null, string]>;
+      }[];
+    };
+export interface StudentDeadlineItem {
+  groupId: string;
+  groupName: string;
+  normativeId: string;
+  taskNumber: number;
+  title: string;
+  url: string;
+  weekStart: string;
+  when: 'this' | 'next' | 'past';
+  dueAt: string;
+  graceEnd: string;
+  state: DeadlineState;
+}
+export type StudentDeadlines =
+  | { enabled: false }
+  | { enabled: true; now: string; graceDays: number; perWeek: number; counts: DeadlineCounts; items: StudentDeadlineItem[] };
+
+// (Ok<T> pastda, kurator bo'limida e'lon qilingan)
+export const deadlinesApi = {
+  me: () => api.get<Ok<StudentDeadlines>>('/normative-deadlines/me'),
+  overview: (week?: string) => api.get<Ok<DeadlineOverview>>('/normative-deadlines/overview', { params: week ? { week } : {}, timeout: 60_000 }),
+  group: (groupId: string) => api.get<Ok<DeadlineGroupDetail>>(`/normative-deadlines/groups/${groupId}`, { timeout: 60_000 }),
+  preview: (startDate: string, perWeek: number) => api.post<Ok<DeadlinePreview>>('/normative-deadlines/preview', { startDate, perWeek }, { timeout: 60_000 }),
+  start: (body: { startDate: string; perWeek?: number; graceDays?: number }) =>
+    api.post<Ok<{ config: DeadlineConfig; created: number }>>('/normative-deadlines/start', body, { timeout: 120_000 }),
+  pause: () => api.post<Ok<{ config: DeadlineConfig }>>('/normative-deadlines/pause'),
+  reset: () => api.delete<Ok<{ config: DeadlineConfig; removed: number }>>('/normative-deadlines/plan'),
+  config: (body: { perWeek?: number; graceDays?: number }) => api.patch<Ok<{ config: DeadlineConfig }>>('/normative-deadlines/config', body),
+  updateItems: (groupId: string, body: { ids: string[]; weekStart?: string; excluded?: boolean }) =>
+    api.patch<Ok<{ updated: number }>>(`/normative-deadlines/groups/${groupId}/items`, body),
+  rebuild: (groupId: string, fromWeek: string) => api.post<Ok<{ updated: number }>>(`/normative-deadlines/groups/${groupId}/rebuild`, { fromWeek }),
+};
+
 // ─── Kurator (demo-mentor): 2 oylik kuzatuv, dastur, jadval ────────────────
 export type CuratorStatus = 'faol' | 'tugadi' | 'toxtatildi';
 export type CuratorHomework = 'bajardi' | 'qisman' | 'bajarmadi';

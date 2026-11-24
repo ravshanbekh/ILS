@@ -77,6 +77,8 @@ export function registerWriteTools(server: McpServer, actor: McpActor) {
         startDate: day.optional().describe('Kurs boshlanishi (YYYY-MM-DD)'),
         durationMonths: z.number().int().min(1).max(36).optional(),
         lessonDayType: z.enum(['juft', 'toq', 'har_kuni']).optional().describe('Dars kunlari'),
+        lessonStartMinute: z.number().int().min(360).max(1439).optional().describe("Dars boshlanishi, kun boshidan daqiqa (14:00 = 840)"),
+        lessonEndMinute: z.number().int().min(360).max(1439).optional().describe('Dars tugashi, kun boshidan daqiqa'),
       },
       annotations: SAFE_WRITE,
     },
@@ -93,7 +95,7 @@ export function registerWriteTools(server: McpServer, actor: McpActor) {
     {
       title: 'Guruhni tahrirlash',
       description:
-        'Guruh nomi, ustozi yoki jadvalini (boshlanish, davomiylik, dars kunlari) o\'zgartiradi. Faqat berilgan maydonlar o\'zgaradi; teacherId: null — ustozni olib tashlash.' + CONFIRM_NOTE,
+        'Guruh nomi, ustozi yoki jadvalini (boshlanish, davomiylik, dars kunlari, dars soati) o\'zgartiradi. Faqat berilgan maydonlar o\'zgaradi; teacherId: null — ustozni olib tashlash.' + CONFIRM_NOTE,
       inputSchema: {
         groupId: uuid('Guruh'),
         name: z.string().min(1).max(50).optional(),
@@ -101,6 +103,8 @@ export function registerWriteTools(server: McpServer, actor: McpActor) {
         startDate: day.nullable().optional(),
         durationMonths: z.number().int().min(1).max(36).nullable().optional(),
         lessonDayType: z.enum(['juft', 'toq', 'har_kuni']).nullable().optional(),
+        lessonStartMinute: z.number().int().min(360).max(1439).nullable().optional().describe("Dars boshlanishi, kun boshidan daqiqa (14:00 = 840)"),
+        lessonEndMinute: z.number().int().min(360).max(1439).nullable().optional(),
       },
       annotations: SAFE_WRITE,
     },

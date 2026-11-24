@@ -18,7 +18,21 @@ const scheduleFields = {
     .optional()
     .nullable(),
   lessonDayType: z.enum(['juft', 'toq', 'har_kuni']).optional().nullable(),
+  // Dars vaqti — kun boshidan daqiqa (14:00 → 840). Normativ deadline'i shu soatga qo'yiladi.
+  lessonStartMinute: z
+    .number()
+    .int()
+    .min(6 * 60, 'Dars 06:00 dan oldin boshlanmaydi')
+    .max(22 * 60, 'Dars 22:00 dan kech boshlanmaydi')
+    .optional()
+    .nullable(),
+  lessonEndMinute: z.number().int().min(6 * 60).max(23 * 60 + 59).optional().nullable(),
 };
+
+/** Tugash vaqti boshlanishdan keyin bo'lsin (ikkalasi berilganda) */
+const lessonTimeOk = (d: { lessonStartMinute?: number | null; lessonEndMinute?: number | null }) =>
+  d.lessonStartMinute == null || d.lessonEndMinute == null || d.lessonEndMinute > d.lessonStartMinute;
+const lessonTimeMsg = { message: "Dars tugash vaqti boshlanishidan keyin bo'lsin", path: ['lessonEndMinute'] };
 
 export const createGroupSchema = z.object({
   name: z
@@ -27,14 +41,14 @@ export const createGroupSchema = z.object({
     .max(50, 'Guruh nomi 50 ta belgidan oshmasin'),
   teacherId: z.string().uuid('Noto\'g\'ri o\'qituvchi ID').optional().nullable(),
   ...scheduleFields,
-});
+}).refine(lessonTimeOk, lessonTimeMsg);
 
 export const updateGroupSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   teacherId: z.string().uuid().optional().nullable(),
   isActive: z.boolean().optional(),
   ...scheduleFields,
-});
+}).refine(lessonTimeOk, lessonTimeMsg);
 
 export const addStudentSchema = z.object({
   studentId: z.string().uuid('Noto\'g\'ri o\'quvchi ID'),

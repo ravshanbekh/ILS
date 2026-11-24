@@ -1269,6 +1269,21 @@ img.ios-img-in:not([class*="animate-"]) {
   :root[data-theme="light"] .ils-nm-p { background-color: rgb(245 158 11 / 0.16); color: #b45309; }
   :root[data-theme="light"] .ils-nm-num { color: #0369a1; }
   :root[data-theme="light"] .ils-nm-time { color: #92400e; }
+  /* Normativ deadline'lari — holat kataklari (palitra qayta belgilangani uchun aniq ranglar) */
+  .ils-nd-done { background-color: rgb(16 185 129 / 0.2); color: #34d399; }
+  .ils-nd-gdone { background-color: rgb(132 204 22 / 0.16); color: #a3e635; }
+  .ils-nd-late { background-color: rgb(239 68 68 / 0.1); color: #f87171; box-shadow: inset 0 0 0 1px rgb(239 68 68 / 0.45); }
+  .ils-nd-open { background-color: rgb(113 113 122 / 0.14); color: #a1a1aa; }
+  .ils-nd-grace { background-color: rgb(245 158 11 / 0.18); color: #fbbf24; }
+  .ils-nd-missed { background-color: rgb(220 38 38 / 0.85); color: #fff; }
+  .ils-nd-na { color: #52525b; }
+  :root[data-theme="light"] .ils-nd-done { background-color: rgb(16 185 129 / 0.18); color: #047857; }
+  :root[data-theme="light"] .ils-nd-gdone { background-color: rgb(132 204 22 / 0.2); color: #3f6212; }
+  :root[data-theme="light"] .ils-nd-late { background-color: rgb(239 68 68 / 0.08); color: #b91c1c; }
+  :root[data-theme="light"] .ils-nd-open { background-color: rgb(113 113 122 / 0.12); color: #52525b; }
+  :root[data-theme="light"] .ils-nd-grace { background-color: rgb(245 158 11 / 0.2); color: #92400e; }
+  :root[data-theme="light"] .ils-nd-missed { background-color: #dc2626; color: #fff; }
+  :root[data-theme="light"] .ils-nd-na { color: #a1a1aa; }
 }
 @layer utilities {
   /* Inputlar kabi: dekorativ border-zinc-800 emas, aniq ko'rinadigan chegara */

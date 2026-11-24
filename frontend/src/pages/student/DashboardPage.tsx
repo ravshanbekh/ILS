@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
 import CuratorSummaryCard from '@/components/shared/CuratorSummaryCard';
+import StudentDeadlinesCard from '@/components/shared/StudentDeadlinesCard';
 import { statsApi, feedbackApi, coinsApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
 import { uzDayMonth } from '@/utils/uzDate';
@@ -186,6 +187,9 @@ export default function StudentDashboard() {
             />
           </div>
         </section>
+
+        {/* Normativ muddatlari — deadline tizimi yoqilgandagina ko'rinadi (qizillar birinchi ko'rinsin) */}
+        <StudentDeadlinesCard />
 
         {/* ── Coin balansi + Do'kon ───────────────────────────────── */}
         <section

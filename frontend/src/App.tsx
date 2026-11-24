@@ -82,6 +82,8 @@ const TypingGamePage = lazyWithReload(() => import('@/pages/student/game/TypingG
 const TypingGamesAdminPage = lazyWithReload(() => import('@/pages/admin/TypingGamesPage'));
 const TypingContestPage = lazyWithReload(() => import('@/pages/shared/TypingContestPage'));
 const NormativeMatrixPage = lazyWithReload(() => import('@/pages/shared/NormativeMatrixPage'));
+const NormativeDeadlinesPage = lazyWithReload(() => import('@/pages/deadlines/NormativeDeadlinesPage'));
+const NormativeDeadlineGroupPage = lazyWithReload(() => import('@/pages/deadlines/NormativeDeadlineGroupPage'));
 const CuratorStudentsPage = lazyWithReload(() => import('@/pages/curator/CuratorStudentsPage'));
 const CuratorStudentDetailPage = lazyWithReload(() => import('@/pages/curator/CuratorStudentDetailPage'));
 const CuratorSchedulePage = lazyWithReload(() => import('@/pages/curator/CuratorSchedulePage'));
@@ -237,6 +239,8 @@ export default function App() {
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/rankings" element={<AdminRankingsPage />} />
               <Route path="/admin/normative-matrix" element={<NormativeMatrixPage />} />
+              <Route path="/admin/normative-deadlines" element={<NormativeDeadlinesPage />} />
+              <Route path="/admin/normative-deadlines/:groupId" element={<NormativeDeadlineGroupPage />} />
               <Route path="/admin/curators" element={<CuratorStudentsPage />} />
               <Route path="/admin/curators/:id" element={<CuratorStudentDetailPage />} />
               <Route path="/admin/curator-schedule" element={<CuratorSchedulePage />} />
@@ -302,6 +306,8 @@ export default function App() {
               <Route path="/teacher/live-quiz" element={<LiveQuizPage />} />
               <Route path="/teacher/typing-contest" element={<TypingContestPage />} />
               <Route path="/teacher/normative-matrix" element={<NormativeMatrixPage />} />
+              <Route path="/teacher/normative-deadlines" element={<NormativeDeadlinesPage />} />
+              <Route path="/teacher/normative-deadlines/:groupId" element={<NormativeDeadlineGroupPage />} />
               <Route path="/teacher/quiz-tests" element={<QuizTestsPage />} />
               <Route path="/teacher/quiz-tests/:id" element={<QuizTestDetailPage />} />
               {/* Faqat "homework_manage" ruxsati berilgan o'qituvchiga menyuda chiqadi */}
@@ -352,6 +358,8 @@ export default function App() {
               <Route path="/viewer/:role/student/:id" element={<StudentProfilePage />} />
               <Route path="/viewer/:role/rankings" element={<StudentRankingPage />} />
               <Route path="/viewer/:role/normative-matrix" element={<NormativeMatrixPage />} />
+              <Route path="/viewer/:role/normative-deadlines" element={<NormativeDeadlinesPage />} />
+              <Route path="/viewer/:role/normative-deadlines/:groupId" element={<NormativeDeadlineGroupPage />} />
               <Route path="/viewer/:role/curators" element={<CuratorStudentsPage />} />
               <Route path="/viewer/:role/curators/:id" element={<CuratorStudentDetailPage />} />
               <Route path="/viewer/:role/curator-schedule" element={<CuratorSchedulePage />} />

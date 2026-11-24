@@ -6,6 +6,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FolderPlus, Pencil, Trash2, Users, Search, ChevronLeft, ChevronRight, GraduationCap, Archive, RotateCcw } from 'lucide-react';
 import DateInput from '@/components/shared/DateInput';
 
+/** Dars vaqti tanlovi: 07:00 – 21:30, 30 daqiqa qadam */
+const LESSON_TIMES = Array.from({ length: 30 }, (_, i) => `${String(7 + Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`);
+const minuteToHHMM = (m: number | null | undefined): string =>
+  m == null ? '' : `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+const hhmmToMinute = (s: string): number | null => {
+  const m = /^(\d{2}):(\d{2})$/.exec(s || '');
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+};
+
 export default function GroupsPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -35,6 +44,9 @@ export default function GroupsPage() {
     startDate: '',
     durationMonths: '',
     lessonDayType: '',
+    // Dars vaqti "HH:MM" — normativ deadline'i shu soatga qo'yiladi
+    lessonStart: '',
+    lessonEnd: '',
   });
 
   const fetchGroups = useCallback(async () => {
@@ -101,10 +113,12 @@ export default function GroupsPage() {
         startDate: groupToEdit.startDate ? String(groupToEdit.startDate).slice(0, 10) : '',
         durationMonths: groupToEdit.durationMonths ? String(groupToEdit.durationMonths) : '',
         lessonDayType: groupToEdit.lessonDayType || '',
+        lessonStart: minuteToHHMM(groupToEdit.lessonStartMinute),
+        lessonEnd: minuteToHHMM(groupToEdit.lessonEndMinute),
       });
     } else {
       setEditingGroup(null);
-      setFormData({ name: '', teacherId: '', startDate: '', durationMonths: '', lessonDayType: '' });
+      setFormData({ name: '', teacherId: '', startDate: '', durationMonths: '', lessonDayType: '', lessonStart: '', lessonEnd: '' });
     }
     setShowModal(true);
   };
@@ -120,6 +134,14 @@ export default function GroupsPage() {
       payload.startDate = payload.startDate || null;
       payload.lessonDayType = payload.lessonDayType || null;
       payload.durationMonths = payload.durationMonths ? Number(payload.durationMonths) : null;
+      payload.lessonStartMinute = hhmmToMinute(payload.lessonStart);
+      payload.lessonEndMinute = hhmmToMinute(payload.lessonEnd);
+      delete payload.lessonStart;
+      delete payload.lessonEnd;
+      if (payload.lessonStartMinute != null && payload.lessonEndMinute != null && payload.lessonEndMinute <= payload.lessonStartMinute) {
+        alert("Dars tugash vaqti boshlanishidan keyin bo'lsin");
+        return;
+      }
 
       if (editingGroup) {
         await groupsApi.update(editingGroup.id, payload);
@@ -507,9 +529,9 @@ export default function GroupsPage() {
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { v: 'juft', t: 'Juft kunlar' },
-                      { v: 'toq', t: 'Toq kunlar' },
-                      { v: 'har_kuni', t: 'Har kuni' },
+                      { v: 'toq', t: 'Toq kunlar', d: 'Du · Chor · Ju' },
+                      { v: 'juft', t: 'Juft kunlar', d: 'Se · Pay · Sha' },
+                      { v: 'har_kuni', t: 'Har kuni', d: 'Du – Yak' },
                     ].map((o) => (
                       <button
                         key={o.v}
@@ -526,11 +548,36 @@ export default function GroupsPage() {
                             : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
                         }`}
                       >
-                        {o.t}
+                        <span className="block">{o.t}</span>
+                        <span className="block text-[11px] opacity-70">{o.d}</span>
                       </button>
                     ))}
                   </div>
                 </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  {([
+                    ['lessonStart', 'Dars boshlanishi'],
+                    ['lessonEnd', 'Dars tugashi'],
+                  ] as const).map(([key, label]) => (
+                    <div key={key}>
+                      <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 block">{label}</label>
+                      <select
+                        value={formData[key]}
+                        onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-white text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                      >
+                        <option value="">—</option>
+                        {LESSON_TIMES.map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-zinc-500 mt-2">
+                  Normativ deadline'i haftaning oxirgi dars kuni, dars boshlanish soatigacha qo'yiladi
+                </p>
 
                 {(!formData.startDate || !formData.durationMonths || !formData.lessonDayType) && (
                   <p className="text-[11px] text-amber-500/80 mt-3">

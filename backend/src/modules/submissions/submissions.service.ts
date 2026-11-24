@@ -201,6 +201,8 @@ class SubmissionsService {
           comment: null,
           canResubmit: false,
           submittedAt: new Date(),
+          // Deadline birinchi topshirish bo'yicha: eski yozuvda bo'sh bo'lsa — asl vaqtini saqlab qo'yamiz
+          ...(existing.firstSubmittedAt ? {} : { firstSubmittedAt: existing.submittedAt }),
           checkedById: null,
           checkedAt: null,
         },
@@ -237,6 +239,7 @@ class SubmissionsService {
         normativeId: data.normativeId,
         groupId: groupId,
         youtubeUrl: data.youtubeUrl,
+        firstSubmittedAt: new Date(),
       },
       include: {
         normative: {

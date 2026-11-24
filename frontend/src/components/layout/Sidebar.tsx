@@ -79,6 +79,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   const canExams = can('exam_create') || can('exam_edit') || can('exam_delete');
   const canQuizTests = can('quiz_tests');
   const canNormativeMatrix = can('normative_matrix_all');
+  const canNormativeDeadlines = can('normative_deadlines_all') || can('normative_deadlines_manage');
   const canCuratorOversight = can('curator_oversight');
 
   // O'quvchi: kuratori bo'lsa "Kuratorim" bandi chiqadi (bir marta so'raladi)
@@ -174,6 +175,10 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     // Normativ natijalari paneli — barcha guruhlar (qo'lda beriladigan ruxsat)
     ...(canNormativeMatrix
       ? [{ to: `/viewer/${user!.role}/normative-matrix`, icon: Grid3x3, label: 'Normativ natijalari' }]
+      : []),
+    // Normativ deadline'lari — haftalik muddatlar (qo'lda beriladigan ruxsat)
+    ...(canNormativeDeadlines
+      ? [{ to: `/viewer/${user!.role}/normative-deadlines`, icon: CalendarClock, label: "Normativ deadline'lari" }]
       : []),
     // Nazorat — qo'lda beriladigan ruxsat
     ...(canSupportOversight

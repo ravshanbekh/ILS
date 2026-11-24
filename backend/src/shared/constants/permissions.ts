@@ -156,6 +156,21 @@ export const PERMISSIONS = {
     category: 'Hisobot',
     legacyRoles: ['administrator', 'filial_rahbari', 'nazoratchi', 'hr_rahbari'],
   },
+  normative_deadlines_all: {
+    label: "Normativ deadline'lari — barcha guruhlar",
+    description:
+      "Haftalik normativ muddatlari: bu hafta nechta topshirilishi kerak, nechtasi topshirildi, kim qo'shimcha muddatda va kim qizilda — barcha guruhlar bo'yicha. Ruxsatsiz o'qituvchi faqat o'z guruhlarini ko'radi",
+    category: 'Hisobot',
+    legacyRoles: ['administrator', 'filial_rahbari', 'nazoratchi', 'hr_rahbari'],
+  },
+  normative_deadlines_manage: {
+    label: "Normativ deadline'larini boshqarish",
+    description:
+      "Deadline tizimini ishga tushirish (start) va to'xtatish, haftalik reja: normativni boshqa haftaga ko'chirish yoki rejadan chiqarish, guruh rejasini qayta qurish",
+    category: 'Hisobot',
+    // Ataylab hech kimga avtomatik berilmaydi — admin qo'lda beradi
+    legacyRoles: [],
+  },
   curator_oversight: {
     label: 'Kuratorlar nazorati — barcha kuratorlar',
     description:
