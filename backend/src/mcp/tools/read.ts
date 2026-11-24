@@ -26,7 +26,7 @@ const offsetArg = z.number().int().min(0).default(0).describe('Sahifalash uchun 
 const ROLES = [
   'admin', 'teacher', 'student', 'filial_rahbari', 'assistant', 'moliya_rahbari', 'kassir',
   'administrator', 'nazoratchi', 'hr_rahbari', 'sotuv_operatori', 'farrosh',
-  'robototexnika_ustoz', 'call_operatori',
+  'robototexnika_ustoz', 'call_operatori', 'kurator',
 ] as const;
 
 /** Guruhdagi faol o'quvchilarning guruh normativlari bo'yicha natijasi */

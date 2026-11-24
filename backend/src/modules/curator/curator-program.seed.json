@@ -1,0 +1,612 @@
+[
+ {
+  "n": 1,
+  "week": 1,
+  "weekTitle": "AI qanday o'ylaydi",
+  "kind": "A",
+  "title": "AI chizmangni taniydimi?",
+  "goal": "Neyron tarmoq misollardan qanday o'rganishini his qilish.",
+  "fact": "Quick, Draw! ma'lumotlar to'plamida 345 toifada 50 mln dan ortiq chizma bor. AI aynan shu chizmalardan o'rgangan.",
+  "steps": [
+   "3–7 daq: Har bola bitta raund o'ynaydi (6 ta chizma).",
+   "7–10 daq: Natija sahifasida har chizmani bosib, AI nima deb o'ylaganini va boshqalar shu narsani qanday chizganini ko'rish.",
+   "10–14 daq: Musobaqa: kimning chizmalarini AI ko'proq taniydi? AI adashgan chizmani birga tahlil qilish: nega adashdi?",
+   "14–16 daq: Xulosa: AI = ko'p misol + naqsh. Boshqalar boshqacha chizgani uchun AI adashadi."
+  ],
+  "wow": "AI chizmani siz tugatmasdan taniydi.",
+  "artifact": "AI adashgan chizma skrini va \"nega adashdi\" degan 1 gap.",
+  "homework": "Uyda ota-ona yoki aka-uka bilan bitta raund o'ynash va natija skrinini yuborish.",
+  "tools": [
+   {
+    "name": "Quick, Draw!",
+    "url": "https://quickdraw.withgoogle.com"
+   }
+  ],
+  "fallback": "AutoDraw (https://www.autodraw.com) — AI chizmani taxmin qilib, chiroyli ikonaga almashtiradi."
+ },
+ {
+  "n": 2,
+  "week": 1,
+  "weekTitle": "AI qanday o'ylaydi",
+  "kind": "A",
+  "title": "Ovozni taniydigan AI",
+  "goal": "O'z ovoz modelini o'rgatish: sinf, namuna va o'qitish tushunchalari.",
+  "fact": "Teachable Machine'ning ovoz loyihasida \"Background Noise\" sinfi uchun kamida 20 ta, boshqa sinflar uchun kamida 8 ta namuna kerak.",
+  "steps": [
+   "3–5 daq: \"Audio Project\"ni ochish. Sinflar: Fon shovqini, Qarsak, Hushtak (yoki \"Salom\" so'zi).",
+   "5–9 daq: Namunalarni yozish: avval fon shovqini, keyin har sinf.",
+   "9–11 daq: \"Train Model\".",
+   "11–14 daq: Sinash: model sherikning ovozini ham taniydimi? Qachon adashadi?",
+   "14–16 daq: Xulosa: namuna qancha ko'p va xilma-xil bo'lsa, model shuncha aniq."
+  ],
+  "wow": "Model qarsakni real vaqtda taniydi.",
+  "artifact": "Model ishlayotganining videosi.",
+  "homework": "Modelga qo'shiladigan bitta yangi ovoz g'oyasini va u kimga foyda berishini yozish (masalan, eshik taqillashi — eshitishi past odam uchun ogohlantirish).",
+  "tools": [
+   {
+    "name": "Teachable Machine — Audio Project",
+    "url": "https://teachablemachine.withgoogle.com"
+   }
+  ],
+  "fallback": "Mikrofon ishlamasa — \"Image Project\" bilan predmetlarni tanish."
+ },
+ {
+  "n": 3,
+  "week": 1,
+  "weekTitle": "AI qanday o'ylaydi",
+  "kind": "B",
+  "title": "AI qanday aldanadi",
+  "goal": "AI faqat ko'rgan ma'lumotini biladi: yomon ma'lumot — yomon AI.",
+  "fact": "Tadqiqotlardan birida bo'ri va itni ajratadigan model aslida qorni ko'rib qaror qilgan: bo'rilar rasmlari ko'pincha qorli fonda bo'lgan.",
+  "steps": [
+   "3–6 daq: \"Qalam\" faqat oq fonda, \"telefon\" faqat rangli fonda o'rgatiladi.",
+   "6–8 daq: \"Train Model\".",
+   "8–11 daq: Sinov: qalamni rangli fonda ko'rsatish. AI \"telefon\" deydi — nega?",
+   "11–14 daq: Tuzatish: ikkala predmetni ikkala fonda ham o'rgatib, qayta sinash.",
+   "14–16 daq: Xulosa: AI ma'lumotdagi tasodifiy naqshni \"qoida\" deb o'rganib olishi mumkin."
+  ],
+  "wow": "AI predmetga emas, fonga qarab qaror qilgani.",
+  "artifact": "\"Yomon dataset\" va \"yaxshi dataset\" natijalarining ikkita skrini.",
+  "homework": "Hayotdan bitta misol: AI qayerda shunday adashishi mumkin va bu kimga zarar qiladi.",
+  "tools": [
+   {
+    "name": "Teachable Machine — Image Project",
+    "url": "https://teachablemachine.withgoogle.com"
+   }
+  ],
+  "fallback": "Kamera bo'lmasa — mentor ekranida namoyish, bolalar natijani oldindan bashorat qiladi."
+ },
+ {
+  "n": 4,
+  "week": 2,
+  "weekTitle": "Kiberxavfsizlik detektivi",
+  "kind": "B",
+  "title": "Parol necha soniyada buziladi",
+  "goal": "Kuchli parolning asosi uzunlik ekanini tushunish va parol-ibora usulini o'rganish.",
+  "fact": "Parolning kuchini birinchi navbatda uzunligi belgilaydi: har bir qo'shimcha belgi variantlar sonini bir necha baravar oshiradi.",
+  "steps": [
+   "3–6 daq: To'qima parollarni sinash: \"ali2010\", \"Ali2010!\", \"qizil-olma-tog'-velosiped\".",
+   "6–9 daq: Jadval: parol uzunligi va buzilish vaqti.",
+   "9–13 daq: Har bola o'z parol-ibora formulasini tuzadi (4 ta tasodifiy so'z + belgi). Haqiqiy parol yozilmaydi.",
+   "13–16 daq: Ikki bosqichli tekshiruv (2FA) nima va nega kerak; SMS kodni hech kimga aytmaslik qoidasi."
+  ],
+  "wow": "Kichik o'zgarish buzilish vaqtini soniyalardan asrlarga uzaytiradi.",
+  "artifact": "Parol-ibora formulasi (parolning o'zi emas).",
+  "homework": "Formulani ota-onaga tushuntirish va ular bilan birga akkauntlarida 2FA yoqilganini tekshirish.",
+  "tools": [
+   {
+    "name": "Bitwarden Password Strength Tester",
+    "url": "https://bitwarden.com/password-strength/"
+   }
+  ],
+  "fallback": "Internet bo'lmasa — qog'ozda hisoblash: 4 xonali PIN = 10 000 variant; 4 ta so'zdan iborat ibora esa milliardlab variant."
+ },
+ {
+  "n": 5,
+  "week": 2,
+  "weekTitle": "Kiberxavfsizlik detektivi",
+  "kind": "A",
+  "title": "Fishing xatni top",
+  "goal": "Firibgar xat va havolalarni ajratish ko'nikmasi.",
+  "fact": "Havolaning haqiqiy egasi domenning oxirgi qismida bo'ladi: \"mail-google.security-check.example.com\" — Google emas, example.com.",
+  "steps": [
+   "3–4 daq: Qoida: havola ustida sichqonchani ushlab turib, haqiqiy manzilni ko'rish.",
+   "4–11 daq: Har bola quizni o'zi ishlaydi (8 ta xat).",
+   "11–14 daq: Eng ko'p adashtirgan xatni birga tahlil qilish.",
+   "14–16 daq: Mahalliy misollar: \"yutuq\" xabarlari, soxta to'lov sahifalari, \"kodni ayting\" qo'ng'iroqlari."
+  ],
+  "wow": "Kattalar ham ko'pincha 8/8 ola olmaydi.",
+  "artifact": "Quiz natijasi (X/8).",
+  "homework": "Ota-ona quizni ishlaydi, bola belgilarni tushuntiradi; ota-onaning bali yuboriladi.",
+  "tools": [
+   {
+    "name": "Google Jigsaw Phishing Quiz",
+    "url": "https://phishingquiz.withgoogle.com"
+   }
+  ],
+  "fallback": "Sayt ochilmasa — mentor tayyorlagan firibgarlik xabarlari skrinlari bilan qog'ozda."
+ },
+ {
+  "n": 6,
+  "week": 2,
+  "weekTitle": "Kiberxavfsizlik detektivi",
+  "kind": "A",
+  "title": "AI'dan sirni sug'urib ol",
+  "goal": "Prompt injection nima ekanini o'yin orqali tushunish va AI xavfsizligi kasbi bilan tanishish.",
+  "fact": "Prompt injection — AI'ga berilgan yashirin ko'rsatmani boshqa so'zlar bilan aylanib o'tish. Bu AI xavfsizligining asosiy muammolaridan biri.",
+  "steps": [
+   "3–5 daq: 1-darajani birga o'tish.",
+   "5–12 daq: 2–3-darajalar juftlikda.",
+   "12–14 daq: Qaysi usullar ishladi: to'g'ridan-to'g'ri so'rash, rol o'ynash, harflab so'rash, tarjima qildirish.",
+   "14–16 daq: Himoya tomoni: dasturchi buni qanday to'xtatadi. Odob qoidasi."
+  ],
+  "wow": "Bir necha so'z bilan AI himoyasi aylanib o'tiladi.",
+  "artifact": "Erishilgan daraja skrini.",
+  "homework": "Uyda keyingi darajaga urinish va qaysi usul ishlaganini 1 gapda yozish.",
+  "tools": [
+   {
+    "name": "Gandalf (Lakera)",
+    "url": "https://gandalf.lakera.ai"
+   }
+  ],
+  "fallback": "Sayt ochilmasa — mentor oldindan yozib olgan o'yin videosini ko'rib, usullarni muhokama qilish."
+ },
+ {
+  "n": 7,
+  "week": 3,
+  "weekTitle": "Maxfiy xabarlar",
+  "kind": "A",
+  "title": "Sezar shifri",
+  "goal": "Shifrlash, kalit va kalitni tanlab buzish (brute force) tushunchalari.",
+  "fact": "Yuliy Sezar harflarni alifboda 3 taga surib yozgan. 26 harfli alifboda foydali surish atigi 25 ta, shuning uchun kompyuter bu shifrni bir zumda buzadi.",
+  "steps": [
+   "3–6 daq: Shifr diskini sozlash: kalit = surish soni.",
+   "6–10 daq: Sherikka qisqa xabar shifrlash.",
+   "10–13 daq: Kalitsiz buzish musobaqasi: surishlarni birma-bir sinab ko'rish.",
+   "13–16 daq: cryptii'da tekshirish. Xulosa: zamonaviy shifrlarning kaliti juda uzun, tanlab buzish yillab davom etadi."
+  ],
+  "wow": "Qo'lda uzoq buziladigan shifrni kompyuter bir zumda buzadi.",
+  "artifact": "Shifrlangan xabar rasmi.",
+  "homework": "Ota-onaga shifrlangan xabar va kalitni berish; ota-ona ochadi. Javobini ham shifrlab yozsa — bonus.",
+  "tools": [
+   {
+    "name": "cryptii — Caesar cipher",
+    "url": "https://cryptii.com/pipes/caesar-cipher"
+   }
+  ],
+  "fallback": "Internet bo'lmasa — faqat qog'oz diskda."
+ },
+ {
+  "n": 8,
+  "week": 3,
+  "weekTitle": "Maxfiy xabarlar",
+  "kind": "A",
+  "title": "Rasm ichidagi sir",
+  "goal": "Steganografiya — ma'lumotni ko'rinmaydigan qilib yashirish.",
+  "fact": "Rasm millionlab piksellardan iborat. Har piksel rangidagi juda kichik o'zgarishni ko'z sezmaydi — xabar aynan shu o'zgarishlarga yashiriladi.",
+  "steps": [
+   "3–5 daq: Mentor tayyorlagan rasmdan xabarni ochish (Decode).",
+   "5–10 daq: Har bola o'z xabarini rasmga yashiradi (Encode) va PNG faylni yuklab oladi.",
+   "10–13 daq: Juftlar fayl almashib, bir-birining xabarini ochadi.",
+   "13–16 daq: Nega rasm siqilsa xabar yo'qolishi mumkin: siqish piksellarni o'zgartiradi, shuning uchun \"fayl\" sifatida yuboriladi."
+  ],
+  "wow": "Ikki rasm bir xil ko'rinadi, lekin biri sir saqlaydi.",
+  "artifact": "Maxfiy xabarli rasm.",
+  "homework": "Mini-guruh sherigiga rasmni fayl sifatida yuborish; sherik xabarni ochib, keyingi safar aytadi.",
+  "tools": [
+   {
+    "name": "Steganography Online",
+    "url": "https://stylesuxx.github.io/steganography/"
+   }
+  ],
+  "fallback": "Vosita ochilmasa — mentor tayyorlagan rasmlar va oldindan yozilgan namoyish videosi."
+ },
+ {
+  "n": 9,
+  "week": 3,
+  "weekTitle": "Maxfiy xabarlar",
+  "kind": "B",
+  "title": "QR kod sirlari",
+  "goal": "QR kod tuzilishi, xatoni tuzatish kodi va QR orqali firibgarlik xavfi.",
+  "fact": "QR kodda xatoni tuzatish kodi bor: eng yuqori (H) darajada kodning taxminan 30% shikastlansa ham u o'qiladi.",
+  "steps": [
+   "3–6 daq: O'z QR vizitkasini yasash (ism va to'garak nomi).",
+   "6–9 daq: Burchaklardagi 3 ta katta kvadrat nima uchun kerak: joylashuv belgilari.",
+   "9–12 daq: Tajriba: kodning bir qismini qog'oz bilan yopish. Qancha yopilganda o'qilmay qoladi? Burchak kvadrati yopilsa-chi?",
+   "12–16 daq: Firibgarlikdan himoya: kamera ko'rsatgan havolani ochishdan oldin o'qish."
+  ],
+  "wow": "\"Yaralangan\" QR kod baribir o'qiladi.",
+  "artifact": "O'z QR vizitkasi.",
+  "homework": "Atrofdagi 3 ta QR kodni ochmasdan, kamera ko'rsatgan havolaga qarab qayerga olib borishini yozish.",
+  "tools": [
+   {
+    "name": "Istalgan QR generator (xatoni tuzatish darajasini tanlash imkoni bo'lsa yaxshi)",
+    "url": "https://www.qrcode-monkey.com"
+   }
+  ],
+  "fallback": "Generator ochilmasa — mentor oldindan chop etgan QR kodlar bilan tajriba."
+ },
+ {
+  "n": 10,
+  "week": 4,
+  "weekTitle": "Internet ichidan",
+  "kind": "A",
+  "title": "Internet dengiz tubida",
+  "goal": "Internet jismoniy infratuzilma ekanini ko'rish.",
+  "fact": "Qit'alararo internet trafigining asosiy qismi okean tubidagi optik kabellar orqali o'tadi (manbalarda ko'pincha 95–99% deyiladi). Sun'iy yo'ldoshlarning ulushi kichik.",
+  "steps": [
+   "3–6 daq: Xaritani o'rganish: eng uzun kabellar va ularning egalari.",
+   "6–10 daq: Savol: O'zbekistonning dengizga chiqishi yo'q. Eng yaqin kabel qaysi qirg'oqqa chiqadi? Bizgacha quruqlikdagi optik kabellar orqali keladi (bu xaritada ko'rsatilmaydi).",
+   "10–14 daq: Juftlikda \"Guliston → AQShdagi sayt\" yo'lini taxminiy chizish.",
+   "14–16 daq: Xulosa: internet — simlar, kabellar va binolardan iborat jismoniy narsa."
+  ],
+  "wow": "Xabaringiz okean tubidan o'tadi.",
+  "artifact": "Taxminiy yo'l sxemasi (qog'oz yoki rasm).",
+  "homework": "Ota-onaga bitta fakt aytib berish va ularning munosabatini yozish.",
+  "tools": [
+   {
+    "name": "Submarine Cable Map (TeleGeography)",
+    "url": "https://www.submarinecablemap.com"
+   }
+  ],
+  "fallback": "Sayt ochilmasa — mentor oldindan olgan skrinlar."
+ },
+ {
+  "n": 11,
+  "week": 4,
+  "weekTitle": "Internet ichidan",
+  "kind": "A",
+  "title": "Xabarning sayohati",
+  "goal": "ping va tracert bilan tarmoq yo'lini ko'rish; terminal bilan birinchi tanishuv.",
+  "fact": "ping so'rovning borib-kelish vaqtini millisekundlarda o'lchaydi. tracert yo'ldagi har bir routerni (\"hop\") ko'rsatadi, standart holatda 30 tagacha.",
+  "steps": [
+   "3–5 daq: Win+R → cmd.",
+   "5–8 daq: ping google.com va ping kun.uz: qaysi biri tezroq va nega?",
+   "8–12 daq: tracert google.com: hop'larni sanash; * * * nima degani.",
+   "12–16 daq: Jadval: sayt, ping (ms), hop soni. Xulosa: uzoq sayt — ko'proq bekat."
+  ],
+  "wow": "Bitta so'rov o'nlab routerlardan o'tishi ekranda ko'rinadi.",
+  "artifact": "tracert skrini va izoh.",
+  "homework": "Uyda kompyuter bo'lsa — 2 ta saytning ping vaqtini solishtirish; bo'lmasa — telefonda internet tezligi testidagi ping qiymatini yozish.",
+  "tools": [
+   {
+    "name": "Windows buyruqlar qatori (cmd): ping va tracert",
+    "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/tracert"
+   }
+  ],
+  "fallback": "Tarmoq javob bermasa — mentor tayyorlagan skrin va izoh."
+ },
+ {
+  "n": 12,
+  "week": 4,
+  "weekTitle": "Internet ichidan",
+  "kind": "B",
+  "title": "Brauzer siz haqingizda nima biladi",
+  "goal": "Raqamli \"barmoq izi\" va kuzatuvdan himoyalanish.",
+  "fact": "Brauzerning \"barmoq izi\" ekran o'lchami, shriftlar, til, vaqt mintaqasi kabi o'nlab belgilardan yig'iladi. Cookie bo'lmasa ham qurilmani ajratish mumkin.",
+  "steps": [
+   "3–7 daq: Testni o'tkazish.",
+   "7–11 daq: Natijani o'qish: qaysi belgilar eng noyob?",
+   "11–14 daq: Inkognito rejimida takrorlash: natija o'zgardimi?",
+   "14–16 daq: 3 ta himoya qoidasi: cookie sozlamalari, keraksiz kengaytmalarni o'chirish, kuzatuvdan himoyalangan brauzer."
+  ],
+  "wow": "Brauzeringiz millionlab boshqalar orasida noyob bo'lib chiqadi.",
+  "artifact": "Natija skrini va 3 ta qoida.",
+  "homework": "Ota-onaning brauzerini birga tekshirish.",
+  "tools": [
+   {
+    "name": "Cover Your Tracks (EFF)",
+    "url": "https://coveryourtracks.eff.org"
+   }
+  ],
+  "fallback": "Sayt ochilmasa — Am I Unique (https://amiunique.org)."
+ },
+ {
+  "n": 13,
+  "week": 5,
+  "weekTitle": "Raqamli detektiv",
+  "kind": "B",
+  "title": "Google sehrgari",
+  "goal": "Qidiruv operatorlari bilan tez va aniq izlash.",
+  "fact": "Qidiruv operatorlari: \"...\" — aniq ibora; site: — faqat bitta sayt; filetype:pdf — fayl turi; - — so'zni chiqarish; OR — yoki.",
+  "steps": [
+   "3–6 daq: Operatorlarni misollarda ko'rsatish: python snake -programming (bitta so'z — ikki ma'no).",
+   "6–13 daq: Musobaqa: 5 ta topshiriq (masalan, site:gov.uz \"IT Park\" yoki algoritm filetype:pdf).",
+   "13–16 daq: Har bola o'z shpargalkasini yozadi."
+  ],
+  "wow": "Kerakli PDF 10 soniyada topiladi.",
+  "artifact": "Operatorlar shpargalkasi.",
+  "homework": "Mentor bergan 3 ta topshiriqni operatorlar bilan topish va so'rov matnini yozish.",
+  "tools": [
+   {
+    "name": "Google qidiruvi",
+    "url": "https://www.google.com"
+   }
+  ],
+  "fallback": "Musobaqa juftlikda, bitta noutbukda."
+ },
+ {
+  "n": 14,
+  "week": 5,
+  "weekTitle": "Raqamli detektiv",
+  "kind": "A",
+  "title": "Bu rasm rostmi?",
+  "goal": "Teskari qidiruv bilan rasmning asl manbasini topish va AI yasagan rasm belgilarini bilish.",
+  "fact": "Teskari qidiruv rasmning internetdagi oldingi nusxalarini topadi. Eng eski nusxa ko'pincha asl manbaga olib boradi.",
+  "steps": [
+   "3–5 daq: Bashorat: qaysi rasm soxta?",
+   "5–10 daq: Har rasmni Google Lens'da tekshirish; TinEye'da eng eski nusxa bo'yicha saralash.",
+   "10–13 daq: AI rasm belgilari: barmoqlar, rasmdagi matn, soyalar, juda \"silliq\" teri. Bu belgilar har doim ham ishlamaydi.",
+   "13–16 daq: Qoida: tarqatishdan oldin kamida 2 ta manba."
+  ],
+  "wow": "Viral rasmning asl manbasi va sanasi topiladi.",
+  "artifact": "Fosh qilingan rasm va dalil skrini.",
+  "homework": "Ota-ona ruxsati bilan oila chatidagi bitta shubhali rasm yoki xabarni tekshirish va natijani yozish.",
+  "tools": [
+   {
+    "name": "Google Lens",
+    "url": "https://lens.google.com"
+   },
+   {
+    "name": "TinEye",
+    "url": "https://tineye.com"
+   }
+  ],
+  "fallback": "Bitta vosita ishlamasa — ikkinchisi; ikkalasi ham bo'lmasa — mentor tayyorlagan dalil skrinlari."
+ },
+ {
+  "n": 15,
+  "week": 5,
+  "weekTitle": "Raqamli detektiv",
+  "kind": "A",
+  "title": "Rasm sizni sotadi",
+  "goal": "EXIF metadata nima ekanini bilish va shaxsiy ma'lumotni himoyalash.",
+  "fact": "EXIF — rasm fayli ichida saqlanadigan ma'lumot: sana, kamera modeli, sozlamalar va ba'zan GPS koordinatalari. Messenjerlar rasmni \"rasm\" sifatida yuborganda odatda uni o'chiradi, \"fayl\" sifatida yuborganda saqlanib qolishi mumkin.",
+  "steps": [
+   "3–7 daq: Xususiyatlar → Tafsilotlar: sana, telefon modeli, GPS.",
+   "7–10 daq: Koordinatalarni Google Maps'ga kiritish — markaz binosi chiqadi.",
+   "10–13 daq: Metadata'ni o'chirish: \"Xususiyatlar va shaxsiy ma'lumotlarni o'chirish\" (Remove Properties and Personal Information).",
+   "13–16 daq: \"Yuborishdan oldin\" checklisti."
+  ],
+  "wow": "Oddiy rasmdan joy, sana va telefon modeli chiqadi.",
+  "artifact": "\"Yuborishdan oldin\" checklisti.",
+  "homework": "Ota-ona bilan telefondagi kameraning \"joylashuvni saqlash\" sozlamasini ko'rish; oila o'zi qaror qiladi.",
+  "tools": [
+   {
+    "name": "Windows: fayl → Xususiyatlar (Properties) → Tafsilotlar (Details)",
+    "url": null
+   }
+  ],
+  "fallback": "Noutbuk bo'lmasa — mentor ekranida namoyish."
+ },
+ {
+  "n": 16,
+  "week": 6,
+  "weekTitle": "Ovoz texnologiyalari",
+  "kind": "A",
+  "title": "Ovozni ko'r",
+  "goal": "Ovoz — to'lqin: spektrogrammani o'qish.",
+  "fact": "Spektrogramma vaqt bo'yicha qaysi chastotalar (past va baland tovushlar) qanchalik kuchli ekanini ko'rsatadi. Har ovozning o'z \"barmoq izi\" bor; Shazam kabi ilovalar shu izlarni solishtiradi.",
+  "steps": [
+   "3–6 daq: O'z ismini aytish, hushtak, \"sss\" va \"shhh\" — qanday ko'rinadi?",
+   "6–10 daq: Topishmoq: biri ovoz chiqaradi, ikkinchisi faqat ekranga qarab topadi.",
+   "10–14 daq: Tayyor namunalar: turli cholg'ular va qush ovozi.",
+   "14–16 daq: Shazam g'oyasi: ovozning \"barmoq izi\"."
+  ],
+  "wow": "Ovoz ekranda rangli rasmga aylanadi.",
+  "artifact": "O'z ovozining spektrogrammasi skrini.",
+  "homework": "Uydagi 3 ta ovozdan (choynak, mushuk, o'z ovozi) qaysi biri eng \"baland chastotali\" bo'lishini bashorat qilish; keyingi safar tekshiramiz.",
+  "tools": [
+   {
+    "name": "Chrome Music Lab — Spectrogram",
+    "url": "https://musiclab.chromeexperiments.com/Spectrogram"
+   }
+  ],
+  "fallback": "Mikrofon ishlamasa — tayyor namunalar bilan."
+ },
+ {
+  "n": 17,
+  "week": 6,
+  "weekTitle": "Ovoz texnologiyalari",
+  "kind": "B",
+  "title": "Kuy = naqsh",
+  "goal": "Musiqa — vaqt va balandlik panjarasidagi naqsh ekanini ko'rish.",
+  "fact": "Kompyuterda musiqa vaqt va balandlik panjarasidagi nuqtalar sifatida saqlanadi. Takrorlanuvchi naqsh — kuyning asosi.",
+  "steps": [
+   "3–5 daq: Interfeys: panjara, ritm qatori, tempo.",
+   "5–11 daq: 8 taktli kuy va ritm yasash.",
+   "11–14 daq: Tempo va cholg'uni o'zgartirish.",
+   "14–16 daq: Saqlash va havolani olish."
+  ],
+  "wow": "10 daqiqada o'z kuyi.",
+  "artifact": "Kuy havolasi.",
+  "homework": "Kuyni ota-onaga yuborish; ular kuyga nom qo'yadi.",
+  "tools": [
+   {
+    "name": "Chrome Music Lab — Song Maker",
+    "url": "https://musiclab.chromeexperiments.com/Song-Maker"
+   }
+  ],
+  "fallback": "Quloqchin bo'lmasa — navbat bilan, past ovozda."
+ },
+ {
+  "n": 18,
+  "week": 6,
+  "weekTitle": "Ovoz texnologiyalari",
+  "kind": "A",
+  "title": "Gapirgan matn",
+  "goal": "Nutqni matnga aylantirish va AI xatolarini o'lchash.",
+  "fact": "Nutqni matnga aylantirish tizimlari ovozni kichik bo'laklarga bo'lib, eng ehtimolli so'zlarni tanlaydi. Ma'lumot kam bo'lgan tillarda xato ko'proq bo'lishi mumkin.",
+  "steps": [
+   "3–6 daq: Har bola bir xil 3 ta gapni aytadi.",
+   "6–10 daq: Xatolarni sanash: aniqlik = to'g'ri so'zlar / jami so'zlar.",
+   "10–13 daq: Tajriba: tez gapirish, shovqin, sheva — qaysi biri ko'proq xato beradi?",
+   "13–16 daq: Natijalar jadvali va xulosa."
+  ],
+  "wow": "Aytilgan gap ekranda o'zi yoziladi — va AI'ning xatolari kulgili bo'lishi mumkin.",
+  "artifact": "Aniqlik foizi jadvali.",
+  "homework": "1 daqiqalik \"bugun nima o'rgandim\" ovozli konspektini matnga aylantirib, xatolarini tuzatib yuborish.",
+  "tools": [
+   {
+    "name": "Google Docs → Asboblar → Ovozli yozish yoki telefon klaviaturasi (Gboard) ovozli yozuvi",
+    "url": "https://docs.google.com"
+   }
+  ],
+  "fallback": "Bitta vosita ishlamasa — ikkinchisi (Docs yoki Gboard)."
+ },
+ {
+  "n": 19,
+  "week": 7,
+  "weekTitle": "3D va o'yin",
+  "kind": "A",
+  "title": "10 daqiqada 3D",
+  "goal": "3D model nima ekanini bilish va birinchi modelni yasash.",
+  "fact": "3D model minglab uchburchaklardan (poligonlardan) iborat to'r. Poligon qancha ko'p bo'lsa, shakl shuncha silliq, lekin fayl og'irroq.",
+  "steps": [
+   "3–5 daq: Boshqaruv: aylantirish, yaqinlashtirish, cho'tka turlari.",
+   "5–12 daq: Shardan qahramon boshi: ko'z, burun, quloq.",
+   "12–14 daq: Sim to'r (wireframe) ko'rinishini yoqib, poligonlarni ko'rish.",
+   "14–16 daq: Skrin olish yoki modelni eksport qilish."
+  ],
+  "wow": "Shar bir necha daqiqada qahramonga aylanadi.",
+  "artifact": "3D model skrini.",
+  "homework": "Model qaysi o'yinda ishlatilishi mumkinligini yozish va qahramonga nom bilan 2 gaplik tarix o'ylab topish.",
+  "tools": [
+   {
+    "name": "SculptGL (akkauntsiz)",
+    "url": "https://stephaneginier.com/sculptgl"
+   }
+  ],
+  "fallback": "Sayt ochilmasa — oflayn variant: plastilin bilan poligon g'oyasini ko'rsatish."
+ },
+ {
+  "n": 20,
+  "week": 7,
+  "weekTitle": "3D va o'yin",
+  "kind": "A",
+  "title": "AI bilan 5 daqiqada o'yin",
+  "goal": "So'rov orqali dastur yasash (vibe coding) va nega baribir dasturlashni bilish kerakligini tushunish.",
+  "fact": "AI kodni so'rovga qarab yozadi, lekin xatoni topish va nimani so'rashni bilish uchun dasturlashni tushunish kerak. Foundation'dagi C++ va Python aynan shuni beradi.",
+  "steps": [
+   "3–5 daq: G'oya: ushlab olish, qochish yoki savol-javob o'yini.",
+   "5–8 daq: So'rov: \"Brauzerda ishlaydigan oddiy o'yin yasab ber: [g'oya]. Boshqaruv — strelkalar. Ball hisobi va 'Qayta boshlash' tugmasi bo'lsin. Barcha matnlar o'zbek tilida. Bitta HTML faylda.\"",
+   "8–12 daq: O'ynab ko'rish va 2 ta o'zgartirish so'rash (rang, tezlik).",
+   "12–15 daq: Xato qidirish: AI nimani noto'g'ri qildi?",
+   "15–16 daq: O'yinni saqlash."
+  ],
+  "wow": "So'z bilan aytilgan g'oya o'ynaladigan o'yinga aylanadi.",
+  "artifact": "O'yin videosi yoki havolasi.",
+  "homework": "O'yinga bitta yangi qoida g'oyasi va uni AI'dan qanday so'rash kerakligini (so'rov matnini) yozish.",
+  "tools": [
+   {
+    "name": "AI chat — Claude, ChatGPT yoki Gemini (Canvas/Artifacts, mentor akkaunti)",
+    "url": "https://claude.ai"
+   }
+  ],
+  "fallback": "Bitta AI xizmati ishlamasa — boshqasi."
+ },
+ {
+  "n": 21,
+  "week": 7,
+  "weekTitle": "3D va o'yin",
+  "kind": "B",
+  "title": "O'yin dizayneri",
+  "goal": "O'yinni qiziqarli qiladigan qoidalar: maqsad, qiyinlik va javob.",
+  "fact": "Yaxshi o'yinning asosi: aniq maqsad, qiyinlikning asta-sekin oshishi va o'yinchining har harakatiga tezkor javob.",
+  "steps": [
+   "3–6 daq: O'tgan o'yinni o'ynab ko'rish: nima zerikarli?",
+   "6–10 daq: Qog'ozda yangi daraja yoki qoida: qiyinlik qanday oshadi?",
+   "10–14 daq: AI'dan o'zgartirish so'rash va sinash.",
+   "14–16 daq: Sherik o'ynab ko'radi va 1–5 ball beradi."
+  ],
+  "wow": "O'yin bolaning o'z qoidasi bilan ishlay boshlaydi.",
+  "artifact": "Yangilangan o'yin.",
+  "homework": "Oila a'zosi o'yinni o'ynaydi; uning fikrini 1 gapda yozish.",
+  "tools": [
+   {
+    "name": "20-mashg'ulotdagi o'yin va AI chat (mentor akkaunti)",
+    "url": "https://claude.ai"
+   }
+  ],
+  "fallback": "AI ishlamasa — qog'ozda o'yin darajasini loyihalash."
+ },
+ {
+  "n": 22,
+  "week": 8,
+  "weekTitle": "Kelajak va bitiruv",
+  "kind": "B",
+  "title": "Kompyuter qo'lingni ko'radi",
+  "goal": "Kompyuter ko'rishi: qo'lni real vaqtda kuzatish.",
+  "fact": "Qo'lni kuzatish modeli har qo'lda 21 ta nuqtani (bo'g'imlarni) real vaqtda topadi.",
+  "steps": [
+   "3–6 daq: Demoni ochish, kamera ruxsati.",
+   "6–10 daq: Tajriba: qo'lni yopish, ikki qo'l, yorug'likni o'zgartirish — model qachon adashadi?",
+   "10–14 daq: G'oya: bu bilan qanday ilova yasash mumkin (barmoq sanash o'yini, ishora bilan slayd almashtirish).",
+   "14–16 daq: Xulosa."
+  ],
+  "wow": "Ekranda qo'lning 21 ta nuqtasi harakat bilan birga yuradi.",
+  "artifact": "Video.",
+  "homework": "Shu texnologiya bilan yasash mumkin bo'lgan 3 ta foydali ilova g'oyasi.",
+  "tools": [
+   {
+    "name": "MediaPipe Studio — Hand Landmarker",
+    "url": "https://mediapipe-studio.webapps.google.com/demo/hand_landmarker"
+   },
+   {
+    "name": "Zaxira: Teachable Machine — Pose Project",
+    "url": "https://teachablemachine.withgoogle.com"
+   }
+  ],
+  "fallback": "Teachable Machine'ning Pose loyihasi."
+ },
+ {
+  "n": 23,
+  "week": 8,
+  "weekTitle": "Kelajak va bitiruv",
+  "kind": "A",
+  "title": "3 oydan keyin buni o'zing qilasan",
+  "goal": "Veb-sahifa brauzerda chiziladigan kod ekanini ko'rish va Frontend yo'liga qiziqish uyg'otish.",
+  "fact": "Veb-sahifa brauzer sizning kompyuteringizda chizadigan kod. F12 bilan uni ko'rish va vaqtincha o'zgartirish mumkin, lekin serverdagi asl sayt o'zgarmaydi.",
+  "steps": [
+   "3–5 daq: F12 → Elements: sahifaning \"suyagi\" (HTML).",
+   "5–9 daq: document.designMode = \"on\": sahifadagi matnni o'zgartirish va sarlavhaga \"O'QUV NAMUNASI\" deb yozish.",
+   "9–12 daq: Elements → Styles: rangni o'zgartirish.",
+   "12–14 daq: F5: hammasi qaytdi. Nega?",
+   "14–16 daq: Frontend yo'li: 3-oydan keyin nimalar o'rganiladi."
+  ],
+  "wow": "Istalgan sayt ekranda \"o'zgaradi\".",
+  "artifact": "\"O'QUV NAMUNASI\" yozuvli o'zgartirilgan sahifa skrini.",
+  "homework": "Frontend'da qanday sayt yasamoqchi: 1 ta g'oya va u kim uchun.",
+  "tools": [
+   {
+    "name": "Chrome DevTools: F12 → Console → document.designMode = \"on\"",
+    "url": "https://developer.chrome.com/docs/devtools"
+   }
+  ],
+  "fallback": "Chrome bo'lmasa — Edge'da ham F12 xuddi shunday ishlaydi."
+ },
+ {
+  "n": 24,
+  "week": 8,
+  "weekTitle": "Kelajak va bitiruv",
+  "kind": "A",
+  "title": "Mening 2 oyim — bitiruv",
+  "goal": "2 oyda nima o'rganilganini ko'rsatish, asosiy ustozga ko'prik va keyingi bosqichga qiziqish.",
+  "fact": "Odam o'rganganini boshqaga tushuntirganda uni yaxshiroq eslab qoladi (\"protégé effekti\").",
+  "steps": [
+   "3–8 daq: Portfolioni ko'rib chiqish va eng yaxshi 3 ta ishni tanlash.",
+   "8–13 daq: Har bola ustoz va mini-guruh oldida 1 daqiqalik taqdimot qiladi: \"menga eng yoqqani va nega\".",
+   "13–16 daq: Nishon topshirish. Asosiy ustoz Foundation'ning 3-oyi va Frontend'ga ko'prik haqida gapiradi."
+  ],
+  "wow": "Bola 2 oyda qilgan ishlarini birdan ko'radi.",
+  "artifact": "Portfolio va bitiruv nishoni.",
+  "homework": "Yo'q — buning o'rniga ota-onaga yakuniy hisobot yuboriladi.",
+  "tools": [
+   {
+    "name": "Bolaning portfolio papkasi (Telegram yoki ILS)",
+    "url": null
+   }
+  ],
+  "fallback": "Ustoz kela olmasa — uning qisqa video murojaati."
+ }
+]

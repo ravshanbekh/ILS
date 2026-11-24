@@ -612,6 +612,7 @@ export default function UsersPage() {
                     <option value="hr_rahbari">HR Menejeri</option>
                     <option value="sotuv_operatori">Sotuv Menejeri</option>
                     <option value="call_operatori">Call Operatori</option>
+                    <option value="kurator">Kurator (demo-mentor)</option>
                     <option value="farrosh">Farrosh</option>
                     <option value="robototexnika_ustoz">Robototexnika Ustoz</option>
                   </select>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
+import CuratorSummaryCard from '@/components/shared/CuratorSummaryCard';
 import { statsApi, feedbackApi, coinsApi } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
 import { uzDayMonth } from '@/utils/uzDate';
@@ -264,6 +265,9 @@ export default function StudentDashboard() {
             </ul>
           </section>
         )}
+
+        {/* Kuratorim — biriktirilgan bo'lsagina ko'rinadi */}
+        <CuratorSummaryCard />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatsCard

@@ -1,6 +1,7 @@
 import { useAuthStore } from '@/stores/authStore';
 import { ShieldAlert, Clock } from 'lucide-react';
 import ChecklistPage from './ChecklistPage';
+import CuratorStudentsPage from '@/pages/curator/CuratorStudentsPage';
 
 const ROLE_LABELS: Record<string, string> = {
   filial_rahbari: 'Filial Rahbari',
@@ -12,6 +13,7 @@ const ROLE_LABELS: Record<string, string> = {
   hr_rahbari: 'HR Menejeri',
   sotuv_operatori: 'Sotuv Menejeri',
   farrosh: 'Farrosh',
+  kurator: 'Kurator',
 };
 
 // Checklist bor rollar
@@ -31,6 +33,9 @@ const CHECKLIST_ROLES = [
 export default function ViewerDashboardPage() {
   const { user } = useAuthStore();
   const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : "Noma'lum";
+
+  // Kurator — bosh sahifasi o'z o'quvchilari ro'yxati
+  if (user?.role === 'kurator') return <CuratorStudentsPage />;
 
   // Agar rolning checklisty bo'lsa, uni ko'rsat
   if (user?.role && CHECKLIST_ROLES.includes(user.role)) {

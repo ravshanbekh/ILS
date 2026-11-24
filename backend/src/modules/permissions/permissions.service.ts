@@ -16,6 +16,7 @@ const ASSIGNABLE_ROLES = [
   'sotuv_operatori',
   'call_operatori',
   'robototexnika_ustoz',
+  'kurator',
   'farrosh',
 ];
 

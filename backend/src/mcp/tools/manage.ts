@@ -35,7 +35,7 @@ const uuid = (what: string) => z.string().uuid().describe(`${what} ID (UUID)`);
 const NON_ADMIN_ROLES = [
   'teacher', 'student', 'filial_rahbari', 'assistant', 'moliya_rahbari', 'kassir',
   'administrator', 'nazoratchi', 'hr_rahbari', 'sotuv_operatori', 'farrosh',
-  'robototexnika_ustoz', 'call_operatori',
+  'robototexnika_ustoz', 'call_operatori', 'kurator',
 ] as const;
 const FREEZE_REASONS = [
   'moliyaviy', 'kochib_ketish', 'vaqtincha_toxtatgan', 'kasallik', 'kanikul', 'boshqa_fan', 'kurs_tugadi',

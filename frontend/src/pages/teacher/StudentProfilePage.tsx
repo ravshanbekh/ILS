@@ -5,6 +5,7 @@ import { uzDayMonth } from '@/utils/uzDate';
 import Header from '@/components/layout/Header';
 import StatsCard from '@/components/shared/StatsCard';
 import ScoreBadge from '@/components/shared/ScoreBadge';
+import CuratorSummaryCard from '@/components/shared/CuratorSummaryCard';
 import { statsApi, submissionsApi, monitoringApi } from '@/api';
 import { formatDateTime } from '@/utils';
 import { Loader2, ArrowLeft, Star, Target, Clock, Trophy, ExternalLink, TrendingUp, Brain, FileText, Copy, X, Sparkles } from 'lucide-react';
@@ -177,6 +178,16 @@ export default function StudentProfilePage() {
 
           <div className="absolute right-0 top-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3"></div>
         </div>
+
+        {/* Kurator (demo-mentor) — 2 oylik kuzatuv; kuratori bo'lmasa chizilmaydi */}
+        {id && (
+          <div className="mb-6">
+            <CuratorSummaryCard
+              studentId={id}
+              detailHref={(eid) => (user?.role === 'teacher' ? null : user?.role === 'admin' ? `/admin/curators/${eid}` : `/viewer/${user?.role}/curators/${eid}`)}
+            />
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

@@ -51,6 +51,7 @@ import supportHoursRoutes from './modules/support-hours/support-hours.routes';
 import homeworkRoutes from './modules/homework/homework.routes';
 import studentAccessRoutes from './modules/student-access/student-access.routes';
 import normativeMatrixRoutes from './modules/normative-matrix/normative-matrix.routes';
+import curatorRoutes from './modules/curator/curator.routes';
 import milestonesRoutes from './modules/milestones/milestones.routes';
 import lessonObservationsRoutes from './modules/lesson-observations/lesson-observations.routes';
 import typingRoutes from './modules/typing/typing.routes';
@@ -170,6 +171,7 @@ app.use('/api/support-hours', supportHoursRoutes);
 app.use('/api/homework', homeworkRoutes);
 app.use('/api/student-access', studentAccessRoutes);
 app.use('/api/normative-matrix', normativeMatrixRoutes);
+app.use('/api/curator', curatorRoutes);
 app.use('/api/milestones', milestonesRoutes);
 app.use('/api/lesson-observations', lessonObservationsRoutes);
 app.use('/api/typing', typingRoutes);
@@ -223,6 +225,14 @@ const startServer = async () => {
     // Ruxsatlar tizimi — birinchi ishga tushishda mavjud huquqlarni saqlab qolish
     const { initPermissions } = await import('./config/initPermissions');
     await initPermissions();
+
+    // Kurator dasturi (24 mashg'ulot) — bo'sh bo'lsa bir marta to'ldiriladi
+    try {
+      const { ensureProgram } = await import('./modules/curator/curator.service');
+      await ensureProgram();
+    } catch (err) {
+      logger.error("Kurator dasturini to'ldirib bo'lmadi:", err);
+    }
 
     httpServer.listen(env.PORT, () => {
       logger.info(`🚀 Server ishga tushdi: http://localhost:${env.PORT}`);

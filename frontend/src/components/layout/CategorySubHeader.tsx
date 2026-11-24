@@ -5,8 +5,9 @@ import {
   Users, FolderOpen, BookOpen, ClipboardCheck, BarChart3, Trophy,
   Snowflake, Star, Phone, ClipboardList, TrendingDown, Download,
   Settings, FileText, Zap, Video, Trash2, AlarmClock, Heart, MessageSquare, PartyPopper, LayoutGrid,
-  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle, Keyboard, Gamepad2, ClipboardPenLine, Medal, Grid3x3
+  Coins, Gift, Package, ShieldCheck, CalendarClock, CalendarCheck, UserCircle, Keyboard, Gamepad2, ClipboardPenLine, Medal, Grid3x3, HeartHandshake, Sparkles
 } from 'lucide-react';
+import { useCuratorFlag } from '@/stores/curatorStore';
 
 export interface SubNavItem {
   to: string;
@@ -30,6 +31,9 @@ export const ADMIN_GROUPS: NavCategoryGroup[] = [
       { to: '/admin/users', label: 'Foydalanuvchilar', icon: Users },
       { to: '/admin/groups', label: 'Guruhlar', icon: FolderOpen },
       { to: '/admin/permissions', label: 'Ruxsatlar', icon: ShieldCheck },
+      { to: '/admin/curators', label: 'Kuratorlar', icon: HeartHandshake },
+      { to: '/admin/curator-schedule', label: 'Kurator jadvali', icon: CalendarClock },
+      { to: '/admin/curator-program', label: 'Kurator dasturi', icon: Sparkles },
       { to: '/admin/trash', label: 'Korzinka (Savat)', icon: Trash2 },
     ]
   },
@@ -169,9 +173,15 @@ export const TEACHER_GROUPS: NavCategoryGroup[] = [
 export function getNavGroups(
   role: string | undefined,
   can: (permission: string) => boolean,
+  /** O'quvchining kuratori bormi — "Kuratorim" bandi faqat shunda */
+  hasCurator = false,
 ): NavCategoryGroup[] {
   if (role === 'admin') return ADMIN_GROUPS;
-  if (role === 'student') return STUDENT_GROUPS;
+  if (role === 'student') {
+    return hasCurator
+      ? STUDENT_GROUPS
+      : STUDENT_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => i.to !== '/student/curator') }));
+  }
   if (role !== 'teacher') return [];
 
   if (!can('homework_manage')) return TEACHER_GROUPS;
@@ -196,6 +206,8 @@ export const STUDENT_GROUPS: NavCategoryGroup[] = [
       { to: '/student/homework', label: 'Uyga vazifalar', icon: BookOpen },
       { to: '/student/results', label: 'Natijalarim', icon: Trophy },
       { to: '/student/support-hours', label: 'Yordamchi ustoz', icon: CalendarClock },
+      // Faqat kuratori bor o'quvchiga ko'rinadi (Sidebar/CategorySubHeader filtrlaydi)
+      { to: '/student/curator', label: 'Kuratorim', icon: HeartHandshake },
     ]
   },
   {
@@ -217,7 +229,8 @@ export default function CategorySubHeader() {
   // Ruxsatlar yuklanganda qayta hisoblansin (can funksiyasi o'zgarmaydi)
   usePermissionStore((s) => s.permissions);
 
-  const groups = getNavGroups(user?.role, can);
+  const hasCurator = useCuratorFlag((s) => s.hasCurator);
+  const groups = getNavGroups(user?.role, can, hasCurator);
   if (groups.length === 0) return null;
 
   const activeGroup = groups.find(group =>

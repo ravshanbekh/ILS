@@ -27,6 +27,7 @@ enum UserRole {
   farrosh
   robototexnika_ustoz
   call_operatori
+  kurator
 }
 
 enum SubmissionStatus {
@@ -136,6 +137,13 @@ model User {
   typingMatchesHosted       TypingMatch[]         @relation("TypingMatchHost")
   typingMatchPlayers        TypingMatchPlayer[]   @relation("TypingMatchPlayerUser")
   typingRating              TypingRating?         @relation("TypingRatingUser")
+  // Kurator (demo-mentor) — 2 oylik kuzatuv
+  curatorStudents           CuratorStudent[]      @relation("CuratorOfStudents")
+  curatorEnrollment         CuratorStudent?       @relation("CuratorStudentUser")
+  curatorStudentsCreated    CuratorStudent[]      @relation("CuratorStudentCreatedBy")
+  curatorSlots              CuratorSlot[]         @relation("CuratorSlots")
+  curatorBookings           CuratorBooking[]      @relation("CuratorBookingStudent")
+  curatorProgressMarked     CuratorProgress[]     @relation("CuratorProgressMarkedBy")
 
   @@map("users")
 }
@@ -1757,4 +1765,139 @@ model TypingRating {
 
   @@index([rating])
   @@map("typing_ratings")
+}
+
+// ============================================================
+//  KURATOR (demo-mentor)
+//  Kurator yangi kelgan bola bilan 20 daqiqalik demo dars o'tadi va uni
+//  ILS'ga (guruhsiz) qo'shadi. Keyin bola asosiy guruhga qo'shiladi, kurator
+//  esa 2 oy davomida o'z dasturi (24 mashg'ulot) bo'yicha u bilan
+//  shug'ullanadi va asosiy darslari qanday ketayotganini kuzatib boradi.
+//  Batafsil: docs/curator.md
+// ============================================================
+
+enum CuratorStudentStatus {
+  faol // 2 oylik kuzatuv davom etmoqda
+  tugadi // 2 oy tugadi (yoki dastur yakunlandi)
+  toxtatildi // o'qishni tashladi / kuratorlik to'xtatildi
+}
+
+/// Kuratorning o'quvchisi — bitta o'quvchining bitta kuratori bo'ladi
+model CuratorStudent {
+  id          String               @id @default(uuid()) @db.Uuid
+  curatorId   String               @map("curator_id") @db.Uuid
+  studentId   String               @unique @map("student_id") @db.Uuid
+  /// Demo dars o'tgan kun — 2 oylik muddat shu kundan hisoblanadi
+  demoDate    DateTime             @map("demo_date") @db.Date
+  /// Kuzatuv tugaydigan kun (demoDate + 2 oy)
+  endDate     DateTime             @map("end_date") @db.Date
+  status      CuratorStudentStatus @default(faol)
+  /// Demo haqida qisqa izoh: qiziqishi, yoshi, nima yoqdi
+  demoNote    String?              @map("demo_note") @db.VarChar(500)
+  createdById String?              @map("created_by_id") @db.Uuid
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  curator   User              @relation("CuratorOfStudents", fields: [curatorId], references: [id], onDelete: Cascade)
+  student   User              @relation("CuratorStudentUser", fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy User?             @relation("CuratorStudentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  progress  CuratorProgress[]
+
+  @@index([curatorId, status])
+  @@map("curator_students")
+}
+
+/// Kuratorning 2 oylik dasturi — barcha kuratorlar uchun umumiy (admin tahrirlaydi)
+model CuratorLesson {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// Tartib raqami (1..24)
+  n         Int      @unique
+  week      Int
+  weekTitle String   @map("week_title") @db.VarChar(120)
+  /// A — asosiy, B — yulduzcha (qo'shimcha) mashg'ulot
+  kind      String   @default("A") @db.VarChar(2)
+  title     String   @db.VarChar(200)
+  goal      String?  @db.VarChar(500)
+  /// fact, steps[], wow, artifact, homework, tools[{name,url}], fallback
+  content   Json?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  progress CuratorProgress[]
+  slots    CuratorSlot[]
+
+  @@map("curator_lessons")
+}
+
+enum CuratorHomework {
+  bajardi
+  qisman
+  bajarmadi
+}
+
+/// O'quvchi dasturdagi qaysi mashg'ulotni o'tgani (yoki kelmagani)
+model CuratorProgress {
+  id               String           @id @default(uuid()) @db.Uuid
+  curatorStudentId String           @map("curator_student_id") @db.Uuid
+  lessonId         String           @map("lesson_id") @db.Uuid
+  /// keldi | kelmadi
+  attended         Boolean          @default(true)
+  /// O'tgan safargi mini-vazifa natijasi
+  homework         CuratorHomework?
+  note             String?          @db.VarChar(500)
+  date             DateTime         @db.Date
+  slotId           String?          @map("slot_id") @db.Uuid
+  markedById       String?          @map("marked_by_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  curatorStudent CuratorStudent @relation(fields: [curatorStudentId], references: [id], onDelete: Cascade)
+  lesson         CuratorLesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  slot           CuratorSlot?   @relation(fields: [slotId], references: [id], onDelete: SetNull)
+  markedBy       User?          @relation("CuratorProgressMarkedBy", fields: [markedById], references: [id], onDelete: SetNull)
+
+  @@unique([curatorStudentId, lessonId])
+  @@map("curator_progress")
+}
+
+/// Kuratorning ochiq vaqti — 30 daqiqalik oraliq (mashg'ulot 20 daqiqa)
+model CuratorSlot {
+  id          String   @id @default(uuid()) @db.Uuid
+  curatorId   String   @map("curator_id") @db.Uuid
+  date        DateTime @db.Date
+  /// Kun boshidan daqiqa: 600 = 10:00, 630 = 10:30
+  startMinute Int      @map("start_minute")
+  capacity    Int      @default(8)
+  /// Shu vaqtda o'tiladigan dastur mashg'uloti (ixtiyoriy)
+  lessonId    String?  @map("lesson_id") @db.Uuid
+  note        String?  @db.VarChar(300)
+  isOpen      Boolean  @default(true) @map("is_open")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  curator  User              @relation("CuratorSlots", fields: [curatorId], references: [id], onDelete: Cascade)
+  lesson   CuratorLesson?    @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  bookings CuratorBooking[]
+  progress CuratorProgress[]
+
+  @@unique([curatorId, date, startMinute])
+  @@index([date])
+  @@map("curator_slots")
+}
+
+/// O'quvchining kurator vaqtiga yozilishi (onlayn, o'z profilidan)
+model CuratorBooking {
+  id          String               @id @default(uuid()) @db.Uuid
+  slotId      String               @map("slot_id") @db.Uuid
+  studentId   String               @map("student_id") @db.Uuid
+  status      SupportBookingStatus @default(band)
+  createdAt   DateTime             @default(now()) @map("created_at")
+  cancelledAt DateTime?            @map("cancelled_at")
+
+  slot    CuratorSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  student User        @relation("CuratorBookingStudent", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([slotId, studentId])
+  @@index([studentId])
+  @@map("curator_bookings")
 }

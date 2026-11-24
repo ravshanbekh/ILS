@@ -156,6 +156,19 @@ export const PERMISSIONS = {
     category: 'Hisobot',
     legacyRoles: ['administrator', 'filial_rahbari', 'nazoratchi', 'hr_rahbari'],
   },
+  curator_oversight: {
+    label: 'Kuratorlar nazorati — barcha kuratorlar',
+    description:
+      "Barcha kuratorlarning o'quvchilari, 2 oylik dastur bo'yicha holati, jadvali va asosiy darslardagi natijalarini ko'rish; o'quvchini kuratorga biriktirish. Kuratorning o'zi faqat o'z o'quvchilarini ko'radi",
+    category: 'Kurator',
+    legacyRoles: ['administrator', 'filial_rahbari', 'nazoratchi'],
+  },
+  curator_program: {
+    label: "Kurator dasturini tahrirlash",
+    description: "2 oylik kurator dasturidagi mashg'ulotlarni (mavzu, maqsad, vazifa) qo'shish va tahrirlash",
+    category: 'Kurator',
+    legacyRoles: [],
+  },
   view_rankings: {
     label: "Barcha guruhlar reytingini ko'rish",
     description: "O'z guruhlaridan tashqari guruhlarning reytingini ham ko'rish",

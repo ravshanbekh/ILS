@@ -30,6 +30,7 @@ const ROLE_LABELS: Record<string, string> = {
   hr_rahbari: 'HR Menejeri',
   sotuv_operatori: 'Sotuv Menejeri',
   call_operatori: 'Call Operatori',
+  kurator: 'Kurator',
   robototexnika_ustoz: 'Robototexnika Ustoz',
   farrosh: 'Farrosh',
 };

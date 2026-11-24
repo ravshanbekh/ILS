@@ -82,6 +82,11 @@ const TypingGamePage = lazyWithReload(() => import('@/pages/student/game/TypingG
 const TypingGamesAdminPage = lazyWithReload(() => import('@/pages/admin/TypingGamesPage'));
 const TypingContestPage = lazyWithReload(() => import('@/pages/shared/TypingContestPage'));
 const NormativeMatrixPage = lazyWithReload(() => import('@/pages/shared/NormativeMatrixPage'));
+const CuratorStudentsPage = lazyWithReload(() => import('@/pages/curator/CuratorStudentsPage'));
+const CuratorStudentDetailPage = lazyWithReload(() => import('@/pages/curator/CuratorStudentDetailPage'));
+const CuratorSchedulePage = lazyWithReload(() => import('@/pages/curator/CuratorSchedulePage'));
+const CuratorProgramPage = lazyWithReload(() => import('@/pages/curator/CuratorProgramPage'));
+const StudentCuratorPage = lazyWithReload(() => import('@/pages/student/StudentCuratorPage'));
 const PermissionsPage = lazyWithReload(() => import('@/pages/admin/PermissionsPage'));
 
 /** Sahifa yuklanayotgan paytdagi ko'rsatkich */
@@ -232,6 +237,10 @@ export default function App() {
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/rankings" element={<AdminRankingsPage />} />
               <Route path="/admin/normative-matrix" element={<NormativeMatrixPage />} />
+              <Route path="/admin/curators" element={<CuratorStudentsPage />} />
+              <Route path="/admin/curators/:id" element={<CuratorStudentDetailPage />} />
+              <Route path="/admin/curator-schedule" element={<CuratorSchedulePage />} />
+              <Route path="/admin/curator-program" element={<CuratorProgramPage />} />
               <Route path="/admin/frozen-students" element={<FrozenStudentsPage />} />
               <Route path="/admin/monitoring" element={<MonitoringPage />} />
               <Route path="/admin/milestones" element={<MilestonesControlPage />} />
@@ -325,6 +334,7 @@ export default function App() {
               <Route path="/student/game" element={<GameHubPage />} />
               <Route path="/student/game/typing" element={<TypingGamePage />} />
               <Route path="/student/support-hours" element={<SupportBookingPage />} />
+              <Route path="/student/curator" element={<StudentCuratorPage />} />
               <Route path="/student/homework" element={<StudentHomeworkPage />} />
               <Route path="/student/results" element={<StudentResultsPage />} />
             </Route>
@@ -332,7 +342,7 @@ export default function App() {
             {/* Viewer routes — all new roles */}
             <Route
               element={
-                <ProtectedRoute roles={['filial_rahbari','assistant','moliya_rahbari','kassir','administrator','nazoratchi','hr_rahbari','sotuv_operatori','farrosh','robototexnika_ustoz','call_operatori']}>
+                <ProtectedRoute roles={['filial_rahbari','assistant','moliya_rahbari','kassir','administrator','nazoratchi','hr_rahbari','sotuv_operatori','farrosh','robototexnika_ustoz','call_operatori','kurator']}>
                   <AppLayout />
                 </ProtectedRoute>
               }
@@ -342,6 +352,10 @@ export default function App() {
               <Route path="/viewer/:role/student/:id" element={<StudentProfilePage />} />
               <Route path="/viewer/:role/rankings" element={<StudentRankingPage />} />
               <Route path="/viewer/:role/normative-matrix" element={<NormativeMatrixPage />} />
+              <Route path="/viewer/:role/curators" element={<CuratorStudentsPage />} />
+              <Route path="/viewer/:role/curators/:id" element={<CuratorStudentDetailPage />} />
+              <Route path="/viewer/:role/curator-schedule" element={<CuratorSchedulePage />} />
+              <Route path="/viewer/:role/curator-program" element={<CuratorProgramPage />} />
               <Route path="/viewer/:role/frozen-students" element={<FrozenStudentsPage />} />
               <Route path="/viewer/:role/monitoring" element={<MonitoringPage />} />
               <Route path="/viewer/:role/teacher-rating" element={<TeacherRatingPage />} />

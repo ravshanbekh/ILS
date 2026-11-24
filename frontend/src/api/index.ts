@@ -283,6 +283,217 @@ export const normativeMatrixApi = {
   excel: (params: MatrixFiltersQuery) => api.get('/normative-matrix/excel', { params, responseType: 'blob', timeout: 120_000 }),
 };
 
+// ─── Kurator (demo-mentor): 2 oylik kuzatuv, dastur, jadval ────────────────
+export type CuratorStatus = 'faol' | 'tugadi' | 'toxtatildi';
+export type CuratorHomework = 'bajardi' | 'qisman' | 'bajarmadi';
+export type CuratorLessonState = 'kutilmoqda' | 'otildi' | 'kelmadi';
+export type BookingStatus = 'band' | 'keldi' | 'kelmadi' | 'bekor';
+
+export interface CuratorTimeline {
+  day: number;
+  totalDays: number;
+  daysLeft: number;
+  expectedLessons: number;
+  finished: boolean;
+}
+export interface CuratorProgressSummary {
+  done: number;
+  missed: number;
+  total: number;
+  next: { id: string; n: number; title: string; week: number; weekTitle: string } | null;
+  lastDate: string | null;
+}
+export interface CuratorLessonContent {
+  fact?: string | null;
+  steps?: string[];
+  wow?: string | null;
+  artifact?: string | null;
+  homework?: string | null;
+  tools?: { name: string; url: string }[];
+  fallback?: string | null;
+}
+export interface CuratorLesson {
+  id: string;
+  n: number;
+  week: number;
+  weekTitle: string;
+  kind: 'A' | 'B' | string;
+  title: string;
+  goal: string | null;
+  content: CuratorLessonContent;
+  isActive: boolean;
+}
+export interface CuratorMainStats {
+  groups: { id: string; name: string; teacherName: string | null; joinedAt: string }[];
+  lessons: { total: number; attended: number; absent: number; attendancePct: number | null; avgHomework: number | null; avgActivity: number | null };
+  normatives: { assigned: number; g: number; b: number; r: number; p: number; donePct: number | null };
+}
+export interface CuratorStudentRow {
+  id: string;
+  status: CuratorStatus;
+  demoDate: string;
+  endDate: string;
+  demoNote: string | null;
+  timeline: CuratorTimeline;
+  student: { id: string; fullName: string; login: string; isActive: boolean; accessBlocked: boolean };
+  curator: { id: string; fullName: string };
+  progress: CuratorProgressSummary;
+  main: CuratorMainStats;
+  nextBooking: { date: string; time: string } | null;
+}
+export interface CuratorStudentDetail {
+  id: string;
+  status: CuratorStatus;
+  demoDate: string;
+  endDate: string;
+  demoNote: string | null;
+  timeline: CuratorTimeline;
+  canEdit: boolean;
+  student: { id: string; fullName: string; login: string; isActive: boolean; accessBlocked: boolean; createdAt: string };
+  curator: { id: string; fullName: string } | null;
+  progress: CuratorProgressSummary;
+  program: {
+    lessonId: string;
+    n: number;
+    week: number;
+    weekTitle: string;
+    kind: string;
+    title: string;
+    state: CuratorLessonState;
+    progressId: string | null;
+    date: string | null;
+    homework: CuratorHomework | null;
+    note: string | null;
+  }[];
+  main: CuratorMainStats & {
+    recentLessons: {
+      id: string;
+      date: string;
+      groupName: string;
+      topic: string | null;
+      attended: boolean | null;
+      homework: string | null;
+      homeworkScore: number | null;
+      activityScore: number | null;
+      comment: string | null;
+    }[];
+    normativeList: { id: string; taskNumber: number; title: string; code: 'g' | 'b' | 'r' | 'p' | null; score: number | null; url: string | null; date: string | null }[];
+  };
+  bookings: { id: string; date: string; time: string; status: BookingStatus; lesson: { n: number; title: string } | null }[];
+}
+export interface CuratorSlot {
+  id: string;
+  date: string;
+  startMinute: number;
+  time: string;
+  capacity: number;
+  booked: number;
+  free: number;
+  isOpen: boolean;
+  isPast: boolean;
+  note: string | null;
+  lesson: { id: string; n: number; title: string } | null;
+  students: { bookingId: string; studentId: string; fullName: string; status: BookingStatus }[];
+}
+export interface CuratorDay {
+  date: string;
+  curatorId: string;
+  isClosedDay: boolean;
+  allowedMinutes: number[];
+  slotMinutes: number;
+  sessionMinutes: number;
+  maxCapacity: number;
+  slots: CuratorSlot[];
+}
+export interface CuratorListItem {
+  id: string;
+  fullName: string;
+  login: string;
+  avatarUrl: string | null;
+  active: number;
+  finished: number;
+  stopped: number;
+  ungrouped: number;
+  slotsThisWeek: number;
+}
+export interface StudentCuratorInfo {
+  id: string;
+  status: CuratorStatus;
+  demoDate: string;
+  endDate: string;
+  timeline: CuratorTimeline;
+  curator: { id: string; fullName: string; avatarUrl: string | null; bio: string | null };
+  progress: CuratorProgressSummary;
+  program: { n: number; week: number; weekTitle: string; kind: string; title: string; goal: string | null; state: CuratorLessonState; date: string | null }[];
+  bookings: { id: string; date: string; time: string; status: BookingStatus; lesson: { n: number; title: string } | null; canCancel: boolean }[];
+}
+export interface StudentCuratorSlot {
+  slotId: string;
+  date: string;
+  time: string;
+  capacity: number;
+  booked: number;
+  free: number;
+  lesson: { n: number; title: string } | null;
+  isMine: boolean;
+  myBookingId: string | null;
+  myStatus: BookingStatus | null;
+  isPast: boolean;
+  canBook: boolean;
+  reason: string | null;
+}
+export interface CuratorSummary {
+  id: string;
+  status: CuratorStatus;
+  demoDate: string;
+  endDate: string;
+  curator: { id: string; fullName: string };
+  timeline: CuratorTimeline;
+  progress: CuratorProgressSummary;
+}
+
+type Ok<T> = { success: boolean; data: T };
+export const curatorApi = {
+  // Kurator / nazorat
+  curators: () => api.get<Ok<CuratorListItem[]>>('/curator/curators'),
+  program: (all = false) =>
+    api.get<Ok<{ sessionMinutes: number; months: number; lessons: CuratorLesson[]; canEdit: boolean }>>('/curator/program', { params: all ? { all: '1' } : {} }),
+  createLesson: (data: Partial<CuratorLesson>) => api.post<Ok<CuratorLesson>>('/curator/program', data),
+  updateLesson: (id: string, data: Partial<CuratorLesson>) => api.patch<Ok<CuratorLesson>>(`/curator/program/${id}`, data),
+  students: (params: { curatorId?: string; status?: CuratorStatus | 'all'; search?: string; ungrouped?: '1' }) =>
+    api.get<Ok<{ scope: 'own' | 'all'; totalLessons: number; items: CuratorStudentRow[] }>>('/curator/students', { params, timeout: 60_000 }),
+  suggestLogin: () => api.get<Ok<{ login: string; password: string }>>('/curator/students/suggest-login'),
+  createStudent: (data: { fullName: string; login: string; password: string; demoDate: string; demoNote?: string | null; curatorId?: string }) =>
+    api.post<Ok<{ id: string; student: { id: string; fullName: string; login: string }; credentials: { login: string; password: string } }>>('/curator/students', data),
+  assign: (data: { studentId: string; curatorId: string; demoDate: string; demoNote?: string | null }) => api.post<Ok<{ id: string }>>('/curator/students/assign', data),
+  unassigned: (q: string) => api.get<Ok<{ id: string; fullName: string; login: string; groups: string[] }[]>>('/curator/students/unassigned', { params: { q } }),
+  student: (id: string) => api.get<Ok<CuratorStudentDetail>>(`/curator/students/${id}`),
+  updateStudent: (id: string, data: { status?: CuratorStatus; demoNote?: string | null; demoDate?: string; curatorId?: string }) =>
+    api.patch(`/curator/students/${id}`, data),
+  recordProgress: (id: string, data: { lessonId: string; attended: boolean; homework?: CuratorHomework | null; note?: string | null; date: string }) =>
+    api.post(`/curator/students/${id}/progress`, data),
+  deleteProgress: (progressId: string) => api.delete(`/curator/progress/${progressId}`),
+  day: (date: string, curatorId?: string) => api.get<Ok<CuratorDay>>('/curator/slots/day', { params: { date, curatorId } }),
+  setDay: (data: { date: string; minutes: number[]; capacity?: number; lessonId?: string | null; curatorId?: string }) =>
+    api.put<Ok<CuratorDay>>('/curator/slots/day', data),
+  updateSlot: (id: string, data: { isOpen?: boolean; capacity?: number; lessonId?: string | null; note?: string | null }) =>
+    api.patch(`/curator/slots/${id}`, data),
+  deleteSlot: (id: string) => api.delete(`/curator/slots/${id}`),
+  addToSlot: (slotId: string, studentId: string) => api.post(`/curator/slots/${slotId}/bookings`, { studentId }),
+  markAttendance: (bookingId: string, status: 'keldi' | 'kelmadi') =>
+    api.patch<Ok<{ success: boolean; progressLesson: string | null }>>(`/curator/bookings/${bookingId}/attendance`, { status }),
+  cancelBooking: (id: string) => api.delete(`/curator/bookings/${id}`),
+  summary: (studentId: string) => api.get<Ok<CuratorSummary | null>>(`/curator/summary/${studentId}`),
+  // O'quvchi
+  me: () => api.get<Ok<{ enrollment: StudentCuratorInfo | null }>>('/curator/me'),
+  available: (from?: string) => api.get<Ok<{ reason: string | null; slots: StudentCuratorSlot[] }>>('/curator/available', { params: from ? { from } : {} }),
+  book: (slotId: string) => api.post<Ok<{ id: string; date: string; time: string }>>('/curator/bookings', { slotId }),
+};
+
+/** Xatolik matni (backend: { error: { message } }) */
+export const apiErrorText = (e: any, fallback = 'Xatolik yuz berdi'): string =>
+  e?.response?.data?.error?.message || e?.response?.data?.message || fallback;
+
 // ─── O'quvchi kirishini yopish/ochish (to'lov va h.k.) ─────────────────────
 export interface StudentAccessStatus {
   blocked: boolean;

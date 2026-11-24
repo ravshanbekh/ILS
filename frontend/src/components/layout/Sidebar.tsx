@@ -7,9 +7,10 @@ import {
   PanelLeftClose, PanelLeftOpen,
   Video, BookOpen, ClipboardCheck, Trophy, BarChart3, ClipboardList, Snowflake, Phone, Star, Trash2,
   Gift, Package, Coins
-, CalendarClock, UserCircle, FileText, Gamepad2, Grid3x3} from 'lucide-react';
+, CalendarClock, UserCircle, FileText, Gamepad2, Grid3x3, HeartHandshake, Sparkles} from 'lucide-react';
 import BrandLogo from '@/components/brand/BrandLogo';
 import { getNavGroups } from './CategorySubHeader';
+import { useCuratorFlag } from '@/stores/curatorStore';
 import type { NavCategoryGroup } from './CategorySubHeader';
 
 const studentLinks = [
@@ -21,13 +22,14 @@ const studentLinks = [
   { to: '/student/homework', icon: BookOpen, label: 'Uyga vazifalar' },
   { to: '/student/results', icon: Trophy, label: 'Natijalarim' },
   { to: '/student/support-hours', icon: CalendarClock, label: 'Yordamchi ustoz' },
+  { to: '/student/curator', icon: HeartHandshake, label: 'Kuratorim' },
   { to: '/student/game', icon: Gamepad2, label: "O'yinlar" },
 ];
 
 const VIEWER_ROLES = [
   'filial_rahbari', 'assistant', 'moliya_rahbari', 'kassir',
   'administrator', 'nazoratchi', 'hr_rahbari', 'sotuv_operatori', 'farrosh',
-  'robototexnika_ustoz', 'call_operatori',
+  'robototexnika_ustoz', 'call_operatori', 'kurator',
 ] as const;
 
 type ViewerRole = typeof VIEWER_ROLES[number];
@@ -77,10 +79,18 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   const canExams = can('exam_create') || can('exam_edit') || can('exam_delete');
   const canQuizTests = can('quiz_tests');
   const canNormativeMatrix = can('normative_matrix_all');
+  const canCuratorOversight = can('curator_oversight');
+
+  // O'quvchi: kuratori bo'lsa "Kuratorim" bandi chiqadi (bir marta so'raladi)
+  const hasCurator = useCuratorFlag((s) => s.hasCurator);
+  const loadCuratorFlag = useCuratorFlag((s) => s.load);
+  useEffect(() => {
+    if (user?.role === 'student' && user.id) loadCuratorFlag(user.id);
+  }, [user?.role, user?.id, loadCuratorFlag]);
 
   // Rol guruhlari + ruxsatga qarab qo'shiladigan bandlar (CategorySubHeader
   // bilan bitta manba — getNavGroups)
-  const rawGroups: NavCategoryGroup[] = getNavGroups(user?.role, can);
+  const rawGroups: NavCategoryGroup[] = getNavGroups(user?.role, can, hasCurator);
 
   const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
 
@@ -89,12 +99,30 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
     items: isDemo ? group.items.filter(item => !item.to.includes('checklist')) : group.items
   })).filter(group => group.items.length > 0);
 
+  // Kurator bo'limi: kuratorning o'zi va "Kuratorlar nazorati" ruxsati borlar
+  const curatorLinks = user?.role === 'kurator'
+    ? [
+        { to: `/viewer/kurator/curators`, icon: HeartHandshake, label: "O'quvchilarim" },
+        { to: `/viewer/kurator/curator-schedule`, icon: CalendarClock, label: 'Jadvalim' },
+        { to: `/viewer/kurator/curator-program`, icon: Sparkles, label: '2 oylik dastur' },
+        { to: `/viewer/kurator/profile`, icon: UserCircle, label: 'Mening profilim' },
+      ]
+    : canCuratorOversight
+      ? [
+          { to: `/viewer/${user?.role}/curators`, icon: HeartHandshake, label: 'Kuratorlar' },
+          { to: `/viewer/${user?.role}/curator-schedule`, icon: CalendarClock, label: 'Kurator jadvali' },
+          { to: `/viewer/${user?.role}/curator-program`, icon: Sparkles, label: 'Kurator dasturi' },
+        ]
+      : [];
+
   const nazoratchiLinks = user?.role === 'nazoratchi' ? [
     { to: `/viewer/nazoratchi/checklist-stats`, icon: BarChart3, label: 'Cheklist Hisobot' },
     { to: `/viewer/nazoratchi/checklist-manage`, icon: ClipboardList, label: 'Cheklist Boshqaruv' },
+    ...curatorLinks,
   ] : [];
 
   const viewerLinks = isViewer && user?.role !== 'nazoratchi' ? [
+    ...curatorLinks,
     ...(['filial_rahbari', 'administrator', 'sotuv_operatori', 'kassir', 'moliya_rahbari', 'assistant', 'call_operatori'].includes(user!.role) ? [
       { to: `/viewer/${user!.role}/users`, icon: GraduationCap, label: "O'quvchilar" },
       { to: `/viewer/${user!.role}/rankings`, icon: Trophy, label: "O'quvchilar reytingi" },
@@ -157,7 +185,7 @@ export default function Sidebar({ isOpen, onClose, collapsed = false, onToggleCo
   ] : [];
 
   const flatLinks = user?.role === 'student'
-    ? studentLinks
+    ? studentLinks.filter((l) => hasCurator || l.to !== '/student/curator')
     : user?.role === 'nazoratchi'
     ? nazoratchiLinks
     : viewerLinks;
