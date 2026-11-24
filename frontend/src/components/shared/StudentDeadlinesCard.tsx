@@ -34,7 +34,7 @@ export default function StudentDeadlinesCard() {
         </Link>
       </div>
       <p className="mt-1 text-xs text-zinc-500">
-        Haftasiga {d.perWeek} ta normativ, muddat — haftaning oxirgi darsi soatigacha. Ulgurmasangiz {d.graceDays} kun qo'shimcha imkon bor, undan keyin qizil bo'ladi.
+        Haftasiga {d.perWeek} ta normativ, muddat — har yakshanba 23:59 gacha. Ulgurmasangiz {d.graceDays} kun qo'shimcha imkon bor, undan keyin qizil bo'ladi.
       </p>
 
       {urgent.length > 0 && (

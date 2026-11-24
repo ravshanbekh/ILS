@@ -6,6 +6,7 @@ import { TopbarContext } from './topbarContext';
 import type { TopbarState } from './topbarContext';
 import CategorySubHeader from './CategorySubHeader';
 import MilestoneWarningBanner from '../shared/MilestoneWarningBanner';
+import StartDateBanner from '../shared/StartDateBanner';
 import { useAuthStore } from '../../stores/authStore';
 import { usePermissionStore } from '../../stores/permissionStore';
 
@@ -85,6 +86,9 @@ export default function AppLayout() {
         {showMilestoneBanner && (
           <MilestoneWarningBanner />
         )}
+
+        {/* O'qituvchi: guruh boshlanish sanasi kiritilmagan — sana kiritilmaguncha turadi */}
+        <StartDateBanner />
 
         <div ref={pageRef} className="flex-1 w-full max-w-7xl mx-auto">
           <TopbarContext.Provider value={topbarCtx}>

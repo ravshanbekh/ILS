@@ -122,7 +122,7 @@ async function syncInternal(cfg: DeadlineConfig, now: Date, groupIds?: string[],
       id: true,
       startDate: true,
       groupNormatives: {
-        where: { normative: { isActive: true } },
+        where: { normative: { isActive: true, archivedAt: null } },
         select: { normative: { select: { id: true, taskNumber: true, title: true } } },
       },
     },
@@ -220,8 +220,7 @@ const scheduleOf = (g: GroupRow) => ({
 const warningsOf = (g: GroupRow, normCount: number) => {
   const w: string[] = [];
   if (!normCount) w.push("Guruhga faol normativ biriktirilmagan");
-  if (!g.lessonDayType) w.push('Dars kunlari kiritilmagan — muddat yakshanba 23:59');
-  else if (g.lessonStartMinute == null) w.push('Dars soati kiritilmagan — muddat oxirgi dars kuni 23:59');
+  if (!g.startDate) w.push('Guruh boshlanish sanasi kiritilmagan');
   if (!g.teacher) w.push("Ustoz biriktirilmagan");
   return w;
 };
@@ -530,7 +529,7 @@ export async function preview(actor: Actor, startDate: string, perWeek: number, 
       ...GROUP_SELECT,
       _count: { select: { groupStudents: { where: { student: { isActive: true, role: 'student' } } } } },
       groupNormatives: {
-        where: { normative: { isActive: true } },
+        where: { normative: { isActive: true, archivedAt: null } },
         select: { normative: { select: { id: true, taskNumber: true, title: true } } },
       },
     },

@@ -10,6 +10,9 @@ import { BookOpen, Video, Send, Loader2, Clock, ChevronDown, ChevronRight, Exter
 export default function StudentNormativesPage() {
   const { user } = useAuthStore();
   const [normatives, setNormatives] = useState<any[]>([]);
+  // Arxiv (eski tahrir) — natijalari saqlangan, "soya" sifatida pastda turadi
+  const [archivedNorms, setArchivedNorms] = useState<any[]>([]);
+  const [showArchive, setShowArchive] = useState(true);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -60,7 +63,8 @@ export default function StudentNormativesPage() {
         .filter((n: any) => groupNormIds.has(n.id) || submittedNormIds.has(n.id))
         .sort((a: any, b: any) => a.taskNumber - b.taskNumber);
 
-      setNormatives(sortedFiltered);
+      setNormatives(sortedFiltered.filter((n: any) => !n.archivedAt));
+      setArchivedNorms(sortedFiltered.filter((n: any) => !!n.archivedAt));
       setSubmissions(allSubs);
       setCurrentPage(1);
     } catch (err) {
@@ -114,6 +118,189 @@ export default function StudentNormativesPage() {
     setExpandedId(expandedId === id ? null : id);
   };
 
+
+  // Bitta normativ qatori; archived — eski tahrir (topshirish yopiq)
+  const renderRow = (norm: any, archived: boolean) => {
+    const submission = getSubmissionForNormative(norm.id);
+    const isPending = submission && submission.status === 'pending';
+    const isChecked = submission && submission.status === 'checked';
+    const isGreen = isChecked && submission.result === 'green';
+    const canResubmit = submission && submission.canResubmit === true;
+    const isExpanded = expandedId === norm.id;
+
+    return (
+      <div key={norm.id} className="group">
+        {/* Row */}
+        <div
+          onClick={() => toggleExpand(norm.id)}
+          className={`grid grid-cols-1 sm:grid-cols-[auto_1fr_100px_120px_100px] items-center gap-3 sm:gap-4 px-5 py-4 cursor-pointer transition-all duration-200 hover:bg-zinc-800/30 ${
+            isExpanded ? 'bg-zinc-800/20' : ''
+          }`}
+        >
+          {/* Task Number */}
+          <div className="flex items-center gap-3 sm:block">
+            <div className="w-10 h-10 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-blue-500 font-bold text-xs shrink-0">
+              #{norm.taskNumber}
+            </div>
+            {/* Mobile title */}
+            <div className="sm:hidden flex-1 min-w-0">
+              <h3 className="text-white font-medium text-sm truncate">{norm.title}</h3>
+              <p className="text-xs text-zinc-500">{norm.maxScore} ball</p>
+            </div>
+            {/* Mobile expand icon */}
+            <div className="sm:hidden">
+              {isExpanded ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}
+            </div>
+          </div>
+
+          {/* Title (desktop) */}
+          <div className="hidden sm:flex items-center gap-2 min-w-0">
+            {isExpanded ? <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" /> : <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />}
+            <div className="min-w-0">
+              <h3 className="text-white font-medium text-sm truncate">{norm.title}</h3>
+              <p className="text-xs text-zinc-500 truncate">{norm.maxScore} ball · {norm.description || "Ta'rifsiz"}</p>
+            </div>
+          </div>
+
+          {/* Time */}
+          <div className="hidden sm:flex justify-center">
+            {norm.timeLimit ? (
+              <span className="flex items-center gap-1 text-xs bg-amber-500/10 text-amber-500 px-2 py-1 rounded border border-amber-500/20">
+                <Clock className="w-3 h-3" />
+                {norm.timeLimit}s
+              </span>
+            ) : (
+              <span className="text-xs text-zinc-600">—</span>
+            )}
+          </div>
+
+          {/* Status */}
+          <div className="hidden sm:flex justify-center" onClick={(e) => e.stopPropagation()}>
+            {isGreen ? (
+              <span className="text-xs bg-emerald-500/10 text-emerald-500 px-2.5 py-1 rounded-lg border border-emerald-500/20 font-medium">
+                ✅ {submission.score} ball
+              </span>
+            ) : isPending ? (
+              <span className="text-xs bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded-lg border border-amber-500/20 font-medium flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Kutilmoqda
+              </span>
+            ) : isChecked ? (
+              <ScoreBadge result={submission.result} size="sm" />
+            ) : (
+              <span className="text-xs text-zinc-600 font-medium">Topshirilmagan</span>
+            )}
+          </div>
+
+          {/* Action */}
+          <div className="hidden sm:flex justify-center" onClick={(e) => e.stopPropagation()}>
+            {archived ? (
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Arxiv</span>
+            ) : isGreen ? (
+              <span className="text-xs text-emerald-600">Tayyor</span>
+            ) : isPending ? (
+              <span className="text-xs text-zinc-600">—</span>
+            ) : isChecked && !canResubmit ? (
+              <span className="text-xs text-zinc-600">Baholangan</span>
+            ) : (
+              <button
+                onClick={() => handleOpenSubmitModal(norm)}
+                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1 ${
+                  canResubmit 
+                    ? 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                <Send className="w-3 h-3" />
+                {canResubmit ? 'Qayta' : 'Topshir'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Expanded Content */}
+        {isExpanded && (
+          <div className="px-5 pb-5 bg-zinc-900/50 border-t border-zinc-800/30 animate-fade-in">
+            <div className="pt-4 space-y-4">
+              {/* Description */}
+              {norm.description && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Ta'rif</p>
+                  <p className="text-sm text-zinc-300 leading-relaxed">{norm.description}</p>
+                </div>
+              )}
+
+              {/* Info row */}
+              <div className="flex flex-wrap items-center gap-3">
+                {!!norm.timeLimit && <TimeBadge seconds={norm.timeLimit} size="md" />}
+                <span className="text-xs bg-blue-500/10 text-blue-500 px-3 py-1.5 rounded-lg border border-blue-500/20">
+                  Max: {norm.maxScore} ball
+                </span>
+              </div>
+
+              {/* Instruction URL Section */}
+              {norm.url && (
+                <div className="mt-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2 flex items-center gap-1.5">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Namuna / Ko'rsatma URL
+                  </p>
+                  <div className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950">
+                    <div className="p-4 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <ExternalLink className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <a
+                        href={norm.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors flex-1 truncate"
+                      >
+                        {norm.url}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Status + Action */}
+              <div className="flex items-center gap-3 sm:hidden pt-2">
+                {/* Status */}
+                <div className="flex-1">
+                  {isGreen ? (
+                    <span className="text-xs bg-emerald-500/10 text-emerald-500 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 font-medium inline-block">
+                      ✅ {submission.score} ball
+                    </span>
+                  ) : isPending ? (
+                    <span className="text-xs bg-amber-500/10 text-amber-500 px-2.5 py-1.5 rounded-lg border border-amber-500/20 font-medium inline-flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Kutilmoqda
+                    </span>
+                  ) : isChecked ? (
+                    <ScoreBadge result={submission.result} size="sm" />
+                  ) : (
+                    <span className="text-xs text-zinc-600">Topshirilmagan</span>
+                  )}
+                </div>
+                {/* Action */}
+                {!archived && !isGreen && !isPending && (!isChecked || canResubmit) && (
+                  <button
+                    onClick={() => handleOpenSubmitModal(norm)}
+                    className={`text-xs px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-1 ${
+                      canResubmit 
+                        ? 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    <Send className="w-3 h-3" />
+                    {canResubmit ? 'Qayta topshirish' : 'Topshirish'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -182,185 +369,7 @@ export default function StudentNormativesPage() {
 
             {/* Normatives List */}
             <div className="divide-y divide-zinc-800/50">
-              {paginatedNormatives.map((norm) => {
-                const submission = getSubmissionForNormative(norm.id);
-                const isPending = submission && submission.status === 'pending';
-                const isChecked = submission && submission.status === 'checked';
-                const isGreen = isChecked && submission.result === 'green';
-                const canResubmit = submission && submission.canResubmit === true;
-                const isExpanded = expandedId === norm.id;
-
-                return (
-                  <div key={norm.id} className="group">
-                    {/* Row */}
-                    <div
-                      onClick={() => toggleExpand(norm.id)}
-                      className={`grid grid-cols-1 sm:grid-cols-[auto_1fr_100px_120px_100px] items-center gap-3 sm:gap-4 px-5 py-4 cursor-pointer transition-all duration-200 hover:bg-zinc-800/30 ${
-                        isExpanded ? 'bg-zinc-800/20' : ''
-                      }`}
-                    >
-                      {/* Task Number */}
-                      <div className="flex items-center gap-3 sm:block">
-                        <div className="w-10 h-10 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-blue-500 font-bold text-xs shrink-0">
-                          #{norm.taskNumber}
-                        </div>
-                        {/* Mobile title */}
-                        <div className="sm:hidden flex-1 min-w-0">
-                          <h3 className="text-white font-medium text-sm truncate">{norm.title}</h3>
-                          <p className="text-xs text-zinc-500">{norm.maxScore} ball</p>
-                        </div>
-                        {/* Mobile expand icon */}
-                        <div className="sm:hidden">
-                          {isExpanded ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}
-                        </div>
-                      </div>
-
-                      {/* Title (desktop) */}
-                      <div className="hidden sm:flex items-center gap-2 min-w-0">
-                        {isExpanded ? <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" /> : <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />}
-                        <div className="min-w-0">
-                          <h3 className="text-white font-medium text-sm truncate">{norm.title}</h3>
-                          <p className="text-xs text-zinc-500 truncate">{norm.maxScore} ball · {norm.description || "Ta'rifsiz"}</p>
-                        </div>
-                      </div>
-
-                      {/* Time */}
-                      <div className="hidden sm:flex justify-center">
-                        {norm.timeLimit ? (
-                          <span className="flex items-center gap-1 text-xs bg-amber-500/10 text-amber-500 px-2 py-1 rounded border border-amber-500/20">
-                            <Clock className="w-3 h-3" />
-                            {norm.timeLimit}s
-                          </span>
-                        ) : (
-                          <span className="text-xs text-zinc-600">—</span>
-                        )}
-                      </div>
-
-                      {/* Status */}
-                      <div className="hidden sm:flex justify-center" onClick={(e) => e.stopPropagation()}>
-                        {isGreen ? (
-                          <span className="text-xs bg-emerald-500/10 text-emerald-500 px-2.5 py-1 rounded-lg border border-emerald-500/20 font-medium">
-                            ✅ {submission.score} ball
-                          </span>
-                        ) : isPending ? (
-                          <span className="text-xs bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded-lg border border-amber-500/20 font-medium flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> Kutilmoqda
-                          </span>
-                        ) : isChecked ? (
-                          <ScoreBadge result={submission.result} size="sm" />
-                        ) : (
-                          <span className="text-xs text-zinc-600 font-medium">Topshirilmagan</span>
-                        )}
-                      </div>
-
-                      {/* Action */}
-                      <div className="hidden sm:flex justify-center" onClick={(e) => e.stopPropagation()}>
-                        {isGreen ? (
-                          <span className="text-xs text-emerald-600">Tayyor</span>
-                        ) : isPending ? (
-                          <span className="text-xs text-zinc-600">—</span>
-                        ) : isChecked && !canResubmit ? (
-                          <span className="text-xs text-zinc-600">Baholangan</span>
-                        ) : (
-                          <button
-                            onClick={() => handleOpenSubmitModal(norm)}
-                            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1 ${
-                              canResubmit 
-                                ? 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700' 
-                                : 'bg-blue-600 hover:bg-blue-700 text-white'
-                            }`}
-                          >
-                            <Send className="w-3 h-3" />
-                            {canResubmit ? 'Qayta' : 'Topshir'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Expanded Content */}
-                    {isExpanded && (
-                      <div className="px-5 pb-5 bg-zinc-900/50 border-t border-zinc-800/30 animate-fade-in">
-                        <div className="pt-4 space-y-4">
-                          {/* Description */}
-                          {norm.description && (
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Ta'rif</p>
-                              <p className="text-sm text-zinc-300 leading-relaxed">{norm.description}</p>
-                            </div>
-                          )}
-
-                          {/* Info row */}
-                          <div className="flex flex-wrap items-center gap-3">
-                            {!!norm.timeLimit && <TimeBadge seconds={norm.timeLimit} size="md" />}
-                            <span className="text-xs bg-blue-500/10 text-blue-500 px-3 py-1.5 rounded-lg border border-blue-500/20">
-                              Max: {norm.maxScore} ball
-                            </span>
-                          </div>
-
-                          {/* Instruction URL Section */}
-                          {norm.url && (
-                            <div className="mt-2">
-                              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2 flex items-center gap-1.5">
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                Namuna / Ko'rsatma URL
-                              </p>
-                              <div className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950">
-                                <div className="p-4 flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                                    <ExternalLink className="w-4 h-4 text-blue-500" />
-                                  </div>
-                                  <a
-                                    href={norm.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-sm text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors flex-1 truncate"
-                                  >
-                                    {norm.url}
-                                  </a>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Mobile Status + Action */}
-                          <div className="flex items-center gap-3 sm:hidden pt-2">
-                            {/* Status */}
-                            <div className="flex-1">
-                              {isGreen ? (
-                                <span className="text-xs bg-emerald-500/10 text-emerald-500 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 font-medium inline-block">
-                                  ✅ {submission.score} ball
-                                </span>
-                              ) : isPending ? (
-                                <span className="text-xs bg-amber-500/10 text-amber-500 px-2.5 py-1.5 rounded-lg border border-amber-500/20 font-medium inline-flex items-center gap-1">
-                                  <Clock className="w-3 h-3" /> Kutilmoqda
-                                </span>
-                              ) : isChecked ? (
-                                <ScoreBadge result={submission.result} size="sm" />
-                              ) : (
-                                <span className="text-xs text-zinc-600">Topshirilmagan</span>
-                              )}
-                            </div>
-                            {/* Action */}
-                            {!isGreen && !isPending && (!isChecked || canResubmit) && (
-                              <button
-                                onClick={() => handleOpenSubmitModal(norm)}
-                                className={`text-xs px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-1 ${
-                                  canResubmit 
-                                    ? 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700' 
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                }`}
-                              >
-                                <Send className="w-3 h-3" />
-                                {canResubmit ? 'Qayta topshirish' : 'Topshirish'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {paginatedNormatives.map((norm) => renderRow(norm, false))}
             </div>
 
             {/* Pagination */}
@@ -398,6 +407,27 @@ export default function StudentNormativesPage() {
                     Keyingi →
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {archivedNorms.length > 0 && (
+          <div className="mt-10">
+            <button
+              type="button"
+              onClick={() => setShowArchive((v) => !v)}
+              className="mb-3 flex w-full items-center gap-2 text-left"
+            >
+              {showArchive ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}
+              <span className="text-sm font-semibold text-zinc-400">Eski normativlar (arxiv)</span>
+              <span className="text-xs text-zinc-600">
+                — {archivedNorms.length} ta · natijalaringiz saqlangan, yangi topshirish yangi normativlar bo'yicha
+              </span>
+            </button>
+            {showArchive && (
+              <div className="opacity-55 grayscale-[35%] bg-zinc-900/60 border border-zinc-800/70 rounded-2xl overflow-hidden divide-y divide-zinc-800/40">
+                {archivedNorms.map((norm) => renderRow(norm, true))}
               </div>
             )}
           </div>

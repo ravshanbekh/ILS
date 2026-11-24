@@ -19,6 +19,8 @@ export const updateNormativeSchema = z.object({
   maxScore: z.number().int().positive().optional(),
   isActive: z.boolean().optional(),
   categoryId: z.string().uuid().optional().nullable(),
+  // Arxivga olish / arxivdan chiqarish (faqat admin — controller tekshiradi)
+  archived: z.boolean().optional(),
 });
 
 export const assignNormativeSchema = z.object({

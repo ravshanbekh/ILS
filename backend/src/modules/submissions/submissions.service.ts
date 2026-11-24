@@ -141,6 +141,17 @@ class SubmissionsService {
    * O'quvchi topshiriq topshiradi (YouTube link)
    */
   async create(studentId: string, data: CreateSubmissionInput) {
+    // Arxivlangan (eski tahrir) normativga yangi topshiriq qabul qilinmaydi —
+    // eski natijalar saqlanadi, yangi natija yangi tahrirdagi normativ bo'yicha yig'iladi
+    const target = await prisma.normative.findUnique({
+      where: { id: data.normativeId },
+      select: { isActive: true, archivedAt: true },
+    });
+    if (!target || !target.isActive) throw ApiError.notFound('Normativ topilmadi');
+    if (target.archivedAt) {
+      throw ApiError.badRequest("Bu normativ arxivlangan (eski tahrir) — yangi tahrirdagi normativni topshiring");
+    }
+
     let groupId = data.groupId || null;
 
     // Agar groupId berilmagan bo'lsa, o'quvchining birinchi guruhini topib olamiz

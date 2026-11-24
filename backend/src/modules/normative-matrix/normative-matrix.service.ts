@@ -92,10 +92,13 @@ export async function buildMatrix(actor: Actor, f: MatrixFilters) {
         orderBy: [{ taskNumber: 'asc' }, { title: 'asc' }],
         select: {
           id: true, taskNumber: true, title: true, description: true, timeLimit: true, url: true, maxScore: true, isActive: true,
+          archivedAt: true,
           category: { select: { id: true, name: true } },
         },
       })
     : [];
+  // Arxivlangan (eski tahrir) normativlar — pastda, "soya" sifatida (natijalari ko'rinib turadi)
+  normatives.sort((a, b) => Number(!!a.archivedAt) - Number(!!b.archivedAt));
   const shownNorm = new Set(normatives.map((n) => n.id));
 
   // Ustunlar: mentor → guruh → o'quvchilar (mentor nomi bo'yicha, ustozsizlar oxirida)

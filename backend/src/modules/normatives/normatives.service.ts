@@ -108,10 +108,12 @@ class NormativesService {
     const existing = await prisma.normative.findUnique({ where: { id } });
     if (!existing) throw ApiError.notFound('Normativ topilmadi');
 
+    const { archived, ...fields } = data;
     const normative = await prisma.normative.update({
       where: { id },
       data: {
-        ...data,
+        ...fields,
+        ...(archived === undefined ? {} : { archivedAt: archived ? existing.archivedAt ?? new Date() : null }),
       },
     });
 

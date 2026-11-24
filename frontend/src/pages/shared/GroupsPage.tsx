@@ -576,7 +576,7 @@ export default function GroupsPage() {
                   ))}
                 </div>
                 <p className="text-[11px] text-zinc-500 mt-2">
-                  Normativ deadline'i haftaning oxirgi dars kuni, dars boshlanish soatigacha qo'yiladi
+                  Normativ deadline'lari guruh boshlanish sanasidan hisoblanadi (muddat — har yakshanba 23:59)
                 </p>
 
                 {(!formData.startDate || !formData.durationMonths || !formData.lessonDayType) && (

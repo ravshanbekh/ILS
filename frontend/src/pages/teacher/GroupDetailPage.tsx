@@ -498,8 +498,18 @@ export default function GroupDetailPage() {
           </span>
         </div>
 
+        {/* Boshlanish sanasi (kiritilmagan bo'lsa — tepadagi bildirishnomada kiritiladi) */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm">
+          <span className="text-zinc-400">Boshlangan:</span>
+          {group?.startDate ? (
+            <span className="text-white font-medium">{String(group.startDate).slice(0, 10).split('-').reverse().join('.')}</span>
+          ) : (
+            <span className="text-amber-400 font-medium">kiritilmagan</span>
+          )}
+        </div>
+
         {/* Dars soati */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm" title="Normativ deadline'i haftaning oxirgi dars kuni shu soatgacha">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-sm">
           <span className="text-zinc-400">Dars soati:</span>
           {(['lessonStartMinute', 'lessonEndMinute'] as const).map((f, i) => (
             <span key={f} className="inline-flex items-center gap-1">

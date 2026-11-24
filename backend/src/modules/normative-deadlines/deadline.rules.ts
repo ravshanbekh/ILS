@@ -5,9 +5,7 @@
  *
  * Qoidalar:
  *   - reja haftalarga bo'linadi (dushanba–yakshanba), har haftaga `perWeek` ta normativ;
- *   - haftaning muddati — guruhning shu haftadagi OXIRGI dars kuni, DARS SOATIGACHA.
- *     Dars soati kiritilmagan bo'lsa — o'sha kun 23:59; dars kunlari ham
- *     kiritilmagan bo'lsa — yakshanba 23:59;
+ *   - haftaning muddati — YAKSHANBA 23:59 (hamma guruh uchun bir xil);
  *   - muddatdan keyin `graceDays` kun qo'shimcha imkon;
  *   - qo'shimcha muddatda ham topshirmasa — qizil ("missed").
  *
@@ -47,18 +45,19 @@ export function centerInstant(day: Date, minute: number): Date {
   return new Date(day.getTime() + (minute - CENTER_OFFSET_MIN) * 60_000);
 }
 
-/** Haftaning muddati: oxirgi dars kuni, dars soatigacha */
-export function dueAtFor(weekStart: Date, g: GroupScheduleLike): Date {
-  const endOfDay = (day: Date) => new Date(centerInstant(day, 24 * 60).getTime() - 1000); // 23:59:59
-  if (g.lessonDayType) {
-    for (let i = 6; i >= 0; i--) {
-      const day = addDays(weekStart, i);
-      if (isLessonDay(g.lessonDayType, day)) {
-        return g.lessonStartMinute != null ? centerInstant(day, g.lessonStartMinute) : endOfDay(day);
-      }
-    }
-  }
-  return endOfDay(addDays(weekStart, 6));
+/**
+ * Haftaning muddati — YAKSHANBA 23:59 (Toshkent). Promptokrat qarori (2026-11-24):
+ * guruh jadvalidan qat'i nazar hamma uchun bir xil. `g` imzoda qoldirilgan —
+ * qoida qayta guruh jadvaliga bog'lansa, chaqiruvlar o'zgarmaydi.
+ */
+export function dueAtFor(weekStart: Date, _g?: GroupScheduleLike): Date {
+  return new Date(centerInstant(addDays(weekStart, 6), 24 * 60).getTime() - 1000); // yakshanba 23:59:59
+}
+
+/** Shu hafta guruhning dars kunlari (ko'rsatish uchun) */
+export function lessonDaysOfWeek(weekStart: Date, g: GroupScheduleLike): Date[] {
+  if (!g.lessonDayType) return [];
+  return [0, 1, 2, 3, 4, 5, 6].map((i) => addDays(weekStart, i)).filter((d) => isLessonDay(g.lessonDayType, d));
 }
 
 export const graceEndFor = (dueAt: Date, graceDays: number): Date => new Date(dueAt.getTime() + graceDays * DAY_MS);

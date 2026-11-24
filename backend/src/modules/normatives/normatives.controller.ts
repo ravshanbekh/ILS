@@ -10,7 +10,11 @@ class NormativesController {
    */
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const pagination = getPagination(req.query as any);
+      // Normativlar ro'yxati sahifalar to'liq ro'yxatni bir so'rovda oladi (o'quvchi sahifasi 500 so'raydi).
+      // Umumiy getPagination 100 ga cheklaydi — 2026 tahriri bilan 100 dan oshadi va ro'yxat jimgina kesilardi.
+      const base = getPagination({ ...(req.query as any), limit: '1' });
+      const limit = Math.min(1000, Math.max(1, parseInt(String(req.query.limit ?? '20'), 10) || 20));
+      const pagination = { page: base.page, limit, skip: (base.page - 1) * limit };
       const filters = {
         search: req.query.search as string | undefined,
       };
@@ -65,6 +69,9 @@ class NormativesController {
         );
       }
 
+      if (validated.data.archived !== undefined && req.user?.role !== 'admin') {
+        throw ApiError.forbidden('Normativni arxivlash faqat administrator uchun');
+      }
       const normative = await normativesService.update(req.params.id, validated.data, req.user?.userId);
       res.json({ success: true, data: normative });
     } catch (error) {

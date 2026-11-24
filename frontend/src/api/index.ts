@@ -103,6 +103,10 @@ export const milestonesApi = {
 };
 
 export const groupsApi = {
+  /** O'qituvchi: o'z faol guruhlaridan boshlanish sanasi kiritilmaganlari */
+  startDateMissing: () => api.get<{ success: boolean; data: { id: string; name: string }[] }>('/groups/start-date/missing'),
+  /** Boshlanish sanasi: o'qituvchi — o'z guruhiga bir marta; admin/edit_group — istalgan payt */
+  setStartDate: (id: string, startDate: string) => api.patch(`/groups/${id}/start-date`, { startDate }),
   getAll: (page: number = 1, limit: number = 100, search?: string, teacherId?: string) =>
     api.get('/groups', { params: { page, limit, search, teacherId } }),
 
@@ -163,6 +167,37 @@ export const normativesApi = {
   /** dryRun=true — faqat oldindan ko'rish, hech narsa yozilmaydi */
   importJson: (payload: unknown, dryRun: boolean) =>
     api.post('/normatives/import', payload, { params: dryRun ? { dryRun: 1 } : undefined }),
+
+  /** Arxivga olish / arxivdan chiqarish (faqat admin) */
+  setArchived: (id: string, archived: boolean) => api.put(`/normatives/${id}`, { archived }),
+};
+
+// ─── Foundation 2026 ga o'tish (admin, bir martalik) ─────────────────────────
+export interface Foundation2026Plan {
+  version: string;
+  category: string;
+  oldCategory: string | null;
+  applied: Record<string, unknown> | null;
+  create: { taskNumber: number; title: string; code: string; hasImage: boolean }[];
+  keep: { taskNumber: number; title: string; old: { id: string; taskNumber: number; title: string; submissions: number } | null }[];
+  archive: { id: string; taskNumber: number; title: string; submissions: number }[];
+  alreadyInNew: number;
+  groups: {
+    id: string;
+    name: string;
+    teacher: { id: string; fullName: string } | null;
+    students: number;
+    oldCount: number;
+    newCount: number;
+    otherCategories: string[];
+    suggested: boolean;
+    reason: string;
+  }[];
+  warnings: string[];
+}
+export const foundation2026Api = {
+  plan: () => api.get<{ success: boolean; data: Foundation2026Plan }>('/normatives/foundation-2026/plan', { timeout: 60_000 }),
+  apply: (groupIds: string[]) => api.post('/normatives/foundation-2026/apply', { groupIds }, { timeout: 120_000 }),
 };
 
 export const submissionsApi = {
@@ -244,6 +279,8 @@ export interface MatrixNormative {
   url: string | null;
   maxScore: number;
   isActive: boolean;
+  /** Arxiv (eski tahrir) — pastda va xira ko'rsatiladi */
+  archivedAt?: string | null;
   category: { id: string; name: string } | null;
 }
 export interface MatrixGroup {

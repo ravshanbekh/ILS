@@ -6,7 +6,8 @@ import { normativesApi, categoriesApi } from '@/api';
 import Header from '@/components/layout/Header';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import NormativesJsonTransfer from '@/components/shared/NormativesJsonTransfer';
-import { Plus, Pencil, Trash2, Link as LinkIcon, Search, Check, AlertCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Link as LinkIcon, Search, Check, AlertCircle, Archive, ArchiveRestore } from 'lucide-react';
+import Foundation2026Panel from '@/components/admin/Foundation2026Panel';
 
 export default function NormativesPage() {
   const { user } = useAuthStore();
@@ -49,7 +50,7 @@ export default function NormativesPage() {
   const fetchNormatives = async () => {
     setLoading(true);
     try {
-      const res = await normativesApi.getAll(1, 100);
+      const res = await normativesApi.getAll(1, 1000);
       setNormatives(res.data.data);
     } catch (error) {
       console.error(error);
@@ -160,6 +161,16 @@ export default function NormativesPage() {
     }
   };
 
+  // Arxivlash / arxivdan chiqarish (eski tahrir — natijalari saqlanadi)
+  const toggleArchive = async (n: any) => {
+    try {
+      await normativesApi.setArchived(n.id, !n.archivedAt);
+      fetchNormatives();
+    } catch (error: any) {
+      alert('Xatolik: ' + (error.response?.data?.error?.message || 'Qandaydir muammo yuz berdi'));
+    }
+  };
+
   const filteredNormatives = normatives.filter(n => {
     const matchSearch = n.title.toLowerCase().includes(search.toLowerCase()) || 
       (n.description && n.description.toLowerCase().includes(search.toLowerCase())) ||
@@ -173,6 +184,8 @@ export default function NormativesPage() {
       <Header title="Normativlar" subtitle="Barcha normativ (vazifa)larni boshqarish" />
 
       <div className="p-8 max-w-7xl mx-auto">
+        {user?.role === 'admin' && <Foundation2026Panel onApplied={() => { fetchNormatives(); fetchCategories(); }} />}
+
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -244,14 +257,19 @@ export default function NormativesPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredNormatives.sort((a, b) => a.taskNumber - b.taskNumber).map((n) => (
-                    <tr key={n.id} className="hover:bg-zinc-800/30 transition-colors group">
+                  // Arxivlanganlar (eski tahrir) — pastda va xira
+                  filteredNormatives.sort((a, b) => Number(!!a.archivedAt) - Number(!!b.archivedAt) || a.taskNumber - b.taskNumber).map((n) => (
+                    <tr key={n.id} className={`hover:bg-zinc-800/30 transition-colors group ${n.archivedAt ? 'opacity-50' : ''}`}>
                       <td className="px-6 py-4 font-bold text-white text-center">
                         <div className="w-8 h-8 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center mx-auto text-blue-500">
                           {n.taskNumber}
                         </div>
                       </td>
-                      <td className="px-6 py-4 font-medium text-white cursor-pointer hover:text-blue-400 transition-colors" onClick={() => setViewingNormative(n)}>{n.title}</td>
+                      <td className="px-6 py-4 font-medium text-white cursor-pointer hover:text-blue-400 transition-colors" onClick={() => setViewingNormative(n)}>
+                        {n.archivedAt && <span className="mr-2 rounded bg-zinc-700/60 px-1.5 py-0.5 text-[10px] font-bold uppercase text-zinc-300">arxiv</span>}
+                        {n.title}
+                        {n.category?.name && <div className="text-[11px] font-normal text-zinc-500">{n.category.name}</div>}
+                      </td>
                       <td className="px-6 py-4 cursor-pointer" onClick={() => setViewingNormative(n)}>
                         <div className="text-zinc-400 line-clamp-2 max-w-sm hover:text-zinc-300 transition-colors">
                           {n.description || <span className="text-zinc-600 italic">Kiritilmagan</span>}
@@ -285,7 +303,14 @@ export default function NormativesPage() {
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
-                            <button 
+                            <button
+                              onClick={() => toggleArchive(n)}
+                              className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                              title={n.archivedAt ? 'Arxivdan chiqarish' : "Arxivlash (eski tahrir — natijalar saqlanadi)"}
+                            >
+                              {n.archivedAt ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                            </button>
+                            <button
                               onClick={() => handleDelete(n.id)}
                               className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
                               title="O'chirish"

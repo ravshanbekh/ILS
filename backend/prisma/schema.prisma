@@ -257,6 +257,10 @@ model Normative {
   url         String?
   maxScore    Int      @default(40) @map("max_score")
   isActive    Boolean  @default(true) @map("is_active")
+  // Arxiv (eski tahrir): natijalari va ballari saqlanadi, o'quvchida "eski normativlar"
+  // bo'limida xira ko'rinadi, yangi topshirish yopiq, deadline rejasiga kirmaydi.
+  // isActive=false (o'chirilgan) dan farqi — ko'rinib turadi.
+  archivedAt  DateTime? @map("archived_at")
   categoryId  String?  @map("category_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
 

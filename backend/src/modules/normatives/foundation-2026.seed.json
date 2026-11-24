@@ -1,0 +1,446 @@
+{
+ "version": "2026-11-24",
+ "category": "Foundation 2026",
+ "oldCategory": "Foundation",
+ "normatives": [
+  {
+   "taskNumber": 1,
+   "code": "F-1",
+   "title": "Vakansiya tahlili: kelajak kasbim talablari",
+   "description": "Topshiriq:\n- hh.uz yoki IT Telegram kanalidan o‘zi tanlagan kasb bo‘yicha 1 ta real vakansiya toping.\n- Google Sheets jadvali: kompaniya, lavozim, tajriba, 5 ta texnik talab, til talablari, maosh (bo‘lsa), havola.\n- Har talab yoniga: IT Live’ning qaysi kursida o‘tiladi yoki «bizda yo‘q».\n- «Bizda yo‘q» talab uchun qanday o‘rganishni bir jumlada yozing.\n\nQabul mezoni:\n- Havola ochiladi, e’lon 30 kundan eski emas.\n- 5 ta texnik talab to‘g‘ri ajratilgan (soft skill aralashmagan).\n- Kamida 1 ta «bizda yo‘q» talab topilgan va reja yozilgan.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 2-dars (1-oy).\nAsos: IT vakansiyalar tahlili (hh.uz, 23.11.2026): 167 ta IT e’londan atigi 5 tasi tajriba so‘ramaydi — o‘quvchi bozor talabini 2-darsdan ko‘rishi kerak.",
+   "timeLimit": 480,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 2,
+   "code": "F-2",
+   "title": "Tez yozish: 60 soniyalik test",
+   "description": "Topshiriq:\n- monkeytype.com: English, time 60, punctuation va numbers o‘chiq.\n- Kamida 3 urinish; eng yaxshisi hisoblanadi.\n- Natija oynasini (wpm, acc, raw) skrinshot qiling.\n\nQabul mezoni:\n- 50+ WPM va aniqlik 95%+.\n- 10 barmoq usuli: videoda qo‘llar ko‘rinadi, klaviaturaga qaralmaydi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 3-dars (1-oy).\nAsos: Eski №1 yangilandi: 30 soniyalik sprint o‘rniga 60 soniyalik barqaror natija va aniqlik mezoni. Kod yozishda xato tezlikdan qimmat.",
+   "timeLimit": 60,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    1
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 3,
+   "code": "F-3",
+   "title": "Fayl tizimi va terminal: loyiha papkasi",
+   "description": "Topshiriq:\n- Explorer’da fayl kengaytmalarini ko‘rinadigan qiling.\n- PowerShell’da: cd Desktop, mkdir loyiha, cd loyiha, mkdir css, img, New-Item index.html, ls -Name.\n- Ish stolidagi 5 ta faylni loyiha ga ko‘chiring va 7-Zip bilan AES-256 parolli ZIP qiling (parolni ustoz beradi).\n- Explorer qidiruvida *.pdf bilan fayl toping.\n\nKutilgan natija / namuna:\nPS C:\\Users\\talaba\\Desktop\\loyiha> ls -Name\ncss\nimg\nindex.html\n\nQabul mezoni:\n- Papka tuzilmasi namunadagidek (ls -Name natijasi).\n- ZIP parolsiz ochilmaydi.\n- Papka va faylni sichqonchasiz, terminalda yaratgan.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 3-dars (1-oy).\nAsos: Eski №8 yangilandi: WinRAR pullik, 7-Zip bepul va AES-256. Terminal — Beeline stajirovkasi va backend e’lonlarining asosi (Linux CLI).",
+   "timeLimit": 180,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    8
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 4,
+   "code": "F-4",
+   "title": "AI javobini tekshirish: 3 ta AI, 1 ta haqiqat",
+   "description": "Topshiriq:\n- Ustoz bergan savolni ChatGPT, Gemini va DeepSeek’ka bir xil prompt bilan bering.\n- Prompt tuzilishi: rol + vazifa + javob formati.\n- Uchala javobni jadvalda solishtiring.\n- Kamida bitta noaniq yoki xato joyni rasmiy manba bilan tekshiring.\n\nQabul mezoni:\n- 3 ta javob solishtirilgan.\n- Xato yoki noaniqlik manba havolasi bilan ko‘rsatilgan.\n- Qaysi javob ishonchliroq ekani asoslangan.\n\nTur: AI bilan. Dalil: Ekran yozuvi + PROMPTS.md.\nDars: 4-dars (1-oy).\nAsos: Import №44 saqlandi. Upwork: Entry e’lonlarning 4% ida mijoz «AI bilan qurdim, ishlamayapti» deydi — AI natijasini tekshirish odati 1-oydan.",
+   "timeLimit": 360,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 5,
+   "code": "F-5",
+   "title": "Ish yozishmasi: rasmiy xat va fayl ulashish",
+   "description": "Topshiriq:\n- Gmail’da ustozga xat: mavzu «Uyga vazifa — Ism Familiya — 4-dars», murojaat, 3 jumla, imzo.\n- Google Drive’ga fayl yuklang va «havolasi bor har kim — faqat ko‘rish» bilan ulashing.\n- Havolani xatga qo‘ying, qabul qiluvchini tekshirib yuboring.\n\nQabul mezoni:\n- Mavzu formatga mos, imlo xatosi yo‘q.\n- Havola tahrirlash huquqisiz ochiladi.\n- Xatda parol yoki shaxsiy ma’lumot yo‘q.\n\nTur: Qo‘lda · Xavfsizlik. Dalil: Ekran yozuvi + sekundomer; Xavfsizlik sinovi ekranda.\nDars: 4-dars (1-oy).\nAsos: Eski №2 (Chrome o‘rnatish) va №3 (Gmail ochish) — bir martalik amal. hh.uz e’lonlarida muloqot sifati alohida talab qilinadi.",
+   "timeLimit": 300,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    2,
+    3
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 6,
+   "code": "F-6",
+   "title": "Word: namuna bo‘yicha hujjat",
+   "description": "Topshiriq:\n- Ustoz bergan namunani Word’da qayta yarating.\n- Sarlavha 1/2 stillari va avtomatik mundarija.\n- Markerli va rim raqamli ro‘yxat; daraja va indeks (O₂, 8³).\n- 5×3 jadval (sarlavha qatori bilan), rasm «matn atrofida», formula (Insert → Equation), SmartArt.\n- PDF qilib saqlang.\n\nQabul mezoni:\n- Mundarija avtomatik: sarlavha o‘zgarsa yangilanadi.\n- Jadval, ro‘yxat va formula namunadagidek.\n- PDF ochiladi va formatlash buzilmagan.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 5-dars (1-oy).\nAsos: Eski №4–6 bitta normativga birlashtirildi (1 daqiqada 10 element — real emas). hh.uz: Safia «avtomatlashtirish mutaxassisi» — MS Office + AI.\n\nNamuna rasmlari (eski №4–6):\n- https://github.com/ITLivementor/Foundation/blob/main/normative-4/normative-4.jpg\n- https://github.com/ITLivementor/Foundation/blob/main/normative-5/normative-5.jpg\n- https://github.com/ITLivementor/Foundation/blob/main/normative-6/normative-6.jpg",
+   "timeLimit": 480,
+   "maxScore": 20,
+   "url": "https://github.com/ITLivementor/Foundation/blob/main/normative-4/normative-4.jpg",
+   "eski": [
+    4,
+    5,
+    6
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 7,
+   "code": "F-7",
+   "title": "Excel: formula, filtr va diagramma",
+   "description": "Topshiriq:\n- Ustoz bergan 20 qatorli savdo CSV’sini Excel jadvaliga aylantiring (Ctrl+T).\n- SUM, AVERAGE, MAX; IF bilan «Bonus» ustuni (savdo > 5 mln so‘m).\n- Saralash, filtr va shartli formatlash (eng katta 3 ta).\n- Ustunli diagramma: sarlavha va o‘q nomlari bilan.\n\nQabul mezoni:\n- Formulalar pastga cho‘zilganda buzilmaydi (nisbiy/absolyut murojaat to‘g‘ri).\n- Natija qo‘lda yozilmagan — hammasi formula.\n- Diagramma ma’lumot o‘zgarsa yangilanadi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 5-dars (1-oy).\nUstoz tayyorlaydi: 20 qatorli savdo CSV fayli.\nAsos: hh.uz: data analyst minimumi — Excel (pivot, VLOOKUP); Upwork: Excel va Data Entry Entry e’lonlarining katta qismi.",
+   "timeLimit": 480,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 8,
+   "code": "F-8",
+   "title": "Canva: brief bo‘yicha flayer va AI rasm",
+   "description": "Topshiriq:\n- Brief: «IT Live — yangi Frontend guruhi», A4 flayer.\n- Brend ranglari va shriftlari (ustoz beradi).\n- AI bilan 1 ta rasm (Canva Magic Media yoki boshqa); promptni PROMPTS.md’ga yozing.\n- QR kod (Canva QR) va PNG + PDF eksport.\n\nQabul mezoni:\n- Matnda imlo xatosi yo‘q, kontrast o‘qiladi.\n- AI rasm prompti yozilgan.\n- QR telefonda ochiladi.\n\nTur: AI bilan. Dalil: Ekran yozuvi + PROMPTS.md.\nDars: 6-dars (1-oy).\nUstoz tayyorlaydi: Brend ranglari va shriftlar ro‘yxati.\nAsos: Eski №7 + AI. Upwork: UI/UX va Graphic Design Entry e’lonlari (median $75).",
+   "timeLimit": 600,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    7
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 9,
+   "code": "F-9",
+   "title": "AI video: 15 soniyalik reklama",
+   "description": "Topshiriq:\n- AI bilan 3 sahnali ssenariy yozing.\n- Har sahnaga AI rasm yoki video (Kling, Veo yoki boshqa).\n- Ovoz yoki musiqa (mualliflik huquqi toza), subtitr.\n- CapCut’da MP4, 1080×1920.\n- Bepul tarifda generatsiya navbati uzun bo‘lsa, kliplar oldindan tayyorlanadi — vaqt ssenariy va montajga qo‘yiladi.\n\nQabul mezoni:\n- Davomiyligi 13–17 soniya.\n- Subtitr o‘qiladi; promptlar PROMPTS.md’da.\n- Begona brend yoki odam yuzi ruxsatsiz ishlatilmagan.\n\nTur: AI bilan. Dalil: Ekran yozuvi + PROMPTS.md.\nDars: 7-dars (1-oy).\nAsos: Yangi: 7-darsning normativi yo‘q edi. Upwork: AI va media e’lonlari; kontent ishlab chiqarish.",
+   "timeLimit": 1500,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 10,
+   "code": "F-10",
+   "title": "Sanoq tizimlari va axborot birliklari",
+   "description": "Topshiriq:\n- Ustoz bergan 4 xonali sonni (2000–9999) qo‘lda 2, 8 va 16 lik sanoq tizimiga o‘tkazing.\n- 16 likdagi natijani qayta 10 likka o‘tkazib tekshiring.\n- 1,5 GB = ? MB = ? KB (1024 asosida).\n\nKutilgan natija / namuna:\n2026(10) = 11111101010(2) = 3752(8) = 7EA(16)\n7EA(16) = 7·256 + 14·16 + 10 = 2026  ✓\n1,5 GB = 1536 MB = 1 572 864 KB\n\nQabul mezoni:\n- 3 ta o‘tkazish to‘g‘ri.\n- Teskari tekshiruv mos keladi.\n- Kalkulyator ishlatilmagan (qog‘oz yoki doska).\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 8–9-dars (1-oy).\nAsos: Eski №9 (1 daqiqa, tavsifsiz) — tavsif va teskari tekshiruv qo‘shildi; qo‘lda 3 ta o‘tkazish uchun real vaqt 3 daqiqa.",
+   "timeLimit": 180,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    9
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 11,
+   "code": "F-11",
+   "title": "Blok-sxema: 3 sondan eng kattasi",
+   "description": "Topshiriq:\n- draw.io (diagrams.net) yoki qog‘ozda standart shakllar bilan chizing: oval, parallelogramm, romb, to‘rtburchak.\n- 3 ta test bilan qo‘lda tekshiring: (5, 9, 2), (7, 7, 1), (−1, −5, −3).\n\nQabul mezoni:\n- Tenglik holati (7, 7, 1) ham to‘g‘ri.\n- Har rombdan 2 ta chiqish (ha / yo‘q) bor.\n- Test jadvali to‘g‘ri to‘ldirilgan.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 10-dars (1-oy).\nAsos: Eski №10 (2 son, 35 s, tavsifsiz) murakkablashtirildi: 3 son va tenglik — intervyu masalalarining eng oddiy turi.",
+   "timeLimit": 240,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    10
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 12,
+   "code": "F-12",
+   "title": "Takrorlanuvchi algoritm va trace jadvali",
+   "description": "Topshiriq:\n- 1 dan N gacha juft sonlar yig‘indisini topuvchi blok-sxema chizing (sikl bilan).\n- N = 6 uchun trace jadvali: har qadamda i va s qiymatlari.\n- N = 0 holatini tekshiring.\n\nKutilgan natija / namuna:\ni : 1  2  3  4  5  6\ns : 0  2  2  6  6  12\n\nQabul mezoni:\n- Sikl to‘xtash sharti to‘g‘ri.\n- Trace jadvali s = 12 bilan tugaydi.\n- N = 0 da natija 0.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 11-dars (1-oy).\nAsos: Yangi: 11-darsga normativ yo‘q edi. Kod yozishdan oldin trace qilish — debugging‘ning asosi.",
+   "timeLimit": 300,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 13,
+   "code": "F-13",
+   "title": "Demo Day 1: oy natijasini taqdim etish",
+   "description": "Topshiriq:\n- 1-oy ishini (flayer, Excel hisobot, AI video) ota-onalar oldida taqdim eting.\n- Tuzilma: muammo → nima qildim → natija → keyingi maqsad.\n- 3 daqiqa taqdimot + 2 daqiqa savol-javob.\n\nQabul mezoni:\n- 3 daqiqaga sig‘adi.\n- Natijani jonli ko‘rsatadi.\n- 2 ta savolga javob beradi.\n\nTur: Loyiha. Dalil: GitHub havola + himoya.\nDars: Demo Day 1 (1-oy).\nAsos: Eski №11 ga baholash mezoni qo‘shildi. Upwork: mijozlarning 3–5% i Loom yoki taqdimot so‘raydi — o‘z ishini tushuntirish ko‘nikmasi.",
+   "timeLimit": 300,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    11
+   ],
+   "keepOld": 11
+  },
+  {
+   "taskNumber": 14,
+   "code": "F-14",
+   "title": "C++: birinchi dastur — kiritish va chiqarish",
+   "description": "Topshiriq:\n- VS Code yoki Code::Blocks’da yangi .cpp fayl.\n- Ism va tug‘ilgan yilni cin bilan oling.\n- Salom va 2026-yildagi yoshni chiqaring; kompilyatsiya qilib ishga tushiring.\n\nKutilgan natija / namuna:\nIsmingiz: Aziz\nTug'ilgan yilingiz: 2011\nSalom, Aziz! Siz 2026-yilda 15 yoshga to'lasiz.\n\nQabul mezoni:\n- Kompilyatsiya xatosiz.\n- Boshqa qiymat bilan ham to‘g‘ri ishlaydi.\n- using namespace std; nima ekanini bir jumlada aytadi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 12-dars (2-oy).\nAsos: Eski №12 (15 s, faqat Hello World, tavsifsiz) — kiritish-chiqarish qo‘shildi.",
+   "timeLimit": 120,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    12
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 15,
+   "code": "F-15",
+   "title": "C++ ma’lumot turlari",
+   "description": "Topshiriq:\n- Ustoz bergan 10 ta qiymatni to‘g‘ri turdagi o‘zgaruvchiga e’lon qiling: 17, 3.14, 'A', \"Toshkent\", true, 2026, -0.5, '7', \"7\", 1e6.\n- Har birini va sizeof ni chiqaring.\n- int x = 7 / 2; va double y = 7 / 2.0; natijasini izohlang.\n\nQabul mezoni:\n- 10/10 to‘g‘ri tur.\n- '7' va \"7\" farqini tushuntiradi.\n- Butun bo‘lish natijasi (3) izohlangan.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 13-dars (2-oy).\nAsos: Eski №13: nomi C++ turlari haqida, tavsifi esa Excel haqida edi — tavsif qayta yozildi.",
+   "timeLimit": 180,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    13
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 16,
+   "code": "F-16",
+   "title": "Shartlar: kabisa yil (if) va hafta kuni (switch)",
+   "description": "Topshiriq:\n- Yil kiriting → kabisa yoki yo‘q: (y % 4 == 0 && y % 100 != 0) || y % 400 == 0.\n- 1–7 raqamga hafta kunini switch bilan chiqaring; noto‘g‘ri raqamga default.\n\nKutilgan natija / namuna:\nYil: 1900\n1900 - kabisa yil emas\nRaqam (1-7): 3\nChorshanba\n\nQabul mezoni:\n- 2024 ✓, 1900 ✗, 2000 ✓, 2026 ✗.\n- 0 va 8 da «Noto‘g‘ri raqam».\n- break unutilmagan.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 14-dars (2-oy).\nAsos: Eski №14 (if sintaksisi), №15 (omadli son), №16 (mantiqiy operatorlar), №18 (switch) birlashtirildi: sintaksis yodlash emas, chegaraviy holatlarni ushlash tekshiriladi.",
+   "timeLimit": 240,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    14,
+    15,
+    16,
+    18
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 17,
+   "code": "F-17",
+   "title": "Sikllar: raqamlar yig‘indisi va tub sonlar",
+   "description": "Topshiriq:\n- while: sonning raqamlari yig‘indisi va teskari tartibi.\n- for + if: 1 dan N gacha tub sonlar va ularning soni.\n\nKutilgan natija / namuna:\nSon: 2026\nRaqamlar yig'indisi: 10, teskari: 6202\nN: 20\nTub sonlar: 2 3 5 7 11 13 17 19\nSoni: 8\n\nQabul mezoni:\n- 1 tub son emas; N = 2 da «2», soni 1.\n- Tub tekshiruvi i * i <= n gacha — nega shundayligini tushuntiradi.\n- Manfiy son kiritilsa xabar chiqadi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 15–16-dars (2-oy).\nAsos: Eski №19 (for sintaksisi, 6 s) va №20 (juft sonlar, 20 s) — masala yechishga almashtirildi; tub son — intervyudagi klassik masala.",
+   "timeLimit": 360,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    19,
+    20
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 18,
+   "code": "F-18",
+   "title": "Debugging: 6 ta xatoni topish",
+   "description": "Topshiriq:\n- AI’dan xatoli kod oling (prompt namunada).\n- Sintaksis xatolarni kompilyator xabari bo‘yicha tuzating.\n- Mantiqiy xatoni breakpoint va Watch bilan toping.\n- Har xato uchun «nima edi → nima qildim» izohini yozing.\n\nKutilgan natija / namuna:\nPrompt: C++ tilida 8 qatorli kichik dastur yoz. Ichiga 4 ta sintaksis\nva 2 ta mantiqiy xato qo'sh. Xatolarni ko'rsatma va izoh yozma.\n\nQabul mezoni:\n- Dastur to‘g‘ri natija beradi.\n- 6 ta xatoning hammasi izohlangan.\n- Breakpoint ishlatilgani videoda ko‘rinadi.\n\nTur: Qo‘lda · AI bilan. Dalil: Ekran yozuvi + sekundomer; Ekran yozuvi + PROMPTS.md.\nDars: 17-dars (2-oy).\nAsos: Eski №17 saqlandi, mantiqiy xato va debugger qo‘shildi. Upwork Entry ishlarining asosiy turi — mavjud koddagi xatoni topish.",
+   "timeLimit": 480,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    17
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 19,
+   "code": "F-19",
+   "title": "Funksiyalar: power va factorial",
+   "description": "Topshiriq:\n- long long power(int a, int n) — sikl bilan, n ≥ 0.\n- long long factorial(int n).\n- main da har biriga 3 ta test; pow (cmath) bilan solishtiring.\n\nQabul mezoni:\n- power(2, 10) = 1024, power(5, 0) = 1.\n- factorial(0) = 1, factorial(10) = 3628800.\n- Funksiya ichida cout yo‘q — natija return qilinadi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 18-dars (2-oy).\nAsos: Eski №22 (pow, 10 daqiqa, tavsifsiz) — tavsif va testlar qo‘shildi.",
+   "timeLimit": 300,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    22
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 20,
+   "code": "F-20",
+   "title": "Satrlar va cmath",
+   "description": "Topshiriq:\n- getline bilan gap oling: so‘zlar soni, palindrommi (bo‘shliq va katta-kichik harf e’tiborsiz), eng uzun so‘z.\n- Katetlardan gipotenuzani sqrt bilan, 2 xona aniqlikda toping.\n\nKutilgan natija / namuna:\nGap: Never odd or even\nSo'zlar: 4 | Palindrom: ha | Eng uzun so'z: Never\na=3, b=4 -> c=5.00\n\nQabul mezoni:\n- 3 ta test gapda to‘g‘ri.\n- fixed << setprecision(2) ishlatilgan (fixedsiz 5.00 emas, 5 chiqadi).\n- Bo‘sh gapda dastur yiqilmaydi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 19-dars (2-oy).\nAsos: Yangi: 19-darsga normativ yo‘q edi. Satr bilan ishlash — LeetCode Easy’ning eng katta bo‘limi.",
+   "timeLimit": 300,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 21,
+   "code": "F-21",
+   "title": "Massiv: max va min o‘rnini almashtirish",
+   "description": "Topshiriq:\n- 10 elementli massivni rand() (1–100) bilan to‘ldiring, srand(time(0)).\n- Chiqaring; eng katta va eng kichik elementlar o‘rnini almashtiring; qayta chiqaring.\n\nKutilgan natija / namuna:\nOldin: 42 7 93 15 60 3 71 28 84 50\nKeyin: 42 7 3 15 60 93 71 28 84 50\n\nQabul mezoni:\n- Har ishga tushirishda boshqa sonlar.\n- Almashtirish indeks bo‘yicha to‘g‘ri.\n- max_element ishlatmasdan o‘zi topadi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 20-dars (2-oy).\nAsos: Eski №21 ga tavsif qo‘shildi.",
+   "timeLimit": 240,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    21
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 22,
+   "code": "F-22",
+   "title": "vector va funksiyalar: baholar jurnali",
+   "description": "Topshiriq:\n- vector<int> asosidagi menyu: 1 — baho qo‘shish (0–100), 2 — o‘rtacha, 3 — eng yuqori, 4 — saralangan (sort), 0 — chiqish.\n- Har amal alohida funksiyada; vector funksiyaga const& bilan uzatiladi.\n\nQabul mezoni:\n- Bo‘sh jurnalda o‘rtacha so‘ralsa dastur yiqilmaydi.\n- 101 va −1 rad etiladi.\n- Funksiyalar main dan tashqarida.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 21–22-dars (2-oy).\nAsos: Yangi (21–22-darslar «Tizim» mavzusi): menyuli dastur — kichik CRUD’ning birinchi ko‘rinishi.",
+   "timeLimit": 480,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 23,
+   "code": "F-23",
+   "title": "Python: BMI kalkulyatori",
+   "description": "Topshiriq:\n- input() bilan ism, yosh, vazn (kg), bo‘y (m).\n- BMI = vazn / bo‘y**2; f-string bilan 2 xona.\n- Toifa: < 18.5 ozg‘in, < 25 me’yor, < 30 ortiqcha, aks holda semizlik.\n\nKutilgan natija / namuna:\nIsmni kiriting: Sardor\nYoshni kiriting: 17\nVazn kiriting (kg): 60\nBo'yni kiriting (m): 1.7\nSardor, BMI indeksingiz: 20.76 (me'yor)\n\nQabul mezoni:\n- float() bilan konvertatsiya.\n- Chegaralar (18.5 va 25) aynan to‘g‘ri.\n- Natija namunadagi formatda.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 23–24-dars (3-oy).\nAsos: Eski №25 + raqobatchi «Normativ №1» (BMI, 4 daqiqa) uslubi: kutilgan natija ekranda beriladi.",
+   "timeLimit": 240,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    25
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 24,
+   "code": "F-24",
+   "title": "Shartlar: kalkulyator va tavsiya dasturi",
+   "description": "Topshiriq:\n- Kalkulyator: 2 son va amal (+ − * /); 0 ga bo‘lish va noma’lum amal uchun xabar.\n- Ichma-ich if: kategoriya (citrus/boshqa) → citrus bo‘lsa «shirinmi yoki nordon?» → taklif.\n\nKutilgan natija / namuna:\nKategoriya tanlang (citrus/boshqa): citrus\nShirinmi yoki nordon? nordon\nTaklif: Limon, greypfrut\n\nQabul mezoni:\n- 0 ga bo‘lishda dastur yiqilmaydi.\n- Katta-kichik harf farq qilmaydi (.lower()).\n- Uchala yo‘l ham sinalgan.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 25-dars (3-oy).\nAsos: Eski №23, №24, №26 birlashtirildi; raqobatchi «Extra task» (6 daqiqa) uslubi.",
+   "timeLimit": 300,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    23,
+    24,
+    26
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 25,
+   "code": "F-25",
+   "title": "Sikl: son topish o‘yini",
+   "description": "Topshiriq:\n- random.randint(1, 100); while bilan «kattaroq / kichikroq».\n- Urinishlar soni; 7 urinishdan keyin «Yutqazdingiz, son: X».\n- Raqam bo‘lmagan kiritishni isdigit() bilan ushlang.\n\nKutilgan natija / namuna:\nSon: 50\nKichikroq!\nSon: 25\nKattaroq!\nSon: 31\nTopdingiz! 3-urinishda.\n\nQabul mezoni:\n- 7 urinish chegarasi ishlaydi.\n- Harf kiritilsa urinish sanalmaydi.\n- Topilganda break bilan chiqadi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 26-dars (3-oy).\nAsos: Eski №27 (1–100 ni chiqarish, tavsifsiz) trivial edi — o‘yin orqali while, break, random.",
+   "timeLimit": 300,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    27
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 26,
+   "code": "F-26",
+   "title": "Funksiyalar va modul",
+   "description": "Topshiriq:\n- matematika.py da add, minus, mult, div (0 ga bo‘lishda None).\n- main.py da import qilib print(mult(minus(add(5, 7), 2), 4)).\n- Tayyor funksiyalar: baholar = [87, 92, 65, 78] uchun o‘rtacha, eng yuqori va saralangan ro‘yxat.\n\nKutilgan natija / namuna:\n40\nO'rtacha: 80.5 | Eng yuqori: 92 | Saralangan: [65, 78, 87, 92]\n\nQabul mezoni:\n- Natija namunadagidek.\n- Modul math deb nomlanmagan — nega shunday ekanini tushuntiradi.\n- div(5, 0) xato bermaydi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 27–28-dars (3-oy).\nAsos: Raqobatchi «Normativ №4» asosida. Ularda modul math deb nomlangan — nomi standart math bilan to‘qnashadi: Windows’da o‘rnatilgan modul yutadi, o‘quvchining fayli umuman yuklanmaydi va math.add xato beradi. Shuning uchun matematika.py.",
+   "timeLimit": 240,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 27,
+   "code": "F-27",
+   "title": "To‘plamlar: lug‘at, set va tuple",
+   "description": "Topshiriq:\n- Mualliflar soni → har muallif → asarlar «stop» gacha → lug‘at {muallif: [asarlar]}.\n- Jamoa yoshlari vergul bilan → set (takrorsiz) → saralangan tuple → 18 dan kichiklar soni.\n\nKutilgan natija / namuna:\nMualliflar soni: 2\nMuallif: Navoiy\nAsar ('stop' - tugatish): Xamsa\nAsar ('stop' - tugatish): stop\nMuallif: Qodiriy\nAsar ('stop' - tugatish): O'tkan kunlar\nAsar ('stop' - tugatish): stop\n{'Navoiy': ['Xamsa'], 'Qodiriy': [\"O'tkan kunlar\"]}\nYoshlar: 18,20,19,20,17,22\nSaralangan: (17, 18, 19, 20, 22) | 18 dan kichik: 1\n\nQabul mezoni:\n- Yoshlar int ga o‘tkazilgan (satr sifatida saralanmaydi).\n- «STOP» katta harfda ham ishlaydi.\n- Asarsiz muallif ham bo‘sh ro‘yxat bilan saqlanadi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 29-dars (3-oy).\nAsos: Raqobatchi «Normativ №2–3» lokallashtirildi. Ularning namunasida yoshlar satr sifatida saralangan — '9' > '10' xatosi; bizda son sifatida.",
+   "timeLimit": 480,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 28,
+   "code": "F-28",
+   "title": "Class va obyekt: Ritsar va Dev jangi",
+   "description": "Topshiriq:\n- Hero klassi: name, health, armor, weapon, power; __init__, self, info().\n- attack(other): zarba avval zirhdan ayriladi, zirh tugasa qolgani sog‘liqdan.\n- Navbat bilan jang — kimdir 0 ga tushguncha; g‘olibni chiqaring.\n\nKutilgan natija / namuna:\nRITSAR | Sog'liq: 4000 | Zirh: 4000 | Qurol: qilich | Kuch: 3000\nDEV    | Sog'liq: 6000 | Zirh: 4000 | Qurol: tosh musht | Kuch: 1000\nRITSAR qilich bilan hujum qildi -> DEV zirhi: 1000, sog'lig'i: 6000\nDEV tosh musht bilan hujum qildi -> RITSAR zirhi: 3000, sog'lig'i: 4000\nRITSAR qilich bilan hujum qildi -> DEV zirhi: 0, sog'lig'i: 4000\n...\nG'OLIB: RITSAR\n\nQabul mezoni:\n- Sog‘liq va zirh manfiyga tushmaydi.\n- Hujum bitta metod orqali — kod takrorlanmaydi.\n- Yangi qahramon 1 qator bilan qo‘shiladi.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 30-dars (3-oy).\nAsos: Eski №30 (Student CRUD, 2 daqiqa — real emas) o‘rniga raqobatchi «Normativ №7»: bolalar uchun qiziqarli, OOP mantiqi to‘liq.",
+   "timeLimit": 600,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    30
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 29,
+   "code": "F-29",
+   "title": "Kutubxona va API: valyuta kursi",
+   "description": "Topshiriq:\n- Virtual muhit: python -m venv .venv, pip install requests, requirements.txt.\n- cbu.uz ochiq JSON API’sidan USD, EUR, RUB kursi.\n- So‘mni dollarga konvertor.\n- timeout=5 va requests.RequestException bilan internet yo‘q holati.\n\nQabul mezoni:\n- Kurs API’dan olinadi (qo‘lda yozilmagan).\n- Internet uzilganda tushunarli xabar, dastur yiqilmaydi.\n- requirements.txt bor.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 31-dars (3-oy).\nAsos: Yangi (31-dars). Upwork backend teglari: «API Integration» 3-o‘rinda; hh.uz: REST API deyarli har e’londa.",
+   "timeLimit": 360,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 30,
+   "code": "F-30",
+   "title": "Ma’lumotlar bilan ishlash: CSV hisobot",
+   "description": "Topshiriq:\n- Ustoz bergan oquvchilar.csv (30 qator: ism, guruh, ball, davomat) ni csv.DictReader bilan o‘qing.\n- Bo‘sh yoki xato qatorlarni o‘tkazib yuboring va sanang.\n- Guruh bo‘yicha o‘rtacha ball va eng yaxshi 3 o‘quvchi.\n- Natijani hisobot.json ga yozing (ensure_ascii=False, indent=2).\n\nKutilgan natija / namuna:\nO'qildi: 30 | Xato qator: 3\n{\n  \"guruhlar\": {\n    \"F-12\": 81.4,\n    \"F-14\": 76.9\n  },\n  \"top3\": [\n    \"Malika\",\n    \"Javohir\",\n    \"Sevara\"\n  ]\n}\n\nQabul mezoni:\n- Xato qatorda dastur yiqilmaydi.\n- O‘zbekcha harflar JSON’da buzilmagan.\n- O‘rtacha 1 xona aniqlikda.\n\nTur: Qo‘lda. Dalil: Ekran yozuvi + sekundomer.\nDars: 32-dars (3-oy).\nUstoz tayyorlaydi: 30 qatorli oquvchilar.csv (3–4 ta ataylab buzilgan qator bilan).\nAsos: Raqobatchi data normativi («Clean the dataset», 20 daqiqa) Foundation darajasiga moslandi. Upwork: Excel tozalash va Data Entry — Entry ishlarining katta qismi.",
+   "timeLimit": 480,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 31,
+   "code": "F-31",
+   "title": "Telegram echo-bot va token xavfsizligi",
+   "description": "Topshiriq:\n- @BotFather → /newbot → token.\n- aiogram 3: /start salomlashadi, har matnni qaytaradi, rasmga «Rasm qabul qilindi».\n- Token .env da (python-dotenv), .env esa .gitignore da.\n\nQabul mezoni:\n- Bot 3 xil xabarga to‘g‘ri javob beradi.\n- Token kodda va repoda yo‘q.\n- Botni 1 buyruq bilan qayta ishga tushiradi.\n\nTur: Qo‘lda · Xavfsizlik. Dalil: Ekran yozuvi + sekundomer; Xavfsizlik sinovi ekranda.\nDars: 33-dars (3-oy).\nAsos: Eski №28 (BotFather) va №29 (echo-bot, 2 daqiqa — real emas) birlashtirildi. Upwork: «Create a Telegram bot» $5–200 — Entry’ning doimiy turi.",
+   "timeLimit": 480,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    28,
+    29
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 32,
+   "code": "F-32",
+   "title": "Ob-havo boti: tashqi API va kalit xavfsizligi",
+   "description": "Topshiriq:\n- Ustoz bergan aiogram skeletini oching.\n- OpenWeather so‘rovi: shahar → harorat, holat, shamol.\n- Noto‘g‘ri shahar nomiga tushunarli xabar.\n- API kalit .env da, .env esa .gitignore da.\n\nQabul mezoni:\n- 3 ta shahar va 1 ta xato holat ishlaydi.\n- Kalit GitHub repoda yo‘q.\n- So‘rovda timeout bor.\n\nTur: Qo‘lda · Xavfsizlik. Dalil: Ekran yozuvi + sekundomer; Xavfsizlik sinovi ekranda.\nDars: 34-dars (3-oy).\nUstoz tayyorlaydi: aiogram bot skeleti.\nAsos: Import №46 saqlandi. Upwork B07: tashqi API integratsiyasi, kalit kodda bo‘lmasligi.",
+   "timeLimit": 480,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 33,
+   "code": "F-33",
+   "title": "IT Live boti: menyu va tugmalar",
+   "description": "Topshiriq:\n- AI yordamida reply keyboard: Kurslar, Narxlar, Manzil, Aloqa.\n- Inline tugma bilan Telegram kanal havolasi; Manzil → send_location.\n- Kurs ma’lumotlari alohida data.py yoki JSON’da.\n- PROMPTS.md: AI kodidan kamida 1 xato yoki kamchilik.\n\nQabul mezoni:\n- Har tugma ishlaydi.\n- Har handler’ni tushuntiradi.\n- Ma’lumot kod ichida qattiq yozilmagan.\n\nTur: AI bilan. Dalil: Ekran yozuvi + PROMPTS.md.\nDars: 35-dars (3-oy).\nAsos: Eski №32 (30 daqiqa, yakuniy) — skelet tayyor bo‘lgani uchun normativ 10 daqiqa: menyu va tugmalar.",
+   "timeLimit": 600,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    32
+   ],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 34,
+   "code": "F-34",
+   "title": "AI suhbatdosh bot",
+   "description": "Topshiriq:\n- O‘z echo-botingizga AI API’ni (Claude, OpenAI yoki Gemini) ulang.\n- System prompt: IT Live kurslari bo‘yicha yordamchi.\n- API ishlamasa tushunarli xabar; kalit .env da.\n\nQabul mezoni:\n- Bot AI orqali javob beradi.\n- Xato holatini ushlaydi.\n- Har qatorni tushuntiradi.\n\nTur: AI bilan · Loyiha · Xavfsizlik. Dalil: Ekran yozuvi + PROMPTS.md; GitHub havola + himoya; Xavfsizlik sinovi ekranda.\nDars: 36-dars (3-oy).\nAsos: Import №47 saqlandi. Upwork: AI/LLM integratsiya — Entry fixed median $82.5, eng yuqori Entry byudjetlar.",
+   "timeLimit": 600,
+   "maxScore": 20,
+   "url": null,
+   "eski": [],
+   "keepOld": null
+  },
+  {
+   "taskNumber": 35,
+   "code": "F-35",
+   "title": "Demo Day 2: botni jonli namoyish",
+   "description": "Topshiriq:\n- Botni jonli ko‘rsating: ota-onalar telefonidan sinab ko‘radi.\n- Muammo → yechim → natija; GitHub havola.\n- 3 daqiqa taqdimot + savol-javob.\n\nQabul mezoni:\n- Bot jonli ishlaydi.\n- 1 ta texnik savolga javob beradi.\n- 5 daqiqadan oshmaydi.\n\nTur: Loyiha. Dalil: GitHub havola + himoya.\nDars: Demo Day 2 (3-oy).\nAsos: Eski №33 ga baholash mezoni qo‘shildi.",
+   "timeLimit": 300,
+   "maxScore": 20,
+   "url": null,
+   "eski": [
+    33
+   ],
+   "keepOld": 33
+  }
+ ]
+}

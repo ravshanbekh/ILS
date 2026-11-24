@@ -48,25 +48,24 @@ async function main() {
     'centerToday: 23:30Z (Toshkentda ertasi 04:30) → ertangi sana',
     R.dayStr(R.centerToday(new Date('2026-11-24T23:30:00Z'))) === '2026-11-25'
   );
+  // Muddat — har hafta YAKSHANBA 23:59 Toshkent (Promptokrat, 2026-11-24), guruh jadvalidan qat'i nazar
   const dJuft = R.dueAtFor(mon, { lessonDayType: 'juft', lessonStartMinute: 14 * 60 });
-  check('juft + 14:00 → shanba 14:00 Toshkent (09:00Z)', dJuft.toISOString() === '2026-11-28T09:00:00.000Z', dJuft.toISOString());
+  check('juft + 14:00 → yakshanba 23:59:59 (18:59:59Z)', dJuft.toISOString() === '2026-11-29T18:59:59.000Z', dJuft.toISOString());
   const dToq = R.dueAtFor(mon, { lessonDayType: 'toq', lessonStartMinute: 9 * 60 + 30 });
-  check('toq + 09:30 → juma 09:30 (04:30Z)', dToq.toISOString() === '2026-11-27T04:30:00.000Z', dToq.toISOString());
-  const dNoTime = R.dueAtFor(mon, { lessonDayType: 'juft', lessonStartMinute: null });
-  check('soatsiz → oxirgi dars kuni 23:59:59', dNoTime.toISOString() === '2026-11-28T18:59:59.000Z', dNoTime.toISOString());
+  check('toq → ham yakshanba 23:59:59', dToq.toISOString() === '2026-11-29T18:59:59.000Z', dToq.toISOString());
   const dNone = R.dueAtFor(mon, { lessonDayType: null, lessonStartMinute: null });
   check('jadvalsiz → yakshanba 23:59:59', dNone.toISOString() === '2026-11-29T18:59:59.000Z', dNone.toISOString());
-  check('qo\'shimcha muddat +2 kun', R.graceEndFor(dJuft, 2).toISOString() === '2026-11-30T09:00:00.000Z');
+  check("qo'shimcha muddat +2 kun → seshanba 23:59:59", R.graceEndFor(dJuft, 2).toISOString() === '2026-12-01T18:59:59.000Z');
   const st = (sub: string | null, now: string, joined = '2026-01-01T00:00:00Z') =>
     R.stateOf({ dueAt: dJuft, graceEnd: R.graceEndFor(dJuft, 2), submittedAt: sub ? new Date(sub) : null, joinedAt: new Date(joined), now: new Date(now) });
-  check('holat: muddatgacha topshirmagan → open', st(null, '2026-11-26T10:00:00Z') === 'open');
-  check('holat: muddat o\'tdi → grace', st(null, '2026-11-29T10:00:00Z') === 'grace');
-  check('holat: qo\'shimcha ham o\'tdi → missed (qizil)', st(null, '2026-11-30T09:00:01Z') === 'missed');
-  check('holat: o\'z vaqtida → done', st('2026-11-28T08:59:00Z', '2026-12-05T00:00:00Z') === 'done');
-  check('holat: qo\'shimcha muddatda → grace_done', st('2026-11-29T10:00:00Z', '2026-12-05T00:00:00Z') === 'grace_done');
-  check('holat: kech → late_done', st('2026-12-01T10:00:00Z', '2026-12-05T00:00:00Z') === 'late_done');
+  check('holat: muddatgacha topshirmagan → open', st(null, '2026-11-29T10:00:00Z') === 'open');
+  check("holat: muddat o'tdi → grace", st(null, '2026-11-30T10:00:00Z') === 'grace');
+  check("holat: qo'shimcha ham o'tdi → missed (qizil)", st(null, '2026-12-01T19:00:00Z') === 'missed');
+  check("holat: o'z vaqtida (yakshanba kechqurun) → done", st('2026-11-29T18:30:00Z', '2026-12-05T00:00:00Z') === 'done');
+  check("holat: qo'shimcha muddatda → grace_done", st('2026-11-30T10:00:00Z', '2026-12-05T00:00:00Z') === 'grace_done');
+  check('holat: kech → late_done', st('2026-12-02T10:00:00Z', '2026-12-05T00:00:00Z') === 'late_done');
   check('holat: kelajakdagi topshiriq hisobga olinmaydi', st('2026-11-27T10:00:00Z', '2026-11-26T10:00:00Z') === 'open');
-  check('holat: muddatdan keyin qo\'shilgan → na', st(null, '2026-12-05T00:00:00Z', '2026-11-29T00:00:00Z') === 'na');
+  check("holat: muddatdan keyin qo'shilgan → na", st(null, '2026-12-05T00:00:00Z', '2026-11-30T00:00:00Z') === 'na');
   const lay = R.layOut(['a', 'b', 'c', 'd', 'e'], mon, 2, new Map([['2026-11-23', 1]]));
   check(
     'layOut: band joy hisobga olinadi (1+1, 2, 1)',
@@ -172,7 +171,7 @@ async function main() {
       data: [
         { groupId: g1.id, studentId: s1.id, joinedAt: old },
         { groupId: g1.id, studentId: s2.id, joinedAt: old },
-        { groupId: g1.id, studentId: s3.id, joinedAt: at(M, 24 * 6) }, // yakshanba — 1-hafta muddatidan keyin
+        { groupId: g1.id, studentId: s3.id, joinedAt: at(M, 24 * 7) }, // dushanba — 1-hafta muddatidan keyin
         { groupId: g2.id, studentId: s4.id, joinedAt: old },
       ],
     });
@@ -213,8 +212,8 @@ async function main() {
     const pg2 = pv.json?.data?.groups?.find((g: any) => g.id === g2.id);
     check('menejer preview → 200', pv.status === 200);
     check('G1: 5 normativ → 3 hafta, 1-hafta N1+N2', pg1?.normatives === 5 && pg1?.weeks === 3 && pg1?.firstWeekItems.map((x: any) => x.id).join() === [N1.id, N2.id].join());
-    check('G1 birinchi muddat — shanba 14:00', pg1?.firstDueAt === R.dueAtFor(M, { lessonDayType: 'juft', lessonStartMinute: 840 }).toISOString());
-    check("G2 ogohlantirish: dars kunlari yo'q", pg2?.warnings.some((w: string) => w.includes('Dars kunlari')));
+    check('G1 birinchi muddat — yakshanba 23:59', pg1?.firstDueAt === R.dueAtFor(M, { lessonDayType: 'juft', lessonStartMinute: 840 }).toISOString());
+    check("G2 ogohlantirish: boshlanish sanasi yo'q", pg2?.warnings.some((w: string) => w.includes('boshlanish sanasi')));
     check('preview hech narsa yozmaydi', (await prisma.normativeDeadline.count()) === 0);
     check('preview: dushanba emas → 400', (await call(manager.token, 'POST', '/preview', { startDate: R.dayStr(R.addDays(M, 1)) })).status === 400);
 
@@ -236,14 +235,14 @@ async function main() {
 
     // ── 4) holatlar ──
     console.log('\n4) Holatlar (vaqt bo\'yicha)');
-    const due1 = R.dueAtFor(M, { lessonDayType: 'juft', lessonStartMinute: 840 }); // shanba 09:00Z
+    const due1 = R.dueAtFor(M, { lessonDayType: 'juft', lessonStartMinute: 840 }); // yakshanba 18:59:59Z
     const subAt = async (studentId: string, normativeId: string, when: Date) =>
       prisma.submission.create({
         data: { studentId, normativeId, groupId: g1.id, youtubeUrl: 'https://youtu.be/x', submittedAt: when, firstSubmittedAt: when },
       });
     await subAt(s1.id, N1.id, at(M, 24 + 6)); // seshanba — o'z vaqtida
-    await subAt(s1.id, N2.id, at(M, 24 * 6 + 1)); // yakshanba — qo'shimcha muddatda
-    await subAt(s2.id, N1.id, at(M, 24 * 8 + 1)); // keyingi seshanba — kech
+    await subAt(s1.id, N2.id, at(M, 24 * 7 + 2)); // dushanba — qo'shimcha muddatda
+    await subAt(s2.id, N1.id, at(M, 24 * 9 + 1)); // chorshanba — qo'shimcha muddatdan keyin (kech)
     const A = { userId: admin.id, role: 'admin' };
     svc.resetSyncThrottle();
     const ov = async (now: Date, week = Ms) => {
@@ -253,18 +252,18 @@ async function main() {
     let o = await ov(at(M, 24 * 3 + 6)); // payshanba
     check('payshanba: G1 bu hafta 2 ta normativ, 4 ta deadline (s3 hisobda yo\'q)', o.g.week.items.length === 2 && o.g.week.due === 4, JSON.stringify(o.g.week));
     check('payshanba: 1 topshirildi, 3 kutilmoqda, 0 qizil', o.g.week.done === 1 && o.g.week.open === 3 && o.g.missed === 0);
-    check('hafta muddati javobda — shanba 14:00', o.g.week.items[0].dueAt === due1.toISOString());
-    o = await ov(at(M, 24 * 6 + 3)); // yakshanba 08:00 Toshkent
-    check('yakshanba: s1 N2 qo\'shimcha muddatda topshirdi, s2 ikkalasi qo\'shimcha muddatda', o.g.week.graceDone === 1 && o.g.week.grace === 2 && o.g.week.missed === 0, JSON.stringify(o.g.week));
-    o = await ov(at(M, 24 * 8 + 6)); // keyingi seshanba
+    check('hafta muddati javobda — yakshanba 23:59', o.g.week.items[0].dueAt === due1.toISOString());
+    o = await ov(at(M, 24 * 7 + 6)); // dushanba 11:00 Toshkent
+    check("dushanba: s1 N2 qo'shimcha muddatda topshirdi, s2 ikkalasi qo'shimcha muddatda", o.g.week.graceDone === 1 && o.g.week.grace === 2 && o.g.week.missed === 0, JSON.stringify(o.g.week));
+    o = await ov(at(M, 24 * 9 + 6)); // chorshanba — qo'shimcha muddat ham o'tgan
     check('qo\'shimcha muddatdan keyin: s2 N2 QIZIL, s2 N1 kech topshirgan', o.g.week.missed === 1 && o.g.week.lateDone === 1 && o.g.missed === 1 && o.g.studentsWithMissed === 1, JSON.stringify(o.g.week));
     check('jami: qizil o\'quvchilar soni', o.d.totals.studentsWithMissed >= 1 && o.d.totals.missed >= 1);
-    const wk2 = await ov(at(M, 24 * 8 + 6), R.dayStr(R.addDays(M, 7)));
+    const wk2 = await ov(at(M, 24 * 9 + 6), R.dayStr(R.addDays(M, 7)));
     check('2-hafta tanlanganda: N3, N4', wk2.g.week.items.map((x: any) => x.normativeId).join() === [N3.id, N4.id].join() && wk2.d.week.start === R.dayStr(R.addDays(M, 7)));
     const g2ov = o.d.groups.find((x: any) => x.id === g2.id);
-    check('G2 (jadvalsiz) muddat — yakshanba 23:59', g2ov.week.items[0]?.dueAt === R.dueAtFor(M, { lessonDayType: null, lessonStartMinute: null }).toISOString());
+    check('G2 muddati ham yakshanba 23:59', g2ov.week.items[0]?.dueAt === R.dueAtFor(M, { lessonDayType: null, lessonStartMinute: null }).toISOString());
 
-    const det: any = await svc.groupDetail(A, g1.id, at(M, 24 * 8 + 6));
+    const det: any = await svc.groupDetail(A, g1.id, at(M, 24 * 9 + 6));
     const rowN2 = det.weeks[0].items.find((x: any) => x.normativeId === N2.id).id;
     const rowN1 = det.weeks[0].items.find((x: any) => x.normativeId === N1.id).id;
     const cell = (sid: string, row: string) => det.students.find((s: any) => s.id === sid).cells[row][0];
@@ -283,7 +282,7 @@ async function main() {
     const vov = await call(viewer.token, 'GET', `/overview?week=${Ms}`);
     check('nazoratchi (ruxsat) hammasini ko\'radi', vov.json.data.groups.some((g: any) => g.id === g1.id) && vov.json.data.groups.some((g: any) => g.id === g2.id));
     check("o'qituvchi canManage=false", t1ov.json.data.canManage === false && vov.json.data.canManage === false);
-    const me: any = await svc.studentMe(s2.id, at(M, 24 * 8 + 6));
+    const me: any = await svc.studentMe(s2.id, at(M, 24 * 9 + 6));
     check("o'quvchi /me: qizil N2 + shu haftaning 2 tasi", me.enabled && me.items.some((x: any) => x.normativeId === N2.id && x.state === 'missed') && me.items.filter((x: any) => x.when === 'this').length === 2, JSON.stringify(me.counts));
     check("o'quvchi /me: o'z vaqtida topshirilgan eski band ko'rinmaydi", !me.items.some((x: any) => x.when === 'past' && x.state === 'late_done'));
     const me4 = await call(s4.token, 'GET', '/me');
@@ -309,7 +308,7 @@ async function main() {
     check('N5 → 4-haftaga ko\'chirildi', mv.status === 200 && R.dayStr((await prisma.normativeDeadline.findUnique({ where: { id: rowOf(N5.id) } }))!.weekStart) === R.dayStr(R.addDays(M, 21)));
     const ex = await call(manager.token, 'PATCH', `/groups/${g1.id}/items`, { ids: [rowOf(N4.id)], excluded: true });
     check('N4 rejadan chiqarildi', ex.status === 200 && (await prisma.normativeDeadline.findUnique({ where: { id: rowOf(N4.id) } }))!.excluded);
-    o = await ov(at(M, 24 * 8 + 6), R.dayStr(R.addDays(M, 7)));
+    o = await ov(at(M, 24 * 9 + 6), R.dayStr(R.addDays(M, 7)));
     check("chiqarilgan band hisobga olinmaydi (2-haftada faqat 0 ta)", o.g.week.items.length === 0, JSON.stringify(o.g.week.items.map((x: any) => x.title)));
     const rb = await call(manager.token, 'POST', `/groups/${g1.id}/rebuild`, { fromWeek: R.dayStr(R.addDays(M, 7)) });
     const plan3 = await prisma.normativeDeadline.findMany({ where: { groupId: g1.id, excluded: false }, orderBy: { seq: 'asc' } });

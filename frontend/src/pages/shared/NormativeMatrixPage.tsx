@@ -445,7 +445,7 @@ const MatrixRow = memo(function MatrixRow({
 }) {
   const pct = stat.assigned ? (stat.g + stat.b) / stat.assigned : null;
   return (
-    <tr className="group/row">
+    <tr className={`group/row ${n.archivedAt ? 'opacity-50' : ''}`} title={n.archivedAt ? 'Arxiv — eski tahrir normativi (natijalari saqlangan)' : undefined}>
       <td className="sticky z-10 border-b border-r border-zinc-800 ils-nm-title ils-nm-num px-1 text-center text-xs font-bold" style={{ left: L.left.n }}>
         {n.taskNumber}
       </td>
@@ -456,6 +456,7 @@ const MatrixRow = memo(function MatrixRow({
       >
         <div className="flex items-start gap-1">
           <span className="line-clamp-2 text-xs font-semibold leading-snug text-zinc-100" title={n.description ? `${n.title}\n\n${n.description}` : n.title}>
+            {n.archivedAt && <span className="mr-1 rounded bg-zinc-700/60 px-1 py-px text-[9px] font-bold uppercase text-zinc-300">arxiv</span>}
             {n.title}
           </span>
           {n.url && (

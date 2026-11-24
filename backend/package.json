@@ -20,7 +20,8 @@
     "e2e:student-access": "tsx tests/student-access.e2e.ts",
     "e2e:normative-matrix": "tsx tests/normative-matrix.e2e.ts",
     "e2e:curator": "tsx tests/curator.e2e.ts",
-    "e2e:normative-deadlines": "tsx tests/normative-deadlines.e2e.ts"
+    "e2e:normative-deadlines": "tsx tests/normative-deadlines.e2e.ts",
+    "e2e:foundation-2026": "tsx tests/foundation-2026.e2e.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

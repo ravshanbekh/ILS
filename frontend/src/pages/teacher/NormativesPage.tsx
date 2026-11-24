@@ -33,7 +33,8 @@ export default function TeacherNormativesPage() {
         normativesApi.getAll(1, 500),
         groupsApi.getAll(1, 100)
       ]);
-      const sorted = (normRes.data.data || []).sort((a: any, b: any) => a.taskNumber - b.taskNumber);
+      // Arxivlanganlar (eski tahrir) — pastda va xira
+      const sorted = (normRes.data.data || []).sort((a: any, b: any) => Number(!!a.archivedAt) - Number(!!b.archivedAt) || a.taskNumber - b.taskNumber);
       setNormatives(sorted);
       setGroups(groupRes.data.data || []);
     } catch (err) {
@@ -157,7 +158,7 @@ export default function TeacherNormativesPage() {
               {paginated.map((norm, idx) => (
                 <div
                   key={norm.id}
-                  className="grid grid-cols-[60px_60px_1fr_2fr_120px_80px_80px] items-center gap-4 px-5 py-3.5 hover:bg-zinc-800/20 transition-colors"
+                  className={`grid grid-cols-[60px_60px_1fr_2fr_120px_80px_80px] items-center gap-4 px-5 py-3.5 hover:bg-zinc-800/20 transition-colors ${norm.archivedAt ? 'opacity-50' : ''}`}
                 >
                   {/* Row number */}
                   <div className="flex justify-center">
@@ -175,7 +176,10 @@ export default function TeacherNormativesPage() {
 
                   {/* Title */}
                   <div className="min-w-0 cursor-pointer hover:text-blue-400 transition-colors" onClick={() => setViewingNormative(norm)}>
-                    <p className="text-white font-medium text-sm truncate">{norm.title}</p>
+                    <p className="text-white font-medium text-sm truncate">
+                      {norm.archivedAt && <span className="mr-1.5 rounded bg-zinc-700/60 px-1 py-px text-[9px] font-bold uppercase text-zinc-300">arxiv</span>}
+                      {norm.title}
+                    </p>
                   </div>
  
                   {/* Description */}

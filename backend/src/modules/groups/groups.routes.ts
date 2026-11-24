@@ -3,6 +3,7 @@ import groupsController from './groups.controller';
 import normativesController from '../normatives/normatives.controller';
 import { authenticate, roleGuard } from '../../shared/middleware/auth.middleware';
 import { permissionGuard } from '../../shared/middleware/permission.middleware';
+import { mountStartDateRoutes } from './groups.startdate';
 
 const router = Router();
 
@@ -18,6 +19,9 @@ router.get('/', roleGuard('admin', 'teacher', 'kassir', 'administrator', 'sotuv_
 // DIQQAT: '/:id' dan OLDIN turishi shart — aks holda Express "archived"
 // so'zini guruh id si deb qabul qiladi va 400/404 qaytaradi.
 router.get('/archived', roleGuard('admin', 'administrator', 'filial_rahbari', 'nazoratchi'), groupsController.getArchived);
+
+// Boshlanish sanasi: o'qituvchi eslatmasi + o'zi kiritishi ('/:id' dan OLDIN)
+mountStartDateRoutes(router);
 
 router.get('/:id', roleGuard('admin', 'teacher', 'student', 'kassir', 'administrator', 'sotuv_operatori', 'filial_rahbari', 'moliya_rahbari', 'assistant', 'nazoratchi', 'hr_rahbari', 'call_operatori'), groupsController.getById);
 

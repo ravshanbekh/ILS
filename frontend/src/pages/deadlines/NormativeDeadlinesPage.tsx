@@ -119,7 +119,7 @@ export default function NormativeDeadlinesPage() {
             <CalendarClock className="h-6 w-6 text-amber-400" /> Normativ deadline'lari
           </h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Haftasiga <b className="text-zinc-200">{cfg.perWeek} ta</b> normativ · muddat — haftaning oxirgi darsi, <b className="text-zinc-200">dars soatigacha</b> ·
+            Haftasiga <b className="text-zinc-200">{cfg.perWeek} ta</b> normativ · muddat — <b className="text-zinc-200">yakshanba 23:59</b> ·
             topshirmasa <b className="text-zinc-200">+{cfg.graceDays} kun</b> qo'shimcha imkon · undan keyin <span className="font-semibold text-red-400">qizil</span>
           </p>
         </div>

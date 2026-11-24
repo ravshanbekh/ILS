@@ -1,8 +1,9 @@
 # Normativ deadline'lari
 
-Har bir guruh o'quvchisi **haftasiga 2 ta normativ** topshiradi. Muddat — haftaning
-**oxirgi dars kuni, dars soatigacha**. Ulgurmasa **+2 kun** qo'shimcha imkon beriladi,
-undan keyin ham topshirmasa — **qizil**.
+Har bir guruh o'quvchisi **haftasiga 2 ta normativ** topshiradi. Muddat — har hafta
+**yakshanba 23:59** (Toshkent), hamma guruh uchun bir xil (Promptokrat qarori, 2026-11-24).
+Ulgurmasa **+2 kun** qo'shimcha imkon beriladi (seshanba 23:59 gacha), undan keyin ham
+topshirmasa — **qizil**.
 
 Tizim yoqilmaguncha hech kim (o'qituvchi ham, o'quvchi ham) hech narsa ko'rmaydi.
 Normativlar yangilanib, e'lon qilingandan keyin admin **"Hammaga start"** beradi.
@@ -17,11 +18,17 @@ Guruh formasi (Jamoa → Guruhlar → tahrirlash) va guruh sahifasining tepasida
 | Dars kunlari | **Toq** = Du · Chor · Ju, **Juft** = Se · Pay · Sha, **Har kuni** |
 | Dars boshlanishi / tugashi | masalan 14:00–16:00 (30 daqiqa qadam) |
 
-Haftaning muddati shu ma'lumotdan **har safar qayta hisoblanadi**. Dars soati
-o'zgarsa, hamma haftalarning muddati ham o'zgaradi.
-- Juft guruh, 14:00 → shanba 14:00, qo'shimcha muddat dushanba 14:00 gacha.
-- Dars soati kiritilmagan → oxirgi dars kuni 23:59.
-- Dars kunlari ham kiritilmagan → yakshanba 23:59 (panelda ogohlantirish chiqadi).
+Muddatga dars kuni va soati ta'sir qilmaydi (doim yakshanba 23:59). **Boshlanish sanasi**
+esa kerak: reja guruh boshlangan haftadan (start haftasidan oldin emas) quriladi.
+
+**O'qituvchi bildirishnomasi.** Boshlanish sanasi kiritilmagan har bir guruh uchun o'qituvchi
+panelining tepasida bildirishnoma turadi va **yopilmaydi**. Sana shu yerning o'zida kiritiladi
+(`PATCH /api/groups/:id/start-date`). Qoidalar:
+- o'qituvchi faqat o'z guruhiga kiritadi (boshqa guruh — 404) va faqat bir marta;
+- keyin o'zgartirish faqat administrator yoki `edit_group` ruxsati bilan;
+- har bir kiritish audit jurnaliga yoziladi.
+
+Deadline panelida sanasiz guruhlar "Guruh boshlanish sanasi kiritilmagan" ogohlantirishi bilan chiqadi.
 
 ## Holatlar
 
@@ -117,6 +124,29 @@ Har bir start, pauza, tozalash va reja tahriri audit jurnaliga yoziladi
 Model: `NormativeDeadline` (guruh × normativ, `weekStart` dushanba, `seq`, `excluded`).
 Guruhda: `lessonStartMinute`, `lessonEndMinute`. Sxema faqat `prisma db push` bilan.
 
+## Foundation 2026 ga o'tish (yangi normativlar)
+
+Admin → Normativlar sahifasining tepasida **"Foundation normativlarini 2026 yangi tahririga o'tkazish"** paneli.
+Avval reja ko'rsatiladi, keyin **"Qo'llash"** bosiladi (bitta tranzaksiya, qayta bosish xavfsiz):
+
+1. "Foundation 2026" yo'nalishida yangi normativlar yaratiladi (manba
+   `backend/src/modules/normatives/foundation-2026.seed.json`, `E:\normativlar-2026` quruvchisidan).
+   2-normativ: **50+ WPM** (45 emas). 6-normativga eski Word namunalarining GitHub rasmlari
+   (`ITLivementor/Foundation`, normative-4/5/6) ulangan.
+2. Eskisi bilan **bir xil** normativlar (Demo day 1 va 2) qayta yaratilmaydi. Eski yozuv va
+   natijalari saqlanadi, u yangi yo'nalishga o'tadi va yangi raqam oladi (13 va 35).
+3. Qolgan eski "Foundation" normativlari **arxivlanadi** (`Normative.archivedAt`):
+   - o'chirilmaydi, natija va ballar saqlanadi;
+   - o'quvchi sahifasida pastda "Eski normativlar (arxiv)" bo'limida **xira** turadi;
+   - ularga yangi topshirish yopiq;
+   - deadline rejasiga kirmaydi;
+   - admin normativni tahrirlab, arxivdan qaytara oladi.
+4. Tanlangan guruhlarga yangi to'plam biriktiriladi. Tavsiya: eski Foundation normativi bor va
+   boshqa yo'nalishi (Frontend va h.k.) yo'q guruhlar. Admin tanlovni o'zgartira oladi.
+
+Hech kimga xabar yuborilmaydi. Natija audit jurnalida (`FOUNDATION_2026_MIGRATION`)
+va `app_settings.foundation_2026_migration` da saqlanadi.
+
 ## Shu ish bilan tuzatilgan eski xatolar
 
 - **Guruhni tahrirlash jadvalni o'chirardi.** Guruhlar ro'yxati API'si boshlanish
@@ -127,11 +157,15 @@ Guruhda: `lessonStartMinute`, `lessonEndMinute`. Sxema faqat `prisma db push` bi
   hisoblardi (12-noyabr = "juft"). Dars sessiyalari esa hafta kuni bo'yicha
   ishlaydi (Se/Pay/Sha). Endi ikkalasi bitta qoidada: hafta kuni. Allaqachon
   qurilgan bosqichlar o'zgarmaydi, faqat yangilari shu qoida bilan quriladi.
+- **Normativlar ro'yxati 100 taga kesilardi.** `/api/normatives` umumiy 100 chegarasi bilan
+  ishlardi, o'quvchi sahifasi esa 500 tasini so'raydi. 2026 tahriri bilan normativlar 100 dan
+  oshadi, shuning uchun bu ro'yxat uchun chegara 1000 qilindi.
 
 ## Testlar
 
 ```bash
-cd backend && npm run e2e:normative-deadlines   # 87 tekshiruv
+cd backend && npm run e2e:normative-deadlines   # 86 tekshiruv
+cd backend && npm run e2e:foundation-2026        # 49 tekshiruv (migratsiya, arxiv, boshlanish sanasi)
 ```
 
 Qamrov:
