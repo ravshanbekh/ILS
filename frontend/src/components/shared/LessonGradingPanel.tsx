@@ -76,6 +76,8 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
   const [unlocking, setUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [isLessonDay, setIsLessonDay] = useState(true);
+  // Admin qayta ochgan O'TGAN kun darsi bo'lsa — uning sanasi (bannerda ko'rsatiladi)
+  const [pastDate, setPastDate] = useState<string | null>(null);
   const [lessonDayType, setLessonDayType] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [step, setStep] = useState<'homework' | 'activity' | 'coin'>('homework');
@@ -128,6 +130,7 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
     try {
       const res = await lessonSessionsApi.getToday(groupId);
       setIsLessonDay(res.data.data.isLessonDay);
+      setPastDate(res.data.data.pastDate ?? null);
       setLessonDayType(res.data.data.lessonDayType);
       const sess = res.data.data.session;
       setSession(sess);
@@ -285,6 +288,11 @@ export default function LessonGradingPanel({ groupId, groupName, onClose }: Prop
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
           <div>
             <h2 className="text-white font-bold text-lg">Baholash — {groupName}</h2>
+            {pastDate && session && (
+              <div className="mt-1 text-sm font-medium text-sky-400">
+                {String(pastDate).slice(0, 10).split('-').reverse().join('.')} kungi dars — administrator qayta ochgan
+              </div>
+            )}
             {session?.status === 'ochiq' && !isExpiredLocally && (
               <div className="flex items-center gap-1.5 text-amber-400 text-sm mt-1 font-medium">
                 <Clock className="w-4 h-4" />

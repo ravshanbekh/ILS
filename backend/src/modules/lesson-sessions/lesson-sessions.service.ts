@@ -99,10 +99,30 @@ class LessonSessionsService {
       where: { groupId_date: { groupId, date: today } },
     });
 
+    // Admin O'TGAN kun darsini qayta ochgan bo'lsa (avto-yopilgan yoki adashib yakunlangan)
+    // — o'qituvchi uni shu paneldan tugatadi. Ilgari faqat bugungi dars qidirilardi va
+    // qayta ochilgan kechagi dars o'qituvchiga ko'rinmasdi. Bugungi dars ochiq bo'lsa — u ustun.
+    if (!session || session.status !== 'ochiq') {
+      const openPast = await prisma.lessonSession.findFirst({
+        where: { groupId, status: 'ochiq', date: { lt: today } },
+        orderBy: { date: 'desc' },
+        select: { id: true, date: true },
+      });
+      if (openPast) {
+        return {
+          isLessonDay: isLessonDay(group.lessonDayType, today),
+          lessonDayType: group.lessonDayType,
+          session: await this.getById(openPast.id),
+          pastDate: openPast.date,
+        };
+      }
+    }
+
     return {
       isLessonDay: isLessonDay(group.lessonDayType, today),
       lessonDayType: group.lessonDayType,
       session: session ? await this.getById(session.id) : null,
+      pastDate: null,
     };
   }
 
@@ -341,12 +361,19 @@ class LessonSessionsService {
       return this.getById(session.id);
     }
 
-    if (existing.status === 'yakunlandi') {
-      throw ApiError.badRequest('Bu dars allaqachon yakunlangan, qayta ochish shart emas');
+    if (existing.status === 'ochiq') {
+      throw ApiError.badRequest('Bu dars hozir ochiq — qayta ochish shart emas');
     }
 
-    // avto_yopildi -> qayta ochish, avtomatik 0 baholarni tozalash
-    await prisma.$transaction([
+    // avto_yopildi YOKI yakunlandi (o'qituvchi "Yakunlash"ni adashib, baholashni oxiriga
+    // yetkazmay bosgan) -> qayta ochish. Yopilganda baholanmaganlarga avtomatik qo'yilgan
+    // 0 lar tozalanadi; o'qituvchi qo'lda qo'ygan baholar va berilgan coinlar saqlanadi.
+    // Yakunlangan darsda ota-ona xabari hali ketmagan bo'lsa — u bekor qilinadi va dars
+    // qayta yakunlanganda to'g'ri baholar bilan ketadi. Allaqachon ketgan bo'lsa — qayta
+    // yuborilmaydi (ota-onaga ikkinchi xabar bormasin).
+    const wasFinalized = existing.status === 'yakunlandi';
+    const parentsAlreadyNotified = !!existing.parentNotifiedAt;
+    const [cleared] = await prisma.$transaction([
       prisma.lessonGrade.updateMany({
         where: { sessionId: existing.id, autoZero: true },
         data: { homework: null, homeworkScore: null, autoZero: false, gradedAt: null },
@@ -359,11 +386,23 @@ class LessonSessionsService {
           unlockedById: adminId,
           unlockedAt: now,
           unlockNote: note,
+          ...(wasFinalized ? { finalizedAt: null, ...(parentsAlreadyNotified ? {} : { parentNotifyAt: null }) } : {}),
+        },
+      }),
+      prisma.auditLog.create({
+        data: {
+          userId: adminId,
+          action: 'LESSON_SESSION_REOPEN',
+          targetType: 'lesson_session',
+          targetId: existing.id,
+          details: { groupId, date: targetDate.toISOString().slice(0, 10), from: existing.status, note, parentsAlreadyNotified },
         },
       }),
     ]);
+    logger.info(`Dars sessiyasi qayta ochildi (${existing.status} → ochiq): ${existing.id}, avto-0 tozalandi: ${cleared.count}`);
 
-    return this.getById(existing.id);
+    const session = await this.getById(existing.id);
+    return { ...session, reopen: { from: existing.status, clearedAutoZero: cleared.count, parentsAlreadyNotified } };
   }
 
   // ============ ADMIN: KUNLIK NAZORAT HISOBOTI ============
@@ -415,13 +454,16 @@ class LessonSessionsService {
     const from = new Date(today);
     from.setDate(from.getDate() - Math.max(1, Math.min(days, 60)));
 
+    // Avtomatik yopilganlar VA o'qituvchi yakunlaganlar. Yakunlanganlar ham kerak:
+    // o'qituvchi "Yakunlash"ni adashib, baholashni oxiriga yetkazmay bosgan bo'lishi mumkin —
+    // bunda baholanmaganlarga avtomatik 0 qo'yiladi (autoZeroCount > 0 — asosiy belgi).
     const sessions = await prisma.lessonSession.findMany({
-      where: { status: 'avto_yopildi', date: { gte: from, lte: today } },
+      where: { status: { in: ['avto_yopildi', 'yakunlandi'] }, date: { gte: from, lte: today } },
       orderBy: [{ date: 'desc' }],
       include: {
         group: { select: { id: true, name: true } },
         teacher: { select: { id: true, fullName: true } },
-        _count: { select: { grades: true } },
+        grades: { select: { homework: true, autoZero: true, activityScore: true } },
       },
     });
 
@@ -430,9 +472,17 @@ class LessonSessionsService {
       groupId: s.group.id,
       groupName: s.group.name,
       teacherName: s.teacher?.fullName ?? null,
+      status: s.status,
       date: s.date,
       startedAt: s.startedAt,
-      studentCount: s._count.grades,
+      finalizedAt: s.finalizedAt,
+      studentCount: s.grades.length,
+      /** Yopilganda baholanmagani uchun avtomatik 0 olganlar */
+      autoZeroCount: s.grades.filter((g) => g.autoZero).length,
+      /** Faollik bahosi qo'yilmaganlar (darsga kelmaganlar hisobga olinmaydi) */
+      activityMissing: s.grades.filter((g) => g.homework !== 'kelmadi' && g.activityScore == null).length,
+      parentNotifyAt: s.parentNotifyAt,
+      parentNotifiedAt: s.parentNotifiedAt,
       /** Ilgari ochilgan bo'lsa — kim va nega ochgani */
       unlockedAt: s.unlockedAt,
       unlockNote: s.unlockNote,
